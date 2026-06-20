@@ -4,7 +4,7 @@
 Fase 7 — Notificaciones push (Web Push)
 
 ## Paso actual / siguiente paso
-Siguiente: Fase 8 — PWA (manifest.json + service worker para instalación en móvil).
+Siguiente: Fase 8, paso 2: base.html wiring — manifest link, registro SW, suscripción push y generación de iconos.
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -26,6 +26,7 @@ Siguiente: Fase 8 — PWA (manifest.json + service worker para instalación en m
 - [x] Fase 6, paso 2: caducidad disparada en GET / (dashboard) · 111 tests passing
 - [x] Fase 7, paso 1: enviar_push + POST /push/suscribir · guarda subscription · silent ante excepciones WebPush · 118 tests passing
 - [x] Fase 7, paso 2: push integrado en crear_match_directo, confirmar_participacion y rechazar_match · 121 tests passing
+- [x] Fase 8, paso 1: /manifest.json + /sw.js + /push/vapid-public-key · sw.js con push/install/fetch handlers · 126 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

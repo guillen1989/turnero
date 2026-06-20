@@ -39,6 +39,9 @@ def create_app(config_name=None):
     from app.routes.push import bp as push_bp
     app.register_blueprint(push_bp)
 
+    from app.routes.pwa import bp as pwa_bp
+    app.register_blueprint(pwa_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 
