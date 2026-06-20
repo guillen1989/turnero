@@ -31,5 +31,9 @@
   {% else %}
     <p class="empty-state">{{ _('No tienes publicaciones activas.') }}</p>
   {% endif %}
+
+  <div class="dashboard-actions">
+    <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary">{{ _('Publicar cambio') }}</a>
+  </div>
 </div>
 {% endblock %}
