@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from app.extensions import db
 from app.models import Notificacion
+from app.push.sender import enviar_push
 
 
 def _participacion_del_usuario(match, usuario_id):
@@ -37,6 +38,11 @@ def confirmar_participacion(match, usuario_id):
                     match_id=match.id,
                     tipo="confirmacion_parcial",
                 ))
+                enviar_push(
+                    p.publicacion.usuario,
+                    "Cambio pendiente de tu confirmación",
+                    "La otra parte ya confirmó. Revisa el cambio.",
+                )
 
     db.session.commit()
 
@@ -54,4 +60,9 @@ def rechazar_match(match, usuario_id):
                 match_id=match.id,
                 tipo="rechazo",
             ))
+            enviar_push(
+                p.publicacion.usuario,
+                "Cambio rechazado",
+                "La otra parte rechazó el cambio propuesto.",
+            )
     db.session.commit()

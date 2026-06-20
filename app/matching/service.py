@@ -17,6 +17,7 @@ from app.models import (
     Usuario,
 )
 from app.matching.engine import detectar_match_directo
+from app.push.sender import enviar_push
 
 
 def _cedidos_abiertos(pub):
@@ -117,4 +118,8 @@ def crear_match_directo(pub_a, pub_b):
     ))
 
     db.session.commit()
+
+    enviar_push(pub_a.usuario, "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
+    enviar_push(pub_b.usuario, "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
+
     return match

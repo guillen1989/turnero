@@ -1,10 +1,10 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 6 — Caducidad automática
+Fase 7 — Notificaciones push (Web Push)
 
 ## Paso actual / siguiente paso
-Siguiente: Fase 7, paso 2: integrar enviar_push en los servicios de match, confirmación y rechazo.
+Siguiente: Fase 8 — PWA (manifest.json + service worker para instalación en móvil).
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -25,6 +25,7 @@ Siguiente: Fase 7, paso 2: integrar enviar_push en los servicios de match, confi
 - [x] Fase 6, paso 1: servicio caducar_publicaciones_expiradas(hoy) · caduca si todos los turnos cedidos abiertos son pasados · 110 tests passing
 - [x] Fase 6, paso 2: caducidad disparada en GET / (dashboard) · 111 tests passing
 - [x] Fase 7, paso 1: enviar_push + POST /push/suscribir · guarda subscription · silent ante excepciones WebPush · 118 tests passing
+- [x] Fase 7, paso 2: push integrado en crear_match_directo, confirmar_participacion y rechazar_match · 121 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
