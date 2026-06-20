@@ -4,7 +4,7 @@
 Fase 3 — Publicación de cambios de turno
 
 ## Paso actual / siguiente paso
-Siguiente: Fase 3, paso 3: cancelar una publicación propia.
+Siguiente: Fase 4, paso 1: motor de matching — detectar coincidencias 1 a 1 entre publicaciones activas.
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -17,6 +17,7 @@ Siguiente: Fase 3, paso 3: cancelar una publicación propia.
 - [x] Fase 2, paso 1: servicio de registro (encontrar_o_crear hospital/unidad/categoría) · formulario RegistroForm y LoginForm · rutas /auth/registro, /auth/login, /auth/logout · plantillas HTML · CSS básico · 52 tests passing
 - [x] Fase 3, paso 1: dashboard del usuario · ruta / diferenciada por auth · lista de publicaciones propias · empty state · 57 tests passing
 - [x] Fase 3, paso 2: ruta /publicar · servicio publicar_cambio · formulario con slots numerados · múltiples turnos cedidos · validación mínimo 1 cedido · 64 tests passing
+- [x] Fase 3, paso 3: POST /publicaciones/<id>/cancelar · guarda "cancelada" · 403 si ajena · 409 si ya inactiva · 70 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

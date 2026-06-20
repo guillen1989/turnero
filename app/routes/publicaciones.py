@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 
-from app.models import FranjaHoraria
-from app.services.publicaciones import publicar_cambio
+from app.extensions import db
+from app.models import FranjaHoraria, PublicacionCambio
+from app.services.publicaciones import cancelar_publicacion, publicar_cambio
 
 bp = Blueprint("publicaciones", __name__)
 
@@ -56,3 +57,16 @@ def nueva():
         return redirect(url_for("main.index"))
 
     return render_template("publicaciones/publicar.html", franjas=franjas)
+
+
+@bp.post("/publicaciones/<int:pub_id>/cancelar")
+@login_required
+def cancelar(pub_id):
+    pub = db.get_or_404(PublicacionCambio, pub_id)
+    if pub.usuario_id != current_user.id:
+        abort(403)
+    if not pub.esta_activa():
+        abort(409)
+    cancelar_publicacion(pub)
+    flash(_("Publicación cancelada."), "info")
+    return redirect(url_for("main.index"))

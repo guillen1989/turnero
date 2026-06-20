@@ -27,3 +27,9 @@ def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados):
 
     db.session.commit()
     return pub
+
+
+def cancelar_publicacion(pub):
+    """Marca la publicación como cancelada. Requiere que esté activa."""
+    pub.estado = "cancelada"
+    db.session.commit()
