@@ -124,6 +124,76 @@ body {
 
 .form-footer a { color: #005a9c; }
 
+/* Matches section */
+.matches-section { margin-bottom: 2rem; }
+
+.matches-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: #1a1a1a;
+}
+
+.match-card {
+  background: #fff;
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+
+.match-card.match--confirmado_parcial { border-left-color: #3b82f6; }
+
+.match-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.match-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.match-badge--confirmado_parcial { background: #dbeafe; color: #1e40af; }
+
+.match-usuario { font-weight: 600; font-size: 0.9rem; }
+
+.match-turnos { margin-bottom: 0.75rem; }
+
+.match-turno {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  color: #333;
+}
+
+.match-turno-label {
+  font-weight: 600;
+  margin-right: 0.3rem;
+}
+
+.match-acciones { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.match-esperando {
+  font-size: 0.85rem;
+  color: #1e40af;
+  font-style: italic;
+}
+
+.btn-sm { padding: 0.4rem 1rem; font-size: 0.88rem; }
+.btn-secondary { background: #e5e7eb; color: #1a1a1a; }
+.btn-secondary:hover { background: #d1d5db; }
+.btn-danger { background: #dc2626; color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+
 /* Home */
 .hero { text-align: center; padding: 3rem 0; }
 .hero h1 { font-size: 2rem; margin-bottom: 1rem; }

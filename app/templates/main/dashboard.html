@@ -8,6 +8,47 @@
     <h1>{{ _('Mis publicaciones') }}</h1>
   </div>
 
+  {% if matches %}
+  <section class="matches-section">
+    <h2 class="matches-title">{{ _('Cambios compatibles encontrados') }}</h2>
+    {% for match, mi_part, otra_part in matches %}
+    <div class="match-card match--{{ match.estado }}">
+      <div class="match-header">
+        <span class="match-badge match-badge--{{ match.estado }}">
+          {% if match.estado == 'propuesto' %}{{ _('Pendiente de confirmar') }}
+          {% else %}{{ _('Esperando al otro usuario') }}{% endif %}
+        </span>
+        <span class="match-usuario">{{ otra_part.publicacion.usuario.nombre }}</span>
+      </div>
+      <div class="match-turnos">
+        <div class="match-turno">
+          <span class="match-turno-label">{{ _('Tú cedes:') }}</span>
+          {{ mi_part.turno_cedido.fecha }} — {{ mi_part.turno_cedido.franja_horaria.nombre }}
+        </div>
+        <div class="match-turno">
+          <span class="match-turno-label">{{ _('Recibirías:') }}</span>
+          {{ otra_part.turno_cedido.fecha }} — {{ otra_part.turno_cedido.franja_horaria.nombre }}
+        </div>
+      </div>
+      {% if not mi_part.confirmado %}
+      <div class="match-acciones">
+        <form method="post" action="{{ url_for('matches.confirmar', match_id=match.id) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-primary btn-sm">{{ _('Confirmar') }}</button>
+        </form>
+        <form method="post" action="{{ url_for('matches.rechazar', match_id=match.id) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger btn-sm">{{ _('Rechazar') }}</button>
+        </form>
+      </div>
+      {% else %}
+      <p class="match-esperando">{{ _('Has confirmado. Esperando al otro usuario.') }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
   {% if publicaciones %}
     <ul class="publicaciones-list">
       {% for pub in publicaciones %}

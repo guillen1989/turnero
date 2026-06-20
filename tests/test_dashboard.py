@@ -4,6 +4,8 @@ from datetime import date, time
 from app.models import (
     Categoria,
     FranjaHoraria,
+    MatchCambio,
+    MatchParticipacion,
     PublicacionCambio,
     TurnoCedido,
     TurnoAceptado,
@@ -62,6 +64,33 @@ def test_dashboard_muestra_publicaciones_propias(client, db):
     _publicacion(usuario, franja)
     resp = client.get("/")
     assert b"2026-08-01" in resp.data
+
+
+def test_dashboard_muestra_match_propuesto(client, db):
+    """Cuando hay un match propuesto, el dashboard lo muestra con botones de acción."""
+    ana = _usuario_y_login(client, email="ana@test.es")
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = _publicacion(ana, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
+    pub_pedro = _publicacion(pedro, franja, fecha_cedida=date(2026, 9, 2), fecha_aceptada=date(2026, 9, 1))
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    tc_ana = pub_ana.turnos_cedidos[0]
+    tc_pedro = pub_pedro.turnos_cedidos[0]
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_ana.id, turno_cedido_id=tc_ana.id))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_pedro.id, turno_cedido_id=tc_pedro.id))
+    db.session.commit()
+
+    resp = client.get("/")
+    assert b"Cambios compatibles encontrados" in resp.data
+    assert b"Pedro" in resp.data
+    assert b"Confirmar" in resp.data
+    assert b"Rechazar" in resp.data
 
 
 def test_dashboard_no_muestra_publicaciones_ajenas(client, db):
