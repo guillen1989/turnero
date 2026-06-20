@@ -4,7 +4,7 @@
 Fase 0 — Andamiaje
 
 ## Paso actual / siguiente paso
-Fase 1, paso 4: modelos PublicacionCambio, TurnoCedido y TurnoAceptado con tests.
+Fase 2, paso 1: formulario y ruta de registro (email + contraseña + hospital/unidad/categoría).
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -12,6 +12,8 @@ Fase 1, paso 4: modelos PublicacionCambio, TurnoCedido y TurnoAceptado con tests
 - [x] Fase 1, paso 1: modelos Hospital, GrupoIntercambio y Unidad · conftest con PostgreSQL · 8 tests passing
 - [x] Fase 1, paso 2: modelos Categoria (con seed idempotente) y FranjaHoraria · 15 tests passing
 - [x] Fase 1, paso 3: modelo Usuario · hash de contraseña · Flask-Login UserMixin · grupo_intercambio accesible · 20 tests passing
+- [x] Fase 1, paso 4: modelos PublicacionCambio, TurnoCedido, TurnoAceptado · resolución parcial · actualizar_estado() · 29 tests passing
+- [x] Fase 1, paso 5: modelos MatchCambio, MatchParticipacion, Notificacion · extensible a N bandas · migración inicial generada y aplicada
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

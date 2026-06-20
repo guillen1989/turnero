@@ -21,6 +21,8 @@ class Usuario(UserMixin, db.Model):
 
     unidad = db.relationship("Unidad", back_populates="usuarios")
     categoria = db.relationship("Categoria", back_populates="usuarios")
+    publicaciones = db.relationship("PublicacionCambio", back_populates="usuario", lazy="dynamic")
+    notificaciones = db.relationship("Notificacion", back_populates="usuario", lazy="dynamic")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
