@@ -5,8 +5,9 @@ from flask_babel import _
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import FranjaHoraria, PublicacionCambio
+from app.models import FranjaHoraria, GrupoIntercambio, PublicacionCambio
 from app.services.publicaciones import cancelar_publicacion, publicar_cambio
+from app.services.registro import crear_franjas_default
 from app.matching.service import buscar_matches_para, crear_match_directo
 
 bp = Blueprint("publicaciones", __name__)
@@ -31,12 +32,22 @@ def _extraer_turnos(prefix):
     return turnos
 
 
+def _asegurar_franjas(grupo_intercambio_id):
+    """Si el grupo no tiene franjas (usuarios anteriores al seeding), las crea ahora."""
+    if FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_intercambio_id).count() == 0:
+        grupo = db.session.get(GrupoIntercambio, grupo_intercambio_id)
+        crear_franjas_default(grupo)
+        db.session.commit()
+
+
 @bp.route("/publicar", methods=["GET", "POST"])
 @login_required
 def nueva():
+    grupo_id = current_user.unidad.grupo_intercambio_id
+    _asegurar_franjas(grupo_id)
     franjas = (
         FranjaHoraria.query
-        .filter_by(grupo_intercambio_id=current_user.unidad.grupo_intercambio_id)
+        .filter_by(grupo_intercambio_id=grupo_id)
         .order_by(FranjaHoraria.hora_inicio)
         .all()
     )

@@ -10,7 +10,7 @@ _FRANJAS_DEFAULT = [
 ]
 
 
-def _crear_franjas_default(grupo):
+def crear_franjas_default(grupo):
     for nombre, inicio, fin in _FRANJAS_DEFAULT:
         db.session.add(FranjaHoraria(
             nombre=nombre,
@@ -46,7 +46,7 @@ def encontrar_o_crear_unidad(nombre, hospital):
         grupo = GrupoIntercambio()
         db.session.add(grupo)
         db.session.flush()
-        _crear_franjas_default(grupo)
+        crear_franjas_default(grupo)
         unidad = Unidad(nombre=nombre.strip(), hospital=hospital, grupo_intercambio=grupo)
         db.session.add(unidad)
         db.session.flush()
