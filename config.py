@@ -5,6 +5,13 @@ from sqlalchemy.pool import NullPool
 load_dotenv()
 
 
+def _fix_db_url(url):
+    # Railway devuelve postgres:// pero SQLAlchemy 2.x requiere postgresql://
+    if url and url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql://", 1)
+    return url
+
+
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-inseguro")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -35,7 +42,7 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+    SQLALCHEMY_DATABASE_URI = _fix_db_url(os.environ.get("DATABASE_URL"))
 
 
 config = {
