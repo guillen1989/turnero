@@ -16,7 +16,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <section class="turnos-section">
-      <h2>{{ _('Turnos que cedo') }}</h2>
+      <h2>{{ _('Turnos que quiero librar') }}</h2>
       <div id="cedidos-list">
         <div class="turno-row">
           <input type="date" name="fecha_cedida_0" required>
@@ -29,12 +29,12 @@
         </div>
       </div>
       <button type="button" class="btn btn-secondary" id="btn-add-cedida">
-        {{ _('+ Añadir otro turno a ceder') }}
+        {{ _('+ Añadir otro turno a librar') }}
       </button>
     </section>
 
     <section class="turnos-section">
-      <h2>{{ _('Turnos que aceptaría') }}</h2>
+      <h2>{{ _('Turnos que quiero trabajar') }}</h2>
       <div id="aceptados-list">
         <div class="turno-row">
           <input type="date" name="fecha_aceptada_0" required>
@@ -47,7 +47,7 @@
         </div>
       </div>
       <button type="button" class="btn btn-secondary" id="btn-add-aceptada">
-        {{ _('+ Añadir otro turno que aceptaría') }}
+        {{ _('+ Añadir otro turno que puedo trabajar') }}
       </button>
     </section>
 

@@ -1,45 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Crear cuenta') }} — {{ _('CambiaTurnos') }}{% endblock %}
+{% block title %}{{ _('Mi perfil') }} — {{ _('CambiaTurnos') }}{% endblock %}
 
 {% block content %}
 <div class="card">
-  <h1>{{ _('Crear cuenta') }}</h1>
+  <h1>{{ _('Mi perfil') }}</h1>
 
   <form method="POST" novalidate>
     {{ form.hidden_tag() }}
-
-    <div class="form-group">
-      {{ form.nombre.label }}
-      {{ form.nombre(autocomplete="name") }}
-      {% for error in form.nombre.errors %}
-        <p class="field-error">{{ error }}</p>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      {{ form.email.label }}
-      {{ form.email(autocomplete="email") }}
-      {% for error in form.email.errors %}
-        <p class="field-error">{{ error }}</p>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      {{ form.password.label }}
-      {{ form.password(autocomplete="new-password") }}
-      {% for error in form.password.errors %}
-        <p class="field-error">{{ error }}</p>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      {{ form.password2.label }}
-      {{ form.password2(autocomplete="new-password") }}
-      {% for error in form.password2.errors %}
-        <p class="field-error">{{ error }}</p>
-      {% endfor %}
-    </div>
 
     <div class="form-group">
       {{ form.hospital_nombre.label }}
@@ -87,7 +55,7 @@
   </form>
 
   <p class="form-footer">
-    {{ _('¿Ya tienes cuenta?') }} <a href="{{ url_for('auth.login') }}">{{ _('Entra aquí') }}</a>
+    <a href="{{ url_for('main.index') }}">{{ _('← Volver al inicio') }}</a>
   </p>
 </div>
 

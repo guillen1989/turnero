@@ -6,6 +6,10 @@
 <div class="dashboard">
   <div class="dashboard-header">
     <h1>{{ _('Mis publicaciones') }}</h1>
+    <div class="dashboard-header-actions">
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-actualizar" onclick="window.location.reload()">{{ _('Actualizar') }}</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-push">{{ _('Activar notificaciones') }}</button>
+    </div>
   </div>
 
   {% if matches %}
@@ -22,11 +26,11 @@
       </div>
       <div class="match-turnos">
         <div class="match-turno">
-          <span class="match-turno-label">{{ _('Tú cedes:') }}</span>
+          <span class="match-turno-label">{{ _('Tú quieres librar:') }}</span>
           {{ mi_part.turno_cedido.fecha }} — {{ mi_part.turno_cedido.franja_horaria.nombre }}
         </div>
         <div class="match-turno">
-          <span class="match-turno-label">{{ _('Recibirías:') }}</span>
+          <span class="match-turno-label">{{ _('Librarías:') }}</span>
           {{ otra_part.turno_cedido.fecha }} — {{ otra_part.turno_cedido.franja_horaria.nombre }}
         </div>
       </div>
@@ -55,7 +59,7 @@
       <li class="publicacion-card publicacion--{{ pub.estado }}">
         <span class="estado-badge estado--{{ pub.estado }}">{{ pub.estado }}</span>
         <div class="turnos-cedidos">
-          <strong>{{ _('Cedo:') }}</strong>
+          <strong>{{ _('Quiero librar:') }}</strong>
           {% for turno in pub.turnos_cedidos %}
           <span class="turno">{{ turno.fecha }} — {{ turno.franja_horaria.nombre }}</span>
           {% endfor %}
@@ -77,4 +81,26 @@
     <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary">{{ _('Publicar cambio') }}</a>
   </div>
 </div>
+
+<script>
+(function () {
+  var btn = document.getElementById('btn-push');
+  if (!btn) return;
+  if (typeof _actualizarBotonPush === 'function') {
+    _actualizarBotonPush(btn);
+  }
+  btn.addEventListener('click', async function () {
+    btn.disabled = true;
+    if (typeof _suscribirPush === 'function') {
+      var ok = await _suscribirPush();
+      if (ok) {
+        btn.textContent = '{{ _("Notificaciones activas ✓") }}';
+      } else {
+        btn.textContent = '{{ _("No se pudieron activar") }}';
+        btn.disabled = false;
+      }
+    }
+  });
+})();
+</script>
 {% endblock %}

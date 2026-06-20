@@ -1,13 +1,13 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, jsonify, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_babel import _
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import Hospital, Unidad, Categoria
-from app.forms.auth import RegistroForm, LoginForm
+from app.forms.auth import LoginForm, PerfilForm, RegistroForm
 from app.models.usuario import Usuario
-from app.services.registro import registrar_usuario
+from app.services.registro import actualizar_perfil, registrar_usuario
 
 bp = Blueprint("auth", __name__)
 
@@ -86,3 +86,53 @@ def logout():
     logout_user()
     flash(_("Has cerrado sesión."), "info")
     return redirect(url_for("auth.login"))
+
+
+@bp.get("/api/unidades")
+def api_unidades():
+    hospital_nombre = request.args.get("hospital", "").strip()
+    if not hospital_nombre:
+        return jsonify([])
+    hospital = Hospital.query.filter(
+        db.func.lower(Hospital.nombre) == hospital_nombre.lower()
+    ).first()
+    if not hospital:
+        return jsonify([])
+    nombres = [u.nombre for u in Unidad.query.filter_by(hospital_id=hospital.id).order_by(Unidad.nombre).all()]
+    return jsonify(nombres)
+
+
+@bp.route("/perfil", methods=["GET", "POST"])
+@login_required
+def perfil():
+    form = PerfilForm()
+    form.categoria_id.choices = _choices_categorias()
+
+    if form.validate_on_submit():
+        categoria_id = form.categoria_id.data or None
+        categoria_nueva = form.categoria_nueva.data or None
+
+        if not categoria_id and not categoria_nueva:
+            form.categoria_nueva.errors.append(_("Indica una categoría o escribe una nueva."))
+        else:
+            actualizar_perfil(
+                usuario=current_user,
+                hospital_nombre=form.hospital_nombre.data,
+                unidad_nombre=form.unidad_nombre.data,
+                categoria_id=categoria_id if categoria_id != _OPCION_NUEVA_CATEGORIA else None,
+                categoria_nueva_nombre=categoria_nueva,
+            )
+            flash(_("Perfil actualizado correctamente."), "success")
+            return redirect(url_for("main.index"))
+
+    elif request.method == "GET":
+        form.hospital_nombre.data = current_user.unidad.hospital.nombre
+        form.unidad_nombre.data = current_user.unidad.nombre
+        form.categoria_id.data = current_user.categoria_id
+
+    hospitales = Hospital.query.order_by(Hospital.nombre).all()
+    return render_template(
+        "auth/perfil.html",
+        form=form,
+        hospitales=hospitales,
+    )

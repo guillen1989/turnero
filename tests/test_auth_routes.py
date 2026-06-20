@@ -106,3 +106,66 @@ def test_logout_cierra_sesion(client, db):
     client.post("/auth/registro", data=_datos_registro(db))
     resp = client.get("/auth/logout", follow_redirects=True)
     assert "cerrado sesión".encode() in resp.data
+
+
+# --- API de unidades ---
+
+def test_api_unidades_sin_hospital_devuelve_lista_vacia(client):
+    resp = client.get("/auth/api/unidades")
+    assert resp.status_code == 200
+    assert resp.get_json() == []
+
+
+def test_api_unidades_hospital_inexistente_devuelve_lista_vacia(client):
+    resp = client.get("/auth/api/unidades?hospital=NoExiste")
+    assert resp.status_code == 200
+    assert resp.get_json() == []
+
+
+def test_api_unidades_devuelve_unidades_del_hospital(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/api/unidades?hospital=Hospital Test")
+    assert resp.status_code == 200
+    nombres = resp.get_json()
+    assert "Urgencias" in nombres
+
+
+# --- Perfil ---
+
+def test_get_perfil_requiere_autenticacion(client):
+    resp = client.get("/auth/perfil", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
+def test_get_perfil_devuelve_200(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/perfil")
+    assert resp.status_code == 200
+
+
+def test_perfil_prerellena_datos_actuales(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/perfil")
+    assert b"Hospital Test" in resp.data
+    assert b"Urgencias" in resp.data
+
+
+def test_perfil_actualiza_hospital_y_unidad(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    resp = client.post(
+        "/auth/perfil",
+        data={
+            "hospital_nombre": "Hospital Nuevo",
+            "unidad_nombre": "UCI",
+            "categoria_id": _cat_id(db),
+            "categoria_nueva": "",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert usuario.unidad.nombre == "UCI"
+    assert usuario.unidad.hospital.nombre == "Hospital Nuevo"

@@ -71,6 +71,16 @@ def encontrar_o_crear_categoria(categoria_id, nombre_nueva):
     return categoria
 
 
+def actualizar_perfil(usuario, hospital_nombre, unidad_nombre, categoria_id, categoria_nueva_nombre=None):
+    hospital = encontrar_o_crear_hospital(hospital_nombre)
+    unidad = encontrar_o_crear_unidad(unidad_nombre, hospital)
+    categoria = encontrar_o_crear_categoria(categoria_id, categoria_nueva_nombre)
+    usuario.unidad = unidad
+    usuario.categoria = categoria
+    db.session.commit()
+    return usuario
+
+
 def registrar_usuario(nombre, email, password, hospital_nombre, unidad_nombre, categoria_id, categoria_nueva_nombre=None):
     hospital = encontrar_o_crear_hospital(hospital_nombre)
     unidad = encontrar_o_crear_unidad(unidad_nombre, hospital)

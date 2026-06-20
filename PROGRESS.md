@@ -1,10 +1,10 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 8 — PWA (Progressive Web App)
+Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-MVP completado y desplegado en Railway. 130/130 tests pasando. UAT superado.
+Mejoras post-MVP implementadas. 140/140 tests pasando. Pendiente: compilar catálogo Babel y desplegar en Railway.
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -29,6 +29,7 @@ MVP completado y desplegado en Railway. 130/130 tests pasando. UAT superado.
 - [x] Fase 8, paso 1: /manifest.json + /sw.js + /push/vapid-public-key · sw.js con push/install/fetch handlers · 126 tests passing
 - [x] Fase 8, paso 2: base.html — <link rel="manifest">, meta theme-color, registro SW, suscripción push automática para usuarios autenticados · iconos PNG 192×512 · 130 tests passing
 - [x] Despliegue: Railway · PostgreSQL · variables de entorno · flask db upgrade automático · UAT 130/130
+- [x] Fase 9, paso 1: cascade hospital→unidad en registro y perfil · ruta /auth/perfil · API /auth/api/unidades · botón Actualizar + Activar notificaciones en dashboard · enlace Mi perfil en nav · 140 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

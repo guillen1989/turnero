@@ -15,6 +15,7 @@
     <nav>
       {% if current_user.is_authenticated %}
         <span class="nav-user">{{ current_user.nombre }}</span>
+        <a href="{{ url_for('auth.perfil') }}">{{ _('Mi perfil') }}</a>
         <a href="{{ url_for('auth.logout') }}">{{ _('Cerrar sesión') }}</a>
       {% else %}
         <a href="{{ url_for('auth.login') }}">{{ _('Entrar') }}</a>
@@ -38,24 +39,24 @@
   </main>
 
   <script>
-    // Registro del service worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
     }
 
     {% if current_user.is_authenticated %}
-    // Suscripción a notificaciones push (solo para usuarios autenticados)
-    async function suscribirPush() {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    var _pushActivo = false;
+
+    async function _suscribirPush() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
       try {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') return false;
         const reg = await navigator.serviceWorker.ready;
         const existing = await reg.pushManager.getSubscription();
-        if (existing) return;  // ya suscrito
-
+        if (existing) return true;
         const resp = await fetch('/push/vapid-public-key');
         const { publicKey } = await resp.json();
-        if (!publicKey) return;
-
+        if (!publicKey) return false;
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: publicKey,
@@ -65,10 +66,28 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(sub),
         });
-      } catch (_) {}
+        return true;
+      } catch (e) { return false; }
     }
 
-    navigator.serviceWorker.ready.then(suscribirPush);
+    async function _actualizarBotonPush(btn) {
+      if (!btn) return;
+      if (!('Notification' in window)) { btn.style.display = 'none'; return; }
+      if (Notification.permission === 'granted') {
+        const reg = await navigator.serviceWorker.ready.catch(function () { return null; });
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription().catch(function () { return null; });
+          if (sub) { btn.textContent = '{{ _("Notificaciones activas ✓") }}'; btn.disabled = true; return; }
+        }
+      }
+      btn.textContent = '{{ _("Activar notificaciones") }}';
+      btn.disabled = false;
+    }
+
+    // Intentar suscripción silenciosa si el permiso ya fue concedido
+    if (Notification.permission === 'granted') {
+      _suscribirPush().catch(function () {});
+    }
     {% endif %}
   </script>
 </body>

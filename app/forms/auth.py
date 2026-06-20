@@ -43,6 +43,28 @@ class RegistroForm(FlaskForm):
     submit = SubmitField(_l("Crear cuenta"))
 
 
+class PerfilForm(FlaskForm):
+    hospital_nombre = StringField(
+        _l("Hospital"),
+        validators=[DataRequired()],
+    )
+    unidad_nombre = StringField(
+        _l("Unidad / servicio"),
+        validators=[DataRequired()],
+    )
+    categoria_id = SelectField(
+        _l("Categoría profesional"),
+        coerce=int,
+        choices=[],
+        validators=[Optional()],
+    )
+    categoria_nueva = StringField(
+        _l("Nombre de la nueva categoría"),
+        validators=[Optional(), Length(max=100)],
+    )
+    submit = SubmitField(_l("Guardar cambios"))
+
+
 class LoginForm(FlaskForm):
     email = StringField(
         _l("Correo electrónico"),
