@@ -1,11 +1,13 @@
-from flask import Blueprint, current_app, jsonify
+import json
+
+from flask import Blueprint, Response, current_app
 
 bp = Blueprint("pwa", __name__)
 
 
 @bp.get("/manifest.json")
 def manifest():
-    return jsonify({
+    data = {
         "name": "CambiaTurnos",
         "short_name": "CambiaTurnos",
         "description": "Intercambio de turnos para personal sanitario",
@@ -20,7 +22,8 @@ def manifest():
             {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
             {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
         ],
-    })
+    }
+    return Response(json.dumps(data), content_type="application/manifest+json")
 
 
 @bp.get("/sw.js")

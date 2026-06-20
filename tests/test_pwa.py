@@ -4,11 +4,12 @@
 def test_manifest_json_disponible(client, db):
     resp = client.get("/manifest.json")
     assert resp.status_code == 200
-    assert "application/json" in resp.content_type
+    assert "manifest+json" in resp.content_type
 
 
 def test_manifest_contiene_campos_requeridos(client, db):
-    data = client.get("/manifest.json").get_json()
+    import json
+    data = json.loads(client.get("/manifest.json").data)
     assert data["name"] == "CambiaTurnos"
     assert data["short_name"] == "CambiaTurnos"
     assert data["start_url"] == "/"
