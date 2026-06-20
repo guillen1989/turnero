@@ -1,0 +1,46 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ _('Unidades') }} — {{ _('Admin') }}{% endblock %}
+
+{% block admin_content %}
+<h1>{{ _('Unidades') }}</h1>
+
+<form method="POST" novalidate class="admin-inline-form">
+  {{ form.hidden_tag() }}
+  <div class="inline-form-row">
+    {{ form.hospital_id(class="select-inline") }}
+    {{ form.nombre(placeholder=_('Nombre de la unidad')) }}
+    {{ form.submit(class="btn btn-primary btn-sm") }}
+  </div>
+  {% for e in form.nombre.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+</form>
+
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>{{ _('Hospital') }}</th>
+      <th>{{ _('Unidad') }}</th>
+      <th>{{ _('Usuarios') }}</th>
+      <th>{{ _('Acciones') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in unidades %}
+    <tr>
+      <td>{{ u.hospital.nombre }}</td>
+      <td>{{ u.nombre }}</td>
+      <td>{{ u.usuarios.count() }}</td>
+      <td class="admin-actions">
+        <a href="{{ url_for('admin.unidad_editar', id=u.id) }}" class="btn btn-secondary btn-xs">{{ _('Editar') }}</a>
+        <form method="post" action="{{ url_for('admin.unidad_eliminar', id=u.id) }}" style="display:inline" onsubmit="return confirm('{{ _('¿Eliminar esta unidad?') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger btn-xs">{{ _('Eliminar') }}</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="empty-cell">{{ _('No hay unidades.') }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

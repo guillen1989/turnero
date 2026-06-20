@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <a href="{{ url_for('admin.index') }}" class="admin-nav-link{% if request.endpoint == 'admin.index' %} active{% endif %}">{{ _('Resumen') }}</a>
+    <a href="{{ url_for('admin.usuarios') }}" class="admin-nav-link{% if 'usuario' in request.endpoint %} active{% endif %}">{{ _('Usuarios') }}</a>
+    <a href="{{ url_for('admin.hospitales') }}" class="admin-nav-link{% if 'hospital' in request.endpoint %} active{% endif %}">{{ _('Hospitales') }}</a>
+    <a href="{{ url_for('admin.unidades') }}" class="admin-nav-link{% if 'unidad' in request.endpoint %} active{% endif %}">{{ _('Unidades') }}</a>
+    <a href="{{ url_for('admin.categorias') }}" class="admin-nav-link{% if 'categoria' in request.endpoint %} active{% endif %}">{{ _('Categorías') }}</a>
+    <a href="{{ url_for('admin.publicaciones') }}" class="admin-nav-link{% if 'publicacion' in request.endpoint %} active{% endif %}">{{ _('Cambios') }}</a>
+  </nav>
+  <div class="admin-content">
+    {% block admin_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

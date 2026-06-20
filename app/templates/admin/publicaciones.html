@@ -1,0 +1,49 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ _('Cambios') }} — {{ _('Admin') }}{% endblock %}
+
+{% block admin_content %}
+<h1>{{ _('Cambios de todos los usuarios') }}</h1>
+
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>{{ _('ID') }}</th>
+      <th>{{ _('Usuario') }}</th>
+      <th>{{ _('Estado') }}</th>
+      <th>{{ _('Fecha') }}</th>
+      <th>{{ _('Turnos cede') }}</th>
+      <th>{{ _('Acciones') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in publicaciones %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>{{ p.usuario.nombre }}</td>
+      <td><span class="estado-badge estado--{{ p.estado }}">{{ p.estado }}</span></td>
+      <td>{{ p.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+      <td>
+        {% for t in p.turnos_cedidos %}
+          <span class="turno">{{ t.fecha }} ({{ t.franja_horaria.nombre }})</span>
+        {% endfor %}
+      </td>
+      <td class="admin-actions">
+        {% if p.estado not in ('cancelada', 'caducada') %}
+        <form method="post" action="{{ url_for('admin.publicacion_cancelar', id=p.id) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-secondary btn-xs">{{ _('Cancelar') }}</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('admin.publicacion_eliminar', id=p.id) }}" style="display:inline" onsubmit="return confirm('{{ _('¿Eliminar permanentemente?') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger btn-xs">{{ _('Eliminar') }}</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="empty-cell">{{ _('No hay cambios registrados.') }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

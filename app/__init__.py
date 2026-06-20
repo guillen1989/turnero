@@ -42,6 +42,9 @@ def create_app(config_name=None):
     from app.routes.pwa import bp as pwa_bp
     app.register_blueprint(pwa_bp)
 
+    from app.routes.admin import bp as admin_bp
+    app.register_blueprint(admin_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 
@@ -67,6 +70,46 @@ def _registrar_comandos(app):
                 seeded += 1
         db.session.commit()
         click.echo(f"Franjas sembradas en {seeded} grupo(s).")
+
+    @app.cli.command("init-admin")
+    @click.option("--yes", is_flag=True, required=True, help="Confirmación explícita obligatoria.")
+    def init_admin(yes):
+        """Borra TODOS los datos y crea el usuario administrador inicial."""
+        from sqlalchemy import text
+        from app.models import insertar_categorias_semilla, Categoria, Usuario
+        from app.services.registro import encontrar_o_crear_hospital, encontrar_o_crear_unidad
+
+        # Borrar todo respetando las FK con CASCADE
+        db.session.execute(text(
+            "TRUNCATE notificacion, match_participacion, match_cambio, "
+            "turno_cedido, turno_aceptado, publicacion_cambio, usuario, "
+            "franja_horaria, unidad, grupo_intercambio, hospital, categoria "
+            "RESTART IDENTITY CASCADE"
+        ))
+        db.session.commit()
+        click.echo("Datos borrados.")
+
+        # Insertar categorías semilla
+        insertar_categorias_semilla()
+
+        # Infraestructura mínima para el usuario admin
+        hospital = encontrar_o_crear_hospital("Sistema")
+        unidad = encontrar_o_crear_unidad("Administración", hospital)
+        cat = Categoria(nombre="Administrador")
+        db.session.add(cat)
+        db.session.flush()
+
+        admin = Usuario(
+            nombre="admin",
+            email="guillen@delbarrioblanco.net",
+            unidad=unidad,
+            categoria=cat,
+            es_admin=True,
+        )
+        admin.set_password("relajate")
+        db.session.add(admin)
+        db.session.commit()
+        click.echo("Usuario administrador creado: guillen@delbarrioblanco.net")
 
 
 def _get_locale():

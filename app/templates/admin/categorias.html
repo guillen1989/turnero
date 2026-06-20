@@ -1,0 +1,43 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ _('Categorías') }} — {{ _('Admin') }}{% endblock %}
+
+{% block admin_content %}
+<h1>{{ _('Categorías profesionales') }}</h1>
+
+<form method="POST" novalidate class="admin-inline-form">
+  {{ form.hidden_tag() }}
+  <div class="inline-form-row">
+    {{ form.nombre(placeholder=_('Nombre de la categoría')) }}
+    {{ form.submit(class="btn btn-primary btn-sm") }}
+  </div>
+  {% for e in form.nombre.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+</form>
+
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>{{ _('Categoría') }}</th>
+      <th>{{ _('Usuarios') }}</th>
+      <th>{{ _('Acciones') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in categorias %}
+    <tr>
+      <td>{{ c.nombre }}</td>
+      <td>{{ c.usuarios.count() }}</td>
+      <td class="admin-actions">
+        <a href="{{ url_for('admin.categoria_editar', id=c.id) }}" class="btn btn-secondary btn-xs">{{ _('Editar') }}</a>
+        <form method="post" action="{{ url_for('admin.categoria_eliminar', id=c.id) }}" style="display:inline" onsubmit="return confirm('{{ _('¿Eliminar esta categoría?') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger btn-xs">{{ _('Eliminar') }}</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="empty-cell">{{ _('No hay categorías.') }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

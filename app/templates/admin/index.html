@@ -1,0 +1,29 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ _('Panel de administración') }} — {{ _('CambiaTurnos') }}{% endblock %}
+
+{% block admin_content %}
+<h1>{{ _('Panel de administración') }}</h1>
+<div class="admin-stats">
+  <a href="{{ url_for('admin.usuarios') }}" class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.usuarios }}</span>
+    <span class="admin-stat-label">{{ _('Usuarios') }}</span>
+  </a>
+  <a href="{{ url_for('admin.hospitales') }}" class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.hospitales }}</span>
+    <span class="admin-stat-label">{{ _('Hospitales') }}</span>
+  </a>
+  <a href="{{ url_for('admin.unidades') }}" class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.unidades }}</span>
+    <span class="admin-stat-label">{{ _('Unidades') }}</span>
+  </a>
+  <a href="{{ url_for('admin.categorias') }}" class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.categorias }}</span>
+    <span class="admin-stat-label">{{ _('Categorías') }}</span>
+  </a>
+  <a href="{{ url_for('admin.publicaciones') }}" class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.publicaciones }}</span>
+    <span class="admin-stat-label">{{ _('Cambios') }}</span>
+  </a>
+</div>
+{% endblock %}

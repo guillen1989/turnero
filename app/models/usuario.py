@@ -15,6 +15,7 @@ class Usuario(UserMixin, db.Model):
     categoria_id = db.Column(db.Integer, db.ForeignKey("categoria.id"), nullable=False)
     locale = db.Column(db.String(10), nullable=False, default="es")
     push_subscription = db.Column(db.Text, nullable=True)
+    es_admin = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     fecha_registro = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )

@@ -1,0 +1,47 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ _('Usuarios') }} — {{ _('Admin') }}{% endblock %}
+
+{% block admin_content %}
+<div class="admin-section-header">
+  <h1>{{ _('Usuarios') }}</h1>
+  <a href="{{ url_for('admin.usuario_nuevo') }}" class="btn btn-primary btn-sm">{{ _('+ Nuevo usuario') }}</a>
+</div>
+
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>{{ _('Nombre') }}</th>
+      <th>{{ _('Email') }}</th>
+      <th>{{ _('Hospital') }}</th>
+      <th>{{ _('Unidad') }}</th>
+      <th>{{ _('Categoría') }}</th>
+      <th>{{ _('Admin') }}</th>
+      <th>{{ _('Acciones') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in usuarios %}
+    <tr>
+      <td>{{ u.nombre }}</td>
+      <td>{{ u.email }}</td>
+      <td>{{ u.unidad.hospital.nombre }}</td>
+      <td>{{ u.unidad.nombre }}</td>
+      <td>{{ u.categoria.nombre }}</td>
+      <td>{% if u.es_admin %}<span class="badge badge-admin">{{ _('Sí') }}</span>{% else %}—{% endif %}</td>
+      <td class="admin-actions">
+        <a href="{{ url_for('admin.usuario_editar', id=u.id) }}" class="btn btn-secondary btn-xs">{{ _('Editar') }}</a>
+        {% if u.id != current_user.id %}
+        <form method="post" action="{{ url_for('admin.usuario_eliminar', id=u.id) }}" style="display:inline" onsubmit="return confirm('{{ _('¿Eliminar este usuario?') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger btn-xs">{{ _('Eliminar') }}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="empty-cell">{{ _('No hay usuarios.') }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
