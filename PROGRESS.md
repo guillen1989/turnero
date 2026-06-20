@@ -4,10 +4,11 @@
 Fase 0 — Andamiaje
 
 ## Paso actual / siguiente paso
-Fase 0, paso 2: configurar Flask-Babel (i18n) — crear babel.cfg, catálogo `es`, y marcar los primeros textos con `_()`.
+Fase 1, paso 1: modelos SQLAlchemy de Hospital, GrupoDeIntercambio y Unidad con tests.
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory (Flask + Babel + SQLAlchemy + Login) · health check · test passing · Procfile
+- [x] Fase 0, paso 2: Flask-Babel configurado · catálogo `es` inicializado y compilado · test de locale por defecto passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

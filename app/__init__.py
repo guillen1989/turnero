@@ -31,6 +31,9 @@ def create_app(config_name=None):
 
 def _get_locale():
     from flask_login import current_user
-    if current_user.is_authenticated and hasattr(current_user, "locale"):
-        return current_user.locale
+    try:
+        if current_user.is_authenticated and hasattr(current_user, "locale"):
+            return current_user.locale
+    except Exception:
+        pass
     return request.accept_languages.best_match(["es", "en"]) or "es"
