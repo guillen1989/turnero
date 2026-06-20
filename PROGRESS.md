@@ -4,7 +4,7 @@
 Fase 2 — Autenticación (registro, login, logout)
 
 ## Paso actual / siguiente paso
-Fase 2 completa. Siguiente: Fase 3, paso 1: dashboard del usuario (ruta protegida con lista de publicaciones propias).
+Siguiente: Fase 3, paso 2: formulario y ruta para publicar un cambio de turno.
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -15,6 +15,7 @@ Fase 2 completa. Siguiente: Fase 3, paso 1: dashboard del usuario (ruta protegid
 - [x] Fase 1, paso 4: modelos PublicacionCambio, TurnoCedido, TurnoAceptado · resolución parcial · actualizar_estado() · 29 tests passing
 - [x] Fase 1, paso 5: modelos MatchCambio, MatchParticipacion, Notificacion · extensible a N bandas · migración inicial generada y aplicada
 - [x] Fase 2, paso 1: servicio de registro (encontrar_o_crear hospital/unidad/categoría) · formulario RegistroForm y LoginForm · rutas /auth/registro, /auth/login, /auth/logout · plantillas HTML · CSS básico · 52 tests passing
+- [x] Fase 3, paso 1: dashboard del usuario · ruta / diferenciada por auth · lista de publicaciones propias · empty state · 57 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
