@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2563eb">
   <title>{% block title %}{{ _('Cambio de turnos') }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 </head>
 <body>
   <header class="site-header">
@@ -33,5 +36,40 @@
 
     {% block content %}{% endblock %}
   </main>
+
+  <script>
+    // Registro del service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
+    {% if current_user.is_authenticated %}
+    // Suscripción a notificaciones push (solo para usuarios autenticados)
+    async function suscribirPush() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+        if (existing) return;  // ya suscrito
+
+        const resp = await fetch('/push/vapid-public-key');
+        const { publicKey } = await resp.json();
+        if (!publicKey) return;
+
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: publicKey,
+        });
+        await fetch('/push/suscribir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sub),
+        });
+      } catch (_) {}
+    }
+
+    navigator.serviceWorker.ready.then(suscribirPush);
+    {% endif %}
+  </script>
 </body>
 </html>
