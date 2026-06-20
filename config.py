@@ -17,14 +17,14 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", "postgresql://localhost/cambiaturnos"
+        "DATABASE_URL", "postgresql:///cambiaturnos"
     )
 
 
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "TEST_DATABASE_URL", "postgresql://localhost/cambiaturnos_test"
+        "TEST_DATABASE_URL", "postgresql:///cambiaturnos_test"
     )
     WTF_CSRF_ENABLED = False
 
