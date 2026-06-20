@@ -1,1 +1,1 @@
-web: flask db upgrade && flask seed-franjas && gunicorn run:app
+web: flask db upgrade && gunicorn run:app
