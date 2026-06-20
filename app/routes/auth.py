@@ -119,12 +119,13 @@ def logout():
 @bp.get("/api/unidades")
 def api_unidades():
     hospital_id = request.args.get("hospital_id", type=int)
+    categoria_id = request.args.get("categoria_id", type=int)
     if not hospital_id:
         return jsonify([])
-    hospital = db.session.get(Hospital, hospital_id)
-    if not hospital:
-        return jsonify([])
-    unidades = Unidad.query.filter_by(hospital_id=hospital.id).order_by(Unidad.nombre).all()
+    q = Unidad.query.filter_by(hospital_id=hospital_id)
+    if categoria_id:
+        q = q.filter_by(categoria_id=categoria_id)
+    unidades = q.order_by(Unidad.nombre).all()
     return jsonify([{"id": u.id, "nombre": u.nombre} for u in unidades])
 
 

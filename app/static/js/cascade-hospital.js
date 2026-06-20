@@ -1,11 +1,13 @@
-// Cascade hospital → unidad (select-based, como el de categorías)
-// Requiere en el DOM: #hospital-select, #hospital-nuevo-group, #hospital-nuevo-input (opcional),
-//                    #unidad-select, #unidad-nuevo-group, #unidad-nuevo-input (opcional)
-// La API /auth/api/unidades?hospital_id=X devuelve [{id, nombre}, ...]
+// Cascade hospital + categoria → unidad (select-based, como el de categorías)
+// Requiere en el DOM: #hospital-select, #hospital-nuevo-group,
+//                    #categoria-select (opcional, para filtrar unidades por categoría),
+//                    #unidad-select, #unidad-nuevo-group
+// La API /auth/api/unidades?hospital_id=X&categoria_id=Y devuelve [{id, nombre}, ...]
 
 (function () {
   var hospitalSelect  = document.getElementById('hospital-select');
   var hospitalNuevoGroup = document.getElementById('hospital-nuevo-group');
+  var categoriaSelect = document.getElementById('categoria-select');
   var unidadSelect    = document.getElementById('unidad-select');
   var unidadNuevoGroup = document.getElementById('unidad-nuevo-group');
 
@@ -35,7 +37,9 @@
       toggleUnidadNuevo();
       return;
     }
-    fetch('/auth/api/unidades?hospital_id=' + hospitalId)
+    var catId = (categoriaSelect && categoriaSelect.value && categoriaSelect.value !== OPCION_NUEVA)
+      ? '&categoria_id=' + categoriaSelect.value : '';
+    fetch('/auth/api/unidades?hospital_id=' + hospitalId + catId)
       .then(function (r) { return r.json(); })
       .then(function (lista) {
         var placeholder = document.createElement('option');
@@ -73,6 +77,16 @@
 
   hospitalSelect.addEventListener('change', onHospitalChange);
   unidadSelect.addEventListener('change', toggleUnidadNuevo);
+
+  // Cuando cambia la categoría, recargar unidades
+  if (categoriaSelect) {
+    categoriaSelect.addEventListener('change', function () {
+      var hId = hospitalSelect.value;
+      if (hId && hId !== OPCION_NUEVA && hId !== '') {
+        cargarUnidades(hId, null);
+      }
+    });
+  }
 
   // Estado inicial (p. ej. perfil pre-rellenado: data-selected-unidad en el select)
   var initialHospitalId = hospitalSelect.value;

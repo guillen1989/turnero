@@ -63,16 +63,36 @@ def test_unidades_en_mismo_grupo_de_intercambio(db):
     assert nombres == {"Traumatología 1", "Traumatología 2"}
 
 
-def test_unidad_nombre_unico_por_hospital(db):
-    """No puede haber dos unidades con el mismo nombre en el mismo hospital."""
+def test_unidad_nombre_unico_por_hospital_y_categoria(db):
+    """Misma unidad (nombre + hospital + categoría) no puede existir dos veces."""
+    from app.models import Categoria
     hospital = Hospital(nombre="Hospital Norte")
-    grupo = GrupoIntercambio()
-    db.session.add_all([hospital, grupo])
+    grupo1 = GrupoIntercambio()
+    grupo2 = GrupoIntercambio()
+    cat = Categoria(nombre="Enfermería Test Uniq")
+    db.session.add_all([hospital, grupo1, grupo2, cat])
     db.session.commit()
 
-    db.session.add(Unidad(nombre="Urgencias", hospital=hospital, grupo_intercambio=grupo))
+    db.session.add(Unidad(nombre="Urgencias", hospital=hospital, grupo_intercambio=grupo1, categoria=cat))
     db.session.commit()
 
-    db.session.add(Unidad(nombre="Urgencias", hospital=hospital, grupo_intercambio=grupo))
+    db.session.add(Unidad(nombre="Urgencias", hospital=hospital, grupo_intercambio=grupo2, categoria=cat))
     with pytest.raises(Exception):
         db.session.commit()
+
+
+def test_unidad_mismo_nombre_diferente_categoria_es_valido(db):
+    """La misma unidad puede existir para distintas categorías en el mismo hospital."""
+    from app.models import Categoria
+    hospital = Hospital(nombre="Hospital Sur")
+    grupo1 = GrupoIntercambio()
+    grupo2 = GrupoIntercambio()
+    cat1 = Categoria(nombre="Médico Test")
+    cat2 = Categoria(nombre="Enfermería Test")
+    db.session.add_all([hospital, grupo1, grupo2, cat1, cat2])
+    db.session.commit()
+
+    db.session.add(Unidad(nombre="UCI", hospital=hospital, grupo_intercambio=grupo1, categoria=cat1))
+    db.session.add(Unidad(nombre="UCI", hospital=hospital, grupo_intercambio=grupo2, categoria=cat2))
+    db.session.commit()
+    assert Unidad.query.filter_by(nombre="UCI").count() == 2

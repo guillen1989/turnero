@@ -59,20 +59,6 @@
     </div>
 
     <div class="form-group">
-      <label>{{ _('Unidad / servicio') }}</label>
-      <select id="unidad-select" name="unidad_id">
-        <option value="">{{ _('— Selecciona primero el hospital —') }}</option>
-        <option value="0">{{ _('— Añadir nueva unidad —') }}</option>
-      </select>
-      <div id="unidad-nuevo-group" style="display:none">
-        {{ form.unidad_nuevo(placeholder=_('Nombre de la unidad')) }}
-        {% for error in form.unidad_nuevo.errors %}
-          <p class="field-error">{{ error }}</p>
-        {% endfor %}
-      </div>
-    </div>
-
-    <div class="form-group">
       {{ form.categoria_id.label }}
       {{ form.categoria_id(id="categoria-select") }}
       {% for error in form.categoria_id.errors %}
@@ -86,6 +72,20 @@
       {% for error in form.categoria_nueva.errors %}
         <p class="field-error">{{ error }}</p>
       {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label>{{ _('Unidad / servicio') }}</label>
+      <select id="unidad-select" name="unidad_id">
+        <option value="">{{ _('— Selecciona primero hospital y categoría —') }}</option>
+        <option value="0">{{ _('— Añadir nueva unidad —') }}</option>
+      </select>
+      <div id="unidad-nuevo-group" style="display:none">
+        {{ form.unidad_nuevo(placeholder=_('Nombre de la unidad')) }}
+        {% for error in form.unidad_nuevo.errors %}
+          <p class="field-error">{{ error }}</p>
+        {% endfor %}
+      </div>
     </div>
 
     <div class="form-group">

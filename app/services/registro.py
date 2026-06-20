@@ -36,18 +36,26 @@ def encontrar_o_crear_hospital(nombre):
     return hospital
 
 
-def encontrar_o_crear_unidad(nombre, hospital):
+def encontrar_o_crear_unidad(nombre, hospital, categoria=None):
     nombre_norm = _normalizar(nombre)
-    unidad = Unidad.query.filter(
+    q = Unidad.query.filter(
         Unidad.hospital_id == hospital.id,
         db.func.lower(Unidad.nombre) == nombre_norm,
-    ).first()
+    )
+    if categoria is not None:
+        q = q.filter(Unidad.categoria_id == categoria.id)
+    unidad = q.first()
     if not unidad:
         grupo = GrupoIntercambio()
         db.session.add(grupo)
         db.session.flush()
         crear_franjas_default(grupo)
-        unidad = Unidad(nombre=nombre.strip(), hospital=hospital, grupo_intercambio=grupo)
+        unidad = Unidad(
+            nombre=nombre.strip(),
+            hospital=hospital,
+            grupo_intercambio=grupo,
+            categoria=categoria,
+        )
         db.session.add(unidad)
         db.session.flush()
     return unidad
@@ -73,8 +81,8 @@ def encontrar_o_crear_categoria(categoria_id, nombre_nueva):
 
 def actualizar_perfil(usuario, hospital_nombre, unidad_nombre, categoria_id, categoria_nueva_nombre=None):
     hospital = encontrar_o_crear_hospital(hospital_nombre)
-    unidad = encontrar_o_crear_unidad(unidad_nombre, hospital)
     categoria = encontrar_o_crear_categoria(categoria_id, categoria_nueva_nombre)
+    unidad = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
     usuario.unidad = unidad
     usuario.categoria = categoria
     db.session.commit()
@@ -83,8 +91,8 @@ def actualizar_perfil(usuario, hospital_nombre, unidad_nombre, categoria_id, cat
 
 def registrar_usuario(nombre, email, password, hospital_nombre, unidad_nombre, categoria_id, categoria_nueva_nombre=None):
     hospital = encontrar_o_crear_hospital(hospital_nombre)
-    unidad = encontrar_o_crear_unidad(unidad_nombre, hospital)
     categoria = encontrar_o_crear_categoria(categoria_id, categoria_nueva_nombre)
+    unidad = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
 
     usuario = Usuario(
         nombre=nombre.strip(),
