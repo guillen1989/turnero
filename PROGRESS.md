@@ -1,10 +1,10 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 2 — Autenticación (registro, login, logout)
+Fase 3 — Publicación de cambios de turno
 
 ## Paso actual / siguiente paso
-Siguiente: Fase 3, paso 2: formulario y ruta para publicar un cambio de turno.
+Siguiente: Fase 3, paso 3: cancelar una publicación propia.
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -16,6 +16,7 @@ Siguiente: Fase 3, paso 2: formulario y ruta para publicar un cambio de turno.
 - [x] Fase 1, paso 5: modelos MatchCambio, MatchParticipacion, Notificacion · extensible a N bandas · migración inicial generada y aplicada
 - [x] Fase 2, paso 1: servicio de registro (encontrar_o_crear hospital/unidad/categoría) · formulario RegistroForm y LoginForm · rutas /auth/registro, /auth/login, /auth/logout · plantillas HTML · CSS básico · 52 tests passing
 - [x] Fase 3, paso 1: dashboard del usuario · ruta / diferenciada por auth · lista de publicaciones propias · empty state · 57 tests passing
+- [x] Fase 3, paso 2: ruta /publicar · servicio publicar_cambio · formulario con slots numerados · múltiples turnos cedidos · validación mínimo 1 cedido · 64 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

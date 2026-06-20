@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Publicar cambio') }} — {{ _('CambiaTurnos') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Publicar cambio de turno') }}</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert--{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="post" id="publicar-form">
+
+    <section class="turnos-section">
+      <h2>{{ _('Turnos que cedo') }}</h2>
+      <div id="cedidos-list">
+        <div class="turno-row">
+          <input type="date" name="fecha_cedida_0" required>
+          <select name="franja_cedida_0" required>
+            <option value="">{{ _('— Selecciona franja —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary" id="btn-add-cedida">
+        {{ _('+ Añadir otro turno a ceder') }}
+      </button>
+    </section>
+
+    <section class="turnos-section">
+      <h2>{{ _('Turnos que aceptaría') }}</h2>
+      <div id="aceptados-list">
+        <div class="turno-row">
+          <input type="date" name="fecha_aceptada_0" required>
+          <select name="franja_aceptada_0" required>
+            <option value="">{{ _('— Selecciona franja —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary" id="btn-add-aceptada">
+        {{ _('+ Añadir otro turno que aceptaría') }}
+      </button>
+    </section>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">{{ _('Publicar') }}</button>
+      <a href="{{ url_for('main.index') }}" class="btn btn-secondary">{{ _('Cancelar') }}</a>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  var franjaOptions = `{% for f in franjas %}<option value="{{ f.id }}">{{ f.nombre }}</option>{% endfor %}`;
+
+  function addRow(listId, prefix) {
+    var list = document.getElementById(listId);
+    var idx = list.children.length;
+    var div = document.createElement('div');
+    div.className = 'turno-row';
+    div.innerHTML =
+      '<input type="date" name="fecha_' + prefix + '_' + idx + '" required>' +
+      '<select name="franja_' + prefix + '_' + idx + '" required>' +
+      '<option value="">{{ _("— Selecciona franja —") }}</option>' +
+      franjaOptions +
+      '</select>' +
+      '<button type="button" class="btn-remove" onclick="this.parentElement.remove()">✕</button>';
+    list.appendChild(div);
+  }
+
+  document.getElementById('btn-add-cedida').addEventListener('click', function () {
+    addRow('cedidos-list', 'cedida');
+  });
+  document.getElementById('btn-add-aceptada').addEventListener('click', function () {
+    addRow('aceptados-list', 'aceptada');
+  });
+})();
+</script>
+{% endblock %}
