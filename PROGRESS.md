@@ -9,7 +9,7 @@ Implementando características del backlog. Ver lista abajo.
 ## Backlog (fuente: .backlog)
 - [x] B1: Mensaje opcional (≤200 chars) al publicar un cambio ✓
 - [ ] B2: Jerarquía hospital > categoría > servicio en desplegables
-- [ ] B3: Botón de instalación de la PWA
+- [x] B3: Botón de instalación de la PWA ✓
 - [ ] B4: Tipos de turno personalizados al publicar (nombre + horario)
 - [x] B5: Arreglar notificaciones push (CSRF + codificación VAPID) ✓
 

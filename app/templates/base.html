@@ -44,6 +44,25 @@
       navigator.serviceWorker.register('/sw.js').catch(function () {});
     }
 
+    // Botón de instalación PWA
+    var _deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      _deferredInstall = e;
+      var btn = document.getElementById('btn-instalar-pwa');
+      if (btn) btn.style.display = '';
+    });
+    window.addEventListener('appinstalled', function () {
+      _deferredInstall = null;
+      var btn = document.getElementById('btn-instalar-pwa');
+      if (btn) btn.style.display = 'none';
+    });
+    function instalarPWA() {
+      if (!_deferredInstall) return;
+      _deferredInstall.prompt();
+      _deferredInstall.userChoice.then(function () { _deferredInstall = null; });
+    }
+
     {% if current_user.is_authenticated %}
     var _pushActivo = false;
 
