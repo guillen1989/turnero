@@ -1,10 +1,10 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 0 — Andamiaje
+Fase 2 — Autenticación (registro, login, logout)
 
 ## Paso actual / siguiente paso
-Fase 2, paso 1: formulario y ruta de registro (email + contraseña + hospital/unidad/categoría).
+Fase 2 completa. Siguiente: Fase 3, paso 1: dashboard del usuario (ruta protegida con lista de publicaciones propias).
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -14,6 +14,7 @@ Fase 2, paso 1: formulario y ruta de registro (email + contraseña + hospital/un
 - [x] Fase 1, paso 3: modelo Usuario · hash de contraseña · Flask-Login UserMixin · grupo_intercambio accesible · 20 tests passing
 - [x] Fase 1, paso 4: modelos PublicacionCambio, TurnoCedido, TurnoAceptado · resolución parcial · actualizar_estado() · 29 tests passing
 - [x] Fase 1, paso 5: modelos MatchCambio, MatchParticipacion, Notificacion · extensible a N bandas · migración inicial generada y aplicada
+- [x] Fase 2, paso 1: servicio de registro (encontrar_o_crear hospital/unidad/categoría) · formulario RegistroForm y LoginForm · rutas /auth/registro, /auth/login, /auth/logout · plantillas HTML · CSS básico · 52 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
@@ -22,3 +23,4 @@ Fase 2, paso 1: formulario y ruta de registro (email + contraseña + hospital/un
 - Autenticación: email + contraseña (Flask-Login + Werkzeug).
 - El motor de matching se implementa como módulo puro sin acoplamiento a Flask ni SQLAlchemy.
 - Los conflictos de pip (streamlit, spyder) son del sistema y no afectan al proyecto.
+- conftest.py empuja un app context fresco por test para aislar g (Flask-Login) y la sesión SQLAlchemy. Necesario porque en Flask 3.x g está scoped al app context (no al request context) y Flask-Login cachea current_user en g._login_user.

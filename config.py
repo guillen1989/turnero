@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from sqlalchemy.pool import NullPool
 
 load_dotenv()
 
@@ -27,6 +28,9 @@ class TestingConfig(Config):
         "TEST_DATABASE_URL", "postgresql:///cambiaturnos_test"
     )
     WTF_CSRF_ENABLED = False
+    # NullPool evita que las conexiones se reutilicen entre tests,
+    # previniendo bloqueos por transacciones implícitas abiertas en el pool.
+    SQLALCHEMY_ENGINE_OPTIONS = {"poolclass": NullPool}
 
 
 class ProductionConfig(Config):

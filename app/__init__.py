@@ -16,6 +16,10 @@ def create_app(config_name=None):
     babel.init_app(app, locale_selector=_get_locale)
     csrf.init_app(app)
 
+    # Flask-Babel 4.x no inyecta get_locale en Jinja2 automáticamente
+    from flask_babel import get_locale
+    app.jinja_env.globals["get_locale"] = get_locale
+
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "info"
