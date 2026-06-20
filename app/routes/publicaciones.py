@@ -7,6 +7,7 @@ from flask_login import current_user, login_required
 from app.extensions import db
 from app.models import FranjaHoraria, PublicacionCambio
 from app.services.publicaciones import cancelar_publicacion, publicar_cambio
+from app.matching.service import buscar_matches_para, crear_match_directo
 
 bp = Blueprint("publicaciones", __name__)
 
@@ -52,7 +53,9 @@ def nueva():
             flash(_("Debes indicar al menos un turno que aceptarías."), "danger")
             return render_template("publicaciones/publicar.html", franjas=franjas)
 
-        publicar_cambio(current_user.id, cedidos, aceptados)
+        pub = publicar_cambio(current_user.id, cedidos, aceptados)
+        for candidata in buscar_matches_para(pub):
+            crear_match_directo(pub, candidata)
         flash(_("Publicación creada correctamente."), "success")
         return redirect(url_for("main.index"))
 
