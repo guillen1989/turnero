@@ -7,6 +7,7 @@ class GrupoIntercambio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     unidades = db.relationship("Unidad", back_populates="grupo_intercambio", lazy="dynamic")
+    franjas_horarias = db.relationship("FranjaHoraria", back_populates="grupo_intercambio", lazy="dynamic")
 
     def __repr__(self):
         return f"<GrupoIntercambio {self.id}>"

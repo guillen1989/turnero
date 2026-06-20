@@ -4,12 +4,13 @@
 Fase 0 — Andamiaje
 
 ## Paso actual / siguiente paso
-Fase 1, paso 2: modelos Categoria y FranjaHoraria con seed de categorías y tests.
+Fase 1, paso 3: modelo Usuario con tests.
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
 - [x] Fase 0, paso 2: Flask-Babel configurado · catálogo `es` · test de locale passing
 - [x] Fase 1, paso 1: modelos Hospital, GrupoIntercambio y Unidad · conftest con PostgreSQL · 8 tests passing
+- [x] Fase 1, paso 2: modelos Categoria (con seed idempotente) y FranjaHoraria · 15 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
