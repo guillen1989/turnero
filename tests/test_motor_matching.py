@@ -1,0 +1,120 @@
+"""Tests unitarios del motor de matching (Fase 4, paso 1).
+
+El motor es una función pura: no toca la base de datos ni Flask.
+Los turnos se representan como frozensets de (fecha, franja_horaria_id).
+"""
+from datetime import date
+
+from app.matching.engine import detectar_match_directo
+
+# --- UAT-3.1: match directo 1 a 1 ---
+
+def test_match_directo_basico():
+    """Ana cede mañana_25 y acepta tarde_26; Pedro cede tarde_26 y acepta mañana_25."""
+    mañana_25 = (date(2026, 6, 25), 1)
+    tarde_26 = (date(2026, 6, 26), 2)
+
+    assert detectar_match_directo(
+        cedidos_a={mañana_25},
+        aceptados_a={tarde_26},
+        cedidos_b={tarde_26},
+        aceptados_b={mañana_25},
+    )
+
+
+# --- UAT-3.2: sin match si solo un sentido coincide ---
+
+def test_no_match_si_solo_un_sentido_coincide():
+    """Pedro acepta lo que Ana cede, pero Ana no acepta lo que Pedro cede."""
+    mañana_25 = (date(2026, 6, 25), 1)
+    tarde_26 = (date(2026, 6, 26), 2)
+    noche_27 = (date(2026, 6, 27), 3)
+
+    assert not detectar_match_directo(
+        cedidos_a={mañana_25},
+        aceptados_a={tarde_26},
+        cedidos_b={noche_27},
+        aceptados_b={mañana_25},
+    )
+
+
+def test_no_match_si_el_otro_sentido_tampoco_coincide():
+    """Ninguna de las dos partes acepta lo que la otra cede."""
+    mañana_25 = (date(2026, 6, 25), 1)
+    tarde_26 = (date(2026, 6, 26), 2)
+    noche_27 = (date(2026, 6, 27), 3)
+    noche_28 = (date(2026, 6, 28), 3)
+
+    assert not detectar_match_directo(
+        cedidos_a={mañana_25},
+        aceptados_a={tarde_26},
+        cedidos_b={noche_27},
+        aceptados_b={noche_28},
+    )
+
+
+# --- UAT-3.3: match con varias opciones por lado ---
+
+def test_match_con_multiples_opciones_en_aceptados():
+    """Ana acepta tarde_26 O noche_28; Pedro cede tarde_26 — basta con una coincidencia."""
+    mañana_25 = (date(2026, 6, 25), 1)
+    tarde_26 = (date(2026, 6, 26), 2)
+    noche_28 = (date(2026, 6, 28), 3)
+
+    assert detectar_match_directo(
+        cedidos_a={mañana_25},
+        aceptados_a={tarde_26, noche_28},
+        cedidos_b={tarde_26},
+        aceptados_b={mañana_25},
+    )
+
+
+def test_match_con_multiples_cedidos():
+    """A cede dos turnos; el que B acepta es el segundo de los cedidos."""
+    mañana_25 = (date(2026, 6, 25), 1)
+    tarde_26 = (date(2026, 6, 26), 2)
+    noche_27 = (date(2026, 6, 27), 3)
+
+    assert detectar_match_directo(
+        cedidos_a={mañana_25, tarde_26},
+        aceptados_a={noche_27},
+        cedidos_b={noche_27},
+        aceptados_b={tarde_26},
+    )
+
+
+# --- Casos límite ---
+
+def test_no_match_con_cedidos_vacios():
+    """Sin turnos a ceder no puede haber match."""
+    tarde_26 = (date(2026, 6, 26), 2)
+
+    assert not detectar_match_directo(
+        cedidos_a=set(),
+        aceptados_a={tarde_26},
+        cedidos_b={tarde_26},
+        aceptados_b=set(),
+    )
+
+
+def test_no_match_con_todo_vacio():
+    assert not detectar_match_directo(
+        cedidos_a=set(),
+        aceptados_a=set(),
+        cedidos_b=set(),
+        aceptados_b=set(),
+    )
+
+
+def test_no_match_cuando_ambos_ceden_lo_mismo_pero_no_se_cruzan():
+    """A y B ceden el mismo turno, pero ninguno acepta lo que el otro da."""
+    mañana_25 = (date(2026, 6, 25), 1)
+    tarde_26 = (date(2026, 6, 26), 2)
+    noche_27 = (date(2026, 6, 27), 3)
+
+    assert not detectar_match_directo(
+        cedidos_a={mañana_25},
+        aceptados_a={tarde_26},
+        cedidos_b={mañana_25},
+        aceptados_b={noche_27},
+    )
