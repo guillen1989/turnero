@@ -3,7 +3,7 @@ Tests del servicio de registro: lógica de negocio pura, sin HTTP.
 Cubre UAT-1.1 a UAT-1.4.
 """
 import pytest
-from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, Usuario
+from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, Usuario, FranjaHoraria
 from app.services.registro import (
     encontrar_o_crear_hospital,
     encontrar_o_crear_unidad,
@@ -140,6 +140,27 @@ def test_registrar_usuario_crea_todo(db):
     assert usuario.unidad.hospital.nombre == "Hospital La Paz"
     assert usuario.categoria.nombre == "Enfermería"
     assert usuario.check_password("contraseña123")
+
+
+def test_registro_crea_franjas_horarias_por_defecto(db):
+    from app.models import insertar_categorias_semilla
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    usuario = registrar_usuario("Test", "t@t.es", "pass1234", "H1", "Urgencias", cat.id)
+    franjas = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=usuario.unidad.grupo_intercambio_id
+    ).all()
+    nombres = {f.nombre for f in franjas}
+    assert nombres == {"Mañana", "Tarde", "Noche"}
+
+
+def test_registro_no_duplica_franjas_si_unidad_existe(db):
+    from app.models import insertar_categorias_semilla
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    registrar_usuario("Ana", "ana@t.es", "pass1234", "H1", "Urgencias", cat.id)
+    registrar_usuario("Pedro", "pedro@t.es", "pass1234", "H1", "Urgencias", cat.id)
+    assert FranjaHoraria.query.filter_by(nombre="Mañana").count() == 1
 
 
 def test_registrar_usuario_email_duplicado_lanza_error(db):

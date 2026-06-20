@@ -18,12 +18,9 @@ def _setup(client):
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
     usuario = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
-    franja = FranjaHoraria(
-        nombre="Mañana", hora_inicio=time(7, 0), hora_fin=time(15, 0),
-        grupo_intercambio_id=usuario.unidad.grupo_intercambio_id,
-    )
-    db.session.add(franja)
-    db.session.flush()
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=usuario.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
 
     pub = PublicacionCambio(usuario_id=usuario.id)
     db.session.add(pub)

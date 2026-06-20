@@ -25,12 +25,9 @@ def _setup(db):
     ana = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
     pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "H1", "Urgencias", cat.id)
 
-    franja = FranjaHoraria(
-        nombre="Mañana", hora_inicio=time(7, 0), hora_fin=time(15, 0),
-        grupo_intercambio_id=ana.unidad.grupo_intercambio_id,
-    )
-    db.session.add(franja)
-    db.session.flush()
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=ana.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
 
     pub_ana = PublicacionCambio(usuario_id=ana.id)
     db.session.add(pub_ana)

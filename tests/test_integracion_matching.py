@@ -24,16 +24,8 @@ def _usuario(nombre, email):
     return registrar_usuario(nombre, email, "password123", "Hospital T", "Urgencias", cat.id)
 
 
-def _franja(grupo_id):
-    franja = FranjaHoraria(
-        nombre="Mañana",
-        hora_inicio=time(7, 0),
-        hora_fin=time(15, 0),
-        grupo_intercambio_id=grupo_id,
-    )
-    db.session.add(franja)
-    db.session.commit()
-    return franja
+def _franja(grupo_id, nombre="Mañana"):
+    return FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id, nombre=nombre).first()
 
 
 # --- Tests: creación de MatchCambio tras publicar ---
@@ -123,10 +115,7 @@ def test_publicar_sin_coincidencia_no_crea_match(client, db):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    franja2 = FranjaHoraria(nombre="Tarde", hora_inicio=time(15, 0), hora_fin=time(22, 0),
-                            grupo_intercambio_id=ana.unidad.grupo_intercambio_id)
-    db.session.add(franja2)
-    db.session.commit()
+    franja2 = _franja(ana.unidad.grupo_intercambio_id, nombre="Tarde")
 
     pub_pedro = PublicacionCambio(usuario_id=pedro.id)
     db.session.add(pub_pedro)

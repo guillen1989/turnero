@@ -13,6 +13,7 @@
   {% endwith %}
 
   <form method="post" id="publicar-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <section class="turnos-section">
       <h2>{{ _('Turnos que cedo') }}</h2>

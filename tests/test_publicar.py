@@ -23,15 +23,7 @@ def _usuario_y_login(client, email="test@test.es"):
 
 
 def _franja(db, grupo_id, nombre="Mañana"):
-    franja = FranjaHoraria(
-        nombre=nombre,
-        hora_inicio=time(7, 0),
-        hora_fin=time(15, 0),
-        grupo_intercambio_id=grupo_id,
-    )
-    db.session.add(franja)
-    db.session.commit()
-    return franja
+    return FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id, nombre=nombre).first()
 
 
 # --- Acceso a la ruta ---

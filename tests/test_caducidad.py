@@ -31,11 +31,7 @@ def _usuario(email="test@test.es"):
 
 
 def _franja(grupo_id):
-    f = FranjaHoraria(nombre="Mañana", hora_inicio=time(7, 0), hora_fin=time(15, 0),
-                      grupo_intercambio_id=grupo_id)
-    db.session.add(f)
-    db.session.flush()
-    return f
+    return FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id, nombre="Mañana").first()
 
 
 def _pub(usuario, fecha_cede, franja):

@@ -1,5 +1,23 @@
+from datetime import time
+
 from app.extensions import db
-from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, Usuario
+from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, Usuario, FranjaHoraria
+
+_FRANJAS_DEFAULT = [
+    ("Mañana", time(7, 0), time(15, 0)),
+    ("Tarde", time(15, 0), time(23, 0)),
+    ("Noche", time(23, 0), time(7, 0)),
+]
+
+
+def _crear_franjas_default(grupo):
+    for nombre, inicio, fin in _FRANJAS_DEFAULT:
+        db.session.add(FranjaHoraria(
+            nombre=nombre,
+            hora_inicio=inicio,
+            hora_fin=fin,
+            grupo_intercambio=grupo,
+        ))
 
 
 def _normalizar(texto):
@@ -28,6 +46,7 @@ def encontrar_o_crear_unidad(nombre, hospital):
         grupo = GrupoIntercambio()
         db.session.add(grupo)
         db.session.flush()
+        _crear_franjas_default(grupo)
         unidad = Unidad(nombre=nombre.strip(), hospital=hospital, grupo_intercambio=grupo)
         db.session.add(unidad)
         db.session.flush()
