@@ -47,6 +47,15 @@
     {% if current_user.is_authenticated %}
     var _pushActivo = false;
 
+    function _base64UrlToUint8Array(base64String) {
+      var padding = '='.repeat((4 - base64String.length % 4) % 4);
+      var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      var raw = atob(base64);
+      var arr = new Uint8Array(raw.length);
+      for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+      return arr;
+    }
+
     async function _suscribirPush() {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
       try {
@@ -60,7 +69,7 @@
         if (!publicKey) return false;
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: publicKey,
+          applicationServerKey: _base64UrlToUint8Array(publicKey),
         });
         await fetch('/push/suscribir', {
           method: 'POST',
@@ -68,7 +77,7 @@
           body: JSON.stringify(sub),
         });
         return true;
-      } catch (e) { return false; }
+      } catch (e) { console.error('Push error:', e); return false; }
     }
 
     async function _actualizarBotonPush(btn) {

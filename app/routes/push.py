@@ -3,7 +3,7 @@ import json
 from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user, login_required
 
-from app.extensions import db
+from app.extensions import csrf, db
 
 bp = Blueprint("push", __name__)
 
@@ -13,6 +13,7 @@ def vapid_public_key():
     return jsonify({"publicKey": current_app.config.get("VAPID_PUBLIC_KEY", "")})
 
 
+@csrf.exempt
 @bp.post("/push/suscribir")
 @login_required
 def suscribir():

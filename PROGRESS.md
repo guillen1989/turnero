@@ -11,7 +11,7 @@ Implementando características del backlog. Ver lista abajo.
 - [ ] B2: Jerarquía hospital > categoría > servicio en desplegables
 - [ ] B3: Botón de instalación de la PWA
 - [ ] B4: Tipos de turno personalizados al publicar (nombre + horario)
-- [ ] B5: Arreglar notificaciones push (CSRF + codificación VAPID)
+- [x] B5: Arreglar notificaciones push (CSRF + codificación VAPID) ✓
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
