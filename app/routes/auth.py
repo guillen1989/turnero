@@ -16,7 +16,9 @@ _OPCION_NUEVA_CATEGORIA = 0
 
 
 def _choices_categorias():
-    cats = Categoria.query.order_by(Categoria.nombre).all()
+    cats = Categoria.query.filter(
+        Categoria.nombre != "Administrador"
+    ).order_by(Categoria.nombre).all()
     choices = [(c.id, c.nombre) for c in cats]
     choices.append((_OPCION_NUEVA_CATEGORIA, _("— Añadir nueva categoría —")))
     return choices
