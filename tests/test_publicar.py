@@ -1,0 +1,122 @@
+"""Tests de integración para publicar un cambio de turno (Fase 3, paso 2)."""
+from datetime import date, time
+
+from app.models import (
+    Categoria,
+    FranjaHoraria,
+    PublicacionCambio,
+    TurnoCedido,
+    TurnoAceptado,
+    insertar_categorias_semilla,
+)
+from app.services.registro import registrar_usuario
+
+
+def _usuario_y_login(client, email="test@test.es"):
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    usuario = registrar_usuario(
+        "Test User", email, "password123", "Hospital T", "Urgencias", cat.id
+    )
+    client.post("/auth/login", data={"email": email, "password": "password123"})
+    return usuario
+
+
+def _franja(db, grupo_id, nombre="Mañana"):
+    franja = FranjaHoraria(
+        nombre=nombre,
+        hora_inicio=time(7, 0),
+        hora_fin=time(15, 0),
+        grupo_intercambio_id=grupo_id,
+    )
+    db.session.add(franja)
+    db.session.commit()
+    return franja
+
+
+# --- Acceso a la ruta ---
+
+def test_publicar_requiere_login(client, db):
+    resp = client.get("/publicar", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
+def test_get_publicar_devuelve_formulario(client, db):
+    usuario = _usuario_y_login(client)
+    _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.get("/publicar")
+    assert resp.status_code == 200
+    assert b"Publicar cambio" in resp.data
+
+
+# --- Creación de la publicación ---
+
+def test_publicar_crea_publicacion_en_bd(client, db):
+    usuario = _usuario_y_login(client)
+    franja = _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.post("/publicar", data={
+        "fecha_cedida_0": "2026-09-01",
+        "franja_cedida_0": franja.id,
+        "fecha_aceptada_0": "2026-09-02",
+        "franja_aceptada_0": franja.id,
+    }, follow_redirects=False)
+    assert resp.status_code == 302
+    assert PublicacionCambio.query.filter_by(usuario_id=usuario.id).count() == 1
+
+
+def test_publicar_crea_turnos_cedidos_y_aceptados(client, db):
+    usuario = _usuario_y_login(client)
+    franja = _franja(db, usuario.unidad.grupo_intercambio_id)
+    client.post("/publicar", data={
+        "fecha_cedida_0": "2026-09-01",
+        "franja_cedida_0": franja.id,
+        "fecha_aceptada_0": "2026-09-02",
+        "franja_aceptada_0": franja.id,
+    })
+    pub = PublicacionCambio.query.filter_by(usuario_id=usuario.id).first()
+    assert pub is not None
+    assert len(pub.turnos_cedidos) == 1
+    assert len(pub.turnos_aceptados) == 1
+    assert pub.turnos_cedidos[0].fecha == date(2026, 9, 1)
+    assert pub.turnos_aceptados[0].fecha == date(2026, 9, 2)
+
+
+def test_publicar_multiples_turnos_cedidos(client, db):
+    usuario = _usuario_y_login(client)
+    franja = _franja(db, usuario.unidad.grupo_intercambio_id)
+    client.post("/publicar", data={
+        "fecha_cedida_0": "2026-09-01",
+        "franja_cedida_0": franja.id,
+        "fecha_cedida_1": "2026-09-03",
+        "franja_cedida_1": franja.id,
+        "fecha_aceptada_0": "2026-09-02",
+        "franja_aceptada_0": franja.id,
+    })
+    pub = PublicacionCambio.query.filter_by(usuario_id=usuario.id).first()
+    assert pub is not None
+    assert len(pub.turnos_cedidos) == 2
+
+
+def test_publicar_redirige_al_dashboard(client, db):
+    usuario = _usuario_y_login(client)
+    franja = _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.post("/publicar", data={
+        "fecha_cedida_0": "2026-09-01",
+        "franja_cedida_0": franja.id,
+        "fecha_aceptada_0": "2026-09-02",
+        "franja_aceptada_0": franja.id,
+    }, follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/")
+
+
+def test_publicar_sin_turno_cedido_muestra_error(client, db):
+    usuario = _usuario_y_login(client)
+    _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.post("/publicar", data={
+        "fecha_aceptada_0": "2026-09-02",
+        "franja_aceptada_0": 1,
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    assert PublicacionCambio.query.count() == 0

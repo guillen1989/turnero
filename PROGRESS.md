@@ -4,7 +4,7 @@
 Fase 8 — PWA (Progressive Web App)
 
 ## Paso actual / siguiente paso
-MVP completado. Pendiente: despliegue en Railway (variables de entorno VAPID, DATABASE_URL), generación de claves VAPID reales, y pruebas de usuario (UAT).
+MVP completado y desplegado en Railway. 130/130 tests pasando. UAT superado.
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -28,6 +28,7 @@ MVP completado. Pendiente: despliegue en Railway (variables de entorno VAPID, DA
 - [x] Fase 7, paso 2: push integrado en crear_match_directo, confirmar_participacion y rechazar_match · 121 tests passing
 - [x] Fase 8, paso 1: /manifest.json + /sw.js + /push/vapid-public-key · sw.js con push/install/fetch handlers · 126 tests passing
 - [x] Fase 8, paso 2: base.html — <link rel="manifest">, meta theme-color, registro SW, suscripción push automática para usuarios autenticados · iconos PNG 192×512 · 130 tests passing
+- [x] Despliegue: Railway · PostgreSQL · variables de entorno · flask db upgrade automático · UAT 130/130
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
