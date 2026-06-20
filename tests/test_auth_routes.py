@@ -15,8 +15,10 @@ def _datos_registro(db, **overrides):
         "email": "ana@test.es",
         "password": "contraseña123",
         "password2": "contraseña123",
-        "hospital_nombre": "Hospital Test",
-        "unidad_nombre": "Urgencias",
+        "hospital_id": 0,
+        "hospital_nuevo": "Hospital Test",
+        "unidad_id": 0,
+        "unidad_nuevo": "Urgencias",
         "categoria_id": _cat_id(db),
         "categoria_nueva": "",
     }
@@ -41,7 +43,7 @@ def test_registro_crea_usuario_en_bd(client, db):
 
 
 def test_registro_crea_hospital_nuevo(client, db):
-    client.post("/auth/registro", data=_datos_registro(db, hospital_nombre="Hospital Nuevo"))
+    client.post("/auth/registro", data=_datos_registro(db, hospital_id=0, hospital_nuevo="Hospital Nuevo"))
     assert Hospital.query.filter_by(nombre="Hospital Nuevo").count() == 1
 
 
@@ -124,9 +126,10 @@ def test_api_unidades_hospital_inexistente_devuelve_lista_vacia(client):
 
 def test_api_unidades_devuelve_unidades_del_hospital(client, db):
     client.post("/auth/registro", data=_datos_registro(db))
-    resp = client.get("/auth/api/unidades?hospital=Hospital Test")
+    hospital = Hospital.query.filter_by(nombre="Hospital Test").first()
+    resp = client.get(f"/auth/api/unidades?hospital_id={hospital.id}")
     assert resp.status_code == 200
-    nombres = resp.get_json()
+    nombres = [u["nombre"] for u in resp.get_json()]
     assert "Urgencias" in nombres
 
 
@@ -157,8 +160,10 @@ def test_perfil_actualiza_hospital_y_unidad(client, db):
     resp = client.post(
         "/auth/perfil",
         data={
-            "hospital_nombre": "Hospital Nuevo",
-            "unidad_nombre": "UCI",
+            "hospital_id": 0,
+            "hospital_nuevo": "Hospital Nuevo",
+            "unidad_id": 0,
+            "unidad_nuevo": "UCI",
             "categoria_id": _cat_id(db),
             "categoria_nueva": "",
         },

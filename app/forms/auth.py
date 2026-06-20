@@ -21,15 +21,15 @@ class RegistroForm(FlaskForm):
         _l("Repite la contraseña"),
         validators=[DataRequired(), EqualTo("password", message=_l("Las contraseñas no coinciden"))],
     )
-    hospital_nombre = StringField(
-        _l("Hospital"),
-        validators=[DataRequired()],
+    # hospital_id y unidad_id se leen de request.form en la ruta (no son campos WTForms)
+    hospital_nuevo = StringField(
+        _l("Nombre del nuevo hospital"),
+        validators=[Optional(), Length(max=200)],
     )
-    unidad_nombre = StringField(
-        _l("Unidad / servicio"),
-        validators=[DataRequired()],
+    unidad_nuevo = StringField(
+        _l("Nombre de la nueva unidad"),
+        validators=[Optional(), Length(max=200)],
     )
-    # choices se asignan dinámicamente en la ruta
     categoria_id = SelectField(
         _l("Categoría profesional"),
         coerce=int,
@@ -44,13 +44,13 @@ class RegistroForm(FlaskForm):
 
 
 class PerfilForm(FlaskForm):
-    hospital_nombre = StringField(
-        _l("Hospital"),
-        validators=[DataRequired()],
+    hospital_nuevo = StringField(
+        _l("Nombre del nuevo hospital"),
+        validators=[Optional(), Length(max=200)],
     )
-    unidad_nombre = StringField(
-        _l("Unidad / servicio"),
-        validators=[DataRequired()],
+    unidad_nuevo = StringField(
+        _l("Nombre de la nueva unidad"),
+        validators=[Optional(), Length(max=200)],
     )
     categoria_id = SelectField(
         _l("Categoría profesional"),
