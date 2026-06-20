@@ -4,7 +4,7 @@
 Fase 5 — Confirmación y rechazo de matches
 
 ## Paso actual / siguiente paso
-Siguiente: Fase 6, paso 1: caducidad automática de publicaciones cuya fecha de turno ya pasó.
+Siguiente: Fase 6, paso 2: disparar caducidad en el dashboard (before_request).
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
@@ -22,6 +22,7 @@ Siguiente: Fase 6, paso 1: caducidad automática de publicaciones cuya fecha de 
 - [x] Fase 4, paso 2: servicio buscar_matches_para · filtros categoría/grupo/estado · 84 tests passing
 - [x] Fase 4, paso 3: crear_match_directo · MatchCambio + 2 MatchParticipacion + 2 Notificacion · disparado desde /publicar · 88 tests passing
 - [x] Fase 5, paso 1: POST /matches/<id>/confirmar y /rechazar · confirmado_parcial → confirmado_total · resuelve turnos · Notificacion confirmacion_parcial/rechazo · 102 tests passing
+- [x] Fase 6, paso 1: servicio caducar_publicaciones_expiradas(hoy) · caduca si todos los turnos cedidos abiertos son pasados · 110 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
