@@ -2,12 +2,12 @@ from app.extensions import db
 from app.models import PublicacionCambio, TurnoCedido, TurnoAceptado
 
 
-def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados):
+def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None):
     """
     Crea una PublicacionCambio con los turnos indicados.
     turnos_cedidos/aceptados: listas de (fecha: date, franja_horaria_id: int)
     """
-    pub = PublicacionCambio(usuario_id=usuario_id)
+    pub = PublicacionCambio(usuario_id=usuario_id, mensaje=mensaje or None)
     db.session.add(pub)
     db.session.flush()
 

@@ -64,7 +64,8 @@ def nueva():
             flash(_("Debes indicar al menos un turno que aceptarías."), "danger")
             return render_template("publicaciones/publicar.html", franjas=franjas)
 
-        pub = publicar_cambio(current_user.id, cedidos, aceptados)
+        mensaje = request.form.get("mensaje", "").strip()[:200] or None
+        pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje)
         for candidata in buscar_matches_para(pub):
             crear_match_directo(pub, candidata)
         flash(_("Publicación creada correctamente."), "success")

@@ -51,6 +51,13 @@
       </button>
     </section>
 
+    <section class="turnos-section">
+      <h2>{{ _('Mensaje (opcional)') }}</h2>
+      <textarea name="mensaje" maxlength="200" rows="3"
+        placeholder="{{ _('Escribe un mensaje para el usuario con el que hagas match (máx. 200 caracteres)') }}"
+        class="mensaje-textarea"></textarea>
+    </section>
+
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">{{ _('Publicar') }}</button>
       <a href="{{ url_for('main.index') }}" class="btn btn-secondary">{{ _('Cancelar') }}</a>

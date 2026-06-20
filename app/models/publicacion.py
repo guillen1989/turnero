@@ -14,6 +14,7 @@ class PublicacionCambio(db.Model):
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
     estado = db.Column(db.String(30), nullable=False, default="abierta")
+    mensaje = db.Column(db.String(200), nullable=True)
 
     usuario = db.relationship("Usuario", back_populates="publicaciones")
     turnos_cedidos = db.relationship(

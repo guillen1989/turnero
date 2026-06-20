@@ -34,6 +34,9 @@
           {{ otra_part.turno_cedido.fecha }} — {{ otra_part.turno_cedido.franja_horaria.nombre }}
         </div>
       </div>
+      {% if otra_part.publicacion.mensaje %}
+      <p class="match-mensaje">"{{ otra_part.publicacion.mensaje }}"</p>
+      {% endif %}
       {% if not mi_part.confirmado %}
       <div class="match-acciones">
         <form method="post" action="{{ url_for('matches.confirmar', match_id=match.id) }}" style="display:inline">
