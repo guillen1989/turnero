@@ -51,6 +51,30 @@
       </button>
     </section>
 
+    <section class="turnos-section turnos-section--nueva-franja">
+      <details>
+        <summary>{{ _('+ Crear nuevo tipo de turno') }}</summary>
+        <div class="nueva-franja-form">
+          <input type="hidden" name="accion" value="nueva_franja">
+          <div class="franja-fields">
+            <div class="form-group">
+              <label>{{ _('Nombre') }}</label>
+              <input type="text" name="franja_nombre" placeholder="{{ _('Ej: Guardia 12h') }}" maxlength="50">
+            </div>
+            <div class="form-group">
+              <label>{{ _('Hora inicio') }}</label>
+              <input type="time" name="franja_inicio">
+            </div>
+            <div class="form-group">
+              <label>{{ _('Hora fin') }}</label>
+              <input type="time" name="franja_fin">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm">{{ _('Guardar tipo de turno') }}</button>
+        </div>
+      </details>
+    </section>
+
     <section class="turnos-section">
       <h2>{{ _('Mensaje (opcional)') }}</h2>
       <textarea name="mensaje" maxlength="200" rows="3"

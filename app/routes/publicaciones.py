@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time as dtime
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_babel import _
@@ -51,6 +51,37 @@ def nueva():
         .order_by(FranjaHoraria.hora_inicio)
         .all()
     )
+
+    if request.method == "POST" and request.form.get("accion") == "nueva_franja":
+        nombre_f = request.form.get("franja_nombre", "").strip()[:50]
+        inicio_str = request.form.get("franja_inicio", "")
+        fin_str = request.form.get("franja_fin", "")
+        try:
+            inicio = dtime.fromisoformat(inicio_str)
+            fin = dtime.fromisoformat(fin_str)
+            if not nombre_f:
+                raise ValueError("nombre vacío")
+            existe = FranjaHoraria.query.filter_by(
+                grupo_intercambio_id=grupo_id, nombre=nombre_f
+            ).first()
+            if not existe:
+                db.session.add(FranjaHoraria(
+                    nombre=nombre_f, hora_inicio=inicio, hora_fin=fin,
+                    grupo_intercambio_id=grupo_id,
+                ))
+                db.session.commit()
+                flash(_("Tipo de turno «%(n)s» creado.", n=nombre_f), "success")
+            else:
+                flash(_("Ya existe un turno con ese nombre."), "warning")
+        except (ValueError, TypeError):
+            flash(_("Datos del turno incorrectos."), "danger")
+        franjas = (
+            FranjaHoraria.query
+            .filter_by(grupo_intercambio_id=grupo_id)
+            .order_by(FranjaHoraria.hora_inicio)
+            .all()
+        )
+        return render_template("publicaciones/publicar.html", franjas=franjas)
 
     if request.method == "POST":
         cedidos = _extraer_turnos("cedida")
