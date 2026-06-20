@@ -11,6 +11,7 @@ class Unidad(db.Model):
 
     hospital = db.relationship("Hospital", back_populates="unidades")
     grupo_intercambio = db.relationship("GrupoIntercambio", back_populates="unidades")
+    usuarios = db.relationship("Usuario", back_populates="unidad", lazy="dynamic")
 
     __table_args__ = (
         db.UniqueConstraint("nombre", "hospital_id", name="uq_unidad_nombre_hospital"),
