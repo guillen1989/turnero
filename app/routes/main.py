@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, render_template
 from flask_login import current_user
 
 from app.models import PublicacionCambio
+from app.services.caducidad import caducar_publicaciones_expiradas
 
 bp = Blueprint("main", __name__)
 
@@ -14,6 +15,7 @@ def health():
 @bp.get("/")
 def index():
     if current_user.is_authenticated:
+        caducar_publicaciones_expiradas()
         publicaciones = (
             PublicacionCambio.query
             .filter_by(usuario_id=current_user.id)
