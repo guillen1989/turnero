@@ -33,6 +33,9 @@ def create_app(config_name=None):
     from app.routes.publicaciones import bp as publicaciones_bp
     app.register_blueprint(publicaciones_bp)
 
+    from app.routes.matches import bp as matches_bp
+    app.register_blueprint(matches_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 
