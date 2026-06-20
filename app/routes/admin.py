@@ -22,6 +22,7 @@ from app.services.registro import (
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
+_OPCION_NUEVA = 0
 _OPCION_NUEVA_CATEGORIA = 0
 
 
@@ -42,8 +43,29 @@ def _choices_cats():
     return choices
 
 
+def _choices_cats_unidad():
+    cats = Categoria.query.order_by(Categoria.nombre).all()
+    return [(0, _("— Sin categoría —"))] + [(c.id, c.nombre) for c in cats]
+
+
 def _choices_hospitales():
     return [(h.id, h.nombre) for h in Hospital.query.order_by(Hospital.nombre).all()]
+
+
+def _resolver_hospital(hospital_id, hospital_nuevo):
+    if hospital_id == _OPCION_NUEVA or hospital_id is None:
+        nombre = (hospital_nuevo or "").strip()
+        return nombre if nombre else None
+    h = db.session.get(Hospital, hospital_id)
+    return h.nombre if h else None
+
+
+def _resolver_unidad(unidad_id, unidad_nuevo):
+    if unidad_id == _OPCION_NUEVA or unidad_id is None:
+        nombre = (unidad_nuevo or "").strip()
+        return nombre if nombre else None
+    u = db.session.get(Unidad, unidad_id)
+    return u.nombre if u else None
 
 
 # ---------------------------------------------------------------------------
@@ -80,19 +102,34 @@ def usuario_nuevo():
     form = AdminUsuarioForm()
     form.categoria_id.choices = _choices_cats()
     if form.validate_on_submit():
+        hospital_id = request.form.get("hospital_id", type=int)
+        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
+        unidad_id = request.form.get("unidad_id", type=int)
+        unidad_nombre = _resolver_unidad(unidad_id, form.unidad_nuevo.data)
         cat_id = form.categoria_id.data or None
         cat_nueva = form.categoria_nueva.data or None
+
+        errores = False
+        if not hospital_nombre:
+            flash(_("Selecciona un hospital o escribe el nombre de uno nuevo."), "danger")
+            errores = True
+        if not unidad_nombre:
+            flash(_("Selecciona una unidad o escribe el nombre de una nueva."), "danger")
+            errores = True
         if not cat_id and not cat_nueva:
             flash(_("Indica una categoría o escribe una nueva."), "danger")
-        elif not form.password.data:
+            errores = True
+        if not errores and not form.password.data:
             flash(_("La contraseña es obligatoria para usuarios nuevos."), "danger")
-        else:
-            hospital = encontrar_o_crear_hospital(form.hospital_nombre.data)
-            unidad = encontrar_o_crear_unidad(form.unidad_nombre.data, hospital)
+            errores = True
+
+        if not errores:
+            hospital = encontrar_o_crear_hospital(hospital_nombre)
             categoria = encontrar_o_crear_categoria(
                 cat_id if cat_id != _OPCION_NUEVA_CATEGORIA else None,
                 cat_nueva,
             )
+            unidad = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
             u = Usuario(
                 nombre=form.nombre.data.strip(),
                 email=form.email.data.strip().lower(),
@@ -105,8 +142,13 @@ def usuario_nuevo():
             db.session.commit()
             flash(_("Usuario creado."), "success")
             return redirect(url_for("admin.usuarios"))
+
     hospitales = Hospital.query.order_by(Hospital.nombre).all()
-    return render_template("admin/usuario_form.html", form=form, titulo=_("Nuevo usuario"), hospitales=hospitales)
+    return render_template(
+        "admin/usuario_form.html", form=form, titulo=_("Nuevo usuario"),
+        hospitales=hospitales,
+        current_hospital_id=None, current_unidad_id=None, current_unidades=[],
+    )
 
 
 @bp.route("/usuarios/<int:id>/editar", methods=["GET", "POST"])
@@ -116,17 +158,31 @@ def usuario_editar(id):
     form = AdminUsuarioForm(obj=u)
     form.categoria_id.choices = _choices_cats()
     if form.validate_on_submit():
+        hospital_id = request.form.get("hospital_id", type=int)
+        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
+        unidad_id = request.form.get("unidad_id", type=int)
+        unidad_nombre = _resolver_unidad(unidad_id, form.unidad_nuevo.data)
         cat_id = form.categoria_id.data or None
         cat_nueva = form.categoria_nueva.data or None
+
+        errores = False
+        if not hospital_nombre:
+            flash(_("Selecciona un hospital o escribe el nombre de uno nuevo."), "danger")
+            errores = True
+        if not unidad_nombre:
+            flash(_("Selecciona una unidad o escribe el nombre de una nueva."), "danger")
+            errores = True
         if not cat_id and not cat_nueva:
             flash(_("Indica una categoría o escribe una nueva."), "danger")
-        else:
-            hospital = encontrar_o_crear_hospital(form.hospital_nombre.data)
-            unidad = encontrar_o_crear_unidad(form.unidad_nombre.data, hospital)
+            errores = True
+
+        if not errores:
+            hospital = encontrar_o_crear_hospital(hospital_nombre)
             categoria = encontrar_o_crear_categoria(
                 cat_id if cat_id != _OPCION_NUEVA_CATEGORIA else None,
                 cat_nueva,
             )
+            unidad = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
             u.nombre = form.nombre.data.strip()
             u.email = form.email.data.strip().lower()
             u.unidad = unidad
@@ -138,11 +194,21 @@ def usuario_editar(id):
             flash(_("Usuario actualizado."), "success")
             return redirect(url_for("admin.usuarios"))
     elif request.method == "GET":
-        form.hospital_nombre.data = u.unidad.hospital.nombre
-        form.unidad_nombre.data = u.unidad.nombre
         form.categoria_id.data = u.categoria_id
+
+    current_hospital = u.unidad.hospital
+    current_unidades = Unidad.query.filter_by(
+        hospital_id=current_hospital.id,
+        categoria_id=u.categoria_id,
+    ).order_by(Unidad.nombre).all()
     hospitales = Hospital.query.order_by(Hospital.nombre).all()
-    return render_template("admin/usuario_form.html", form=form, titulo=_("Editar usuario"), hospitales=hospitales)
+    return render_template(
+        "admin/usuario_form.html", form=form, titulo=_("Editar usuario"),
+        hospitales=hospitales,
+        current_hospital_id=current_hospital.id,
+        current_unidad_id=u.unidad_id,
+        current_unidades=current_unidades,
+    )
 
 
 @bp.route("/usuarios/<int:id>/eliminar", methods=["POST"])
@@ -210,9 +276,12 @@ def hospital_eliminar(id):
 def unidades():
     form = AdminUnidadForm(prefix="nuevo")
     form.hospital_id.choices = _choices_hospitales()
+    form.categoria_id.choices = _choices_cats_unidad()
     if form.validate_on_submit():
         hospital = db.session.get(Hospital, form.hospital_id.data) or abort(400)
-        encontrar_o_crear_unidad(form.nombre.data, hospital)
+        cat_id = form.categoria_id.data
+        categoria = db.session.get(Categoria, cat_id) if cat_id else None
+        encontrar_o_crear_unidad(form.nombre.data, hospital, categoria)
         db.session.commit()
         flash(_("Unidad creada."), "success")
         return redirect(url_for("admin.unidades"))
@@ -226,14 +295,18 @@ def unidad_editar(id):
     u = db.session.get(Unidad, id) or abort(404)
     form = AdminUnidadForm(obj=u)
     form.hospital_id.choices = _choices_hospitales()
+    form.categoria_id.choices = _choices_cats_unidad()
     if form.validate_on_submit():
         u.nombre = form.nombre.data.strip()
         u.hospital_id = form.hospital_id.data
+        cat_id = form.categoria_id.data
+        u.categoria_id = cat_id if cat_id else None
         db.session.commit()
         flash(_("Unidad actualizada."), "success")
         return redirect(url_for("admin.unidades"))
     elif request.method == "GET":
         form.hospital_id.data = u.hospital_id
+        form.categoria_id.data = u.categoria_id or 0
     return render_template("admin/unidad_form.html", form=form, titulo=_("Editar unidad"))
 
 

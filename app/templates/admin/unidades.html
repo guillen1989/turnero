@@ -9,6 +9,7 @@
   {{ form.hidden_tag() }}
   <div class="inline-form-row">
     {{ form.hospital_id(class="select-inline") }}
+    {{ form.categoria_id(class="select-inline") }}
     {{ form.nombre(placeholder=_('Nombre de la unidad')) }}
     {{ form.submit(class="btn btn-primary btn-sm") }}
   </div>
@@ -19,6 +20,7 @@
   <thead>
     <tr>
       <th>{{ _('Hospital') }}</th>
+      <th>{{ _('Categoría') }}</th>
       <th>{{ _('Unidad') }}</th>
       <th>{{ _('Usuarios') }}</th>
       <th>{{ _('Acciones') }}</th>
@@ -28,6 +30,7 @@
     {% for u in unidades %}
     <tr>
       <td>{{ u.hospital.nombre }}</td>
+      <td>{{ u.categoria.nombre if u.categoria else '—' }}</td>
       <td>{{ u.nombre }}</td>
       <td>{{ u.usuarios.count() }}</td>
       <td class="admin-actions">
@@ -39,7 +42,7 @@
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="4" class="empty-cell">{{ _('No hay unidades.') }}</td></tr>
+    <tr><td colspan="5" class="empty-cell">{{ _('No hay unidades.') }}</td></tr>
     {% endfor %}
   </tbody>
 </table>

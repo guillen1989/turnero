@@ -8,8 +8,8 @@ class AdminUsuarioForm(FlaskForm):
     nombre = StringField(_l("Nombre"), validators=[DataRequired(), Length(max=200)])
     email = StringField(_l("Correo electrónico"), validators=[DataRequired(), Email()])
     password = PasswordField(_l("Contraseña (dejar vacío para no cambiar)"), validators=[Optional(), Length(min=8)])
-    hospital_nombre = StringField(_l("Hospital"), validators=[DataRequired()])
-    unidad_nombre = StringField(_l("Unidad / servicio"), validators=[DataRequired()])
+    hospital_nuevo = StringField(_l("Nuevo hospital"), validators=[Optional(), Length(max=200)])
+    unidad_nuevo = StringField(_l("Nueva unidad"), validators=[Optional(), Length(max=200)])
     categoria_id = SelectField(_l("Categoría"), coerce=int, choices=[], validators=[Optional()])
     categoria_nueva = StringField(_l("Nueva categoría"), validators=[Optional(), Length(max=100)])
     es_admin = BooleanField(_l("Administrador"))
@@ -25,4 +25,5 @@ class AdminNombreForm(FlaskForm):
 class AdminUnidadForm(FlaskForm):
     nombre = StringField(_l("Nombre de la unidad"), validators=[DataRequired(), Length(max=200)])
     hospital_id = SelectField(_l("Hospital"), coerce=int, choices=[], validators=[DataRequired()])
+    categoria_id = SelectField(_l("Categoría"), coerce=int, choices=[], validators=[Optional()])
     submit = SubmitField(_l("Guardar"))

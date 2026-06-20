@@ -27,21 +27,18 @@
   </div>
 
   <div class="form-group">
-    {{ form.hospital_nombre.label }}
-    {{ form.hospital_nombre(id="hospital-input", list="hospitales-datalist", autocomplete="off") }}
-    <datalist id="hospitales-datalist">
+    <label>{{ _('Hospital') }}</label>
+    <select id="hospital-select" name="hospital_id">
+      <option value="">{{ _('— Selecciona hospital —') }}</option>
       {% for h in hospitales %}
-        <option value="{{ h.nombre }}">
+        <option value="{{ h.id }}" {% if h.id == current_hospital_id %}selected{% endif %}>{{ h.nombre }}</option>
       {% endfor %}
-    </datalist>
-    {% for e in form.hospital_nombre.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
-  </div>
-
-  <div class="form-group">
-    {{ form.unidad_nombre.label }}
-    {{ form.unidad_nombre(id="unidad-input", list="unidades-datalist", autocomplete="off") }}
-    <datalist id="unidades-datalist"></datalist>
-    {% for e in form.unidad_nombre.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      <option value="0">{{ _('— Añadir nuevo hospital —') }}</option>
+    </select>
+    <div id="hospital-nuevo-group" style="display:none">
+      {{ form.hospital_nuevo(placeholder=_('Nombre del hospital')) }}
+      {% for e in form.hospital_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+    </div>
   </div>
 
   <div class="form-group">
@@ -54,6 +51,25 @@
     {{ form.categoria_nueva.label }}
     {{ form.categoria_nueva() }}
     {% for e in form.categoria_nueva.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+  </div>
+
+  <div class="form-group">
+    <label>{{ _('Unidad / servicio') }}</label>
+    <select id="unidad-select" name="unidad_id" data-selected-unidad="{{ current_unidad_id or '' }}">
+      {% if current_unidades %}
+        <option value="">{{ _('— Selecciona unidad —') }}</option>
+        {% for u in current_unidades %}
+          <option value="{{ u.id }}" {% if u.id == current_unidad_id %}selected{% endif %}>{{ u.nombre }}</option>
+        {% endfor %}
+      {% else %}
+        <option value="">{{ _('— Selecciona primero hospital y categoría —') }}</option>
+      {% endif %}
+      <option value="0">{{ _('— Añadir nueva unidad —') }}</option>
+    </select>
+    <div id="unidad-nuevo-group" style="display:none">
+      {{ form.unidad_nuevo(placeholder=_('Nombre de la unidad')) }}
+      {% for e in form.unidad_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+    </div>
   </div>
 
   <div class="form-group form-check">
