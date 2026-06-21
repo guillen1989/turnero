@@ -322,6 +322,8 @@ body {
 .publicaciones-list { list-style: none; padding: 0; }
 .turnos-cedidos, .turnos-aceptados { font-size: 0.9rem; margin-bottom: 0.35rem; }
 .turno { display: inline-block; background: #f0f4ff; color: #1e3a8a; border-radius: 4px; padding: 0.1rem 0.45rem; margin: 0.15rem 0.2rem 0.15rem 0; font-size: 0.85rem; }
+.turno--link { text-decoration: none; cursor: pointer; }
+.turno--link:hover { background: #dbeafe; text-decoration: underline; }
 .empty-state { text-align: center; color: #888; padding: 2.5rem 0; font-size: 0.95rem; }
 
 /* Home */

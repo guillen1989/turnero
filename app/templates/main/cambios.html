@@ -67,7 +67,8 @@
       <div class="turnos-cedidos">
         <strong>{{ _('Quiere librar:') }}</strong>
         {% for turno in pub.turnos_cedidos %}
-        <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</span>
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
         {% endfor %}
       </div>
       <div class="turnos-aceptados">
