@@ -21,15 +21,12 @@ class RegistroForm(FlaskForm):
         _l("Repite la contraseña"),
         validators=[DataRequired(), EqualTo("password", message=_l("Las contraseñas no coinciden"))],
     )
-    # hospital_id y unidad_id se leen de request.form en la ruta (no son campos WTForms)
-    hospital_nuevo = StringField(
-        _l("Nombre del nuevo hospital"),
-        validators=[Optional(), Length(max=200)],
-    )
-    unidad_nuevo = StringField(
-        _l("Nombre de la nueva unidad"),
-        validators=[Optional(), Length(max=200)],
-    )
+    # pais_id, provincia_id, ciudad_id, hospital_id, unidad_id se leen de request.form
+    pais_nuevo = StringField(_l("Nuevo país"), validators=[Optional(), Length(max=100)])
+    provincia_nueva = StringField(_l("Nueva provincia"), validators=[Optional(), Length(max=100)])
+    ciudad_nueva = StringField(_l("Nueva ciudad"), validators=[Optional(), Length(max=100)])
+    hospital_nuevo = StringField(_l("Nombre del nuevo hospital"), validators=[Optional(), Length(max=200)])
+    unidad_nuevo = StringField(_l("Nombre de la nueva unidad"), validators=[Optional(), Length(max=200)])
     categoria_id = SelectField(
         _l("Categoría profesional"),
         coerce=int,
@@ -44,14 +41,11 @@ class RegistroForm(FlaskForm):
 
 
 class PerfilForm(FlaskForm):
-    hospital_nuevo = StringField(
-        _l("Nombre del nuevo hospital"),
-        validators=[Optional(), Length(max=200)],
-    )
-    unidad_nuevo = StringField(
-        _l("Nombre de la nueva unidad"),
-        validators=[Optional(), Length(max=200)],
-    )
+    pais_nuevo = StringField(_l("Nuevo país"), validators=[Optional(), Length(max=100)])
+    provincia_nueva = StringField(_l("Nueva provincia"), validators=[Optional(), Length(max=100)])
+    ciudad_nueva = StringField(_l("Nueva ciudad"), validators=[Optional(), Length(max=100)])
+    hospital_nuevo = StringField(_l("Nombre del nuevo hospital"), validators=[Optional(), Length(max=200)])
+    unidad_nuevo = StringField(_l("Nombre de la nueva unidad"), validators=[Optional(), Length(max=200)])
     categoria_id = SelectField(
         _l("Categoría profesional"),
         coerce=int,

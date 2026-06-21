@@ -5,19 +5,22 @@ from flask_babel import _
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.forms.admin import AdminNombreForm, AdminUnidadForm, AdminUsuarioForm
+from app.forms.admin import (
+    AdminNombreForm, AdminUnidadForm, AdminUsuarioForm,
+    AdminProvinciaForm, AdminCiudadForm, AdminHospitalForm,
+)
 from app.models import (
-    Categoria,
-    Hospital,
-    PublicacionCambio,
-    Unidad,
-    Usuario,
+    Pais, Provincia, Ciudad,
+    Categoria, Hospital, PublicacionCambio, Unidad, Usuario,
     insertar_categorias_semilla,
 )
 from app.services.registro import (
     encontrar_o_crear_categoria,
     encontrar_o_crear_hospital,
     encontrar_o_crear_unidad,
+    encontrar_o_crear_pais,
+    encontrar_o_crear_provincia,
+    encontrar_o_crear_ciudad,
 )
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -36,6 +39,10 @@ def admin_required(f):
     return decorated
 
 
+# ---------------------------------------------------------------------------
+# Helpers de choices
+# ---------------------------------------------------------------------------
+
 def _choices_cats():
     cats = Categoria.query.order_by(Categoria.nombre).all()
     choices = [(c.id, c.nombre) for c in cats]
@@ -50,6 +57,49 @@ def _choices_cats_unidad():
 
 def _choices_hospitales():
     return [(h.id, h.nombre) for h in Hospital.query.order_by(Hospital.nombre).all()]
+
+
+def _choices_paises():
+    return [(p.id, p.nombre) for p in Pais.query.order_by(Pais.nombre).all()]
+
+
+def _choices_provincias():
+    return [(p.id, f"{p.nombre} ({p.pais.nombre})") for p in
+            Provincia.query.join(Pais).order_by(Pais.nombre, Provincia.nombre).all()]
+
+
+def _choices_ciudades():
+    return [(c.id, f"{c.nombre} — {c.provincia.nombre}, {c.provincia.pais.nombre}") for c in
+            Ciudad.query.join(Provincia).join(Pais).order_by(Pais.nombre, Provincia.nombre, Ciudad.nombre).all()]
+
+
+# ---------------------------------------------------------------------------
+# Helpers de resolución (igual que en auth.py)
+# ---------------------------------------------------------------------------
+
+def _resolver_geo(pais_id, pais_nuevo, provincia_id, provincia_nueva, ciudad_id, ciudad_nueva):
+    if pais_id and pais_id != _OPCION_NUEVA:
+        pais = db.session.get(Pais, pais_id)
+    else:
+        nombre = (pais_nuevo or "").strip()
+        pais = encontrar_o_crear_pais(nombre) if nombre else None
+    if pais is None:
+        return None
+
+    if provincia_id and provincia_id != _OPCION_NUEVA:
+        provincia = db.session.get(Provincia, provincia_id)
+    else:
+        nombre = (provincia_nueva or "").strip()
+        provincia = encontrar_o_crear_provincia(nombre, pais) if nombre else None
+    if provincia is None:
+        return None
+
+    if ciudad_id and ciudad_id != _OPCION_NUEVA:
+        ciudad = db.session.get(Ciudad, ciudad_id)
+    else:
+        nombre = (ciudad_nueva or "").strip()
+        ciudad = encontrar_o_crear_ciudad(nombre, provincia) if nombre else None
+    return ciudad
 
 
 def _resolver_hospital(hospital_id, hospital_nuevo):
@@ -77,6 +127,7 @@ def _resolver_unidad(unidad_id, unidad_nuevo):
 def index():
     stats = {
         "usuarios": Usuario.query.count(),
+        "paises": Pais.query.count(),
         "hospitales": Hospital.query.count(),
         "unidades": Unidad.query.count(),
         "categorias": Categoria.query.count(),
@@ -102,9 +153,18 @@ def usuario_nuevo():
     form = AdminUsuarioForm()
     form.categoria_id.choices = _choices_cats()
     if form.validate_on_submit():
+        pais_id = request.form.get("pais_id", type=int)
+        provincia_id = request.form.get("provincia_id", type=int)
+        ciudad_id = request.form.get("ciudad_id", type=int)
         hospital_id = request.form.get("hospital_id", type=int)
-        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
         unidad_id = request.form.get("unidad_id", type=int)
+
+        ciudad = _resolver_geo(
+            pais_id, form.pais_nuevo.data,
+            provincia_id, form.provincia_nueva.data,
+            ciudad_id, form.ciudad_nueva.data,
+        )
+        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
         unidad_nombre = _resolver_unidad(unidad_id, form.unidad_nuevo.data)
         cat_id = form.categoria_id.data or None
         cat_nueva = form.categoria_nueva.data or None
@@ -124,7 +184,7 @@ def usuario_nuevo():
             errores = True
 
         if not errores:
-            hospital = encontrar_o_crear_hospital(hospital_nombre)
+            hospital = encontrar_o_crear_hospital(hospital_nombre, ciudad)
             categoria = encontrar_o_crear_categoria(
                 cat_id if cat_id != _OPCION_NUEVA_CATEGORIA else None,
                 cat_nueva,
@@ -143,11 +203,13 @@ def usuario_nuevo():
             flash(_("Usuario creado."), "success")
             return redirect(url_for("admin.usuarios"))
 
-    hospitales = Hospital.query.order_by(Hospital.nombre).all()
+    paises = Pais.query.order_by(Pais.nombre).all()
     return render_template(
         "admin/usuario_form.html", form=form, titulo=_("Nuevo usuario"),
-        hospitales=hospitales,
-        current_hospital_id=None, current_unidad_id=None, current_unidades=[],
+        paises=paises,
+        current_pais_id=None, current_provincia_id=None, current_ciudad_id=None,
+        current_hospital_id=None, current_unidad_id=None,
+        current_provincias=[], current_ciudades=[], current_hospitales=[], current_unidades=[],
     )
 
 
@@ -158,9 +220,18 @@ def usuario_editar(id):
     form = AdminUsuarioForm(obj=u)
     form.categoria_id.choices = _choices_cats()
     if form.validate_on_submit():
+        pais_id = request.form.get("pais_id", type=int)
+        provincia_id = request.form.get("provincia_id", type=int)
+        ciudad_id = request.form.get("ciudad_id", type=int)
         hospital_id = request.form.get("hospital_id", type=int)
-        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
         unidad_id = request.form.get("unidad_id", type=int)
+
+        ciudad = _resolver_geo(
+            pais_id, form.pais_nuevo.data,
+            provincia_id, form.provincia_nueva.data,
+            ciudad_id, form.ciudad_nueva.data,
+        )
+        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
         unidad_nombre = _resolver_unidad(unidad_id, form.unidad_nuevo.data)
         cat_id = form.categoria_id.data or None
         cat_nueva = form.categoria_nueva.data or None
@@ -177,7 +248,7 @@ def usuario_editar(id):
             errores = True
 
         if not errores:
-            hospital = encontrar_o_crear_hospital(hospital_nombre)
+            hospital = encontrar_o_crear_hospital(hospital_nombre, ciudad)
             categoria = encontrar_o_crear_categoria(
                 cat_id if cat_id != _OPCION_NUEVA_CATEGORIA else None,
                 cat_nueva,
@@ -197,16 +268,39 @@ def usuario_editar(id):
         form.categoria_id.data = u.categoria_id
 
     current_hospital = u.unidad.hospital
+    current_ciudad = current_hospital.ciudad
+    current_provincia = current_ciudad.provincia if current_ciudad else None
+    current_pais = current_provincia.pais if current_provincia else None
+
     current_unidades = Unidad.query.filter_by(
         hospital_id=current_hospital.id,
         categoria_id=u.categoria_id,
     ).order_by(Unidad.nombre).all()
-    hospitales = Hospital.query.order_by(Hospital.nombre).all()
+    current_hospitales = (
+        Hospital.query.filter_by(ciudad_id=current_ciudad.id).order_by(Hospital.nombre).all()
+        if current_ciudad else [current_hospital]
+    )
+    current_ciudades = (
+        Ciudad.query.filter_by(provincia_id=current_provincia.id).order_by(Ciudad.nombre).all()
+        if current_provincia else []
+    )
+    current_provincias = (
+        Provincia.query.filter_by(pais_id=current_pais.id).order_by(Provincia.nombre).all()
+        if current_pais else []
+    )
+
+    paises = Pais.query.order_by(Pais.nombre).all()
     return render_template(
         "admin/usuario_form.html", form=form, titulo=_("Editar usuario"),
-        hospitales=hospitales,
+        paises=paises,
+        current_pais_id=current_pais.id if current_pais else None,
+        current_provincia_id=current_provincia.id if current_provincia else None,
+        current_ciudad_id=current_ciudad.id if current_ciudad else None,
         current_hospital_id=current_hospital.id,
         current_unidad_id=u.unidad_id,
+        current_provincias=current_provincias,
+        current_ciudades=current_ciudades,
+        current_hospitales=current_hospitales,
         current_unidades=current_unidades,
     )
 
@@ -225,15 +319,159 @@ def usuario_eliminar(id):
 
 
 # ---------------------------------------------------------------------------
+# Países
+# ---------------------------------------------------------------------------
+
+@bp.route("/paises", methods=["GET", "POST"])
+@admin_required
+def paises():
+    form = AdminNombreForm(prefix="nuevo")
+    if form.validate_on_submit():
+        encontrar_o_crear_pais(form.nombre.data)
+        db.session.commit()
+        flash(_("País creado."), "success")
+        return redirect(url_for("admin.paises"))
+    todos = Pais.query.order_by(Pais.nombre).all()
+    return render_template("admin/paises.html", paises=todos, form=form)
+
+
+@bp.route("/paises/<int:id>/editar", methods=["GET", "POST"])
+@admin_required
+def pais_editar(id):
+    p = db.session.get(Pais, id) or abort(404)
+    form = AdminNombreForm(obj=p)
+    if form.validate_on_submit():
+        p.nombre = form.nombre.data.strip()
+        db.session.commit()
+        flash(_("País actualizado."), "success")
+        return redirect(url_for("admin.paises"))
+    return render_template("admin/nombre_form.html", form=form, titulo=_("Editar país"), volver=url_for("admin.paises"))
+
+
+@bp.route("/paises/<int:id>/eliminar", methods=["POST"])
+@admin_required
+def pais_eliminar(id):
+    p = db.session.get(Pais, id) or abort(404)
+    if p.provincias.count() > 0:
+        flash(_("No se puede eliminar: el país tiene provincias asociadas."), "danger")
+        return redirect(url_for("admin.paises"))
+    db.session.delete(p)
+    db.session.commit()
+    flash(_("País eliminado."), "success")
+    return redirect(url_for("admin.paises"))
+
+
+# ---------------------------------------------------------------------------
+# Provincias
+# ---------------------------------------------------------------------------
+
+@bp.route("/provincias", methods=["GET", "POST"])
+@admin_required
+def provincias():
+    form = AdminProvinciaForm(prefix="nuevo")
+    form.pais_id.choices = _choices_paises()
+    if form.validate_on_submit():
+        pais = db.session.get(Pais, form.pais_id.data) or abort(400)
+        encontrar_o_crear_provincia(form.nombre.data, pais)
+        db.session.commit()
+        flash(_("Provincia creada."), "success")
+        return redirect(url_for("admin.provincias"))
+    todas = Provincia.query.join(Pais).order_by(Pais.nombre, Provincia.nombre).all()
+    return render_template("admin/provincias.html", provincias=todas, form=form)
+
+
+@bp.route("/provincias/<int:id>/editar", methods=["GET", "POST"])
+@admin_required
+def provincia_editar(id):
+    p = db.session.get(Provincia, id) or abort(404)
+    form = AdminProvinciaForm(obj=p)
+    form.pais_id.choices = _choices_paises()
+    if form.validate_on_submit():
+        p.nombre = form.nombre.data.strip()
+        p.pais_id = form.pais_id.data
+        db.session.commit()
+        flash(_("Provincia actualizada."), "success")
+        return redirect(url_for("admin.provincias"))
+    elif request.method == "GET":
+        form.pais_id.data = p.pais_id
+    return render_template("admin/provincia_form.html", form=form, titulo=_("Editar provincia"))
+
+
+@bp.route("/provincias/<int:id>/eliminar", methods=["POST"])
+@admin_required
+def provincia_eliminar(id):
+    p = db.session.get(Provincia, id) or abort(404)
+    if p.ciudades.count() > 0:
+        flash(_("No se puede eliminar: la provincia tiene ciudades asociadas."), "danger")
+        return redirect(url_for("admin.provincias"))
+    db.session.delete(p)
+    db.session.commit()
+    flash(_("Provincia eliminada."), "success")
+    return redirect(url_for("admin.provincias"))
+
+
+# ---------------------------------------------------------------------------
+# Ciudades
+# ---------------------------------------------------------------------------
+
+@bp.route("/ciudades", methods=["GET", "POST"])
+@admin_required
+def ciudades():
+    form = AdminCiudadForm(prefix="nuevo")
+    form.provincia_id.choices = _choices_provincias()
+    if form.validate_on_submit():
+        provincia = db.session.get(Provincia, form.provincia_id.data) or abort(400)
+        encontrar_o_crear_ciudad(form.nombre.data, provincia)
+        db.session.commit()
+        flash(_("Ciudad creada."), "success")
+        return redirect(url_for("admin.ciudades"))
+    todas = Ciudad.query.join(Provincia).join(Pais).order_by(Pais.nombre, Provincia.nombre, Ciudad.nombre).all()
+    return render_template("admin/ciudades.html", ciudades=todas, form=form)
+
+
+@bp.route("/ciudades/<int:id>/editar", methods=["GET", "POST"])
+@admin_required
+def ciudad_editar(id):
+    c = db.session.get(Ciudad, id) or abort(404)
+    form = AdminCiudadForm(obj=c)
+    form.provincia_id.choices = _choices_provincias()
+    if form.validate_on_submit():
+        c.nombre = form.nombre.data.strip()
+        c.provincia_id = form.provincia_id.data
+        db.session.commit()
+        flash(_("Ciudad actualizada."), "success")
+        return redirect(url_for("admin.ciudades"))
+    elif request.method == "GET":
+        form.provincia_id.data = c.provincia_id
+    return render_template("admin/ciudad_form.html", form=form, titulo=_("Editar ciudad"))
+
+
+@bp.route("/ciudades/<int:id>/eliminar", methods=["POST"])
+@admin_required
+def ciudad_eliminar(id):
+    c = db.session.get(Ciudad, id) or abort(404)
+    if c.hospitales.count() > 0:
+        flash(_("No se puede eliminar: la ciudad tiene hospitales asociados."), "danger")
+        return redirect(url_for("admin.ciudades"))
+    db.session.delete(c)
+    db.session.commit()
+    flash(_("Ciudad eliminada."), "success")
+    return redirect(url_for("admin.ciudades"))
+
+
+# ---------------------------------------------------------------------------
 # Hospitales
 # ---------------------------------------------------------------------------
 
 @bp.route("/hospitales", methods=["GET", "POST"])
 @admin_required
 def hospitales():
-    form = AdminNombreForm(prefix="nuevo")
+    form = AdminHospitalForm(prefix="nuevo")
+    form.ciudad_id.choices = [(0, _("— Sin ciudad —"))] + _choices_ciudades()
     if form.validate_on_submit():
-        encontrar_o_crear_hospital(form.nombre.data)
+        ciudad_id = form.ciudad_id.data
+        ciudad = db.session.get(Ciudad, ciudad_id) if ciudad_id else None
+        encontrar_o_crear_hospital(form.nombre.data, ciudad)
         db.session.commit()
         flash(_("Hospital creado."), "success")
         return redirect(url_for("admin.hospitales"))
@@ -245,13 +483,18 @@ def hospitales():
 @admin_required
 def hospital_editar(id):
     h = db.session.get(Hospital, id) or abort(404)
-    form = AdminNombreForm(obj=h)
+    form = AdminHospitalForm(obj=h)
+    form.ciudad_id.choices = [(0, _("— Sin ciudad —"))] + _choices_ciudades()
     if form.validate_on_submit():
         h.nombre = form.nombre.data.strip()
+        ciudad_id = form.ciudad_id.data
+        h.ciudad_id = ciudad_id if ciudad_id else None
         db.session.commit()
         flash(_("Hospital actualizado."), "success")
         return redirect(url_for("admin.hospitales"))
-    return render_template("admin/nombre_form.html", form=form, titulo=_("Editar hospital"), volver=url_for("admin.hospitales"))
+    elif request.method == "GET":
+        form.ciudad_id.data = h.ciudad_id or 0
+    return render_template("admin/hospital_form.html", form=form, titulo=_("Editar hospital"))
 
 
 @bp.route("/hospitales/<int:id>/eliminar", methods=["POST"])
@@ -367,7 +610,7 @@ def categoria_eliminar(id):
 
 
 # ---------------------------------------------------------------------------
-# Publicaciones (cambios de todos los usuarios)
+# Publicaciones
 # ---------------------------------------------------------------------------
 
 @bp.route("/publicaciones")

@@ -5,6 +5,9 @@
   <nav class="admin-nav">
     <a href="{{ url_for('admin.index') }}" class="admin-nav-link{% if request.endpoint == 'admin.index' %} active{% endif %}">{{ _('Resumen') }}</a>
     <a href="{{ url_for('admin.usuarios') }}" class="admin-nav-link{% if 'usuario' in request.endpoint %} active{% endif %}">{{ _('Usuarios') }}</a>
+    <a href="{{ url_for('admin.paises') }}" class="admin-nav-link{% if 'pais' in request.endpoint %} active{% endif %}">{{ _('Países') }}</a>
+    <a href="{{ url_for('admin.provincias') }}" class="admin-nav-link{% if 'provincia' in request.endpoint %} active{% endif %}">{{ _('Provincias') }}</a>
+    <a href="{{ url_for('admin.ciudades') }}" class="admin-nav-link{% if 'ciudad' in request.endpoint %} active{% endif %}">{{ _('Ciudades') }}</a>
     <a href="{{ url_for('admin.hospitales') }}" class="admin-nav-link{% if 'hospital' in request.endpoint %} active{% endif %}">{{ _('Hospitales') }}</a>
     <a href="{{ url_for('admin.unidades') }}" class="admin-nav-link{% if 'unidad' in request.endpoint %} active{% endif %}">{{ _('Unidades') }}</a>
     <a href="{{ url_for('admin.categorias') }}" class="admin-nav-link{% if 'categoria' in request.endpoint %} active{% endif %}">{{ _('Categorías') }}</a>

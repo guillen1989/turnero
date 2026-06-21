@@ -8,6 +8,7 @@
 <form method="POST" novalidate class="admin-inline-form">
   {{ form.hidden_tag() }}
   <div class="inline-form-row">
+    {{ form.ciudad_id(class="select-inline") }}
     {{ form.nombre(placeholder=_('Nombre del hospital')) }}
     {{ form.submit(class="btn btn-primary btn-sm") }}
   </div>
@@ -17,6 +18,9 @@
 <table class="admin-table">
   <thead>
     <tr>
+      <th>{{ _('País') }}</th>
+      <th>{{ _('Provincia') }}</th>
+      <th>{{ _('Ciudad') }}</th>
       <th>{{ _('Hospital') }}</th>
       <th>{{ _('Unidades') }}</th>
       <th>{{ _('Acciones') }}</th>
@@ -25,6 +29,9 @@
   <tbody>
     {% for h in hospitales %}
     <tr>
+      <td>{{ h.ciudad.provincia.pais.nombre if h.ciudad else '—' }}</td>
+      <td>{{ h.ciudad.provincia.nombre if h.ciudad else '—' }}</td>
+      <td>{{ h.ciudad.nombre if h.ciudad else '—' }}</td>
       <td>{{ h.nombre }}</td>
       <td>{{ h.unidades.count() }}</td>
       <td class="admin-actions">
@@ -36,7 +43,7 @@
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="3" class="empty-cell">{{ _('No hay hospitales.') }}</td></tr>
+    <tr><td colspan="6" class="empty-cell">{{ _('No hay hospitales.') }}</td></tr>
     {% endfor %}
   </tbody>
 </table>

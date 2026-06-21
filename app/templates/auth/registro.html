@@ -42,19 +42,53 @@
     </div>
 
     <div class="form-group">
+      <label>{{ _('País') }}</label>
+      <select id="pais-select" name="pais_id">
+        <option value="">{{ _('— Selecciona país —') }}</option>
+        {% for p in paises %}
+          <option value="{{ p.id }}">{{ p.nombre }}</option>
+        {% endfor %}
+        <option value="0">{{ _('— Añadir nuevo país —') }}</option>
+      </select>
+      <div id="pais-nuevo-group" style="display:none">
+        {{ form.pais_nuevo(placeholder=_('Nombre del país')) }}
+        {% for e in form.pais_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>{{ _('Provincia') }}</label>
+      <select id="provincia-select" name="provincia_id">
+        <option value="">{{ _('— Selecciona primero el país —') }}</option>
+        <option value="0">{{ _('— Añadir nueva provincia —') }}</option>
+      </select>
+      <div id="provincia-nuevo-group" style="display:none">
+        {{ form.provincia_nueva(placeholder=_('Nombre de la provincia')) }}
+        {% for e in form.provincia_nueva.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>{{ _('Ciudad') }}</label>
+      <select id="ciudad-select" name="ciudad_id">
+        <option value="">{{ _('— Selecciona primero la provincia —') }}</option>
+        <option value="0">{{ _('— Añadir nueva ciudad —') }}</option>
+      </select>
+      <div id="ciudad-nuevo-group" style="display:none">
+        {{ form.ciudad_nueva(placeholder=_('Nombre de la ciudad')) }}
+        {% for e in form.ciudad_nueva.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
       <label>{{ _('Hospital') }}</label>
       <select id="hospital-select" name="hospital_id">
-        <option value="">{{ _('— Selecciona hospital —') }}</option>
-        {% for h in hospitales %}
-          <option value="{{ h.id }}">{{ h.nombre }}</option>
-        {% endfor %}
+        <option value="">{{ _('— Selecciona primero la ciudad —') }}</option>
         <option value="0">{{ _('— Añadir nuevo hospital —') }}</option>
       </select>
       <div id="hospital-nuevo-group" style="display:none">
         {{ form.hospital_nuevo(placeholder=_('Nombre del hospital')) }}
-        {% for error in form.hospital_nuevo.errors %}
-          <p class="field-error">{{ error }}</p>
-        {% endfor %}
+        {% for e in form.hospital_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
       </div>
     </div>
 
@@ -82,9 +116,7 @@
       </select>
       <div id="unidad-nuevo-group" style="display:none">
         {{ form.unidad_nuevo(placeholder=_('Nombre de la unidad')) }}
-        {% for error in form.unidad_nuevo.errors %}
-          <p class="field-error">{{ error }}</p>
-        {% endfor %}
+        {% for e in form.unidad_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
       </div>
     </div>
 

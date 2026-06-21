@@ -10,19 +10,78 @@
     {{ form.hidden_tag() }}
 
     <div class="form-group">
-      <label>{{ _('Hospital') }}</label>
-      <select id="hospital-select" name="hospital_id">
-        <option value="">{{ _('— Selecciona hospital —') }}</option>
-        {% for h in hospitales %}
-          <option value="{{ h.id }}" {% if h.id == current_hospital_id %}selected{% endif %}>{{ h.nombre }}</option>
+      <label>{{ _('País') }}</label>
+      <select id="pais-select" name="pais_id"
+              data-selected-pais="{{ current_pais_id or '' }}">
+        <option value="">{{ _('— Selecciona país —') }}</option>
+        {% for p in paises %}
+          <option value="{{ p.id }}" {% if p.id == current_pais_id %}selected{% endif %}>{{ p.nombre }}</option>
         {% endfor %}
+        <option value="0">{{ _('— Añadir nuevo país —') }}</option>
+      </select>
+      <div id="pais-nuevo-group" style="display:none">
+        {{ form.pais_nuevo(placeholder=_('Nombre del país')) }}
+        {% for e in form.pais_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>{{ _('Provincia') }}</label>
+      <select id="provincia-select" name="provincia_id"
+              data-selected-provincia="{{ current_provincia_id or '' }}">
+        {% if current_provincias %}
+          <option value="">{{ _('— Selecciona provincia —') }}</option>
+          {% for p in current_provincias %}
+            <option value="{{ p.id }}" {% if p.id == current_provincia_id %}selected{% endif %}>{{ p.nombre }}</option>
+          {% endfor %}
+        {% else %}
+          <option value="">{{ _('— Selecciona primero el país —') }}</option>
+        {% endif %}
+        <option value="0">{{ _('— Añadir nueva provincia —') }}</option>
+      </select>
+      <div id="provincia-nuevo-group" style="display:none">
+        {{ form.provincia_nueva(placeholder=_('Nombre de la provincia')) }}
+        {% for e in form.provincia_nueva.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>{{ _('Ciudad') }}</label>
+      <select id="ciudad-select" name="ciudad_id"
+              data-selected-ciudad="{{ current_ciudad_id or '' }}">
+        {% if current_ciudades %}
+          <option value="">{{ _('— Selecciona ciudad —') }}</option>
+          {% for c in current_ciudades %}
+            <option value="{{ c.id }}" {% if c.id == current_ciudad_id %}selected{% endif %}>{{ c.nombre }}</option>
+          {% endfor %}
+        {% else %}
+          <option value="">{{ _('— Selecciona primero la provincia —') }}</option>
+        {% endif %}
+        <option value="0">{{ _('— Añadir nueva ciudad —') }}</option>
+      </select>
+      <div id="ciudad-nuevo-group" style="display:none">
+        {{ form.ciudad_nueva(placeholder=_('Nombre de la ciudad')) }}
+        {% for e in form.ciudad_nueva.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>{{ _('Hospital') }}</label>
+      <select id="hospital-select" name="hospital_id"
+              data-selected-hospital="{{ current_hospital_id or '' }}">
+        {% if current_hospitales %}
+          <option value="">{{ _('— Selecciona hospital —') }}</option>
+          {% for h in current_hospitales %}
+            <option value="{{ h.id }}" {% if h.id == current_hospital_id %}selected{% endif %}>{{ h.nombre }}</option>
+          {% endfor %}
+        {% else %}
+          <option value="">{{ _('— Selecciona primero la ciudad —') }}</option>
+        {% endif %}
         <option value="0">{{ _('— Añadir nuevo hospital —') }}</option>
       </select>
       <div id="hospital-nuevo-group" style="display:none">
         {{ form.hospital_nuevo(placeholder=_('Nombre del hospital')) }}
-        {% for error in form.hospital_nuevo.errors %}
-          <p class="field-error">{{ error }}</p>
-        {% endfor %}
+        {% for e in form.hospital_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
       </div>
     </div>
 
@@ -44,17 +103,21 @@
 
     <div class="form-group">
       <label>{{ _('Unidad / servicio') }}</label>
-      <select id="unidad-select" name="unidad_id" data-selected-unidad="{{ current_unidad_id }}">
-        {% for u in current_unidades %}
-          <option value="{{ u.id }}" {% if u.id == current_unidad_id %}selected{% endif %}>{{ u.nombre }}</option>
-        {% endfor %}
+      <select id="unidad-select" name="unidad_id"
+              data-selected-unidad="{{ current_unidad_id or '' }}">
+        {% if current_unidades %}
+          <option value="">{{ _('— Selecciona unidad —') }}</option>
+          {% for u in current_unidades %}
+            <option value="{{ u.id }}" {% if u.id == current_unidad_id %}selected{% endif %}>{{ u.nombre }}</option>
+          {% endfor %}
+        {% else %}
+          <option value="">{{ _('— Selecciona primero hospital y categoría —') }}</option>
+        {% endif %}
         <option value="0">{{ _('— Añadir nueva unidad —') }}</option>
       </select>
       <div id="unidad-nuevo-group" style="display:none">
         {{ form.unidad_nuevo(placeholder=_('Nombre de la unidad')) }}
-        {% for error in form.unidad_nuevo.errors %}
-          <p class="field-error">{{ error }}</p>
-        {% endfor %}
+        {% for e in form.unidad_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
       </div>
     </div>
 

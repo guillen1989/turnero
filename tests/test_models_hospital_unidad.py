@@ -1,5 +1,5 @@
 import pytest
-from app.models import Hospital, GrupoIntercambio, Unidad
+from app.models import Pais, Provincia, Ciudad, Hospital, GrupoIntercambio, Unidad
 from app.extensions import db
 
 
@@ -12,13 +12,35 @@ def test_crear_hospital(db):
     assert recuperado.nombre == "Hospital La Paz"
 
 
-def test_hospital_nombre_unico(db):
-    db.session.add(Hospital(nombre="Hospital Valle Verde"))
+def test_hospital_nombre_unico_por_ciudad(db):
+    """Mismo nombre de hospital en la misma ciudad no puede existir dos veces."""
+    pais = Pais(nombre="España Test")
+    prov = Provincia(nombre="Madrid Test", pais=pais)
+    ciudad = Ciudad(nombre="Madrid Capital", provincia=prov)
+    db.session.add_all([pais, prov, ciudad])
     db.session.commit()
 
-    db.session.add(Hospital(nombre="Hospital Valle Verde"))
+    db.session.add(Hospital(nombre="Hospital Valle Verde", ciudad=ciudad))
+    db.session.commit()
+
+    db.session.add(Hospital(nombre="Hospital Valle Verde", ciudad=ciudad))
     with pytest.raises(Exception):
         db.session.commit()
+
+
+def test_hospital_mismo_nombre_diferente_ciudad_es_valido(db):
+    """El mismo nombre de hospital puede existir en ciudades distintas."""
+    pais = Pais(nombre="España B")
+    prov = Provincia(nombre="Castilla B", pais=pais)
+    ciudad1 = Ciudad(nombre="Toledo", provincia=prov)
+    ciudad2 = Ciudad(nombre="Cuenca", provincia=prov)
+    db.session.add_all([pais, prov, ciudad1, ciudad2])
+    db.session.commit()
+
+    db.session.add(Hospital(nombre="Hospital General", ciudad=ciudad1))
+    db.session.add(Hospital(nombre="Hospital General", ciudad=ciudad2))
+    db.session.commit()
+    assert Hospital.query.filter_by(nombre="Hospital General").count() == 2
 
 
 def test_crear_grupo_intercambio(db):

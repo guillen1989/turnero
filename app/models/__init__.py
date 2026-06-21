@@ -1,3 +1,6 @@
+from app.models.pais import Pais
+from app.models.provincia import Provincia
+from app.models.ciudad import Ciudad
 from app.models.hospital import Hospital
 from app.models.grupo_intercambio import GrupoIntercambio
 from app.models.unidad import Unidad
@@ -9,6 +12,9 @@ from app.models.match import MatchCambio, MatchParticipacion
 from app.models.notificacion import Notificacion
 
 __all__ = [
+    "Pais",
+    "Provincia",
+    "Ciudad",
     "Hospital",
     "GrupoIntercambio",
     "Unidad",
