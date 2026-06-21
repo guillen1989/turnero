@@ -11,7 +11,8 @@ from app.forms.admin import (
 )
 from app.models import (
     Pais, Provincia, Ciudad,
-    Categoria, Hospital, PublicacionCambio, Unidad, Usuario,
+    Categoria, Hospital, MatchCambio, MatchParticipacion,
+    Notificacion, PublicacionCambio, Unidad, Usuario,
     insertar_categorias_semilla,
 )
 from app.services.registro import (
@@ -312,6 +313,30 @@ def usuario_eliminar(id):
     if u.id == current_user.id:
         flash(_("No puedes eliminarte a ti mismo."), "danger")
         return redirect(url_for("admin.usuarios"))
+
+    # Delete in the correct order to satisfy FK constraints.
+    # Step 1: delete matches that involve this user's publications.
+    # (MatchParticipacion.publicacion_id and .turno_cedido_id block deletion otherwise.)
+    pub_ids = [p.id for p in u.publicaciones]
+    if pub_ids:
+        matches = (
+            MatchCambio.query
+            .join(MatchParticipacion)
+            .filter(MatchParticipacion.publicacion_id.in_(pub_ids))
+            .all()
+        )
+        for match in matches:
+            # MatchCambio.notificaciones has no cascade, so delete manually.
+            Notificacion.query.filter_by(match_id=match.id).delete()
+            db.session.delete(match)  # cascades to MatchParticipacion
+
+    # Step 2: delete user's own notifications.
+    Notificacion.query.filter_by(usuario_id=u.id).delete()
+
+    # Step 3: delete user's publications (cascades to TurnoCedido + TurnoAceptado).
+    for pub in u.publicaciones:
+        db.session.delete(pub)
+
     db.session.delete(u)
     db.session.commit()
     flash(_("Usuario eliminado."), "success")

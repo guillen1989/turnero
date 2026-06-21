@@ -1,6 +1,10 @@
 """Tests de integración para el panel de administración."""
 import pytest
-from app.models import Usuario, Hospital, Unidad, Categoria, insertar_categorias_semilla
+from datetime import date
+from app.models import (
+    Usuario, Hospital, Unidad, Categoria, insertar_categorias_semilla,
+    PublicacionCambio, TurnoCedido, TurnoAceptado, FranjaHoraria,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +142,31 @@ def test_admin_elimina_usuario(client, db):
     )
     assert resp.status_code == 200
     assert Usuario.query.filter_by(email="borrar@test.es").count() == 0
+
+
+def test_admin_elimina_usuario_con_publicaciones(client, db):
+    """Regression: deleting a user with publications used to raise Internal Server Error."""
+    from app.extensions import db as _db
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="con_pubs@test.es")
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+    pub = PublicacionCambio(usuario_id=u.id)
+    _db.session.add(pub)
+    _db.session.flush()
+    _db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    _db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 9, 30), franja_horaria_id=franja.id))
+    _db.session.commit()
+
+    resp = client.post(
+        f"/admin/usuarios/{u.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(email="con_pubs@test.es").count() == 0
 
 
 # ---------------------------------------------------------------------------
