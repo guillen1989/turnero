@@ -12,6 +12,31 @@
     {% endfor %}
   {% endwith %}
 
+  <section class="turnos-section turnos-section--nueva-franja">
+    <details>
+      <summary>{{ _('+ Crear nuevo tipo de turno') }}</summary>
+      <form method="post" class="nueva-franja-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="accion" value="nueva_franja">
+        <div class="franja-fields">
+          <div class="form-group">
+            <label>{{ _('Nombre') }}</label>
+            <input type="text" name="franja_nombre" placeholder="{{ _('Ej: Guardia 12h') }}" maxlength="50">
+          </div>
+          <div class="form-group">
+            <label>{{ _('Hora inicio') }}</label>
+            <input type="time" name="franja_inicio">
+          </div>
+          <div class="form-group">
+            <label>{{ _('Hora fin') }}</label>
+            <input type="time" name="franja_fin">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">{{ _('Guardar tipo de turno') }}</button>
+      </form>
+    </details>
+  </section>
+
   <form method="post" id="publicar-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -49,30 +74,6 @@
       <button type="button" class="btn btn-secondary" id="btn-add-aceptada">
         {{ _('+ Añadir otro turno que puedo trabajar') }}
       </button>
-    </section>
-
-    <section class="turnos-section turnos-section--nueva-franja">
-      <details>
-        <summary>{{ _('+ Crear nuevo tipo de turno') }}</summary>
-        <div class="nueva-franja-form">
-          <input type="hidden" name="accion" value="nueva_franja">
-          <div class="franja-fields">
-            <div class="form-group">
-              <label>{{ _('Nombre') }}</label>
-              <input type="text" name="franja_nombre" placeholder="{{ _('Ej: Guardia 12h') }}" maxlength="50">
-            </div>
-            <div class="form-group">
-              <label>{{ _('Hora inicio') }}</label>
-              <input type="time" name="franja_inicio">
-            </div>
-            <div class="form-group">
-              <label>{{ _('Hora fin') }}</label>
-              <input type="time" name="franja_fin">
-            </div>
-          </div>
-          <button type="submit" class="btn btn-secondary btn-sm">{{ _('Guardar tipo de turno') }}</button>
-        </div>
-      </details>
     </section>
 
     <section class="turnos-section">
