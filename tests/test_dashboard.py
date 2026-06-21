@@ -132,6 +132,55 @@ def test_dashboard_filtro_estado_confirmada(client, db):
     assert b"2026-10-01" not in resp.data
 
 
+def _setup_match_parcial(usuario_confirma, usuario_pendiente, franja):
+    """Crea un match confirmado_parcial: usuario_confirma ya confirmó, usuario_pendiente no."""
+    pub_a = PublicacionCambio(usuario_id=usuario_confirma.id)
+    pub_b = PublicacionCambio(usuario_id=usuario_pendiente.id)
+    db.session.add_all([pub_a, pub_b])
+    db.session.flush()
+    tc_a = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 10, 1), franja_horaria_id=franja.id)
+    tc_b = TurnoCedido(publicacion_id=pub_b.id, fecha=date(2026, 10, 2), franja_horaria_id=franja.id)
+    db.session.add_all([tc_a, tc_b])
+    db.session.flush()
+    match = MatchCambio(tipo="directo_2", estado="confirmado_parcial")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc_a.id, confirmado=True))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc_b.id, confirmado=False))
+    db.session.commit()
+    return pub_a
+
+
+def test_dashboard_filtro_pendiente_muestra_publicacion_ya_confirmada(client, db):
+    """Pestaña pendiente: aparece la pub del usuario que ya confirmó y espera al otro."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    db.session.commit()
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+    _setup_match_parcial(ana, pedro, franja)
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/?estado=pendiente")
+    assert b"2026-10-01" in resp.data
+
+
+def test_dashboard_filtro_pendiente_excluye_pub_sin_confirmar(client, db):
+    """Pestaña pendiente de Pedro está vacía: él no ha confirmado aún."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    db.session.commit()
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+    _setup_match_parcial(ana, pedro, franja)  # ana confirmó, pedro no
+
+    client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
+    resp = client.get("/?estado=pendiente")
+    assert "No tienes cambios pendientes".encode() in resp.data
+
+
 def test_dashboard_no_muestra_publicaciones_ajenas(client, db):
     _usuario_y_login(client, email="ana@test.es")
     # Segundo usuario — misma unidad, sin login

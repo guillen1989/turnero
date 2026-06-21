@@ -38,9 +38,27 @@ def _matches_activos(usuario_id):
 
 _ESTADOS_DASHBOARD = {
     "abierta": ["abierta", "parcialmente_resuelta"],
+    "pendiente": None,
     "confirmada": ["confirmada"],
     "caducada": ["caducada"],
 }
+
+
+def _publicaciones_pendientes(usuario_id):
+    """Publicaciones en las que el usuario ya confirmó pero el otro participante aún no."""
+    return (
+        PublicacionCambio.query
+        .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
+        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
+        .filter(
+            PublicacionCambio.usuario_id == usuario_id,
+            MatchParticipacion.confirmado == True,
+            MatchCambio.estado == "confirmado_parcial",
+        )
+        .distinct()
+        .order_by(PublicacionCambio.fecha_creacion.desc())
+        .all()
+    )
 
 
 @bp.get("/")
@@ -50,14 +68,19 @@ def index():
         estado_filtro = request.args.get("estado", "abierta")
         if estado_filtro not in _ESTADOS_DASHBOARD:
             estado_filtro = "abierta"
-        estados = _ESTADOS_DASHBOARD[estado_filtro]
-        publicaciones = (
-            PublicacionCambio.query
-            .filter_by(usuario_id=current_user.id)
-            .filter(PublicacionCambio.estado.in_(estados))
-            .order_by(PublicacionCambio.fecha_creacion.desc())
-            .all()
-        )
+
+        if estado_filtro == "pendiente":
+            publicaciones = _publicaciones_pendientes(current_user.id)
+        else:
+            estados = _ESTADOS_DASHBOARD[estado_filtro]
+            publicaciones = (
+                PublicacionCambio.query
+                .filter_by(usuario_id=current_user.id)
+                .filter(PublicacionCambio.estado.in_(estados))
+                .order_by(PublicacionCambio.fecha_creacion.desc())
+                .all()
+            )
+
         matches = _matches_activos(current_user.id)
         return render_template(
             "main/dashboard.html",
