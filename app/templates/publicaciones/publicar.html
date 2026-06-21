@@ -44,6 +44,7 @@
       <h2>{{ _('Turnos que quiero librar') }}</h2>
       <div id="cedidos-list">
         <div class="turno-row">
+          <label class="turno-fecha-label">{{ _('— Selecciona fecha —') }}</label>
           <input type="date" name="fecha_cedida_0" required>
           <select name="franja_cedida_0" required>
             <option value="">{{ _('— Selecciona franja —') }}</option>
@@ -62,6 +63,7 @@
       <h2>{{ _('Turnos que quiero trabajar') }}</h2>
       <div id="aceptados-list">
         <div class="turno-row">
+          <label class="turno-fecha-label">{{ _('— Selecciona fecha —') }}</label>
           <input type="date" name="fecha_aceptada_0" required>
           <select name="franja_aceptada_0" required>
             <option value="">{{ _('— Selecciona franja —') }}</option>
@@ -100,6 +102,7 @@
     var div = document.createElement('div');
     div.className = 'turno-row';
     div.innerHTML =
+      '<label class="turno-fecha-label">{{ _("— Selecciona fecha —") }}</label>' +
       '<input type="date" name="fecha_' + prefix + '_' + idx + '" required>' +
       '<select name="franja_' + prefix + '_' + idx + '" required>' +
       '<option value="">{{ _("— Selecciona franja —") }}</option>' +
