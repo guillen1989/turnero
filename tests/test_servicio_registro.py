@@ -151,7 +151,7 @@ def test_registro_crea_franjas_horarias_por_defecto(db):
         grupo_intercambio_id=usuario.unidad.grupo_intercambio_id
     ).all()
     nombres = {f.nombre for f in franjas}
-    assert nombres == {"Mañana", "Tarde", "Noche"}
+    assert nombres == {"Mañana", "Tarde", "Noche", "Diurno 12h", "Nocturno 12h"}
 
 
 def test_registro_no_duplica_franjas_si_unidad_existe(db):
