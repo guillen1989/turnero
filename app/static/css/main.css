@@ -316,7 +316,8 @@ body {
 .cambios-filtro-actions { display: flex; gap: 0.5rem; }
 .publicacion-card--ajena { background: #fff; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-left: 4px solid #005a9c; list-style: none; }
 .pub-autor { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.3rem; }
-.pub-autor-nombre { font-weight: 700; font-size: 0.95rem; }
+.pub-autor-nombre { font-weight: 700; font-size: 0.95rem; color: #005a9c; text-decoration: none; }
+.pub-autor-nombre:hover { text-decoration: underline; }
 .pub-fecha-creacion { font-size: 0.78rem; color: #888; }
 .publicaciones-list { list-style: none; padding: 0; }
 .turnos-cedidos, .turnos-aceptados { font-size: 0.9rem; margin-bottom: 0.35rem; }

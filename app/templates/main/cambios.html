@@ -60,7 +60,8 @@
     {% for pub in publicaciones %}
     <li class="publicacion-card publicacion-card--ajena">
       <div class="pub-autor">
-        <span class="pub-autor-nombre">{{ pub.usuario.nombre }}</span>
+        <a class="pub-autor-nombre"
+           href="{{ url_for('main.cambios', usuario=pub.usuario.nombre) }}">{{ pub.usuario.nombre }}</a>
         <span class="pub-fecha-creacion">{{ pub.fecha_creacion.strftime('%d/%m/%Y') }}</span>
       </div>
       <div class="turnos-cedidos">
