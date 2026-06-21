@@ -32,6 +32,15 @@
                value="{{ dia if dia else '' }}">
       </div>
       <div class="form-group">
+        <label>{{ _('Turno') }}</label>
+        <select name="franja">
+          <option value="">{{ _('— Todos los turnos —') }}</option>
+          {% for f in franjas %}
+          <option value="{{ f.id }}" {% if franja_id == f.id %}selected{% endif %}>{{ f.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
         <label>{{ _('Usuario') }}</label>
         <input type="text" name="usuario"
                placeholder="{{ _('Nombre del compañero') }}"
@@ -40,7 +49,7 @@
     </div>
     <div class="cambios-filtro-actions">
       <button type="submit" class="btn btn-primary btn-sm">{{ _('Filtrar') }}</button>
-      {% if mes or dia or nombre %}
+      {% if mes or dia or nombre or franja_id %}
       <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary btn-sm">{{ _('Limpiar') }}</a>
       {% endif %}
     </div>
@@ -74,7 +83,7 @@
   </ul>
   {% else %}
   <p class="empty-state">
-    {% if mes or dia %}
+    {% if mes or dia or nombre or franja_id %}
       {{ _('No hay cambios publicados con ese filtro.') }}
     {% else %}
       {{ _('No hay cambios publicados por otros compañeros en este momento.') }}

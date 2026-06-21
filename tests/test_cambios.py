@@ -182,3 +182,28 @@ def test_cambios_filtro_usuario_insensible_a_mayusculas(client, db):
     assert b"01/09/2026" in client.get("/cambios?usuario=pedro").data
     assert b"01/09/2026" in client.get("/cambios?usuario=PEDRO").data
     assert b"01/09/2026" in client.get("/cambios?usuario=pEdRo").data
+
+
+def test_cambios_filtro_franja(client, db):
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+
+    grupo_id = u2.unidad.grupo_intercambio_id
+    franjas = FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id).order_by(FranjaHoraria.hora_inicio).all()
+    assert len(franjas) >= 2, "Se necesitan al menos 2 franjas para este test"
+    franja_a, franja_b = franjas[0], franjas[1]
+
+    # Publicación con franja_a como turno cedido
+    pub = PublicacionCambio(usuario_id=u2.id)
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja_a.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 9, 2), franja_horaria_id=franja_b.id))
+    db.session.commit()
+
+    resp_a = client.get(f"/cambios?franja={franja_a.id}")
+    assert b"01/09/2026" in resp_a.data
+
+    resp_b = client.get(f"/cambios?franja={franja_b.id}")
+    assert b"01/09/2026" not in resp_b.data
