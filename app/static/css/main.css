@@ -214,10 +214,10 @@ body {
 
 .match-mensaje { font-style: italic; color: #374151; background: #f9fafb; border-left: 3px solid #d1d5db; padding: 0.5rem 0.75rem; margin: 0.5rem 0 0; border-radius: 0 4px 4px 0; font-size: 0.9rem; }
 .mensaje-textarea { width: 100%; padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; font-size: 1rem; resize: vertical; }
-.turnos-section--nueva-franja details { cursor: pointer; }
-.turnos-section--nueva-franja summary { color: #005a9c; font-weight: 500; padding: 0.5rem 0; list-style: none; }
-.turnos-section--nueva-franja summary::-webkit-details-marker { display: none; }
-.nueva-franja-form { margin-top: 0.75rem; padding: 1rem; background: #f9fafb; border-radius: 8px; }
+.nueva-franja-section { background: #f0f6ff; border: 1px solid #c7ddf5; border-radius: 10px; padding: 1.25rem 1.5rem; }
+.nueva-franja-section h2 { color: #005a9c; margin-bottom: 0.25rem; }
+.nueva-franja-hint { color: #555; font-size: 0.9rem; margin-bottom: 1rem; }
+.nueva-franja-form { }
 .franja-fields { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
 .franja-fields .form-group { flex: 1; min-width: 120px; margin-bottom: 0; }
 
