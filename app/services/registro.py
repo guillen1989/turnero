@@ -16,13 +16,17 @@ _FRANJAS_DEFAULT = [
 
 
 def crear_franjas_default(grupo):
+    existentes = {
+        f.nombre for f in FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo.id).all()
+    }
     for nombre, inicio, fin in _FRANJAS_DEFAULT:
-        db.session.add(FranjaHoraria(
-            nombre=nombre,
-            hora_inicio=inicio,
-            hora_fin=fin,
-            grupo_intercambio=grupo,
-        ))
+        if nombre not in existentes:
+            db.session.add(FranjaHoraria(
+                nombre=nombre,
+                hora_inicio=inicio,
+                hora_fin=fin,
+                grupo_intercambio=grupo,
+            ))
 
 
 def _normalizar(texto):

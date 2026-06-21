@@ -33,11 +33,10 @@ def _extraer_turnos(prefix):
 
 
 def _asegurar_franjas(grupo_intercambio_id):
-    """Si el grupo no tiene franjas (usuarios anteriores al seeding), las crea ahora."""
-    if FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_intercambio_id).count() == 0:
-        grupo = db.session.get(GrupoIntercambio, grupo_intercambio_id)
-        crear_franjas_default(grupo)
-        db.session.commit()
+    """Añade al grupo cualquier franja por defecto que falte."""
+    grupo = db.session.get(GrupoIntercambio, grupo_intercambio_id)
+    crear_franjas_default(grupo)
+    db.session.commit()
 
 
 @bp.route("/publicar", methods=["GET", "POST"])
