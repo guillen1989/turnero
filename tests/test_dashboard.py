@@ -49,7 +49,7 @@ def test_index_autenticado_muestra_dashboard(client, db):
     _usuario_y_login(client)
     resp = client.get("/")
     assert resp.status_code == 200
-    assert "Mis publicaciones".encode() in resp.data
+    assert "Mis cambios publicados".encode() in resp.data
 
 
 def test_dashboard_sin_publicaciones_muestra_estado_vacio(client, db):
