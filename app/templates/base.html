@@ -26,6 +26,35 @@
     </nav>
   </header>
 
+  <!-- Banner instalación PWA (Android / Chrome) -->
+  <div id="pwa-install-banner" class="pwa-banner" style="display:none" aria-live="polite">
+    <div class="pwa-banner-body">
+      <img src="/static/icons/icon-192.png" class="pwa-banner-icon" alt="">
+      <div class="pwa-banner-text">
+        <strong>{{ _('Instala Turnero') }}</strong>
+        <span>{{ _('Accede más rápido desde tu pantalla de inicio') }}</span>
+      </div>
+    </div>
+    <div class="pwa-banner-actions">
+      <button class="btn btn-sm pwa-banner-btn" onclick="instalarPWA()">{{ _('Instalar') }}</button>
+      <button class="pwa-banner-close" onclick="cerrarBannerPWA()" aria-label="{{ _('Cerrar') }}">&#x2715;</button>
+    </div>
+  </div>
+
+  <!-- Banner instalación iOS (Safari) -->
+  <div id="pwa-ios-banner" class="pwa-banner" style="display:none" aria-live="polite">
+    <div class="pwa-banner-body">
+      <img src="/static/icons/icon-192.png" class="pwa-banner-icon" alt="">
+      <div class="pwa-banner-text">
+        <strong>{{ _('Instala Turnero') }}</strong>
+        <span>{{ _('Pulsa') }}
+          <svg class="ios-share-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          {{ _('y luego "Añadir a pantalla de inicio"') }}</span>
+      </div>
+    </div>
+    <button class="pwa-banner-close" onclick="cerrarBannerIOS()" aria-label="{{ _('Cerrar') }}">&#x2715;</button>
+  </div>
+
   <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -45,23 +74,44 @@
       navigator.serviceWorker.register('/sw.js').catch(function () {});
     }
 
-    // Botón de instalación PWA
+    // Banner de instalación PWA
+    var _INSTALL_KEY = 'pwa_banner_ok';
+    var _isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     var _deferredInstall = null;
-    window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();
-      _deferredInstall = e;
-      var btn = document.getElementById('btn-instalar-pwa');
-      if (btn) btn.style.display = '';
-    });
-    window.addEventListener('appinstalled', function () {
-      _deferredInstall = null;
-      var btn = document.getElementById('btn-instalar-pwa');
-      if (btn) btn.style.display = 'none';
-    });
+
+    function cerrarBannerPWA() {
+      document.getElementById('pwa-install-banner').style.display = 'none';
+      localStorage.setItem(_INSTALL_KEY, '1');
+    }
+    function cerrarBannerIOS() {
+      document.getElementById('pwa-ios-banner').style.display = 'none';
+      localStorage.setItem(_INSTALL_KEY, '1');
+    }
     function instalarPWA() {
       if (!_deferredInstall) return;
+      document.getElementById('pwa-install-banner').style.display = 'none';
       _deferredInstall.prompt();
-      _deferredInstall.userChoice.then(function () { _deferredInstall = null; });
+      _deferredInstall.userChoice.then(function (r) {
+        _deferredInstall = null;
+        if (r.outcome === 'accepted') localStorage.setItem(_INSTALL_KEY, '1');
+      });
+    }
+
+    if (!_isStandalone && !localStorage.getItem(_INSTALL_KEY)) {
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        _deferredInstall = e;
+        document.getElementById('pwa-install-banner').style.display = '';
+      });
+      window.addEventListener('appinstalled', function () {
+        _deferredInstall = null;
+        document.getElementById('pwa-install-banner').style.display = 'none';
+        localStorage.setItem(_INSTALL_KEY, '1');
+      });
+      var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      if (_isIOS) {
+        document.getElementById('pwa-ios-banner').style.display = '';
+      }
     }
 
     {% if current_user.is_authenticated %}
