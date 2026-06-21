@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Cambios publicados') }} — {{ _('CambiaTurnos') }}{% endblock %}
+
+{% block content %}
+<div class="cambios-page">
+  <div class="dashboard-header">
+    <h1>{{ _('Cambios publicados') }}</h1>
+    <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">{{ _('Publicar cambio') }}</a>
+  </div>
+
+  <form method="get" class="cambios-filtro" action="{{ url_for('main.cambios') }}">
+    <div class="cambios-filtro-fields">
+      <div class="form-group">
+        <label>{{ _('Mes') }}</label>
+        <select name="mes">
+          <option value="">{{ _('— Todos los meses —') }}</option>
+          {% for n, nombre in [
+            (1,  _('Enero')),   (2,  _('Febrero')), (3,  _('Marzo')),
+            (4,  _('Abril')),   (5,  _('Mayo')),    (6,  _('Junio')),
+            (7,  _('Julio')),   (8,  _('Agosto')),  (9,  _('Septiembre')),
+            (10, _('Octubre')), (11, _('Noviembre')),(12, _('Diciembre'))
+          ] %}
+          <option value="{{ n }}" {% if mes == n %}selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>{{ _('Día') }}</label>
+        <input type="number" name="dia" min="1" max="31"
+               placeholder="{{ _('Cualquier día') }}"
+               value="{{ dia if dia else '' }}">
+      </div>
+    </div>
+    <div class="cambios-filtro-actions">
+      <button type="submit" class="btn btn-primary btn-sm">{{ _('Filtrar') }}</button>
+      {% if mes or dia %}
+      <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary btn-sm">{{ _('Limpiar') }}</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if publicaciones %}
+  <ul class="publicaciones-list">
+    {% for pub in publicaciones %}
+    <li class="publicacion-card publicacion-card--ajena">
+      <div class="pub-autor">
+        <span class="pub-autor-nombre">{{ pub.usuario.nombre }}</span>
+        <span class="pub-fecha-creacion">{{ pub.fecha_creacion.strftime('%d/%m/%Y') }}</span>
+      </div>
+      <div class="turnos-cedidos">
+        <strong>{{ _('Quiere librar:') }}</strong>
+        {% for turno in pub.turnos_cedidos %}
+        <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</span>
+        {% endfor %}
+      </div>
+      <div class="turnos-aceptados">
+        <strong>{{ _('Se ofrece a trabajar:') }}</strong>
+        {% for turno in pub.turnos_aceptados %}
+        <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</span>
+        {% endfor %}
+      </div>
+      {% if pub.mensaje %}
+      <p class="match-mensaje">"{{ pub.mensaje }}"</p>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty-state">
+    {% if mes or dia %}
+      {{ _('No hay cambios publicados con ese filtro.') }}
+    {% else %}
+      {{ _('No hay cambios publicados por otros compañeros en este momento.') }}
+    {% endif %}
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

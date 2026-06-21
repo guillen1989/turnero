@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Jerarquía geográfica completa implementada. Pendiente: despliegue en Railway con flask db upgrade.
+Visor de cambios implementado. Pendiente: despliegue en Railway con flask db upgrade.
 
 ## Backlog (fuente: .backlog)
 - [x] B1: Mensaje opcional (≤200 chars) al publicar un cambio ✓
@@ -39,6 +39,7 @@ Jerarquía geográfica completa implementada. Pendiente: despliegue en Railway c
 - [x] Fase 9, paso 1: cascade hospital→unidad en registro y perfil · ruta /auth/perfil · API /auth/api/unidades · botón Actualizar + Activar notificaciones en dashboard · enlace Mi perfil en nav · 140 tests passing
 - [x] Fase 9, paso 2: campo es_admin en Usuario · migración · CLI flask init-admin · panel /admin (usuarios, hospitales, unidades, categorías, publicaciones) · 153 tests passing
 - [x] Fase 9, paso 3: jerarquía geográfica País > Provincia > Ciudad > Hospital · modelos Pais/Provincia/Ciudad · migración · API /auth/api/provincias|ciudades|hospitales · cascade JS 4 niveles · CRUD admin para países/provincias/ciudades · panel de perfil y registro actualizados · 155 tests passing
+- [x] Fase 9, paso 4: visor /cambios · filtro por mes y/o día · restringe a mismo grupo+categoría · enlace en nav · 166 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

@@ -11,10 +11,11 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="logo" href="{{ url_for('main.index') }}">{{ _('CambiaTurnos') }}</a>
+    <a class="logo" href="{{ url_for('main.index') }}">{{ _('Turnero') }}</a>
     <nav>
       {% if current_user.is_authenticated %}
         <span class="nav-user">{{ current_user.nombre }}</span>
+        <a href="{{ url_for('main.cambios') }}">{{ _('Ver cambios') }}</a>
         <a href="{{ url_for('auth.perfil') }}">{{ _('Mi perfil') }}</a>
         {% if current_user.es_admin %}<a href="{{ url_for('admin.index') }}">{{ _('Administración') }}</a>{% endif %}
         <a href="{{ url_for('auth.logout') }}">{{ _('Cerrar sesión') }}</a>
