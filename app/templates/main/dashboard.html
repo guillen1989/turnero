@@ -7,6 +7,7 @@
   <div class="dashboard-header">
     <h1>{{ _('Mis cambios publicados') }}</h1>
     <div class="dashboard-header-actions">
+      <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">{{ _('Publicar cambio') }}</a>
       <button type="button" class="btn btn-secondary btn-sm" id="btn-actualizar" onclick="window.location.reload()">{{ _('Actualizar') }}</button>
       <button type="button" class="btn btn-secondary btn-sm" id="btn-push">{{ _('Activar notificaciones') }}</button>
       <button type="button" class="btn btn-secondary btn-sm" id="btn-instalar-pwa" style="display:none" onclick="instalarPWA()">{{ _('Instalar app') }}</button>
@@ -16,15 +17,15 @@
   <nav class="estado-tabs">
     <a href="{{ url_for('main.index', estado='abierta') }}"
        class="estado-tab {% if estado_filtro == 'abierta' %}estado-tab--active{% endif %}">
-      {{ _('Activas') }}
+      {{ _('Activos') }}
     </a>
     <a href="{{ url_for('main.index', estado='confirmada') }}"
        class="estado-tab {% if estado_filtro == 'confirmada' %}estado-tab--active{% endif %}">
-      {{ _('Confirmadas') }}
+      {{ _('Confirmados') }}
     </a>
     <a href="{{ url_for('main.index', estado='caducada') }}"
        class="estado-tab {% if estado_filtro == 'caducada' %}estado-tab--active{% endif %}">
-      {{ _('Caducadas') }}
+      {{ _('Caducados') }}
     </a>
   </nav>
 
@@ -110,9 +111,6 @@
     </p>
   {% endif %}
 
-  <div class="dashboard-actions">
-    <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary">{{ _('Publicar cambio') }}</a>
-  </div>
 </div>
 
 <script>
