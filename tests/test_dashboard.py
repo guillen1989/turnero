@@ -93,6 +93,45 @@ def test_dashboard_muestra_match_propuesto(client, db):
     assert b"Rechazar" in resp.data
 
 
+def test_dashboard_por_defecto_muestra_solo_activas(client, db):
+    usuario = _usuario_y_login(client)
+    franja = _franja(usuario.unidad.grupo_intercambio_id)
+    _publicacion(usuario, franja, fecha_cedida=date(2026, 10, 1), fecha_aceptada=date(2026, 10, 2))
+    pub_caducada = _publicacion(usuario, franja, fecha_cedida=date(2026, 11, 1), fecha_aceptada=date(2026, 11, 2))
+    pub_caducada.estado = "caducada"
+    db.session.commit()
+
+    resp = client.get("/")
+    assert b"2026-10-01" in resp.data
+    assert b"2026-11-01" not in resp.data
+
+
+def test_dashboard_filtro_estado_caducada(client, db):
+    usuario = _usuario_y_login(client)
+    franja = _franja(usuario.unidad.grupo_intercambio_id)
+    _publicacion(usuario, franja, fecha_cedida=date(2026, 10, 1), fecha_aceptada=date(2026, 10, 2))
+    pub_caducada = _publicacion(usuario, franja, fecha_cedida=date(2026, 11, 1), fecha_aceptada=date(2026, 11, 2))
+    pub_caducada.estado = "caducada"
+    db.session.commit()
+
+    resp = client.get("/?estado=caducada")
+    assert b"2026-11-01" in resp.data
+    assert b"2026-10-01" not in resp.data
+
+
+def test_dashboard_filtro_estado_confirmada(client, db):
+    usuario = _usuario_y_login(client)
+    franja = _franja(usuario.unidad.grupo_intercambio_id)
+    _publicacion(usuario, franja, fecha_cedida=date(2026, 10, 1), fecha_aceptada=date(2026, 10, 2))
+    pub_confirmada = _publicacion(usuario, franja, fecha_cedida=date(2026, 11, 1), fecha_aceptada=date(2026, 11, 2))
+    pub_confirmada.estado = "confirmada"
+    db.session.commit()
+
+    resp = client.get("/?estado=confirmada")
+    assert b"2026-11-01" in resp.data
+    assert b"2026-10-01" not in resp.data
+
+
 def test_dashboard_no_muestra_publicaciones_ajenas(client, db):
     _usuario_y_login(client, email="ana@test.es")
     # Segundo usuario — misma unidad, sin login

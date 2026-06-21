@@ -274,6 +274,10 @@ body {
 .dashboard-header h1 { margin-bottom: 0; }
 .dashboard-header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .dashboard-actions { margin-top: 2rem; }
+.estado-tabs { display: flex; gap: 0.25rem; margin-bottom: 1.25rem; border-bottom: 2px solid #e0e0e0; }
+.estado-tab { padding: 0.5rem 1rem; text-decoration: none; color: #555; border-radius: 6px 6px 0 0; font-size: 0.95rem; border: 2px solid transparent; border-bottom: none; margin-bottom: -2px; }
+.estado-tab:hover { background: #f0f0f0; color: #1a1a1a; }
+.estado-tab--active { color: #005a9c; border-color: #e0e0e0; border-bottom-color: #fff; background: #fff; font-weight: 600; }
 
 /* Admin panel */
 .admin-layout { display: flex; gap: 1.5rem; align-items: flex-start; }

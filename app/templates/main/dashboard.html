@@ -13,6 +13,21 @@
     </div>
   </div>
 
+  <nav class="estado-tabs">
+    <a href="{{ url_for('main.index', estado='abierta') }}"
+       class="estado-tab {% if estado_filtro == 'abierta' %}estado-tab--active{% endif %}">
+      {{ _('Activas') }}
+    </a>
+    <a href="{{ url_for('main.index', estado='confirmada') }}"
+       class="estado-tab {% if estado_filtro == 'confirmada' %}estado-tab--active{% endif %}">
+      {{ _('Confirmadas') }}
+    </a>
+    <a href="{{ url_for('main.index', estado='caducada') }}"
+       class="estado-tab {% if estado_filtro == 'caducada' %}estado-tab--active{% endif %}">
+      {{ _('Caducadas') }}
+    </a>
+  </nav>
+
   {% if matches %}
   <section class="matches-section">
     <h2 class="matches-title">{{ _('Cambios compatibles encontrados') }}</h2>
@@ -88,7 +103,11 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="empty-state">{{ _('No tienes publicaciones activas.') }}</p>
+    <p class="empty-state">
+      {% if estado_filtro == 'confirmada' %}{{ _('No tienes publicaciones confirmadas.') }}
+      {% elif estado_filtro == 'caducada' %}{{ _('No tienes publicaciones caducadas.') }}
+      {% else %}{{ _('No tienes publicaciones activas.') }}{% endif %}
+    </p>
   {% endif %}
 
   <div class="dashboard-actions">

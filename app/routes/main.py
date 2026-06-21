@@ -36,18 +36,35 @@ def _matches_activos(usuario_id):
     return resultado
 
 
+_ESTADOS_DASHBOARD = {
+    "abierta": ["abierta", "parcialmente_resuelta"],
+    "confirmada": ["confirmada"],
+    "caducada": ["caducada"],
+}
+
+
 @bp.get("/")
 def index():
     if current_user.is_authenticated:
         caducar_publicaciones_expiradas()
+        estado_filtro = request.args.get("estado", "abierta")
+        if estado_filtro not in _ESTADOS_DASHBOARD:
+            estado_filtro = "abierta"
+        estados = _ESTADOS_DASHBOARD[estado_filtro]
         publicaciones = (
             PublicacionCambio.query
             .filter_by(usuario_id=current_user.id)
+            .filter(PublicacionCambio.estado.in_(estados))
             .order_by(PublicacionCambio.fecha_creacion.desc())
             .all()
         )
         matches = _matches_activos(current_user.id)
-        return render_template("main/dashboard.html", publicaciones=publicaciones, matches=matches)
+        return render_template(
+            "main/dashboard.html",
+            publicaciones=publicaciones,
+            matches=matches,
+            estado_filtro=estado_filtro,
+        )
     return render_template("main/index.html")
 
 
