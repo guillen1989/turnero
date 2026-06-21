@@ -8,8 +8,8 @@ bp = Blueprint("pwa", __name__)
 @bp.get("/manifest.json")
 def manifest():
     data = {
-        "name": "CambiaTurnos",
-        "short_name": "CambiaTurnos",
+        "name": "Turnero",
+        "short_name": "Turnero",
         "description": "Intercambio de turnos para personal sanitario",
         "start_url": "/",
         "display": "standalone",
