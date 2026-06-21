@@ -56,6 +56,7 @@ def index():
 def cambios():
     mes = request.args.get("mes", type=int)
     dia = request.args.get("dia", type=int)
+    nombre = request.args.get("usuario", "").strip()
 
     q = (
         PublicacionCambio.query
@@ -74,7 +75,10 @@ def cambios():
         q = q.filter(extract("month", TurnoCedido.fecha) == mes)
     if dia:
         q = q.filter(extract("day", TurnoCedido.fecha) == dia)
+    if nombre:
+        q = q.filter(Usuario.nombre.ilike(f"%{nombre}%"))
 
     publicaciones = q.distinct().order_by(PublicacionCambio.fecha_creacion.desc()).all()
 
-    return render_template("main/cambios.html", publicaciones=publicaciones, mes=mes, dia=dia)
+    return render_template("main/cambios.html", publicaciones=publicaciones,
+                           mes=mes, dia=dia, nombre=nombre)

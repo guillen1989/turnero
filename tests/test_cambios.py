@@ -150,3 +150,35 @@ def test_cambios_sin_filtro_muestra_todas_del_grupo(client, db):
     resp = client.get("/cambios")
     assert b"01/09/2026" in resp.data
     assert b"01/10/2026" in resp.data
+
+
+def test_cambios_filtro_usuario_por_nombre(client, db):
+    from app.services.registro import registrar_usuario as reg
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    u1 = reg("Ana García", "u1@test.es", "pass123", "H1", "Urgencias", cat.id)
+    u2 = reg("Pedro López", "u2@test.es", "pass123", "H1", "Urgencias", cat.id)
+    db.session.commit()
+    _login(client, u1.email)
+    _publicar(u2, date(2026, 9, 1), date(2026, 9, 2))
+
+    resp = client.get("/cambios?usuario=Pedro")
+    assert b"01/09/2026" in resp.data
+
+    resp2 = client.get("/cambios?usuario=Ana")
+    assert b"01/09/2026" not in resp2.data
+
+
+def test_cambios_filtro_usuario_insensible_a_mayusculas(client, db):
+    from app.services.registro import registrar_usuario as reg
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    u1 = reg("Ana García", "u1@test.es", "pass123", "H1", "Urgencias", cat.id)
+    u2 = reg("Pedro López", "u2@test.es", "pass123", "H1", "Urgencias", cat.id)
+    db.session.commit()
+    _login(client, u1.email)
+    _publicar(u2, date(2026, 9, 1), date(2026, 9, 2))
+
+    assert b"01/09/2026" in client.get("/cambios?usuario=pedro").data
+    assert b"01/09/2026" in client.get("/cambios?usuario=PEDRO").data
+    assert b"01/09/2026" in client.get("/cambios?usuario=pEdRo").data

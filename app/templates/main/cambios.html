@@ -31,10 +31,16 @@
                placeholder="{{ _('Cualquier día') }}"
                value="{{ dia if dia else '' }}">
       </div>
+      <div class="form-group">
+        <label>{{ _('Usuario') }}</label>
+        <input type="text" name="usuario"
+               placeholder="{{ _('Nombre del compañero') }}"
+               value="{{ nombre }}">
+      </div>
     </div>
     <div class="cambios-filtro-actions">
       <button type="submit" class="btn btn-primary btn-sm">{{ _('Filtrar') }}</button>
-      {% if mes or dia %}
+      {% if mes or dia or nombre %}
       <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary btn-sm">{{ _('Limpiar') }}</a>
       {% endif %}
     </div>
