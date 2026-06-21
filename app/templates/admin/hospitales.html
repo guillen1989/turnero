@@ -36,7 +36,8 @@
       <td>{{ h.unidades.count() }}</td>
       <td class="admin-actions">
         <a href="{{ url_for('admin.hospital_editar', id=h.id) }}" class="btn btn-secondary btn-xs">{{ _('Editar') }}</a>
-        <form method="post" action="{{ url_for('admin.hospital_eliminar', id=h.id) }}" style="display:inline" onsubmit="return confirm('{{ _('¿Eliminar este hospital?') }}')">
+        <form method="post" action="{{ url_for('admin.hospital_eliminar', id=h.id) }}" style="display:inline"
+              onsubmit="return confirm('{% if h.unidades.count() > 0 %}{{ _('¿Eliminar este hospital? Se eliminarán también sus %(n)s unidades. Esta acción no se puede deshacer.', n=h.unidades.count()) }}{% else %}{{ _('¿Eliminar este hospital?') }}{% endif %}')">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-danger btn-xs">{{ _('Eliminar') }}</button>
         </form>

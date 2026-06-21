@@ -526,12 +526,20 @@ def hospital_editar(id):
 @admin_required
 def hospital_eliminar(id):
     h = db.session.get(Hospital, id) or abort(404)
-    if h.unidades.count() > 0:
-        flash(_("No se puede eliminar: el hospital tiene unidades asociadas."), "danger")
-        return redirect(url_for("admin.hospitales"))
+    unidades = h.unidades.all()
+    for u in unidades:
+        if u.usuarios.count() > 0:
+            flash(_("No se puede eliminar: alguna de sus unidades tiene usuarios asociados."), "danger")
+            return redirect(url_for("admin.hospitales"))
+    for u in unidades:
+        db.session.delete(u)
     db.session.delete(h)
     db.session.commit()
-    flash(_("Hospital eliminado."), "success")
+    n = len(unidades)
+    if n:
+        flash(_("Hospital eliminado junto con sus %(n)s unidades.", n=n), "success")
+    else:
+        flash(_("Hospital eliminado."), "success")
     return redirect(url_for("admin.hospitales"))
 
 

@@ -191,7 +191,8 @@ def test_admin_crea_hospital(client, db):
     assert Hospital.query.filter_by(nombre="Hospital Nuevo Admin").count() == 1
 
 
-def test_admin_no_elimina_hospital_con_unidades(client, db):
+def test_admin_no_elimina_hospital_con_unidades_con_usuarios(client, db):
+    """Bloquea si alguna unidad del hospital tiene usuarios."""
     _login_admin(client, db)
     h = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
     resp = client.post(
@@ -201,6 +202,33 @@ def test_admin_no_elimina_hospital_con_unidades(client, db):
     )
     assert resp.status_code == 200
     assert Hospital.query.filter_by(nombre="Hospital Admin Test").count() == 1
+
+
+def test_admin_elimina_hospital_con_unidades_sin_usuarios(client, db):
+    """Permite eliminar un hospital con unidades vacías; borra también las unidades."""
+    from app.extensions import db as _db
+    from app.models import GrupoIntercambio
+    _login_admin(client, db)
+    grupo = GrupoIntercambio()
+    _db.session.add(grupo)
+    _db.session.flush()
+    h = Hospital(nombre="Hospital Vacío")
+    _db.session.add(h)
+    _db.session.flush()
+    u1 = Unidad(nombre="Planta A", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    u2 = Unidad(nombre="Planta B", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    _db.session.add_all([u1, u2])
+    _db.session.commit()
+
+    assert Unidad.query.filter_by(hospital_id=h.id).count() == 2
+    resp = client.post(
+        f"/admin/hospitales/{h.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Hospital.query.filter_by(nombre="Hospital Vacío").count() == 0
+    assert Unidad.query.filter_by(hospital_id=h.id).count() == 0
 
 
 # ---------------------------------------------------------------------------
