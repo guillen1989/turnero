@@ -21,7 +21,7 @@
         {% for tc in pub.turnos_cedidos %}
         <div class="turno-row">
           <label class="turno-fecha-label">{{ _('— Selecciona fecha —') }}</label>
-          <input type="date" name="fecha_cedida_{{ loop.index0 }}" value="{{ tc.fecha }}" required>
+          <input type="date" name="fecha_cedida_{{ loop.index0 }}" value="{{ tc.fecha }}" required min="{{ today }}">
           <select name="franja_cedida_{{ loop.index0 }}" required>
             <option value="">{{ _('— Selecciona franja —') }}</option>
             {% for f in franjas %}
@@ -47,7 +47,7 @@
         {% for ta in pub.turnos_aceptados %}
         <div class="turno-row">
           <label class="turno-fecha-label">{{ _('— Selecciona fecha —') }}</label>
-          <input type="date" name="fecha_aceptada_{{ loop.index0 }}" value="{{ ta.fecha }}" required>
+          <input type="date" name="fecha_aceptada_{{ loop.index0 }}" value="{{ ta.fecha }}" required min="{{ today }}">
           <select name="franja_aceptada_{{ loop.index0 }}" required>
             <option value="">{{ _('— Selecciona franja —') }}</option>
             {% for f in franjas %}
@@ -92,7 +92,7 @@
     div.className = 'turno-row';
     div.innerHTML =
       '<label class="turno-fecha-label">{{ _("— Selecciona fecha —") }}</label>' +
-      '<input type="date" name="fecha_' + prefix + '_' + idx + '" required>' +
+      '<input type="date" name="fecha_' + prefix + '_' + idx + '" required min="{{ today }}">' +
       '<select name="franja_' + prefix + '_' + idx + '" required>' +
       '<option value="">{{ _("— Selecciona franja —") }}</option>' +
       franjaOptions +

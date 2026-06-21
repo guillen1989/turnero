@@ -1,4 +1,4 @@
-from datetime import datetime, time as dtime
+from datetime import date, datetime, time as dtime
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_babel import _
@@ -89,11 +89,16 @@ def nueva():
 
         if not cedidos:
             flash(_("Debes indicar al menos un turno que cedes."), "danger")
-            return render_template("publicaciones/publicar.html", franjas=franjas)
+            return render_template("publicaciones/publicar.html", franjas=franjas, today=date.today().isoformat())
 
         if not aceptados:
             flash(_("Debes indicar al menos un turno que aceptarías."), "danger")
-            return render_template("publicaciones/publicar.html", franjas=franjas)
+            return render_template("publicaciones/publicar.html", franjas=franjas, today=date.today().isoformat())
+
+        hoy = date.today()
+        if any(f < hoy for f, _ in cedidos + aceptados):
+            flash(_("Las fechas de los turnos no pueden ser anteriores a hoy."), "danger")
+            return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
 
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
         pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje)
@@ -102,7 +107,7 @@ def nueva():
         flash(_("Publicación creada correctamente."), "success")
         return redirect(url_for("main.index"))
 
-    return render_template("publicaciones/publicar.html", franjas=franjas)
+    return render_template("publicaciones/publicar.html", franjas=franjas, today=date.today().isoformat())
 
 
 @bp.post("/publicaciones/<int:pub_id>/cancelar")
@@ -143,10 +148,15 @@ def editar(pub_id):
 
         if not cedidos:
             flash(_("Debes indicar al menos un turno que cedes."), "danger")
-            return render_template("publicaciones/editar.html", pub=pub, franjas=franjas)
+            return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=date.today().isoformat())
         if not aceptados:
             flash(_("Debes indicar al menos un turno que aceptarías."), "danger")
-            return render_template("publicaciones/editar.html", pub=pub, franjas=franjas)
+            return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=date.today().isoformat())
+
+        hoy = date.today()
+        if any(f < hoy for f, _ in cedidos + aceptados):
+            flash(_("Las fechas de los turnos no pueden ser anteriores a hoy."), "danger")
+            return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=hoy.isoformat())
 
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
         editar_publicacion(pub, cedidos, aceptados, mensaje=mensaje)
@@ -155,7 +165,7 @@ def editar(pub_id):
         flash(_("Publicación actualizada."), "success")
         return redirect(url_for("main.index"))
 
-    return render_template("publicaciones/editar.html", pub=pub, franjas=franjas)
+    return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=date.today().isoformat())
 
 
 @bp.post("/publicaciones/<int:pub_id>/eliminar")

@@ -112,3 +112,33 @@ def test_publicar_sin_turno_cedido_muestra_error(client, db):
     }, follow_redirects=True)
     assert resp.status_code == 200
     assert PublicacionCambio.query.count() == 0
+
+
+def test_publicar_rechaza_turno_cedido_con_fecha_pasada(client, db):
+    from datetime import date, timedelta
+    usuario = _usuario_y_login(client)
+    franja = _franja(db, usuario.unidad.grupo_intercambio_id)
+    ayer = (date.today() - timedelta(days=1)).isoformat()
+    resp = client.post("/publicar", data={
+        "fecha_cedida_0": ayer,
+        "franja_cedida_0": franja.id,
+        "fecha_aceptada_0": "2026-09-02",
+        "franja_aceptada_0": franja.id,
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    assert PublicacionCambio.query.count() == 0
+
+
+def test_publicar_rechaza_turno_aceptado_con_fecha_pasada(client, db):
+    from datetime import date, timedelta
+    usuario = _usuario_y_login(client)
+    franja = _franja(db, usuario.unidad.grupo_intercambio_id)
+    ayer = (date.today() - timedelta(days=1)).isoformat()
+    resp = client.post("/publicar", data={
+        "fecha_cedida_0": "2026-09-01",
+        "franja_cedida_0": franja.id,
+        "fecha_aceptada_0": ayer,
+        "franja_aceptada_0": franja.id,
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    assert PublicacionCambio.query.count() == 0
