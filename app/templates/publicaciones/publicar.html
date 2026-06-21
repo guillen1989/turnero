@@ -15,40 +15,50 @@
   <form method="post" id="publicar-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <section class="turnos-section">
+    <section class="turnos-section turnos-section--ceder">
       <h2>{{ _('Turnos que quiero librar') }}</h2>
       <div id="cedidos-list">
         <div class="turno-row">
-          <label class="turno-fecha-label">{{ _('— Selecciona fecha —') }}</label>
-          <input type="date" name="fecha_cedida_0" required min="{{ today }}">
-          <select name="franja_cedida_0" required>
-            <option value="">{{ _('— Selecciona franja —') }}</option>
-            {% for f in franjas %}
-            <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
-            {% endfor %}
-          </select>
+          <div class="turno-row-campo">
+            <label>{{ _('Fecha') }}</label>
+            <input type="date" name="fecha_cedida_0" required min="{{ today }}">
+          </div>
+          <div class="turno-row-campo">
+            <label>{{ _('Tipo de turno') }}</label>
+            <select name="franja_cedida_0" required>
+              <option value="">{{ _('— Selecciona —') }}</option>
+              {% for f in franjas %}
+              <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
       </div>
-      <button type="button" class="btn btn-secondary" id="btn-add-cedida">
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-add-cedida">
         {{ _('+ Añadir otro turno a librar') }}
       </button>
     </section>
 
-    <section class="turnos-section">
+    <section class="turnos-section turnos-section--aceptar">
       <h2>{{ _('Turnos que quiero trabajar') }}</h2>
       <div id="aceptados-list">
         <div class="turno-row">
-          <label class="turno-fecha-label">{{ _('— Selecciona fecha —') }}</label>
-          <input type="date" name="fecha_aceptada_0" required min="{{ today }}">
-          <select name="franja_aceptada_0" required>
-            <option value="">{{ _('— Selecciona franja —') }}</option>
-            {% for f in franjas %}
-            <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
-            {% endfor %}
-          </select>
+          <div class="turno-row-campo">
+            <label>{{ _('Fecha') }}</label>
+            <input type="date" name="fecha_aceptada_0" required min="{{ today }}">
+          </div>
+          <div class="turno-row-campo">
+            <label>{{ _('Tipo de turno') }}</label>
+            <select name="franja_aceptada_0" required>
+              <option value="">{{ _('— Selecciona —') }}</option>
+              {% for f in franjas %}
+              <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
+              {% endfor %}
+            </select>
+          </div>
         </div>
       </div>
-      <button type="button" class="btn btn-secondary" id="btn-add-aceptada">
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-add-aceptada">
         {{ _('+ Añadir otro turno que puedo trabajar') }}
       </button>
     </section>
@@ -101,12 +111,17 @@
     var div = document.createElement('div');
     div.className = 'turno-row';
     div.innerHTML =
-      '<label class="turno-fecha-label">{{ _("— Selecciona fecha —") }}</label>' +
-      '<input type="date" name="fecha_' + prefix + '_' + idx + '" required min="{{ today }}">' +
-      '<select name="franja_' + prefix + '_' + idx + '" required>' +
-      '<option value="">{{ _("— Selecciona franja —") }}</option>' +
-      franjaOptions +
-      '</select>' +
+      '<div class="turno-row-campo">' +
+        '<label>{{ _("Fecha") }}</label>' +
+        '<input type="date" name="fecha_' + prefix + '_' + idx + '" required min="{{ today }}">' +
+      '</div>' +
+      '<div class="turno-row-campo">' +
+        '<label>{{ _("Tipo de turno") }}</label>' +
+        '<select name="franja_' + prefix + '_' + idx + '" required>' +
+          '<option value="">{{ _("— Selecciona —") }}</option>' +
+          franjaOptions +
+        '</select>' +
+      '</div>' +
       '<button type="button" class="btn-remove" onclick="this.parentElement.remove()">✕</button>';
     list.appendChild(div);
   }

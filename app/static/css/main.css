@@ -280,6 +280,84 @@ body {
 .estado-tab--active { color: #005a9c; border-color: #e0e0e0; border-bottom-color: #fff; background: #fff; font-weight: 600; }
 .tab-count { font-size: 0.82em; opacity: 0.7; }
 
+/* Publish / Edit form */
+.form-container { max-width: 660px; margin: 2rem auto; padding: 0 1rem; }
+.form-container > h1 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+
+.turnos-section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  border-top: 3px solid #e5e7eb;
+}
+.turnos-section h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.turnos-section--ceder  { border-top-color: #f87171; }
+.turnos-section--ceder h2  { color: #b91c1c; }
+.turnos-section--aceptar { border-top-color: #34d399; }
+.turnos-section--aceptar h2 { color: #065f46; }
+
+.turno-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+.turno-row-campo { flex: 1; min-width: 140px; }
+.turno-row-campo label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3rem;
+}
+.turno-row-campo input[type="date"],
+.turno-row-campo select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #1a1a1a;
+}
+.turno-row-campo input[type="date"]:focus,
+.turno-row-campo select:focus {
+  outline: none;
+  border-color: #005a9c;
+  box-shadow: 0 0 0 2px rgba(0,90,156,.15);
+}
+.btn-remove {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  line-height: 1;
+  align-self: flex-end;
+}
+.btn-remove:hover { background: #fee2e2; }
+
+.form-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem; }
+
 /* Admin panel */
 .admin-layout { display: flex; gap: 1.5rem; align-items: flex-start; }
 .admin-nav { min-width: 160px; background: #fff; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); display: flex; flex-direction: column; gap: 0.25rem; }
