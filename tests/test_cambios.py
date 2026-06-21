@@ -184,6 +184,42 @@ def test_cambios_filtro_usuario_insensible_a_mayusculas(client, db):
     assert b"01/09/2026" in client.get("/cambios?usuario=pEdRo").data
 
 
+def test_cambios_filtro_dia_incluye_turno_aceptado(client, db):
+    """El filtro por día muestra publicaciones cuyo turno aceptado coincide, no solo el cedido."""
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+    # u2 quiere librar el día 5, se ofrece a trabajar el día 10
+    _publicar(u2, date(2026, 9, 5), date(2026, 9, 10))
+
+    resp = client.get("/cambios?dia=10")
+    assert b"05/09/2026" in resp.data
+
+
+def test_cambios_filtro_mes_incluye_turno_aceptado(client, db):
+    """El filtro por mes muestra publicaciones cuyo turno aceptado coincide."""
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+    # u2 quiere librar en septiembre, se ofrece a trabajar en octubre
+    _publicar(u2, date(2026, 9, 5), date(2026, 10, 1))
+
+    resp = client.get("/cambios?mes=10")
+    assert b"05/09/2026" in resp.data
+
+
+def test_cambios_filtro_mes_y_dia_incluye_turno_aceptado(client, db):
+    """El filtro combinado mes+día también busca en el turno aceptado."""
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+    # cedido: 5 sep | aceptado: 1 oct
+    _publicar(u2, date(2026, 9, 5), date(2026, 10, 1))
+
+    resp = client.get("/cambios?mes=10&dia=1")
+    assert b"05/09/2026" in resp.data
+
+
 def test_cambios_filtro_franja(client, db):
     u1 = _usuario(email="u1@test.es")
     u2 = _usuario(email="u2@test.es")

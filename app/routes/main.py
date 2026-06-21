@@ -1,9 +1,9 @@
 from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
-from sqlalchemy import extract
+from sqlalchemy import and_, exists, extract, or_
 
 from app.extensions import db
-from app.models import FranjaHoraria, MatchCambio, MatchParticipacion, PublicacionCambio, TurnoCedido, Unidad, Usuario
+from app.models import FranjaHoraria, MatchCambio, MatchParticipacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
 from app.services.caducidad import caducar_publicaciones_expiradas
 
 bp = Blueprint("main", __name__)
@@ -80,10 +80,19 @@ def cambios():
         )
     )
 
-    if mes:
-        q = q.filter(extract("month", TurnoCedido.fecha) == mes)
-    if dia:
-        q = q.filter(extract("day", TurnoCedido.fecha) == dia)
+    if mes or dia:
+        cedido_parts = []
+        aceptado_parts = [TurnoAceptado.publicacion_id == PublicacionCambio.id]
+        if mes:
+            cedido_parts.append(extract("month", TurnoCedido.fecha) == mes)
+            aceptado_parts.append(extract("month", TurnoAceptado.fecha) == mes)
+        if dia:
+            cedido_parts.append(extract("day", TurnoCedido.fecha) == dia)
+            aceptado_parts.append(extract("day", TurnoAceptado.fecha) == dia)
+        q = q.filter(or_(
+            and_(*cedido_parts),
+            exists().where(and_(*aceptado_parts)),
+        ))
     if nombre:
         q = q.filter(Usuario.nombre.ilike(f"%{nombre}%"))
     if franja_id:
