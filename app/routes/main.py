@@ -44,8 +44,7 @@ _ESTADOS_DASHBOARD = {
 }
 
 
-def _publicaciones_pendientes(usuario_id):
-    """Publicaciones en las que el usuario ya confirmó pero el otro participante aún no."""
+def _query_pendientes(usuario_id):
     return (
         PublicacionCambio.query
         .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
@@ -56,9 +55,28 @@ def _publicaciones_pendientes(usuario_id):
             MatchCambio.estado == "confirmado_parcial",
         )
         .distinct()
-        .order_by(PublicacionCambio.fecha_creacion.desc())
-        .all()
     )
+
+
+def _publicaciones_pendientes(usuario_id):
+    """Publicaciones en las que el usuario ya confirmó pero el otro participante aún no."""
+    return _query_pendientes(usuario_id).order_by(PublicacionCambio.fecha_creacion.desc()).all()
+
+
+def _conteos_tabs(usuario_id):
+    def _count(estados):
+        return (
+            PublicacionCambio.query
+            .filter_by(usuario_id=usuario_id)
+            .filter(PublicacionCambio.estado.in_(estados))
+            .count()
+        )
+    return {
+        "abierta": _count(["abierta", "parcialmente_resuelta"]),
+        "pendiente": _query_pendientes(usuario_id).count(),
+        "confirmada": _count(["confirmada"]),
+        "caducada": _count(["caducada"]),
+    }
 
 
 @bp.get("/")
@@ -82,11 +100,13 @@ def index():
             )
 
         matches = _matches_activos(current_user.id)
+        conteos = _conteos_tabs(current_user.id)
         return render_template(
             "main/dashboard.html",
             publicaciones=publicaciones,
             matches=matches,
             estado_filtro=estado_filtro,
+            conteos=conteos,
         )
     return render_template("main/index.html")
 

@@ -192,3 +192,23 @@ def test_dashboard_no_muestra_publicaciones_ajenas(client, db):
     resp = client.get("/")
     assert b"No tienes publicaciones" in resp.data
     assert b"2026-08-01" not in resp.data
+
+
+def test_dashboard_tabs_muestran_conteos(client, db):
+    """Cada pestaña muestra entre paréntesis el número de publicaciones que contiene."""
+    usuario = _usuario_y_login(client)
+    franja = _franja(usuario.unidad.grupo_intercambio_id)
+    # 2 activas
+    _publicacion(usuario, franja, fecha_cedida=date(2026, 10, 1), fecha_aceptada=date(2026, 10, 2))
+    _publicacion(usuario, franja, fecha_cedida=date(2026, 10, 3), fecha_aceptada=date(2026, 10, 4))
+    # 1 confirmada
+    pub_conf = _publicacion(usuario, franja, fecha_cedida=date(2026, 11, 1), fecha_aceptada=date(2026, 11, 2))
+    pub_conf.estado = "confirmada"
+    # 1 caducada
+    pub_cad = _publicacion(usuario, franja, fecha_cedida=date(2026, 12, 1), fecha_aceptada=date(2026, 12, 2))
+    pub_cad.estado = "caducada"
+    db.session.commit()
+
+    resp = client.get("/")
+    assert b"(2)" in resp.data  # activas
+    assert b"(1)" in resp.data  # confirmadas y caducadas comparten el (1)

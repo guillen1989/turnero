@@ -17,19 +17,19 @@
   <nav class="estado-tabs">
     <a href="{{ url_for('main.index', estado='abierta') }}"
        class="estado-tab {% if estado_filtro == 'abierta' %}estado-tab--active{% endif %}">
-      {{ _('Activos') }}
+      {{ _('Activos') }} <span class="tab-count">({{ conteos.abierta }})</span>
     </a>
     <a href="{{ url_for('main.index', estado='pendiente') }}"
        class="estado-tab {% if estado_filtro == 'pendiente' %}estado-tab--active{% endif %}">
-      {{ _('Pendientes de confirmar') }}
+      {{ _('Pendientes de confirmar') }} <span class="tab-count">({{ conteos.pendiente }})</span>
     </a>
     <a href="{{ url_for('main.index', estado='confirmada') }}"
        class="estado-tab {% if estado_filtro == 'confirmada' %}estado-tab--active{% endif %}">
-      {{ _('Confirmados') }}
+      {{ _('Confirmados') }} <span class="tab-count">({{ conteos.confirmada }})</span>
     </a>
     <a href="{{ url_for('main.index', estado='caducada') }}"
        class="estado-tab {% if estado_filtro == 'caducada' %}estado-tab--active{% endif %}">
-      {{ _('Caducados') }}
+      {{ _('Caducados') }} <span class="tab-count">({{ conteos.caducada }})</span>
     </a>
   </nav>
 
