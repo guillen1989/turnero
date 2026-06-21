@@ -203,6 +203,7 @@ body {
 .btn-danger { background: #dc2626; color: #fff; }
 .btn-danger:hover { background: #b91c1c; }
 
+.pub-acciones { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
 .dashboard-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; }
 .dashboard-header h1 { margin-bottom: 0; }
 .dashboard-header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }

@@ -74,6 +74,16 @@
           <span class="turno">{{ turno.fecha }} — {{ turno.franja_horaria.nombre }}</span>
           {% endfor %}
         </div>
+        {% if pub.esta_activa() %}
+        <div class="pub-acciones">
+          <a href="{{ url_for('publicaciones.editar', pub_id=pub.id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>
+          <form method="post" action="{{ url_for('publicaciones.eliminar', pub_id=pub.id) }}" style="display:inline"
+                onsubmit="return confirm('{{ _('¿Seguro que quieres eliminar esta publicación? Esta acción no se puede deshacer.') }}')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-sm">{{ _('Eliminar') }}</button>
+          </form>
+        </div>
+        {% endif %}
       </li>
       {% endfor %}
     </ul>

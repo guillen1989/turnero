@@ -6,7 +6,7 @@ from flask_login import current_user, login_required
 
 from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, PublicacionCambio
-from app.services.publicaciones import cancelar_publicacion, publicar_cambio
+from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default
 from app.matching.service import buscar_matches_para, crear_match_directo
 
@@ -115,4 +115,55 @@ def cancelar(pub_id):
         abort(409)
     cancelar_publicacion(pub)
     flash(_("Publicación cancelada."), "info")
+    return redirect(url_for("main.index"))
+
+
+@bp.route("/publicaciones/<int:pub_id>/editar", methods=["GET", "POST"])
+@login_required
+def editar(pub_id):
+    pub = db.get_or_404(PublicacionCambio, pub_id)
+    if pub.usuario_id != current_user.id:
+        abort(403)
+    if not pub.esta_activa():
+        flash(_("Solo puedes editar publicaciones activas."), "danger")
+        return redirect(url_for("main.index"))
+
+    grupo_id = current_user.unidad.grupo_intercambio_id
+    _asegurar_franjas(grupo_id)
+    franjas = (
+        FranjaHoraria.query
+        .filter_by(grupo_intercambio_id=grupo_id)
+        .order_by(FranjaHoraria.hora_inicio)
+        .all()
+    )
+
+    if request.method == "POST":
+        cedidos = _extraer_turnos("cedida")
+        aceptados = _extraer_turnos("aceptada")
+
+        if not cedidos:
+            flash(_("Debes indicar al menos un turno que cedes."), "danger")
+            return render_template("publicaciones/editar.html", pub=pub, franjas=franjas)
+        if not aceptados:
+            flash(_("Debes indicar al menos un turno que aceptarías."), "danger")
+            return render_template("publicaciones/editar.html", pub=pub, franjas=franjas)
+
+        mensaje = request.form.get("mensaje", "").strip()[:200] or None
+        editar_publicacion(pub, cedidos, aceptados, mensaje=mensaje)
+        for candidata in buscar_matches_para(pub):
+            crear_match_directo(pub, candidata)
+        flash(_("Publicación actualizada."), "success")
+        return redirect(url_for("main.index"))
+
+    return render_template("publicaciones/editar.html", pub=pub, franjas=franjas)
+
+
+@bp.post("/publicaciones/<int:pub_id>/eliminar")
+@login_required
+def eliminar(pub_id):
+    pub = db.get_or_404(PublicacionCambio, pub_id)
+    if pub.usuario_id != current_user.id:
+        abort(403)
+    eliminar_publicacion(pub)
+    flash(_("Publicación eliminada."), "success")
     return redirect(url_for("main.index"))
