@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Red de seguridad de tests completada. Siguiente: continuar con funcionalidades de producto o despliegue en Railway.
+Todas las mejoras del backlog implementadas. Pendiente: despliegue en Railway con flask db upgrade (3 migraciones nuevas).
 
 ## Backlog (fuente: .backlog)
 - [x] B1: Mensaje opcional (≤200 chars) al publicar un cambio ✓
@@ -12,6 +12,12 @@ Red de seguridad de tests completada. Siguiente: continuar con funcionalidades d
 - [x] B3: Botón de instalación de la PWA ✓
 - [x] B4: Tipos de turno personalizados al publicar (nombre + horario) ✓
 - [x] B5: Arreglar notificaciones push (CSRF + codificación VAPID) ✓
+- [x] B6: Pestaña confirmados muestra nombre del compañero ✓
+- [x] B7: Banner de instalación reaparece tras desinstalar la PWA ✓
+- [x] B8: Publicar tipo 'regalo' (ofrecer turno sin recibir nada) ✓
+- [x] B9: Publicar tipo 'petición' (librar turno sin ofrecer nada) ✓
+- [x] B10: Ofrecer 'cualquier turno de un día' al publicar ✓
+- [x] B11: Avisos por email con límite diario configurable ✓
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
