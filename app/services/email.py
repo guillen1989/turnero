@@ -16,7 +16,7 @@ def _enviar_correo(destinatario, asunto, cuerpo):
         msg = Message(subject=asunto, recipients=[destinatario], body=cuerpo)
         mail.send(msg)
     except Exception as exc:
-        current_app.logger.warning("Error enviando email a %s: %s", destinatario, exc)
+        current_app.logger.error("Error enviando email a %s: %s", destinatario, exc)
 
 
 def _avisos_hoy(usuario_id, hoy):
