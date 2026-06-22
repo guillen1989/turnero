@@ -30,7 +30,7 @@ self.addEventListener('push', event => {
   const options = {
     body: data.body || '',
     icon: '/static/icons/icon-192.png',
-    badge: '/static/icons/icon-192.png',
+    badge: '/static/icons/badge-72.png',
     data: { url: '/' },
   };
   event.waitUntil(self.registration.showNotification(title, options));
