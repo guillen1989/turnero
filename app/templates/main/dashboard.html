@@ -87,7 +87,7 @@
         <div class="turnos-aceptados">
           <strong>{{ _('Me ofrezco a trabajar:') }}</strong>
           {% for turno in pub.turnos_aceptados %}
-          <span class="turno">{{ turno.fecha }} — {{ turno.franja_horaria.nombre }}</span>
+          <span class="turno">{{ turno.fecha }} — {% if turno.cualquier_franja %}{{ _('Cualquier turno') }}{% else %}{{ turno.franja_horaria.nombre }}{% endif %}</span>
           {% endfor %}
         </div>
         {% elif pub.tipo == 'peticion' %}
@@ -108,7 +108,7 @@
         <div class="turnos-aceptados">
           <strong>{{ _('Me ofrezco a trabajar:') }}</strong>
           {% for turno in pub.turnos_aceptados %}
-          <span class="turno">{{ turno.fecha }} — {{ turno.franja_horaria.nombre }}</span>
+          <span class="turno">{{ turno.fecha }} — {% if turno.cualquier_franja %}{{ _('Cualquier turno') }}{% else %}{{ turno.franja_horaria.nombre }}{% endif %}</span>
           {% endfor %}
         </div>
         {% endif %}

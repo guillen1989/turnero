@@ -81,8 +81,9 @@ class TurnoAceptado(db.Model):
     )
     fecha = db.Column(db.Date, nullable=False)
     franja_horaria_id = db.Column(
-        db.Integer, db.ForeignKey("franja_horaria.id"), nullable=False
+        db.Integer, db.ForeignKey("franja_horaria.id"), nullable=True
     )
+    cualquier_franja = db.Column(db.Boolean, nullable=False, default=False)
 
     publicacion = db.relationship("PublicacionCambio", back_populates="turnos_aceptados")
     franja_horaria = db.relationship("FranjaHoraria")

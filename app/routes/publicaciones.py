@@ -14,18 +14,23 @@ bp = Blueprint("publicaciones", __name__)
 
 
 def _extraer_turnos(prefix):
-    """Extrae pares (fecha, franja_id) del form con claves fecha_{prefix}_N / franja_{prefix}_N."""
+    """Extrae pares (fecha, franja_id) del form con claves fecha_{prefix}_N / franja_{prefix}_N.
+
+    franja_id=None si el valor enviado es '0' (cualquier franja).
+    """
     turnos = []
     idx = 0
     while True:
         fecha_str = request.form.get(f"fecha_{prefix}_{idx}", "").strip()
         franja_str = request.form.get(f"franja_{prefix}_{idx}", "").strip()
-        if not fecha_str or not franja_str:
+        if not fecha_str:
             break
         try:
             fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
-            franja_id = int(franja_str)
-            turnos.append((fecha, franja_id))
+            if franja_str == "0":
+                turnos.append((fecha, None))
+            elif franja_str:
+                turnos.append((fecha, int(franja_str)))
         except (ValueError, TypeError):
             pass
         idx += 1

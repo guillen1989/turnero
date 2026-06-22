@@ -163,6 +163,24 @@ def test_publicar_peticion_crea_publicacion_sin_aceptados(client, db):
     assert len(pub.turnos_aceptados) == 0
 
 
+def test_publicar_acepta_cualquier_franja_en_turno_aceptado(client, db):
+    """Al ofrecer 'cualquier franja', el turno aceptado se guarda con franja_horaria_id=None."""
+    usuario = _usuario_y_login(client)
+    franja = _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.post("/publicar", data={
+        "tipo": "cambio",
+        "fecha_cedida_0": "2026-09-01",
+        "franja_cedida_0": franja.id,
+        "fecha_aceptada_0": "2026-09-02",
+        "franja_aceptada_0": "0",  # 0 = cualquier franja
+    }, follow_redirects=False)
+    assert resp.status_code == 302
+    pub = PublicacionCambio.query.filter_by(usuario_id=usuario.id).first()
+    assert pub is not None
+    assert pub.turnos_aceptados[0].franja_horaria_id is None
+    assert pub.turnos_aceptados[0].cualquier_franja is True
+
+
 def test_publicar_rechaza_turno_aceptado_con_fecha_pasada(client, db):
     from datetime import date, timedelta
     usuario = _usuario_y_login(client)

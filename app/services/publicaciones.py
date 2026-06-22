@@ -20,10 +20,12 @@ def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, 
         ))
 
     for fecha, franja_id in turnos_aceptados:
+        cualquier = franja_id is None
         db.session.add(TurnoAceptado(
             publicacion_id=pub.id,
             fecha=fecha,
-            franja_horaria_id=franja_id,
+            franja_horaria_id=None if cualquier else franja_id,
+            cualquier_franja=cualquier,
         ))
 
     db.session.commit()
@@ -68,7 +70,12 @@ def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo
     for fecha, franja_id in turnos_cedidos:
         db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja_id))
     for fecha, franja_id in turnos_aceptados:
-        db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja_id))
+        cualquier = franja_id is None
+        db.session.add(TurnoAceptado(
+            publicacion_id=pub.id, fecha=fecha,
+            franja_horaria_id=None if cualquier else franja_id,
+            cualquier_franja=cualquier,
+        ))
 
     pub.estado = "abierta"
     db.session.commit()

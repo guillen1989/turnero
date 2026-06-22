@@ -204,6 +204,39 @@ def test_peticion_hace_match_con_regalo(db):
     assert matches[0].usuario_id == ana.id
 
 
+def test_cualquier_franja_hace_match_con_cedido_del_mismo_dia(db):
+    """Un aceptado con cualquier_franja=True hace match con cualquier cedido de esa fecha."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    franja_m = _franja(ana.unidad.grupo_intercambio_id)  # Mañana
+    franja_t = _franja(ana.unidad.grupo_intercambio_id, nombre="Tarde")
+    fecha = date(2026, 6, 25)
+
+    # Ana cede mañana del día 25
+    pub_ana = PublicacionCambio(usuario_id=ana.id)
+    db.session.add(pub_ana)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub_ana.id, fecha=fecha, franja_horaria_id=franja_m.id))
+    # Ana acepta cualquier turno del día 26
+    from app.models import TurnoAceptado
+    db.session.add(TurnoAceptado(publicacion_id=pub_ana.id, fecha=date(2026, 6, 26),
+                                 franja_horaria_id=None, cualquier_franja=True))
+    db.session.commit()
+
+    # Pedro cede tarde del día 26 y acepta mañana del día 25
+    pub_pedro = PublicacionCambio(usuario_id=pedro.id)
+    db.session.add(pub_pedro)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 6, 26), franja_horaria_id=franja_t.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=fecha, franja_horaria_id=franja_m.id))
+    db.session.commit()
+
+    # Ana acepta "cualquier franja" del 26, Pedro cede tarde del 26 → match
+    matches = buscar_matches_para(pub_ana)
+    assert len(matches) == 1
+    assert matches[0].usuario_id == pedro.id
+
+
 def test_cambio_no_hace_match_con_regalo(db):
     """Una publicación tipo 'cambio' no hace match con una tipo 'regalo'."""
     ana = _usuario("Ana", "ana@test.es")

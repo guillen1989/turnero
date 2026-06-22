@@ -9,6 +9,7 @@ Responsabilidades:
 """
 from app.extensions import db
 from app.models import (
+    FranjaHoraria,
     MatchCambio,
     MatchParticipacion,
     Notificacion,
@@ -28,11 +29,29 @@ def _cedidos_abiertos(pub):
     )
 
 
+def _franjas_del_grupo(pub):
+    """Devuelve los IDs de todas las franjas disponibles en el grupo del usuario."""
+    grupo_id = db.session.get(Usuario, pub.usuario_id).unidad.grupo_intercambio_id
+    return [f.id for f in FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id).all()]
+
+
 def _aceptados(pub):
-    return frozenset(
-        (t.fecha, t.franja_horaria_id)
-        for t in pub.turnos_aceptados
-    )
+    """Frozenset de (fecha, franja_id) de los turnos aceptados.
+
+    Si un turno tiene cualquier_franja=True, se expande a todas las franjas
+    del grupo para que haga match con cualquier turno cedido de esa fecha.
+    """
+    result = set()
+    franjas_cache = None
+    for t in pub.turnos_aceptados:
+        if t.cualquier_franja:
+            if franjas_cache is None:
+                franjas_cache = _franjas_del_grupo(pub)
+            for fid in franjas_cache:
+                result.add((t.fecha, fid))
+        else:
+            result.add((t.fecha, t.franja_horaria_id))
+    return frozenset(result)
 
 
 def _primer_cedido_que_acepta(pub, aceptados_contraparte):

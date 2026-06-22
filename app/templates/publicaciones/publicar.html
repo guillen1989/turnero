@@ -72,6 +72,7 @@
             <label>{{ _('Tipo de turno') }}</label>
             <select name="franja_aceptada_0">
               <option value="">{{ _('— Selecciona —') }}</option>
+              <option value="0">{{ _('✦ Cualquier turno de ese día') }}</option>
               {% for f in franjas %}
               <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
               {% endfor %}
@@ -124,7 +125,7 @@
 
 <script>
 (function () {
-  var franjaOptions = `{% for f in franjas %}<option value="{{ f.id }}">{{ f.nombre }}</option>{% endfor %}`;
+  var franjaOptions = `<option value="0">{{ _('✦ Cualquier turno de ese día') }}</option>{% for f in franjas %}<option value="{{ f.id }}">{{ f.nombre }}</option>{% endfor %}`;
 
   function addRow(listId, prefix) {
     var list = document.getElementById(listId);
