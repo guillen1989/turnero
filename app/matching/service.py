@@ -245,7 +245,6 @@ def crear_match_directo(pub_a, pub_b):
     db.session.add(Notificacion(usuario_id=pub_b.usuario_id, match_id=match.id, tipo="nuevo_match"))
     db.session.commit()
 
-    enviar_push(pub_a.usuario, "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
     enviar_push(pub_b.usuario, "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
 
     enviar_aviso_match(pub_a.usuario, pub_a)

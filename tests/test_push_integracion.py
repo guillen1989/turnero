@@ -57,15 +57,14 @@ def _match(db, pub_ana, pub_pedro, tc_ana, tc_pedro):
     return match
 
 
-def test_crear_match_llama_enviar_push_para_ambos_usuarios(db):
+def test_crear_match_llama_enviar_push_solo_al_otro_usuario(db):
+    """pub_a es quien acaba de publicar (está en la app); solo pub_b recibe push."""
     ana, pedro, pub_ana, pub_pedro, _, _ = _setup(db)
 
     with patch("app.matching.service.enviar_push") as mock_push:
         crear_match_directo(pub_ana, pub_pedro)
-        assert mock_push.call_count == 2
-        usuarios_notificados = {c.args[0].id for c in mock_push.call_args_list}
-        assert ana.id in usuarios_notificados
-        assert pedro.id in usuarios_notificados
+        mock_push.assert_called_once()
+        assert mock_push.call_args.args[0].id == pedro.id
 
 
 def test_confirmar_parcial_llama_enviar_push_al_otro(db):
@@ -76,6 +75,19 @@ def test_confirmar_parcial_llama_enviar_push_al_otro(db):
         confirmar_participacion(match, ana.id)
         mock_push.assert_called_once()
         assert mock_push.call_args.args[0].id == pedro.id
+
+
+def test_confirmar_total_llama_enviar_push_al_primero(db):
+    """Cuando el segundo usuario confirma, el primero (que no está en la app) recibe push."""
+    ana, pedro, pub_ana, pub_pedro, tc_ana, tc_pedro = _setup(db)
+    match = _match(db, pub_ana, pub_pedro, tc_ana, tc_pedro)
+
+    with patch("app.services.matches.enviar_push") as mock_push:
+        confirmar_participacion(match, ana.id)   # confirmación parcial
+        mock_push.reset_mock()
+        confirmar_participacion(match, pedro.id)  # confirmación total
+        mock_push.assert_called_once()
+        assert mock_push.call_args.args[0].id == ana.id
 
 
 def test_rechazar_llama_enviar_push_al_otro(db):

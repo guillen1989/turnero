@@ -33,6 +33,18 @@ def confirmar_participacion(match, usuario_id):
             else:
                 # Participante de tipo 'regalo': no tiene turno_cedido que resolver.
                 p.publicacion.estado = "confirmada"
+        for p in match.participaciones:
+            db.session.add(Notificacion(
+                usuario_id=p.publicacion.usuario_id,
+                match_id=match.id,
+                tipo="confirmado_total",
+            ))
+            if p.publicacion.usuario_id != usuario_id:
+                enviar_push(
+                    p.publicacion.usuario,
+                    "¡Cambio confirmado!",
+                    "Ambas partes han confirmado el cambio.",
+                )
     else:
         match.estado = "confirmado_parcial"
         for p in match.participaciones:
