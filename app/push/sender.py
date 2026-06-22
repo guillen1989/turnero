@@ -34,5 +34,5 @@ def enviar_push(usuario, titulo, cuerpo):
             vapid_private_key=vapid_private_key,
             vapid_claims=vapid_claims,
         )
-    except WebPushException:
-        pass
+    except Exception as exc:
+        current_app.logger.warning("Push no entregado a usuario %s: %s", usuario.id, exc)
