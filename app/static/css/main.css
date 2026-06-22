@@ -589,9 +589,13 @@ body {
 .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform .2s; }
 .toggle-switch input:checked + .toggle-slider { background: #005a9c; }
 .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
-.notif-colegas-list { list-style: none; padding: 0; }
-.notif-colega-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0; border-top: 1px solid #f0f0f0; gap: 0.5rem; }
+.notif-filtro-colegas { width: 100%; box-sizing: border-box; padding: 0.45rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.92rem; margin-bottom: 0.5rem; }
+.notif-filtro-colegas:focus { outline: none; border-color: #005a9c; box-shadow: 0 0 0 2px rgba(0,90,156,.15); }
+.notif-colegas-list { list-style: none; padding: 0; max-height: 26rem; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; }
+.notif-colega-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; border-top: 1px solid #f0f0f0; gap: 0.5rem; }
+.notif-colega-row:first-child { border-top: none; }
 .notif-colega-nombre { font-size: 0.95rem; flex: 1; }
+.notif-sin-resultados { text-align: center; color: #888; padding: 1rem 0; font-size: 0.9rem; }
 
 /* Confirmation modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }

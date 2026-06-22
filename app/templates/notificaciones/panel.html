@@ -76,9 +76,11 @@
     <p class="notif-section-desc">{{ _('Recibirás una notificación push cada vez que el compañero seleccionado publique un cambio.') }}</p>
 
     {% if colegas %}
-    <ul class="notif-colegas-list">
+    <input type="search" id="filtro-colegas" class="notif-filtro-colegas"
+           placeholder="{{ _('Buscar compañero…') }}" autocomplete="off">
+    <ul class="notif-colegas-list" id="lista-colegas">
       {% for colega in colegas %}
-      <li class="notif-colega-row">
+      <li class="notif-colega-row" data-nombre="{{ colega.nombre | lower }}">
         <span class="notif-colega-nombre">{{ colega.nombre }}</span>
         {% if colega.id in ids_suscritos %}
         <form method="post" action="{{ url_for('notificaciones.cancelar_suscripcion', uid=colega.id) }}" style="display:inline">
@@ -94,6 +96,7 @@
       </li>
       {% endfor %}
     </ul>
+    <p class="notif-sin-resultados" id="sin-resultados" style="display:none">{{ _('Ningún compañero coincide con la búsqueda.') }}</p>
     {% else %}
     <p class="empty-state">{{ _('No hay compañeros de tu misma categoría y grupo para seguir.') }}</p>
     {% endif %}
@@ -139,6 +142,24 @@
   }
 
   actualizarEstado();
+})();
+
+(function () {
+  var input = document.getElementById('filtro-colegas');
+  if (!input) return;
+  var lista = document.getElementById('lista-colegas');
+  var sinResultados = document.getElementById('sin-resultados');
+  input.addEventListener('input', function () {
+    var q = input.value.toLowerCase().trim();
+    var items = lista.querySelectorAll('li.notif-colega-row');
+    var visibles = 0;
+    items.forEach(function (li) {
+      var coincide = !q || li.dataset.nombre.includes(q);
+      li.style.display = coincide ? '' : 'none';
+      if (coincide) visibles++;
+    });
+    sinResultados.style.display = visibles === 0 ? '' : 'none';
+  });
 })();
 </script>
 {% endblock %}
