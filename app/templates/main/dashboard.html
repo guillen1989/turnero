@@ -170,9 +170,10 @@
         <div class="pub-acciones">
           <a href="{{ url_for('publicaciones.editar', pub_id=pub.id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>
           <form method="post" action="{{ url_for('publicaciones.eliminar', pub_id=pub.id) }}" style="display:inline"
-                onsubmit="return confirm('{{ _('¿Seguro que quieres eliminar esta publicación? Esta acción no se puede deshacer.') }}')">
+                onsubmit="return false">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-danger btn-sm">{{ _('Eliminar') }}</button>
+            <button type="button" class="btn btn-danger btn-sm"
+                    onclick="abrirModalEliminar(this.closest('form'))">{{ _('Eliminar') }}</button>
           </form>
           <a href="#"
              class="btn btn-whatsapp btn-sm"
@@ -194,6 +195,42 @@
   {% endif %}
 
 </div>
+
+<div id="modal-eliminar" class="modal-overlay modal-hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <p class="modal-title">{{ _('Turnero') }}</p>
+    <p class="modal-body">{{ _('¿Seguro que quieres eliminar esta publicación? Esta acción no se puede deshacer.') }}</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalEliminar()">{{ _('Cancelar') }}</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btn-modal-confirmar">{{ _('Eliminar') }}</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var _formPendiente = null;
+function abrirModalEliminar(form) {
+  _formPendiente = form;
+  document.getElementById('modal-eliminar').classList.remove('modal-hidden');
+  document.getElementById('btn-modal-confirmar').focus();
+}
+function cerrarModalEliminar() {
+  _formPendiente = null;
+  document.getElementById('modal-eliminar').classList.add('modal-hidden');
+}
+document.getElementById('btn-modal-confirmar').addEventListener('click', function () {
+  if (_formPendiente) {
+    _formPendiente.onsubmit = null;
+    _formPendiente.submit();
+  }
+});
+document.getElementById('modal-eliminar').addEventListener('click', function (e) {
+  if (e.target === this) cerrarModalEliminar();
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') cerrarModalEliminar();
+});
+</script>
 
 <script>
 (function () {
