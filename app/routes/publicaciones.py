@@ -51,13 +51,16 @@ def _extraer_turnos_junte():
     dias_cadencia = set(_CADENCIA_DIAS[cadencia])
     dias_partner  = set(range(7)) - dias_cadencia
 
+    if len(noches_post) != len(dias_cadencia):
+        return [], [], _('Debes seleccionar exactamente %(n)s noches.', n=len(dias_cadencia))
+
     cedidos   = [(lunes + timedelta(days=d), franja_id) for d in sorted(dias_cadencia - noches_post)]
     aceptados = [(lunes + timedelta(days=d), franja_id) for d in sorted(dias_partner  & noches_post)]
 
     if not cedidos:
-        return [], [], _('Debes librar al menos una de tus noches.')
+        return [], [], _('Debes seleccionar noches diferentes a las que ya tienes.')
     if not aceptados:
-        return [], [], _('Debes seleccionar al menos una noche de la otra cadencia.')
+        return [], [], _('Debes incluir al menos una noche de la otra cadencia.')
 
     return cedidos, aceptados, None
 

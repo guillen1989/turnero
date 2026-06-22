@@ -88,7 +88,7 @@
 
       <div class="form-group" id="noches-post-group" style="display:none">
         <label>{{ _('Noches que trabajarás tú tras el junte') }}</label>
-        <p class="nueva-franja-hint">{{ _('Marca las noches que quedarán para ti. En amarillo, las que ya trabajas ahora.') }}</p>
+        <p class="nueva-franja-hint" id="noches-hint">{{ _('Selecciona exactamente las noches que quieres trabajar.') }}</p>
         <div id="noches-semana" class="noches-grid"></div>
       </div>
     </section>
@@ -233,6 +233,20 @@
   var CADENCIA = { LMVD: [0,2,4,6], MJS: [1,3,5] };
   var DIAS_ES  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
+  function nochesRequeridas() {
+    var cad = document.querySelector('input[name="junte_cadencia"]:checked');
+    return cad ? (CADENCIA[cad.value] || []).length : 0;
+  }
+
+  function actualizarHintNoches() {
+    var n = nochesRequeridas();
+    if (!n) return;
+    var seleccionadas = document.querySelectorAll('input[name="junte_noches"]:checked').length;
+    var hint = document.getElementById('noches-hint');
+    hint.style.color = '';
+    hint.textContent = '{{ _("Selecciona exactamente") }} ' + n + ' {{ _("noches") }} (' + seleccionadas + '/' + n + ' {{ _("seleccionadas") }})';
+  }
+
   function generarNochesGrid(fechaStr) {
     var d = new Date(fechaStr + 'T00:00:00');
     var dow = d.getDay(); // 0=Dom
@@ -257,23 +271,29 @@
       grid.appendChild(lbl);
     }
     document.getElementById('noches-post-group').style.display = '';
-    actualizarNochesDestacadas();
-  }
-
-  function actualizarNochesDestacadas() {
-    var cad = document.querySelector('input[name="junte_cadencia"]:checked');
-    if (!cad) return;
-    var propios = CADENCIA[cad.value] || [];
-    document.querySelectorAll('.noche-opcion').forEach(function(lbl) {
-      lbl.classList.toggle('noche-propia', propios.indexOf(parseInt(lbl.dataset.dia)) !== -1);
-    });
+    grid.addEventListener('change', actualizarHintNoches);
+    actualizarHintNoches();
   }
 
   document.getElementById('junte_semana').addEventListener('change', function() {
     if (this.value) generarNochesGrid(this.value);
   });
   document.querySelectorAll('input[name="junte_cadencia"]').forEach(function(r) {
-    r.addEventListener('change', actualizarNochesDestacadas);
+    r.addEventListener('change', actualizarHintNoches);
+  });
+
+  document.getElementById('publicar-form').addEventListener('submit', function(e) {
+    var tipo = document.querySelector('input[name="tipo"]:checked');
+    if (!tipo || tipo.value !== 'junte') return;
+    var n = nochesRequeridas();
+    if (!n) return;
+    var seleccionadas = document.querySelectorAll('input[name="junte_noches"]:checked').length;
+    if (seleccionadas !== n) {
+      e.preventDefault();
+      var hint = document.getElementById('noches-hint');
+      hint.style.color = '#c0392b';
+      hint.textContent = '{{ _("Debes seleccionar exactamente") }} ' + n + ' {{ _("noches") }} (' + seleccionadas + '/' + n + ' {{ _("seleccionadas") }})';
+    }
   });
 })();
 </script>

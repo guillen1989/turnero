@@ -245,16 +245,6 @@ body {
   background: #f0f6ff;
 }
 
-.noche-propia {
-  background: #fffbeb;
-  border-color: #f59e0b;
-}
-
-.noche-propia:has(input:checked) {
-  background: #fef3c7;
-  border-color: #d97706;
-}
-
 .noche-dia {
   font-weight: 700;
   font-size: 0.85rem;
