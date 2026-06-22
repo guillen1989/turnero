@@ -1,4 +1,5 @@
 """Servicio de avisos por email cuando se detecta un match."""
+import threading
 from datetime import date
 
 from flask import current_app
@@ -9,14 +10,21 @@ from app.models.aviso_email import AvisoEmail
 
 
 def _enviar_correo(destinatario, asunto, cuerpo):
-    """Envía un correo. Silencia excepciones para no bloquear el flujo principal."""
-    try:
-        from flask_mail import Message
-        from app.extensions import mail
-        msg = Message(subject=asunto, recipients=[destinatario], body=cuerpo)
-        mail.send(msg)
-    except Exception as exc:
-        current_app.logger.error("Error enviando email a %s: %s", destinatario, exc)
+    """Dispara el envío en un hilo daemon para no bloquear el worker de gunicorn."""
+    from flask_mail import Message
+    from app.extensions import mail
+
+    app = current_app._get_current_object()
+    msg = Message(subject=asunto, recipients=[destinatario], body=cuerpo)
+
+    def _send():
+        with app.app_context():
+            try:
+                mail.send(msg)
+            except Exception as exc:
+                app.logger.error("Error enviando email a %s: %s", destinatario, exc)
+
+    threading.Thread(target=_send, daemon=True).start()
 
 
 def _avisos_hoy(usuario_id, hoy):
