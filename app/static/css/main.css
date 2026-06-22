@@ -567,6 +567,33 @@ body {
 .btn-group { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 
 /* Confirmation modal */
+/* Notifications panel */
+.notif-panel { max-width: 640px; margin: 0 auto; }
+.notif-panel-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
+.notif-section { margin-bottom: 1.5rem; }
+.notif-section-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: #1a1a1a; }
+.notif-section-desc { color: #555; font-size: 0.9rem; margin-bottom: 0.75rem; }
+.notif-browser-status { margin-bottom: 1rem; }
+.notif-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; padding: 0.5rem 0.75rem; border-radius: 6px; }
+.notif-status--ok { background: #d1fae5; color: #065f46; }
+.notif-status--warn { background: #fef3c7; color: #92400e; }
+.notif-status--error { background: #fee2e2; color: #991b1b; }
+.notif-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 0; border-top: 1px solid #f0f0f0; }
+.notif-master { padding-top: 0; border-top: none; }
+.notif-toggle-label { flex: 1; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; gap: 0.15rem; }
+.notif-toggle-desc { font-size: 0.82rem; color: #666; font-weight: 400; }
+.notif-individual { padding-left: 0.5rem; }
+.toggle-switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 26px; transition: background .2s; }
+.toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform .2s; }
+.toggle-switch input:checked + .toggle-slider { background: #005a9c; }
+.toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+.notif-colegas-list { list-style: none; padding: 0; }
+.notif-colega-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0; border-top: 1px solid #f0f0f0; gap: 0.5rem; }
+.notif-colega-nombre { font-size: 0.95rem; flex: 1; }
+
+/* Confirmation modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
 .modal-overlay.modal-hidden { display: none; }
 .modal-box { background: #fff; border-radius: 10px; padding: 1.5rem 1.75rem; max-width: 360px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }

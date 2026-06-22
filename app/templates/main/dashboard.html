@@ -9,7 +9,6 @@
     <div class="dashboard-header-actions">
       <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">{{ _('Publicar cambio') }}</a>
       <button type="button" class="btn btn-secondary btn-sm" id="btn-actualizar" onclick="window.location.reload()">{{ _('Actualizar') }}</button>
-      <button type="button" class="btn btn-secondary btn-sm" id="btn-push">{{ _('Activar notificaciones') }}</button>
       <button type="button" class="btn btn-secondary btn-sm" id="btn-instalar-pwa" style="display:none" onclick="instalarPWA()">{{ _('Instalar app') }}</button>
     </div>
   </div>
@@ -232,29 +231,4 @@ document.addEventListener('keydown', function (e) {
 });
 </script>
 
-<script>
-(function () {
-  var btn = document.getElementById('btn-push');
-  if (!btn) return;
-  if (typeof _actualizarBotonPush === 'function') {
-    _actualizarBotonPush(btn);
-  }
-  btn.addEventListener('click', async function () {
-    btn.disabled = true;
-    if (typeof _suscribirPush === 'function') {
-      var result = await _suscribirPush();
-      if (result === 'ok') {
-        btn.textContent = '{{ _("Notificaciones activas ✓") }}';
-      } else if (result === 'denied') {
-        alert('{{ _("Las notificaciones están bloqueadas. Ve a Ajustes del sistema → Aplicaciones → Turnero → Permisos y activa las Notificaciones.") }}');
-        btn.textContent = '{{ _("Activar notificaciones") }}';
-        btn.disabled = false;
-      } else {
-        btn.textContent = '{{ _("No se pudieron activar") }}';
-        btn.disabled = false;
-      }
-    }
-  });
-})();
-</script>
 {% endblock %}

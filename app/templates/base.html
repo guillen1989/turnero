@@ -17,6 +17,7 @@
         <span class="nav-user">{{ current_user.nombre }}</span>
         <a href="{{ url_for('main.index') }}">{{ _('Mis cambios') }}</a>
         <a href="{{ url_for('main.cambios') }}">{{ _('Buscar cambios') }}</a>
+        <a href="{{ url_for('notificaciones.panel') }}">{{ _('Notificaciones') }}</a>
         <a href="{{ url_for('auth.perfil') }}">{{ _('Mi perfil') }}</a>
         {% if current_user.es_admin %}<a href="{{ url_for('admin.index') }}">{{ _('Administración') }}</a>{% endif %}
         <a href="{{ url_for('auth.logout') }}">{{ _('Cerrar sesión') }}</a>
@@ -133,16 +134,18 @@
     }
 
     async function _suscribirPush() {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return 'error';
       try {
+        if (Notification.permission === 'denied') return 'denied';
         const perm = await Notification.requestPermission();
-        if (perm !== 'granted') return false;
+        if (perm === 'denied') return 'denied';
+        if (perm !== 'granted') return 'error';
         const reg = await navigator.serviceWorker.ready;
         const existing = await reg.pushManager.getSubscription();
-        if (existing) return true;
+        if (existing) return 'ok';
         const resp = await fetch('/push/vapid-public-key');
         const { publicKey } = await resp.json();
-        if (!publicKey) return false;
+        if (!publicKey) return 'error';
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: _base64UrlToUint8Array(publicKey),
@@ -152,8 +155,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(sub),
         });
-        return true;
-      } catch (e) { console.error('Push error:', e); return false; }
+        return 'ok';
+      } catch (e) { console.error('Push error:', e); return 'error'; }
     }
 
     async function _actualizarBotonPush(btn) {

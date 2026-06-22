@@ -9,6 +9,13 @@ import json
 from flask import current_app
 from pywebpush import WebPushException, webpush
 
+# Mapa de tipo de notificación → atributo de preferencia en Usuario
+_PREF_ATTR = {
+    "match": "notif_match",
+    "confirmacion_parcial": "notif_confirmacion_parcial",
+    "confirmado_total": "notif_confirmado_total",
+}
+
 
 def enviar_push(usuario, titulo, cuerpo):
     """
@@ -36,3 +43,18 @@ def enviar_push(usuario, titulo, cuerpo):
         )
     except Exception as exc:
         current_app.logger.warning("Push no entregado a usuario %s: %s", usuario.id, exc)
+
+
+def enviar_push_condicional(usuario, tipo, titulo, cuerpo):
+    """
+    Envía push solo si el usuario tiene habilitadas las notificaciones
+    globalmente (push_activo) y el tipo específico dado.
+
+    tipo: 'match' | 'confirmacion_parcial' | 'confirmado_total' | 'publicacion'
+    """
+    if not getattr(usuario, "push_activo", True):
+        return
+    attr = _PREF_ATTR.get(tipo)
+    if attr and not getattr(usuario, attr, True):
+        return
+    enviar_push(usuario, titulo, cuerpo)

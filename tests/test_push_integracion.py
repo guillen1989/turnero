@@ -61,7 +61,7 @@ def test_crear_match_llama_enviar_push_solo_al_otro_usuario(db):
     """pub_a es quien acaba de publicar (está en la app); solo pub_b recibe push."""
     ana, pedro, pub_ana, pub_pedro, _, _ = _setup(db)
 
-    with patch("app.matching.service.enviar_push") as mock_push:
+    with patch("app.matching.service.enviar_push_condicional") as mock_push:
         crear_match_directo(pub_ana, pub_pedro)
         mock_push.assert_called_once()
         assert mock_push.call_args.args[0].id == pedro.id
@@ -71,7 +71,7 @@ def test_confirmar_parcial_llama_enviar_push_al_otro(db):
     ana, pedro, pub_ana, pub_pedro, tc_ana, tc_pedro = _setup(db)
     match = _match(db, pub_ana, pub_pedro, tc_ana, tc_pedro)
 
-    with patch("app.services.matches.enviar_push") as mock_push:
+    with patch("app.services.matches.enviar_push_condicional") as mock_push:
         confirmar_participacion(match, ana.id)
         mock_push.assert_called_once()
         assert mock_push.call_args.args[0].id == pedro.id
@@ -82,7 +82,7 @@ def test_confirmar_total_llama_enviar_push_al_primero(db):
     ana, pedro, pub_ana, pub_pedro, tc_ana, tc_pedro = _setup(db)
     match = _match(db, pub_ana, pub_pedro, tc_ana, tc_pedro)
 
-    with patch("app.services.matches.enviar_push") as mock_push:
+    with patch("app.services.matches.enviar_push_condicional") as mock_push:
         confirmar_participacion(match, ana.id)   # confirmación parcial
         mock_push.reset_mock()
         confirmar_participacion(match, pedro.id)  # confirmación total
@@ -94,7 +94,7 @@ def test_rechazar_llama_enviar_push_al_otro(db):
     ana, pedro, pub_ana, pub_pedro, tc_ana, tc_pedro = _setup(db)
     match = _match(db, pub_ana, pub_pedro, tc_ana, tc_pedro)
 
-    with patch("app.services.matches.enviar_push") as mock_push:
+    with patch("app.services.matches.enviar_push_condicional") as mock_push:
         rechazar_match(match, ana.id)
         mock_push.assert_called_once()
         assert mock_push.call_args.args[0].id == pedro.id

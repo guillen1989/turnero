@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Notificaciones') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="notif-panel">
+  <h1 class="notif-panel-title">{{ _('Notificaciones') }}</h1>
+
+  <!-- Sección 1: Push del navegador + preferencias globales -->
+  <section class="notif-section card">
+    <h2 class="notif-section-title">{{ _('Notificaciones push') }}</h2>
+
+    <div id="notif-browser-status" class="notif-browser-status">
+      <!-- JS rellena este bloque -->
+    </div>
+
+    <form method="post" action="{{ url_for('notificaciones.guardar') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="notif-toggle-row notif-master">
+        <label class="notif-toggle-label" for="push_activo">
+          <strong>{{ _('Recibir notificaciones push') }}</strong>
+          <span class="notif-toggle-desc">{{ _('Activa o desactiva todas las notificaciones push a la vez.') }}</span>
+        </label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="push_activo" name="push_activo"
+                 {% if current_user.push_activo %}checked{% endif %}
+                 onchange="this.form.submit()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      {% if current_user.push_activo %}
+      <div class="notif-individual" id="notif-individual-prefs">
+        <div class="notif-toggle-row">
+          <label class="notif-toggle-label" for="notif_match">
+            {{ _('Nuevo cambio compatible encontrado') }}
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notif_match" name="notif_match"
+                   {% if current_user.notif_match %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="notif-toggle-row">
+          <label class="notif-toggle-label" for="notif_confirmacion_parcial">
+            {{ _('El otro usuario confirmó o rechazó el cambio') }}
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notif_confirmacion_parcial" name="notif_confirmacion_parcial"
+                   {% if current_user.notif_confirmacion_parcial %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="notif-toggle-row">
+          <label class="notif-toggle-label" for="notif_confirmado_total">
+            {{ _('Cambio confirmado por todos los implicados') }}
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notif_confirmado_total" name="notif_confirmado_total"
+                   {% if current_user.notif_confirmado_total %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+      {% endif %}
+    </form>
+  </section>
+
+  <!-- Sección 2: Suscripciones a publicaciones de compañeros -->
+  <section class="notif-section card">
+    <h2 class="notif-section-title">{{ _('Seguir compañeros') }}</h2>
+    <p class="notif-section-desc">{{ _('Recibirás una notificación push cada vez que el compañero seleccionado publique un cambio.') }}</p>
+
+    {% if colegas %}
+    <ul class="notif-colegas-list">
+      {% for colega in colegas %}
+      <li class="notif-colega-row">
+        <span class="notif-colega-nombre">{{ colega.nombre }}</span>
+        {% if colega.id in ids_suscritos %}
+        <form method="post" action="{{ url_for('notificaciones.cancelar_suscripcion', uid=colega.id) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-secondary btn-xs">{{ _('Dejar de seguir') }}</button>
+        </form>
+        {% else %}
+        <form method="post" action="{{ url_for('notificaciones.suscribir', uid=colega.id) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-primary btn-xs">{{ _('Seguir') }}</button>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty-state">{{ _('No hay compañeros de tu misma categoría y grupo para seguir.') }}</p>
+    {% endif %}
+  </section>
+</div>
+
+<script>
+(function () {
+  var statusDiv = document.getElementById('notif-browser-status');
+  if (!statusDiv) return;
+
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    statusDiv.innerHTML = '<p class="notif-status notif-status--warn">{{ _("Tu navegador no soporta notificaciones push.") }}</p>';
+    return;
+  }
+
+  async function actualizarEstado() {
+    var perm = Notification.permission;
+    if (perm === 'denied') {
+      statusDiv.innerHTML = '<p class="notif-status notif-status--error">{{ _("Las notificaciones están bloqueadas en el navegador. Desbloquéalas en los ajustes del sistema.") }}</p>';
+      return;
+    }
+    var reg = await navigator.serviceWorker.ready.catch(function () { return null; });
+    var sub = reg ? await reg.pushManager.getSubscription().catch(function () { return null; }) : null;
+    if (sub) {
+      statusDiv.innerHTML = '<p class="notif-status notif-status--ok">{{ _("Este navegador está suscrito a notificaciones push.") }}</p>';
+    } else {
+      statusDiv.innerHTML = '<p class="notif-status notif-status--warn">{{ _("Este navegador no está suscrito todavía.") }} <button class="btn btn-primary btn-sm" id="btn-suscribir-browser">{{ _("Activar en este navegador") }}</button></p>';
+      document.getElementById('btn-suscribir-browser').addEventListener('click', async function () {
+        this.disabled = true;
+        if (typeof _suscribirPush === 'function') {
+          var result = await _suscribirPush();
+          if (result === 'ok') {
+            actualizarEstado();
+          } else if (result === 'denied') {
+            statusDiv.innerHTML = '<p class="notif-status notif-status--error">{{ _("Las notificaciones están bloqueadas en el navegador.") }}</p>';
+          } else {
+            this.disabled = false;
+          }
+        }
+      });
+    }
+  }
+
+  actualizarEstado();
+})();
+</script>
+{% endblock %}

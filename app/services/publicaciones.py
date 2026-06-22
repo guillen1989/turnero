@@ -1,5 +1,6 @@
 from app.extensions import db
-from app.models import MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado
+from app.models import MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, SuscripcionPublicaciones, TurnoCedido, TurnoAceptado, Usuario
+from app.push.sender import enviar_push_condicional
 
 
 def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, tipo="cambio"):
@@ -29,7 +30,25 @@ def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, 
         ))
 
     db.session.commit()
+
+    publicador = db.session.get(Usuario, usuario_id)
+    _notificar_suscriptores(publicador)
+
     return pub
+
+
+def _notificar_suscriptores(publicador):
+    """Envía push a los usuarios suscritos a las publicaciones de publicador."""
+    suscripciones = SuscripcionPublicaciones.query.filter_by(publicador_id=publicador.id).all()
+    for suscripcion in suscripciones:
+        suscriptor = db.session.get(Usuario, suscripcion.suscriptor_id)
+        if suscriptor:
+            enviar_push_condicional(
+                suscriptor,
+                "publicacion",
+                f"{publicador.nombre} ha publicado un cambio",
+                "Hay una nueva publicación de alguien a quien sigues.",
+            )
 
 
 def cancelar_publicacion(pub):

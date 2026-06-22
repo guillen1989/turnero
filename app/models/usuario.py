@@ -15,6 +15,10 @@ class Usuario(UserMixin, db.Model):
     categoria_id = db.Column(db.Integer, db.ForeignKey("categoria.id"), nullable=False)
     locale = db.Column(db.String(10), nullable=False, default="es")
     push_subscription = db.Column(db.Text, nullable=True)
+    push_activo = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
+    notif_match = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
+    notif_confirmacion_parcial = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
+    notif_confirmado_total = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     es_admin = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     avisos_email = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     limite_avisos_email = db.Column(db.Integer, nullable=False, default=3, server_default="3")
@@ -26,6 +30,18 @@ class Usuario(UserMixin, db.Model):
     categoria = db.relationship("Categoria", back_populates="usuarios")
     publicaciones = db.relationship("PublicacionCambio", back_populates="usuario", lazy="dynamic")
     notificaciones = db.relationship("Notificacion", back_populates="usuario", lazy="dynamic")
+    suscripciones = db.relationship(
+        "SuscripcionPublicaciones",
+        foreign_keys="SuscripcionPublicaciones.suscriptor_id",
+        backref="suscriptor",
+        lazy="dynamic",
+    )
+    suscriptores_pub = db.relationship(
+        "SuscripcionPublicaciones",
+        foreign_keys="SuscripcionPublicaciones.publicador_id",
+        backref="publicador",
+        lazy="dynamic",
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

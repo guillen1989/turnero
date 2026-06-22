@@ -18,7 +18,7 @@ from app.models import (
     Usuario,
 )
 from app.matching.engine import detectar_match_directo, detectar_match_regalo
-from app.push.sender import enviar_push
+from app.push.sender import enviar_push_condicional
 from app.services.email import enviar_aviso_match
 
 
@@ -245,7 +245,7 @@ def crear_match_directo(pub_a, pub_b):
     db.session.add(Notificacion(usuario_id=pub_b.usuario_id, match_id=match.id, tipo="nuevo_match"))
     db.session.commit()
 
-    enviar_push(pub_b.usuario, "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
+    enviar_push_condicional(pub_b.usuario, "match", "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
 
     enviar_aviso_match(pub_a.usuario, pub_a)
     enviar_aviso_match(pub_b.usuario, pub_b)
