@@ -208,6 +208,64 @@ body {
   line-height: 1.4;
 }
 
+.form-hint-text {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+/* Cuadrícula de noches (junte) */
+.noches-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.noche-opcion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0.5rem;
+  min-width: 58px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.noche-opcion input[type="checkbox"] { display: none; }
+
+.noche-opcion:has(input:checked) {
+  border-color: #005a9c;
+  background: #f0f6ff;
+}
+
+.noche-propia {
+  background: #fffbeb;
+  border-color: #f59e0b;
+}
+
+.noche-propia:has(input:checked) {
+  background: #fef3c7;
+  border-color: #d97706;
+}
+
+.noche-dia {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #1a1a1a;
+}
+
+.noche-fecha {
+  font-size: 0.72rem;
+  color: #666;
+}
+
 .site-footer {
   margin-top: 3rem;
   padding: 1.25rem 1rem;

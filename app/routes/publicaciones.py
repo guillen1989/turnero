@@ -1,4 +1,4 @@
-from datetime import date, datetime, time as dtime
+from datetime import date, datetime, time as dtime, timedelta
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_babel import _
@@ -11,6 +11,55 @@ from app.services.registro import crear_franjas_default
 from app.matching.service import buscar_matches_para, crear_match_directo
 
 bp = Blueprint("publicaciones", __name__)
+
+_CADENCIA_DIAS = {
+    'LMVD': [0, 2, 4, 6],  # Lun, Mié, Vie, Dom
+    'MJS':  [1, 3, 5],     # Mar, Jue, Sáb
+}
+
+
+def _extraer_turnos_junte():
+    """
+    Procesa el formulario de junte de noches.
+    Devuelve (cedidos, aceptados, error_msg). error_msg es None si todo va bien.
+    """
+    semana_str = request.form.get('junte_semana',   '').strip()
+    cadencia   = request.form.get('junte_cadencia', '').strip()
+    franja_str = request.form.get('junte_franja',   '').strip()
+    noches_raw = request.form.getlist('junte_noches')
+
+    if not semana_str:
+        return [], [], _('Indica la semana del junte.')
+    if cadencia not in _CADENCIA_DIAS:
+        return [], [], _('Selecciona tu cadencia de noches.')
+    if not franja_str:
+        return [], [], _('Selecciona el tipo de turno nocturno.')
+
+    try:
+        dia_ref    = datetime.strptime(semana_str, '%Y-%m-%d').date()
+        franja_id  = int(franja_str)
+        noches_post = {int(n) for n in noches_raw if n.isdigit() and 0 <= int(n) <= 6}
+    except (ValueError, TypeError):
+        return [], [], _('Datos del junte incorrectos.')
+
+    lunes = dia_ref - timedelta(days=dia_ref.weekday())
+    hoy = date.today()
+    lunes_actual = hoy - timedelta(days=hoy.weekday())
+    if lunes < lunes_actual:
+        return [], [], _('La semana del junte no puede ser anterior a la semana actual.')
+
+    dias_cadencia = set(_CADENCIA_DIAS[cadencia])
+    dias_partner  = set(range(7)) - dias_cadencia
+
+    cedidos   = [(lunes + timedelta(days=d), franja_id) for d in sorted(dias_cadencia - noches_post)]
+    aceptados = [(lunes + timedelta(days=d), franja_id) for d in sorted(dias_partner  & noches_post)]
+
+    if not cedidos:
+        return [], [], _('Debes librar al menos una de tus noches.')
+    if not aceptados:
+        return [], [], _('Debes seleccionar al menos una noche de la otra cadencia.')
+
+    return cedidos, aceptados, None
 
 
 def _extraer_turnos(prefix):
@@ -89,13 +138,19 @@ def nueva():
 
     if request.method == "POST":
         tipo = request.form.get("tipo", "cambio")
-        if tipo not in ("cambio", "regalo", "peticion"):
+        if tipo not in ("cambio", "regalo", "peticion", "junte"):
             tipo = "cambio"
 
-        cedidos = _extraer_turnos("cedida")
-        aceptados = _extraer_turnos("aceptada")
-
         hoy = date.today()
+
+        if tipo == "junte":
+            cedidos, aceptados, error = _extraer_turnos_junte()
+            if error:
+                flash(error, "danger")
+                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
+        else:
+            cedidos  = _extraer_turnos("cedida")
+            aceptados = _extraer_turnos("aceptada")
 
         if tipo == "cambio":
             if not cedidos:
@@ -113,10 +168,11 @@ def nueva():
                 flash(_("Debes indicar al menos un turno que quieres librar."), "danger")
                 return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
 
-        todas_fechas = [(f, fid) for f, fid in cedidos + aceptados]
-        if any(f < hoy for f, _ in todas_fechas):
-            flash(_("Las fechas de los turnos no pueden ser anteriores a hoy."), "danger")
-            return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
+        if tipo != "junte":
+            todas_fechas = cedidos + aceptados
+            if any(f < hoy for f, _ in todas_fechas):
+                flash(_("Las fechas de los turnos no pueden ser anteriores a hoy."), "danger")
+                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
 
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
         pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
