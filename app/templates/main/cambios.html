@@ -82,6 +82,22 @@
            href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
         {% endfor %}
       </div>
+      {% elif pub.tipo == 'junte' %}
+      <span class="tipo-badge tipo-badge--junte">{{ _('Junte de noches') }}</span>
+      <div class="turnos-cedidos">
+        <strong>{{ _('Cede las noches:') }}</strong>
+        {% for turno in pub.turnos_cedidos %}
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day) }}">{{ turno.fecha.strftime('%d/%m/%Y') }}</a>
+        {% endfor %}
+      </div>
+      <div class="turnos-aceptados">
+        <strong>{{ _('Busca las noches:') }}</strong>
+        {% for turno in pub.turnos_aceptados %}
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day) }}">{{ turno.fecha.strftime('%d/%m/%Y') }}</a>
+        {% endfor %}
+      </div>
       {% else %}
       <div class="turnos-cedidos">
         <strong>{{ _('Quiere librar:') }}</strong>

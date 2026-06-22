@@ -76,16 +76,6 @@
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="junte_franja">{{ _('Tipo de turno nocturno') }}</label>
-        <select id="junte_franja" name="junte_franja">
-          <option value="">{{ _('— Selecciona —') }}</option>
-          {% for f in franjas %}
-          <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
-          {% endfor %}
-        </select>
-      </div>
-
       <div class="form-group" id="noches-post-group" style="display:none">
         <label>{{ _('Noches que trabajarás tú tras el junte') }}</label>
         <p class="nueva-franja-hint" id="noches-hint">{{ _('Selecciona exactamente las noches que quieres trabajar.') }}</p>

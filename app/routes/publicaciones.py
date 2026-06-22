@@ -25,19 +25,23 @@ def _extraer_turnos_junte():
     """
     semana_str = request.form.get('junte_semana',   '').strip()
     cadencia   = request.form.get('junte_cadencia', '').strip()
-    franja_str = request.form.get('junte_franja',   '').strip()
     noches_raw = request.form.getlist('junte_noches')
 
     if not semana_str:
         return [], [], _('Indica la semana del junte.')
     if cadencia not in _CADENCIA_DIAS:
         return [], [], _('Selecciona tu cadencia de noches.')
-    if not franja_str:
-        return [], [], _('Selecciona el tipo de turno nocturno.')
+
+    franja_noche = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=current_user.unidad.grupo_intercambio_id,
+        nombre='Noche',
+    ).first()
+    if not franja_noche:
+        return [], [], _('No hay turno nocturno configurado para tu unidad.')
+    franja_id = franja_noche.id
 
     try:
-        dia_ref    = datetime.strptime(semana_str, '%Y-%m-%d').date()
-        franja_id  = int(franja_str)
+        dia_ref     = datetime.strptime(semana_str, '%Y-%m-%d').date()
         noches_post = {int(n) for n in noches_raw if n.isdigit() and 0 <= int(n) <= 6}
     except (ValueError, TypeError):
         return [], [], _('Datos del junte incorrectos.')

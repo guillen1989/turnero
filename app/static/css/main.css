@@ -373,6 +373,19 @@ body {
 .publicacion--cancelada            { border-left-color: #9ca3af; }
 .publicacion--caducada             { border-left-color: #ef4444; }
 
+.tipo-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.03em;
+}
+.tipo-badge--regalo  { background: #dcfce7; color: #15803d; }
+.tipo-badge--peticion { background: #fef3c7; color: #92400e; }
+.tipo-badge--junte   { background: #ede9fe; color: #5b21b6; }
+
 .estado-badge {
   display: inline-block;
   font-size: 0.75rem;
