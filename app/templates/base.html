@@ -93,7 +93,8 @@
       _deferredInstall.prompt();
       _deferredInstall.userChoice.then(function (r) {
         _deferredInstall = null;
-        if (r.outcome === 'accepted') localStorage.setItem(_INSTALL_KEY, '1');
+        // No guardamos en localStorage al instalar: si el usuario desinstala
+        // y vuelve, el banner debe volver a aparecer.
       });
     }
 
@@ -106,7 +107,7 @@
       window.addEventListener('appinstalled', function () {
         _deferredInstall = null;
         document.getElementById('pwa-install-banner').style.display = 'none';
-        localStorage.setItem(_INSTALL_KEY, '1');
+        // No guardamos en localStorage: el banner reaparece si se desinstala.
       });
       var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       if (_isIOS) {
