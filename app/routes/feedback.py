@@ -4,6 +4,7 @@ from flask_login import current_user
 
 from app.extensions import db
 from app.models import Feedback
+from app.services.email import enviar_notificacion_feedback
 
 bp = Blueprint("feedback", __name__)
 
@@ -37,6 +38,7 @@ def nuevo():
         )
         db.session.add(fb)
         db.session.commit()
+        enviar_notificacion_feedback(fb)
 
         flash(_("Gracias, hemos recibido tu mensaje."), "success")
         return redirect(url_for("main.index"))

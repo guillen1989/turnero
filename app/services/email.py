@@ -23,6 +23,24 @@ def _avisos_hoy(usuario_id, hoy):
     return AvisoEmail.query.filter_by(usuario_id=usuario_id, fecha=hoy).count()
 
 
+def enviar_notificacion_feedback(feedback):
+    """Notifica al administrador cuando se recibe un nuevo mensaje de feedback."""
+    destinatario = current_app.config.get("FEEDBACK_RECIPIENT_EMAIL", "")
+    if not destinatario:
+        return
+
+    tipos = {"error": "Error en la app", "sugerencia": "Sugerencia de mejora"}
+    tipo_label = tipos.get(feedback.tipo, feedback.tipo)
+    asunto = f"[CambiaTurnos] Nuevo feedback: {tipo_label}"
+    cuerpo = (
+        f"Tipo: {tipo_label}\n"
+        f"Descripción: {feedback.descripcion}\n"
+        f"Email de contacto: {feedback.email_contacto or '(no indicado)'}\n"
+        f"Usuario ID: {feedback.usuario_id or '(anónimo)'}\n"
+    )
+    _enviar_correo(destinatario, asunto, cuerpo)
+
+
 def enviar_aviso_match(usuario, publicacion, hoy=None):
     """
     Envía un aviso por email al usuario si:

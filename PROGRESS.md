@@ -18,6 +18,7 @@ Backlog de calidad completado. Sin pasos pendientes definidos.
 - [x] B9: Publicar tipo 'petición' (librar turno sin ofrecer nada) ✓
 - [x] B10: Ofrecer 'cualquier turno de un día' al publicar ✓
 - [x] B11: Avisos por email con límite diario configurable ✓
+- [x] B12: Notificación por email al admin cuando se recibe un feedback ✓
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile

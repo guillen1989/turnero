@@ -1,4 +1,6 @@
 """Tests para la ruta /feedback (formulario de contacto)."""
+from unittest.mock import patch
+
 from app.models import Categoria, Feedback, insertar_categorias_semilla
 from app.services.registro import registrar_usuario
 
@@ -99,3 +101,31 @@ def test_post_feedback_tipo_invalido_vuelve_al_form(client, db):
     })
     assert resp.status_code == 200
     assert Feedback.query.count() == 0
+
+
+# --- Notificación por email al admin ---
+
+def test_post_feedback_envia_email_al_admin(client, db):
+    """Al recibir feedback, se envía un email de notificación al admin configurado."""
+    client.application.config["FEEDBACK_RECIPIENT_EMAIL"] = "admin@test.es"
+    with patch("app.services.email._enviar_correo") as mock_correo:
+        client.post("/feedback", data={
+            "tipo": "error",
+            "descripcion": "La app no carga en Safari.",
+            "email_contacto": "usuario@test.es",
+        })
+        mock_correo.assert_called_once()
+        destinatario = mock_correo.call_args[0][0]
+        assert destinatario == "admin@test.es"
+
+
+def test_post_feedback_no_envia_email_si_no_hay_destinatario(client, db):
+    """Si FEEDBACK_RECIPIENT_EMAIL no está configurado, no se intenta enviar email."""
+    client.application.config["FEEDBACK_RECIPIENT_EMAIL"] = ""
+    with patch("app.services.email._enviar_correo") as mock_correo:
+        client.post("/feedback", data={
+            "tipo": "sugerencia",
+            "descripcion": "Añadir modo oscuro.",
+            "email_contacto": "",
+        })
+        mock_correo.assert_not_called()
