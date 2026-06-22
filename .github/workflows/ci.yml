@@ -58,8 +58,8 @@ jobs:
       - name: Instalar requests
         run: pip install requests
 
-      - name: Esperar deploy Railway (~150s)
-        run: sleep 150
+      - name: Esperar arranque Railway (~60s)
+        run: sleep 60
 
       - name: Smoke test producción
         env:
