@@ -33,7 +33,10 @@ def check(session, method, url, expected_status, expected_text=None, label=None)
         detail = f"status {r.status_code} (esperado {expected_status})"
         if not text_ok:
             detail += f", texto «{expected_text}» no encontrado"
-        print(f"{RED}  ✗  {label}  — {detail}{RESET}")
+            print(f"{RED}  ✗  {label}  — {detail}{RESET}")
+            print(f"       Respuesta recibida: {r.text[:300]!r}")
+        else:
+            print(f"{RED}  ✗  {label}  — {detail}{RESET}")
         return False
 
 
