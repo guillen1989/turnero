@@ -126,9 +126,17 @@ def buscar_matches_para(publicacion):
 
 
 def _primer_aceptado_que_cubre(pub, cedidos_contraparte):
-    """Primer TurnoAceptado de pub cuya clave (fecha, franja_id) está en cedidos_contraparte."""
+    """Primer TurnoAceptado de pub cuya clave (fecha, franja_id) está en cedidos_contraparte.
+
+    Si el turno tiene cualquier_franja=True basta con que la fecha coincida con
+    algún cedido de la contraparte, igual que hace _aceptados() al expandir.
+    """
+    fechas_contraparte = frozenset(fecha for fecha, _ in cedidos_contraparte)
     for t in pub.turnos_aceptados:
-        if (t.fecha, t.franja_horaria_id) in cedidos_contraparte:
+        if t.cualquier_franja:
+            if t.fecha in fechas_contraparte:
+                return t
+        elif (t.fecha, t.franja_horaria_id) in cedidos_contraparte:
             return t
     return None
 
@@ -153,18 +161,27 @@ def crear_match_directo(pub_a, pub_b):
         aceptados_b = _aceptados(pub_b)
         turno_a = _primer_cedido_que_acepta(pub_a, aceptados_b)
         turno_b = _primer_cedido_que_acepta(pub_b, aceptados_a)
+        if not turno_a or not turno_b:
+            db.session.rollback()
+            return None
         db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=turno_a.id))
         db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=turno_b.id))
 
     elif tipo_a == "regalo" and tipo_b == "peticion":
         ta = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
         tc = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
+        if not ta or not tc:
+            db.session.rollback()
+            return None
         db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_aceptado_id=ta.id))
         db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc.id))
 
     elif tipo_a == "peticion" and tipo_b == "regalo":
         tc = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
         ta = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
+        if not tc or not ta:
+            db.session.rollback()
+            return None
         db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc.id))
         db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_aceptado_id=ta.id))
 
