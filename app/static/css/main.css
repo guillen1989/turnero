@@ -154,6 +154,25 @@ body {
 
 .form-footer a { color: #005a9c; }
 
+.site-footer {
+  margin-top: 3rem;
+  padding: 1.25rem 1rem;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+}
+
+.site-footer a {
+  font-size: 0.88rem;
+  color: #005a9c;
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.site-footer a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
 /* Matches section */
 .matches-section { margin-bottom: 2rem; }
 
