@@ -3,6 +3,7 @@ from app.extensions import db
 
 ESTADOS_PUBLICACION = ("abierta", "parcialmente_resuelta", "confirmada", "cancelada", "caducada")
 ESTADOS_TURNO_CEDIDO = ("abierto", "resuelto")
+TIPOS_PUBLICACION = ("cambio", "regalo", "peticion")
 
 
 class PublicacionCambio(db.Model):
@@ -14,6 +15,7 @@ class PublicacionCambio(db.Model):
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
     estado = db.Column(db.String(30), nullable=False, default="abierta")
+    tipo = db.Column(db.String(20), nullable=False, default="cambio")
     mensaje = db.Column(db.String(200), nullable=True)
 
     usuario = db.relationship("Usuario", back_populates="publicaciones")
@@ -28,7 +30,14 @@ class PublicacionCambio(db.Model):
         return self.estado in ("abierta", "parcialmente_resuelta")
 
     def actualizar_estado(self):
-        """Recalcula el estado en función de los turnos cedidos pendientes."""
+        """Recalcula el estado en función de los turnos cedidos pendientes.
+
+        Para regalo/peticion: no hay resolución parcial, el estado lo gestiona
+        confirmar_participacion directamente.
+        """
+        if self.tipo in ("regalo", "peticion"):
+            return
+
         abiertos = sum(1 for t in self.turnos_cedidos if t.estado == "abierto")
         total = len(self.turnos_cedidos)
 

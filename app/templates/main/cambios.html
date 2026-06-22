@@ -64,6 +64,25 @@
            href="{{ url_for('main.cambios', usuario=pub.usuario.nombre) }}">{{ pub.usuario.nombre }}</a>
         <span class="pub-fecha-creacion">{{ pub.fecha_creacion.strftime('%d/%m/%Y') }}</span>
       </div>
+      {% if pub.tipo == 'regalo' %}
+      <span class="tipo-badge tipo-badge--regalo">{{ _('Regalo') }}</span>
+      <div class="turnos-aceptados">
+        <strong>{{ _('Se ofrece a trabajar (sin recibir nada):') }}</strong>
+        {% for turno in pub.turnos_aceptados %}
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
+        {% endfor %}
+      </div>
+      {% elif pub.tipo == 'peticion' %}
+      <span class="tipo-badge tipo-badge--peticion">{{ _('Petición') }}</span>
+      <div class="turnos-cedidos">
+        <strong>{{ _('Quiere librar (sin ofrecer nada):') }}</strong>
+        {% for turno in pub.turnos_cedidos %}
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
+        {% endfor %}
+      </div>
+      {% else %}
       <div class="turnos-cedidos">
         <strong>{{ _('Quiere librar:') }}</strong>
         {% for turno in pub.turnos_cedidos %}
@@ -78,6 +97,7 @@
            href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
         {% endfor %}
       </div>
+      {% endif %}
       {% if pub.mensaje %}
       <p class="match-mensaje">"{{ pub.mensaje }}"</p>
       {% endif %}

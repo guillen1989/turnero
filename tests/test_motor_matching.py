@@ -5,7 +5,7 @@ Los turnos se representan como frozensets de (fecha, franja_horaria_id).
 """
 from datetime import date
 
-from app.matching.engine import detectar_match_directo
+from app.matching.engine import detectar_match_directo, detectar_match_regalo
 
 # --- UAT-3.1: match directo 1 a 1 ---
 
@@ -104,6 +104,43 @@ def test_no_match_con_todo_vacio():
         cedidos_b=set(),
         aceptados_b=set(),
     )
+
+
+# --- Matching regalo ↔ petición ---
+
+def test_match_regalo_detecta_cuando_aceptado_cubre_cedido():
+    """Un regalo (ofrece tarde_26) hace match con una petición que quiere librar tarde_26."""
+    tarde_26 = (date(2026, 6, 26), 2)
+    assert detectar_match_regalo(
+        aceptados_regalo={tarde_26},
+        cedidos_peticion={tarde_26},
+    )
+
+
+def test_match_regalo_no_detecta_cuando_no_hay_interseccion():
+    """Un regalo (ofrece tarde_26) no hace match con una petición que quiere librar mañana_25."""
+    tarde_26 = (date(2026, 6, 26), 2)
+    mañana_25 = (date(2026, 6, 25), 1)
+    assert not detectar_match_regalo(
+        aceptados_regalo={tarde_26},
+        cedidos_peticion={mañana_25},
+    )
+
+
+def test_match_regalo_con_multiples_opciones():
+    """Regalo con varios aceptados hace match si al menos uno coincide con el cedido."""
+    mañana_25 = (date(2026, 6, 25), 1)
+    tarde_26 = (date(2026, 6, 26), 2)
+    noche_27 = (date(2026, 6, 27), 3)
+    assert detectar_match_regalo(
+        aceptados_regalo={mañana_25, tarde_26},
+        cedidos_peticion={noche_27, tarde_26},
+    )
+
+
+def test_match_regalo_con_conjuntos_vacios():
+    assert not detectar_match_regalo(aceptados_regalo=set(), cedidos_peticion={(date(2026, 6, 26), 2)})
+    assert not detectar_match_regalo(aceptados_regalo={(date(2026, 6, 26), 2)}, cedidos_peticion=set())
 
 
 def test_no_match_cuando_ambos_ceden_lo_mismo_pero_no_se_cruzan():

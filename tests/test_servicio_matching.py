@@ -152,6 +152,75 @@ def test_no_incluye_diferente_grupo_intercambio(db):
     assert buscar_matches_para(pub_ana) == []
 
 
+# --- Matching regalo ↔ petición ---
+
+def _pub_regalo(usuario, fecha, franja):
+    """Publicación tipo 'regalo': ofrece trabajar un turno, no pide nada a cambio."""
+    pub = PublicacionCambio(usuario_id=usuario.id, tipo="regalo")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja.id))
+    db.session.commit()
+    return pub
+
+
+def _pub_peticion(usuario, fecha, franja):
+    """Publicación tipo 'peticion': quiere librar un turno, no ofrece nada a cambio."""
+    pub = PublicacionCambio(usuario_id=usuario.id, tipo="peticion")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja.id))
+    db.session.commit()
+    return pub
+
+
+def test_regalo_hace_match_con_peticion(db):
+    """Un regalo que ofrece tarde_26 hace match con una petición que quiere librar tarde_26."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+    fecha = date(2026, 6, 26)
+
+    pub_regalo = _pub_regalo(ana, fecha, franja)
+    _pub_peticion(pedro, fecha, franja)
+
+    matches = buscar_matches_para(pub_regalo)
+    assert len(matches) == 1
+    assert matches[0].usuario_id == pedro.id
+
+
+def test_peticion_hace_match_con_regalo(db):
+    """Una petición que quiere librar tarde_26 hace match con un regalo que ofrece tarde_26."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+    fecha = date(2026, 6, 26)
+
+    _pub_regalo(ana, fecha, franja)
+    pub_peticion = _pub_peticion(pedro, fecha, franja)
+
+    matches = buscar_matches_para(pub_peticion)
+    assert len(matches) == 1
+    assert matches[0].usuario_id == ana.id
+
+
+def test_cambio_no_hace_match_con_regalo(db):
+    """Una publicación tipo 'cambio' no hace match con una tipo 'regalo'."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+    fecha = date(2026, 6, 26)
+
+    pub_cambio = _publicacion(
+        ana,
+        fecha_cede=fecha, franja_cede=franja,
+        fecha_acepta=fecha, franja_acepta=franja,
+    )
+    _pub_regalo(pedro, fecha, franja)
+
+    assert buscar_matches_para(pub_cambio) == []
+
+
 def test_no_incluye_publicaciones_inactivas(db):
     """Publicaciones canceladas o caducadas no aparecen como candidatas."""
     ana = _usuario("Ana", "ana@test.es")

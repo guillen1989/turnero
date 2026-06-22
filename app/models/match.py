@@ -48,14 +48,18 @@ class MatchParticipacion(db.Model):
         db.Integer, db.ForeignKey("publicacion_cambio.id"), nullable=False
     )
     turno_cedido_id = db.Column(
-        db.Integer, db.ForeignKey("turno_cedido.id"), nullable=False
+        db.Integer, db.ForeignKey("turno_cedido.id"), nullable=True
+    )
+    turno_aceptado_id = db.Column(
+        db.Integer, db.ForeignKey("turno_aceptado.id"), nullable=True
     )
     confirmado = db.Column(db.Boolean, nullable=False, default=False)
     fecha_confirmacion = db.Column(db.DateTime, nullable=True)
 
     match = db.relationship("MatchCambio", back_populates="participaciones")
     publicacion = db.relationship("PublicacionCambio")
-    turno_cedido = db.relationship("TurnoCedido")
+    turno_cedido = db.relationship("TurnoCedido", foreign_keys=[turno_cedido_id])
+    turno_aceptado = db.relationship("TurnoAceptado", foreign_keys=[turno_aceptado_id])
 
     __table_args__ = (
         db.UniqueConstraint("match_id", "publicacion_id", name="uq_match_publicacion"),

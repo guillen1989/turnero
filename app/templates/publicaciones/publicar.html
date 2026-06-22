@@ -15,17 +15,38 @@
   <form method="post" id="publicar-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <section class="turnos-section turnos-section--ceder">
+    <section class="turnos-section">
+      <h2>{{ _('¿Qué tipo de publicación quieres hacer?') }}</h2>
+      <div class="tipo-selector">
+        <label class="tipo-opcion">
+          <input type="radio" name="tipo" value="cambio" id="tipo-cambio" checked>
+          <span class="tipo-label">{{ _('Cambio') }}</span>
+          <span class="tipo-desc">{{ _('Libras un turno y trabajas otro a cambio') }}</span>
+        </label>
+        <label class="tipo-opcion">
+          <input type="radio" name="tipo" value="regalo" id="tipo-regalo">
+          <span class="tipo-label">{{ _('Regalo') }}</span>
+          <span class="tipo-desc">{{ _('Te ofreces a trabajar un turno sin recibir nada a cambio') }}</span>
+        </label>
+        <label class="tipo-opcion">
+          <input type="radio" name="tipo" value="peticion" id="tipo-peticion">
+          <span class="tipo-label">{{ _('Petición') }}</span>
+          <span class="tipo-desc">{{ _('Buscas quien trabaje un turno tuyo sin ofrecer nada a cambio') }}</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="turnos-section turnos-section--ceder" id="section-cedidos">
       <h2>{{ _('Turnos que quiero librar') }}</h2>
       <div id="cedidos-list">
         <div class="turno-row">
           <div class="turno-row-campo">
             <label>{{ _('Fecha') }}</label>
-            <input type="date" name="fecha_cedida_0" required min="{{ today }}">
+            <input type="date" name="fecha_cedida_0" min="{{ today }}">
           </div>
           <div class="turno-row-campo">
             <label>{{ _('Tipo de turno') }}</label>
-            <select name="franja_cedida_0" required>
+            <select name="franja_cedida_0">
               <option value="">{{ _('— Selecciona —') }}</option>
               {% for f in franjas %}
               <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
@@ -39,17 +60,17 @@
       </button>
     </section>
 
-    <section class="turnos-section turnos-section--aceptar">
+    <section class="turnos-section turnos-section--aceptar" id="section-aceptados">
       <h2>{{ _('Turnos que quiero trabajar') }}</h2>
       <div id="aceptados-list">
         <div class="turno-row">
           <div class="turno-row-campo">
             <label>{{ _('Fecha') }}</label>
-            <input type="date" name="fecha_aceptada_0" required min="{{ today }}">
+            <input type="date" name="fecha_aceptada_0" min="{{ today }}">
           </div>
           <div class="turno-row-campo">
             <label>{{ _('Tipo de turno') }}</label>
-            <select name="franja_aceptada_0" required>
+            <select name="franja_aceptada_0">
               <option value="">{{ _('— Selecciona —') }}</option>
               {% for f in franjas %}
               <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
@@ -113,11 +134,11 @@
     div.innerHTML =
       '<div class="turno-row-campo">' +
         '<label>{{ _("Fecha") }}</label>' +
-        '<input type="date" name="fecha_' + prefix + '_' + idx + '" required min="{{ today }}">' +
+        '<input type="date" name="fecha_' + prefix + '_' + idx + '" min="{{ today }}">' +
       '</div>' +
       '<div class="turno-row-campo">' +
         '<label>{{ _("Tipo de turno") }}</label>' +
-        '<select name="franja_' + prefix + '_' + idx + '" required>' +
+        '<select name="franja_' + prefix + '_' + idx + '">' +
           '<option value="">{{ _("— Selecciona —") }}</option>' +
           franjaOptions +
         '</select>' +
@@ -132,6 +153,20 @@
   document.getElementById('btn-add-aceptada').addEventListener('click', function () {
     addRow('aceptados-list', 'aceptada');
   });
+
+  // Mostrar/ocultar secciones según tipo de publicación
+  function actualizarSecciones() {
+    var tipo = document.querySelector('input[name="tipo"]:checked').value;
+    var secCedidos = document.getElementById('section-cedidos');
+    var secAceptados = document.getElementById('section-aceptados');
+    secCedidos.style.display = (tipo === 'regalo') ? 'none' : '';
+    secAceptados.style.display = (tipo === 'peticion') ? 'none' : '';
+  }
+
+  document.querySelectorAll('input[name="tipo"]').forEach(function (radio) {
+    radio.addEventListener('change', actualizarSecciones);
+  });
+  actualizarSecciones();
 })();
 </script>
 {% endblock %}

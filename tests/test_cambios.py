@@ -230,7 +230,7 @@ def test_cambios_filtro_franja(client, db):
     assert len(franjas) >= 2, "Se necesitan al menos 2 franjas para este test"
     franja_a, franja_b = franjas[0], franjas[1]
 
-    # Publicación con franja_a como turno cedido
+    # Publicación con franja_a como cedido y franja_b como aceptado
     pub = PublicacionCambio(usuario_id=u2.id)
     db.session.add(pub)
     db.session.flush()
@@ -238,8 +238,16 @@ def test_cambios_filtro_franja(client, db):
     db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 9, 2), franja_horaria_id=franja_b.id))
     db.session.commit()
 
+    # La publicación aparece al filtrar por franja_a (está en cedidos)
     resp_a = client.get(f"/cambios?franja={franja_a.id}")
     assert b"01/09/2026" in resp_a.data
 
+    # También aparece al filtrar por franja_b (está en aceptados — incluye regalos)
     resp_b = client.get(f"/cambios?franja={franja_b.id}")
-    assert b"01/09/2026" not in resp_b.data
+    assert b"02/09/2026" in resp_b.data
+
+    # Una franja que no aparece en ninguna parte no devuelve la publicación
+    if len(franjas) >= 3:
+        franja_c = franjas[2]
+        resp_c = client.get(f"/cambios?franja={franja_c.id}")
+        assert b"01/09/2026" not in resp_c.data

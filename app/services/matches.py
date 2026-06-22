@@ -27,8 +27,12 @@ def confirmar_participacion(match, usuario_id):
     if match.todas_confirmadas():
         match.estado = "confirmado_total"
         for p in match.participaciones:
-            p.turno_cedido.estado = "resuelto"
-            p.publicacion.actualizar_estado()
+            if p.turno_cedido_id is not None:
+                p.turno_cedido.estado = "resuelto"
+                p.publicacion.actualizar_estado()
+            else:
+                # Participante de tipo 'regalo': no tiene turno_cedido que resolver.
+                p.publicacion.estado = "confirmada"
     else:
         match.estado = "confirmado_parcial"
         for p in match.participaciones:

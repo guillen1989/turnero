@@ -129,6 +129,40 @@ def test_publicar_rechaza_turno_cedido_con_fecha_pasada(client, db):
     assert PublicacionCambio.query.count() == 0
 
 
+def test_publicar_regalo_crea_publicacion_sin_cedidos(client, db):
+    """Un regalo publica solo turnos aceptados (nada que ceder)."""
+    usuario = _usuario_y_login(client)
+    franja = _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.post("/publicar", data={
+        "tipo": "regalo",
+        "fecha_aceptada_0": "2026-09-01",
+        "franja_aceptada_0": franja.id,
+    }, follow_redirects=False)
+    assert resp.status_code == 302
+    pub = PublicacionCambio.query.filter_by(usuario_id=usuario.id).first()
+    assert pub is not None
+    assert pub.tipo == "regalo"
+    assert len(pub.turnos_cedidos) == 0
+    assert len(pub.turnos_aceptados) == 1
+
+
+def test_publicar_peticion_crea_publicacion_sin_aceptados(client, db):
+    """Una petición publica solo turnos cedidos (nada que ofrecer)."""
+    usuario = _usuario_y_login(client)
+    franja = _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.post("/publicar", data={
+        "tipo": "peticion",
+        "fecha_cedida_0": "2026-09-01",
+        "franja_cedida_0": franja.id,
+    }, follow_redirects=False)
+    assert resp.status_code == 302
+    pub = PublicacionCambio.query.filter_by(usuario_id=usuario.id).first()
+    assert pub is not None
+    assert pub.tipo == "peticion"
+    assert len(pub.turnos_cedidos) == 1
+    assert len(pub.turnos_aceptados) == 0
+
+
 def test_publicar_rechaza_turno_aceptado_con_fecha_pasada(client, db):
     from datetime import date, timedelta
     usuario = _usuario_y_login(client)

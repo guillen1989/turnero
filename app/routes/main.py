@@ -153,7 +153,6 @@ def cambios():
 
     q = (
         PublicacionCambio.query
-        .join(TurnoCedido, PublicacionCambio.id == TurnoCedido.publicacion_id)
         .join(Usuario, PublicacionCambio.usuario_id == Usuario.id)
         .join(Unidad, Usuario.unidad_id == Unidad.id)
         .filter(
@@ -165,7 +164,7 @@ def cambios():
     )
 
     if mes or dia:
-        cedido_parts = []
+        cedido_parts = [TurnoCedido.publicacion_id == PublicacionCambio.id]
         aceptado_parts = [TurnoAceptado.publicacion_id == PublicacionCambio.id]
         if mes:
             cedido_parts.append(extract("month", TurnoCedido.fecha) == mes)
@@ -174,13 +173,21 @@ def cambios():
             cedido_parts.append(extract("day", TurnoCedido.fecha) == dia)
             aceptado_parts.append(extract("day", TurnoAceptado.fecha) == dia)
         q = q.filter(or_(
-            and_(*cedido_parts),
+            exists().where(and_(*cedido_parts)),
             exists().where(and_(*aceptado_parts)),
         ))
     if nombre:
         q = q.filter(Usuario.nombre.ilike(f"%{nombre}%"))
     if franja_id:
-        q = q.filter(TurnoCedido.franja_horaria_id == franja_id)
+        cedido_franja = exists().where(
+            and_(TurnoCedido.publicacion_id == PublicacionCambio.id,
+                 TurnoCedido.franja_horaria_id == franja_id)
+        )
+        aceptado_franja = exists().where(
+            and_(TurnoAceptado.publicacion_id == PublicacionCambio.id,
+                 TurnoAceptado.franja_horaria_id == franja_id)
+        )
+        q = q.filter(or_(cedido_franja, aceptado_franja))
 
     publicaciones = q.distinct().order_by(PublicacionCambio.fecha_creacion.desc()).all()
 

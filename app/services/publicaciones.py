@@ -2,12 +2,13 @@ from app.extensions import db
 from app.models import MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado
 
 
-def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None):
+def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, tipo="cambio"):
     """
     Crea una PublicacionCambio con los turnos indicados.
     turnos_cedidos/aceptados: listas de (fecha: date, franja_horaria_id: int)
+    tipo: 'cambio' | 'regalo' | 'peticion'
     """
-    pub = PublicacionCambio(usuario_id=usuario_id, mensaje=mensaje or None)
+    pub = PublicacionCambio(usuario_id=usuario_id, mensaje=mensaje or None, tipo=tipo)
     db.session.add(pub)
     db.session.flush()
 
@@ -48,7 +49,7 @@ def _eliminar_matches_de_publicacion(pub_id):
         db.session.delete(match)
 
 
-def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None):
+def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo=None):
     """
     Reemplaza los turnos de una publicación activa y recalcula matches.
     turnos_cedidos/aceptados: listas de (fecha: date, franja_horaria_id: int)
@@ -62,6 +63,8 @@ def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None):
     db.session.flush()
 
     pub.mensaje = mensaje or None
+    if tipo is not None:
+        pub.tipo = tipo
     for fecha, franja_id in turnos_cedidos:
         db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja_id))
     for fecha, franja_id in turnos_aceptados:

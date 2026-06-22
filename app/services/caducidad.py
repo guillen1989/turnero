@@ -23,10 +23,16 @@ def caducar_publicaciones_expiradas(hoy=None):
 
     caducadas = []
     for pub in activas:
-        turnos_abiertos = [t for t in pub.turnos_cedidos if t.estado == "abierto"]
-        if turnos_abiertos and all(t.fecha < hoy for t in turnos_abiertos):
-            pub.estado = "caducada"
-            caducadas.append(pub)
+        if pub.tipo == "regalo":
+            # Para regalos: caduca si todos los turnos ofrecidos ya han pasado.
+            if pub.turnos_aceptados and all(t.fecha < hoy for t in pub.turnos_aceptados):
+                pub.estado = "caducada"
+                caducadas.append(pub)
+        else:
+            turnos_abiertos = [t for t in pub.turnos_cedidos if t.estado == "abierto"]
+            if turnos_abiertos and all(t.fecha < hoy for t in turnos_abiertos):
+                pub.estado = "caducada"
+                caducadas.append(pub)
 
     if caducadas:
         db.session.commit()

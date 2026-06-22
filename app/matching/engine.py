@@ -7,6 +7,18 @@ sin modificar esta capa.
 """
 
 
+def detectar_match_regalo(aceptados_regalo, cedidos_peticion):
+    """
+    Devuelve True si una publicación 'regalo' cubre una 'peticion'.
+
+    Condición: al menos un turno que el regalo ofrece trabajar coincide
+    con algún turno que la petición quiere librar.
+
+    aceptados_regalo / cedidos_peticion: iterables de (fecha: date, franja_horaria_id: int).
+    """
+    return bool(frozenset(aceptados_regalo) & frozenset(cedidos_peticion))
+
+
 def detectar_match_directo(cedidos_a, aceptados_a, cedidos_b, aceptados_b):
     """
     Devuelve True si las publicaciones A y B forman un match directo.

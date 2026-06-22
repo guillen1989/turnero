@@ -16,7 +16,7 @@ from app.models import (
     Unidad,
     Usuario,
 )
-from app.matching.engine import detectar_match_directo
+from app.matching.engine import detectar_match_directo, detectar_match_regalo
 from app.push.sender import enviar_push
 
 
@@ -43,17 +43,9 @@ def _primer_cedido_que_acepta(pub, aceptados_contraparte):
     return None
 
 
-def buscar_matches_para(publicacion):
-    """
-    Devuelve las publicaciones activas que hacen match directo con `publicacion`.
-
-    Solo considera candidatas del mismo grupo de intercambio y misma categoría,
-    excluyendo la propia publicación y las inactivas.
-    """
-    propietario = db.session.get(Usuario, publicacion.usuario_id)
-    grupo_id = propietario.unidad.grupo_intercambio_id
-
-    candidatas = (
+def _candidatas_base(publicacion, propietario, grupo_id):
+    """Consulta base de candidatas activas del mismo grupo y categoría."""
+    return (
         PublicacionCambio.query
         .join(Usuario, PublicacionCambio.usuario_id == Usuario.id)
         .join(Unidad, Usuario.unidad_id == Unidad.id)
@@ -66,57 +58,98 @@ def buscar_matches_para(publicacion):
         .all()
     )
 
-    cedidos_pub = _cedidos_abiertos(publicacion)
-    aceptados_pub = _aceptados(publicacion)
 
-    return [
-        c for c in candidatas
-        if detectar_match_directo(
-            cedidos_pub,
-            aceptados_pub,
-            _cedidos_abiertos(c),
-            _aceptados(c),
-        )
-    ]
+def buscar_matches_para(publicacion):
+    """
+    Devuelve las publicaciones activas que hacen match con `publicacion`.
+
+    - tipo 'cambio': match directo bidireccional contra otras de tipo 'cambio'.
+    - tipo 'regalo': match contra publicaciones de tipo 'peticion' (sus cedidos).
+    - tipo 'peticion': match contra publicaciones de tipo 'regalo' (sus aceptados).
+    """
+    propietario = db.session.get(Usuario, publicacion.usuario_id)
+    grupo_id = propietario.unidad.grupo_intercambio_id
+    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+
+    tipo = publicacion.tipo
+
+    if tipo == "cambio":
+        cedidos_pub = _cedidos_abiertos(publicacion)
+        aceptados_pub = _aceptados(publicacion)
+        return [
+            c for c in candidatas
+            if c.tipo == "cambio" and detectar_match_directo(
+                cedidos_pub, aceptados_pub,
+                _cedidos_abiertos(c), _aceptados(c),
+            )
+        ]
+
+    if tipo == "regalo":
+        aceptados_pub = _aceptados(publicacion)
+        return [
+            c for c in candidatas
+            if c.tipo == "peticion" and detectar_match_regalo(
+                aceptados_pub, _cedidos_abiertos(c)
+            )
+        ]
+
+    if tipo == "peticion":
+        cedidos_pub = _cedidos_abiertos(publicacion)
+        return [
+            c for c in candidatas
+            if c.tipo == "regalo" and detectar_match_regalo(
+                _aceptados(c), cedidos_pub
+            )
+        ]
+
+    return []
+
+
+def _primer_aceptado_que_cubre(pub, cedidos_contraparte):
+    """Primer TurnoAceptado de pub cuya clave (fecha, franja_id) está en cedidos_contraparte."""
+    for t in pub.turnos_aceptados:
+        if (t.fecha, t.franja_horaria_id) in cedidos_contraparte:
+            return t
+    return None
 
 
 def crear_match_directo(pub_a, pub_b):
     """
-    Crea un MatchCambio directo (2 bandas) entre pub_a y pub_b con sus
-    MatchParticipacion y las Notificacion para cada usuario implicado.
+    Crea un MatchCambio directo (2 bandas) entre pub_a y pub_b.
+
+    Soporta los tres tipos de publicación:
+    - cambio ↔ cambio: intercambio clásico, ambos ceden turno.
+    - regalo ↔ peticion: regalo da (turno_aceptado), peticion recibe (turno_cedido).
     """
-    aceptados_a = _aceptados(pub_a)
-    aceptados_b = _aceptados(pub_b)
-
-    turno_a = _primer_cedido_que_acepta(pub_a, aceptados_b)
-    turno_b = _primer_cedido_que_acepta(pub_b, aceptados_a)
-
     match = MatchCambio(tipo="directo_2", estado="propuesto")
     db.session.add(match)
     db.session.flush()
 
-    db.session.add(MatchParticipacion(
-        match_id=match.id,
-        publicacion_id=pub_a.id,
-        turno_cedido_id=turno_a.id,
-    ))
-    db.session.add(MatchParticipacion(
-        match_id=match.id,
-        publicacion_id=pub_b.id,
-        turno_cedido_id=turno_b.id,
-    ))
+    tipo_a = pub_a.tipo
+    tipo_b = pub_b.tipo
 
-    db.session.add(Notificacion(
-        usuario_id=pub_a.usuario_id,
-        match_id=match.id,
-        tipo="nuevo_match",
-    ))
-    db.session.add(Notificacion(
-        usuario_id=pub_b.usuario_id,
-        match_id=match.id,
-        tipo="nuevo_match",
-    ))
+    if tipo_a == "cambio" and tipo_b == "cambio":
+        aceptados_a = _aceptados(pub_a)
+        aceptados_b = _aceptados(pub_b)
+        turno_a = _primer_cedido_que_acepta(pub_a, aceptados_b)
+        turno_b = _primer_cedido_que_acepta(pub_b, aceptados_a)
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=turno_a.id))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=turno_b.id))
 
+    elif tipo_a == "regalo" and tipo_b == "peticion":
+        ta = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
+        tc = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_aceptado_id=ta.id))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc.id))
+
+    elif tipo_a == "peticion" and tipo_b == "regalo":
+        tc = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
+        ta = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc.id))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_aceptado_id=ta.id))
+
+    db.session.add(Notificacion(usuario_id=pub_a.usuario_id, match_id=match.id, tipo="nuevo_match"))
+    db.session.add(Notificacion(usuario_id=pub_b.usuario_id, match_id=match.id, tipo="nuevo_match"))
     db.session.commit()
 
     enviar_push(pub_a.usuario, "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
