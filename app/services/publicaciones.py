@@ -49,6 +49,9 @@ def _eliminar_matches_de_publicacion(pub_id):
     for match in matches:
         Notificacion.query.filter_by(match_id=match.id).delete()
         db.session.delete(match)
+    # Flush antes de continuar: garantiza que MatchParticipacion (que puede referenciar
+    # TurnoAceptado via turno_aceptado_id) se elimine antes que TurnoAceptado.
+    db.session.flush()
 
 
 def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo=None):

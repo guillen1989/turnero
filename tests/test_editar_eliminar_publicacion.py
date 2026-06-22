@@ -184,3 +184,38 @@ def test_eliminar_borra_matches_asociados(client, db):
 
     assert db.session.get(PublicacionCambio, pub1.id) is None
     assert MatchCambio.query.count() == 0
+
+
+def test_eliminar_regalo_con_match_no_da_error(client, db):
+    """Eliminar una publicación tipo regalo que tiene un match no debe dar 500.
+
+    El bug era que SQLAlchemy podía intentar borrar TurnoAceptado (via cascada
+    desde la pub) antes que MatchParticipacion.turno_aceptado_id, violando la FK.
+    """
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    franja = _franja(u1.unidad.grupo_intercambio_id)
+    fecha = date(2026, 9, 1)
+
+    # u1 publica regalo: ofrece trabajar fecha
+    regalo = PublicacionCambio(usuario_id=u1.id, tipo="regalo")
+    db.session.add(regalo)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=regalo.id, fecha=fecha, franja_horaria_id=franja.id))
+
+    # u2 publica peticion: quiere librar fecha
+    peticion = PublicacionCambio(usuario_id=u2.id, tipo="peticion")
+    db.session.add(peticion)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=peticion.id, fecha=fecha, franja_horaria_id=franja.id))
+    db.session.commit()
+
+    from app.matching.service import crear_match_directo
+    crear_match_directo(regalo, peticion)
+    assert MatchCambio.query.count() == 1
+
+    _login(client, u1.email)
+    resp = client.post(f"/publicaciones/{regalo.id}/eliminar", follow_redirects=False)
+    assert resp.status_code == 302
+    assert db.session.get(PublicacionCambio, regalo.id) is None
+    assert MatchCambio.query.count() == 0
