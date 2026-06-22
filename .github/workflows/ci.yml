@@ -41,3 +41,26 @@ jobs:
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost/cambiaturnos_test
           SECRET_KEY: ci-secret-key-no-importa
         run: python -m pytest tests/ -q --tb=short --no-testmon
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar requests
+        run: pip install requests
+
+      - name: Esperar deploy Railway (~90s)
+        run: sleep 90
+
+      - name: Smoke test producción
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+        run: python scripts/smoke_test.py

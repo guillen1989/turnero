@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Junte de noches implementado y desplegado. Sin pasos pendientes definidos.
+Backlog de calidad completado. Sin pasos pendientes definidos.
 
 ## Backlog (fuente: .backlog)
 - [x] B1: Mensaje opcional (≤200 chars) al publicar un cambio ✓
@@ -56,10 +56,12 @@ Junte de noches implementado y desplegado. Sin pasos pendientes definidos.
 - [x] feat: nuevo tipo de publicación «Junte de noches» · formulario asistido con selector de semana, cadencia (LMVD / MJS) y cuadrícula de 7 noches · el servidor deriva automáticamente cedidos y aceptados · matching usa el motor existente · 8 tests · 223 tests passing
 - [x] fix(migration): patrón nullable→backfill→NOT NULL aplicado a tipo en publicacion_cambio y cualquier_franja en turno_aceptado · crashes de deploy resueltos
 - [x] feat: sistema de feedback por email · ruta /feedback · envío a domingofestivo@gmail.com via Gmail SMTP · prerellena email si el usuario está autenticado · 7 tests
+- [x] fix(feedback): guarda feedback en BD en vez de SMTP síncrono · nuevo modelo Feedback · vista /admin/feedback · 9 tests · 225 passing
+- [x] chore: pipeline CI/CD completo · GitHub Actions (suite completa + smoke test post-deploy) · pytest-testmon en pre-push local · Railway gate bloqueado hasta que CI pase
 
 ## Backlog de calidad (pendiente)
-- [ ] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar)
-- [ ] Añadir APP_URL al .env local y documentar el paso de smoke test en el proceso de deploy
+- [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓
+- [x] Añadir APP_URL al .env local y smoke test integrado en GitHub Actions post-deploy ✓
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
