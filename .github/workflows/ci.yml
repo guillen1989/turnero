@@ -14,7 +14,7 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: cambiaturnos_test
+          POSTGRES_DB: turnero_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Ejecutar suite completa
         env:
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost/cambiaturnos_test
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost/turnero_test
           SECRET_KEY: ci-secret-key-no-importa
         run: python -m pytest tests/ -q --tb=short --no-testmon
 

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Mis cambios publicados') }} — {{ _('CambiaTurnos') }}{% endblock %}
+{% block title %}{{ _('Mis cambios publicados') }} — {{ _('Turnero') }}{% endblock %}
 
 {% block content %}
 <div class="dashboard">
@@ -141,25 +141,25 @@
             {% set franja = _('cualquier turno') if t.cualquier_franja else t.franja_horaria.nombre %}
             {% if loop.first %}{% set ns.wa_turnos = t.fecha|string + ' (' + franja + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha|string + ' (' + franja + ')' %}{% endif %}
           {% endfor %}
-          {% set wa_texto = _('Me ofrezco a trabajar en sustitución: ') + ns.wa_turnos + '. ' + _('¿Te interesa? Únete en CambiaTurnos: ') + app_url %}
+          {% set wa_texto = _('Me ofrezco a trabajar en sustitución: ') + ns.wa_turnos + '. ' + _('¿Te interesa? Únete en Turnero:') + app_url %}
         {% elif pub.tipo == 'peticion' %}
           {% set ns = namespace(wa_turnos='') %}
           {% for t in pub.turnos_cedidos %}
             {% if loop.first %}{% set ns.wa_turnos = t.fecha|string + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha|string + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
           {% endfor %}
-          {% set wa_texto = _('Busco a alguien que me cubra un turno: ') + ns.wa_turnos + '. ' + _('¿Puedes ayudarme? Únete en CambiaTurnos: ') + app_url %}
+          {% set wa_texto = _('Busco a alguien que me cubra un turno: ') + ns.wa_turnos + '. ' + _('¿Puedes ayudarme? Únete en Turnero:') + app_url %}
         {% elif pub.tipo == 'junte' %}
           {% set ns = namespace(wa_turnos='') %}
           {% for t in pub.turnos_cedidos %}
             {% if loop.first %}{% set ns.wa_turnos = t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
           {% endfor %}
-          {% set wa_texto = _('Busco compañero/a para un junte de noches: ') + ns.wa_turnos + '. ' + _('¿Te interesa? Únete en CambiaTurnos: ') + app_url %}
+          {% set wa_texto = _('Busco compañero/a para un junte de noches: ') + ns.wa_turnos + '. ' + _('¿Te interesa? Únete en Turnero:') + app_url %}
         {% else %}
           {% set ns = namespace(wa_turnos='') %}
           {% for t in pub.turnos_cedidos %}
             {% if loop.first %}{% set ns.wa_turnos = t.fecha|string + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha|string + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
           {% endfor %}
-          {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar: ') + ns.wa_turnos + '. ' + _('¿Te interesa? Únete en CambiaTurnos: ') + app_url %}
+          {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar: ') + ns.wa_turnos + '. ' + _('¿Te interesa? Únete en Turnero:') + app_url %}
         {% endif %}
         <div class="pub-acciones">
           <a href="{{ url_for('publicaciones.editar', pub_id=pub.id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>
@@ -199,9 +199,13 @@
   btn.addEventListener('click', async function () {
     btn.disabled = true;
     if (typeof _suscribirPush === 'function') {
-      var ok = await _suscribirPush();
-      if (ok) {
+      var result = await _suscribirPush();
+      if (result === 'ok') {
         btn.textContent = '{{ _("Notificaciones activas ✓") }}';
+      } else if (result === 'denied') {
+        alert('{{ _("Las notificaciones están bloqueadas. Ve a Ajustes del sistema → Aplicaciones → Turnero → Permisos y activa las Notificaciones.") }}');
+        btn.textContent = '{{ _("Activar notificaciones") }}';
+        btn.disabled = false;
       } else {
         btn.textContent = '{{ _("No se pudieron activar") }}';
         btn.disabled = false;

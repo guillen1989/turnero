@@ -355,7 +355,7 @@ msgid ""
 msgstr ""
 
 #: app/services/email.py:82
-msgid "Nuevo cambio disponible — CambiaTurnos"
+msgid "Nuevo cambio disponible — Turnero"
 msgstr ""
 
 #: app/templates/base.html:7
@@ -657,14 +657,6 @@ msgstr ""
 msgid "Panel de administración"
 msgstr ""
 
-#: app/templates/admin/index.html:3 app/templates/auth/login.html:3
-#: app/templates/auth/perfil.html:3 app/templates/auth/registro.html:3
-#: app/templates/feedback/nuevo.html:3 app/templates/main/cambios.html:3
-#: app/templates/main/dashboard.html:3 app/templates/main/index.html:5
-#: app/templates/publicaciones/editar.html:3
-#: app/templates/publicaciones/publicar.html:3
-msgid "CambiaTurnos"
-msgstr ""
 
 #: app/templates/admin/paises.html:11 app/templates/admin/usuario_form.html:40
 #: app/templates/auth/perfil.html:23 app/templates/auth/registro.html:54
@@ -1141,7 +1133,7 @@ msgstr ""
 
 #: app/templates/main/dashboard.html:144 app/templates/main/dashboard.html:156
 #: app/templates/main/dashboard.html:162
-msgid "¿Te interesa? Únete en CambiaTurnos: "
+msgid "¿Te interesa? Únete en Turnero:"
 msgstr ""
 
 #: app/templates/main/dashboard.html:150
@@ -1149,7 +1141,7 @@ msgid "Busco a alguien que me cubra un turno: "
 msgstr ""
 
 #: app/templates/main/dashboard.html:150
-msgid "¿Puedes ayudarme? Únete en CambiaTurnos: "
+msgid "¿Puedes ayudarme? Únete en Turnero:"
 msgstr ""
 
 #: app/templates/main/dashboard.html:156

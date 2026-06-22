@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cambiaturnos-v1';
+const CACHE_NAME = 'turnero-v1';
 const URLS_PRECACHE = ['/'];
 
 self.addEventListener('install', event => {
@@ -26,7 +26,7 @@ self.addEventListener('fetch', event => {
 
 self.addEventListener('push', event => {
   const data = event.data ? event.data.json() : {};
-  const title = data.title || 'CambiaTurnos';
+  const title = data.title || 'Turnero';
   const options = {
     body: data.body || '',
     icon: '/static/icons/icon-192.png',

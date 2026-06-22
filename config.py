@@ -26,21 +26,21 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "noreply@cambiaturnos.app")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "noreply@turnero.app")
     FEEDBACK_RECIPIENT_EMAIL = os.environ.get("FEEDBACK_RECIPIENT_EMAIL", "")
 
 
 class DevelopmentConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", "postgresql:///cambiaturnos"
+        "DATABASE_URL", "postgresql:///turnero"
     )
 
 
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "TEST_DATABASE_URL", "postgresql:///cambiaturnos_test"
+        "TEST_DATABASE_URL", "postgresql:///turnero_test"
     )
     WTF_CSRF_ENABLED = False
     # NullPool evita que las conexiones se reutilicen entre tests,

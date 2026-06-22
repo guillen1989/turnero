@@ -8,7 +8,7 @@ def test_login_correcto_redirige_al_inicio(page, live_server, usuario):
     page.locator('[type="submit"]').click()
 
     page.wait_for_url(f"{live_server}/")
-    assert "CambiaTurnos" in page.title()
+    assert "Turnero" in page.title()
 
 
 def test_login_incorrecto_muestra_error(page, live_server, usuario):

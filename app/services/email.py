@@ -31,7 +31,7 @@ def enviar_notificacion_feedback(feedback):
 
     tipos = {"error": "Error en la app", "sugerencia": "Sugerencia de mejora"}
     tipo_label = tipos.get(feedback.tipo, feedback.tipo)
-    asunto = f"[CambiaTurnos] Nuevo feedback: {tipo_label}"
+    asunto = f"[Turnero] Nuevo feedback: {tipo_label}"
     cuerpo = (
         f"Tipo: {tipo_label}\n"
         f"Descripción: {feedback.descripcion}\n"
@@ -79,7 +79,7 @@ def enviar_aviso_match(usuario, publicacion, hoy=None):
             nombre=usuario.nombre,
         )
 
-    asunto = _("Nuevo cambio disponible — CambiaTurnos")
+    asunto = _("Nuevo cambio disponible — Turnero")
     _enviar_correo(usuario.email, asunto, cuerpo)
 
     db.session.add(AvisoEmail(usuario_id=usuario.id, fecha=hoy, publicacion_id=publicacion.id))

@@ -45,8 +45,8 @@ def run(base):
     results = []
 
     # Rutas públicas
-    results.append(check(session, "GET", f"{base}/auth/login",    200, "CambiaTurnos",    "login carga"))
-    results.append(check(session, "GET", f"{base}/manifest.json", 200, "CambiaTurnos",    "PWA manifest"))
+    results.append(check(session, "GET", f"{base}/auth/login",    200, "Turnero",    "login carga"))
+    results.append(check(session, "GET", f"{base}/manifest.json", 200, "Turnero",    "PWA manifest"))
     results.append(check(session, "GET", f"{base}/sw.js",         200, None,              "service worker"))
     results.append(check(session, "GET", f"{base}/static/css/main.css", 200, None,        "CSS principal"))
 
