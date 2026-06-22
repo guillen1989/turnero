@@ -189,6 +189,10 @@ def cambios():
         )
     )
 
+    pub_id = request.args.get("pub_id", type=int)
+    if pub_id:
+        q = q.filter(PublicacionCambio.id == pub_id)
+
     if mes or dia:
         cedido_parts = [TurnoCedido.publicacion_id == PublicacionCambio.id]
         aceptado_parts = [TurnoAceptado.publicacion_id == PublicacionCambio.id]
