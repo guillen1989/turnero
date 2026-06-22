@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Contacto') }} — {{ _('CambiaTurnos') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Contacto') }}</h1>
+  <p class="form-hint">{{ _('¿Has encontrado un error o tienes una sugerencia? Cuéntanos.') }}</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert--{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label>{{ _('Tipo') }}</label>
+      <div class="tipo-selector">
+        <label class="tipo-opcion">
+          <input type="radio" name="tipo" value="error" required>
+          <span class="tipo-label">{{ _('Reportar un error') }}</span>
+        </label>
+        <label class="tipo-opcion">
+          <input type="radio" name="tipo" value="sugerencia">
+          <span class="tipo-label">{{ _('Sugerir una mejora') }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="descripcion">{{ _('Descripción') }} <span class="required">*</span></label>
+      <textarea id="descripcion" name="descripcion" rows="5" maxlength="500" required
+        placeholder="{{ _('Describe el error o la mejora con el mayor detalle posible') }}"
+        class="mensaje-textarea"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="email_contacto">{{ _('Tu email (opcional)') }}</label>
+      <input type="email" id="email_contacto" name="email_contacto"
+        value="{{ email_prefill }}"
+        placeholder="{{ _('Para poder responderte') }}">
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">{{ _('Enviar') }}</button>
+      <a href="{{ url_for('main.index') }}" class="btn btn-secondary">{{ _('Cancelar') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

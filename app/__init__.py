@@ -46,6 +46,9 @@ def create_app(config_name=None):
     from app.routes.admin import bp as admin_bp
     app.register_blueprint(admin_bp)
 
+    from app.routes.feedback import bp as feedback_bp
+    app.register_blueprint(feedback_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 

@@ -69,6 +69,10 @@
     {% block content %}{% endblock %}
   </main>
 
+  <footer class="site-footer">
+    <a href="{{ url_for('feedback.nuevo') }}">{{ _('Contacto') }}</a>
+  </footer>
+
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(function () {});
