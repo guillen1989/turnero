@@ -34,7 +34,12 @@ def check(session, method, url, expected_status, expected_text=None, label=None)
         if not text_ok:
             detail += f", texto «{expected_text}» no encontrado"
             print(f"{RED}  ✗  {label}  — {detail}{RESET}")
-            print(f"       Respuesta recibida: {r.text[:300]!r}")
+            print(f"       Respuesta: {r.text[:300]!r}")
+            cache_headers = {k: v for k, v in r.headers.items()
+                             if k.lower() in ('cache-control', 'age', 'x-cache',
+                                              'cf-cache-status', 'x-railway-edge',
+                                              'via', 'server')}
+            print(f"       Headers caché: {cache_headers}")
         else:
             print(f"{RED}  ✗  {label}  — {detail}{RESET}")
         return False
