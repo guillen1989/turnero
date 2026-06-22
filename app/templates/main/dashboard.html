@@ -113,6 +113,7 @@
           {% endfor %}
         </div>
         {% else %}
+        <span class="tipo-badge tipo-badge--cambio">{{ _('Cambio') }}</span>
         <div class="turnos-cedidos">
           <strong>{{ _('Quiero librar:') }}</strong>
           {% for turno in pub.turnos_cedidos %}
