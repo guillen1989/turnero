@@ -535,6 +535,9 @@ body {
 .cambios-filtro-fields .form-group { flex: 1; min-width: 140px; margin-bottom: 0; }
 .cambios-filtro-actions { display: flex; gap: 0.5rem; }
 .publicacion-card--ajena { background: #fff; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-left: 4px solid #005a9c; list-style: none; }
+.pub-acciones--ajena { margin-top: 0.6rem; }
+.mmi-selects { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+.mmi-form-group { margin-bottom: 0; }
 .pub-autor { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.3rem; }
 .pub-autor-nombre { font-weight: 700; font-size: 0.95rem; color: #005a9c; text-decoration: none; }
 .pub-autor-nombre:hover { text-decoration: underline; }

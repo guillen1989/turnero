@@ -8,6 +8,7 @@ Backlog de calidad completado. Sin pasos pendientes definidos.
 
 ## Backlog (fuente: .backlog)
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
+- [x] B0b: «Me interesa» en Buscar cambios: match manual desde cualquier publicación ajena (Regalo/Petición/Junte/Cambio con modal de selección) ✓
 - [x] B1: Mensaje opcional (≤200 chars) al publicar un cambio ✓
 - [x] B2: Jerarquía hospital > categoría > servicio en desplegables ✓
 - [x] B3: Botón de instalación de la PWA ✓

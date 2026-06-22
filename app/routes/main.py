@@ -221,5 +221,34 @@ def cambios():
 
     publicaciones = q.distinct().order_by(PublicacionCambio.fecha_creacion.desc()).all()
 
+    pub_js_data = {pub.id: _pub_js_data(pub) for pub in publicaciones}
+    franjas_js = [{"id": f.id, "nombre": f.nombre} for f in franjas]
+
     return render_template("main/cambios.html", publicaciones=publicaciones,
-                           mes=mes, dia=dia, nombre=nombre, franja_id=franja_id, franjas=franjas)
+                           mes=mes, dia=dia, nombre=nombre, franja_id=franja_id, franjas=franjas,
+                           pub_js_data=pub_js_data, franjas_js=franjas_js)
+
+
+def _pub_js_data(pub):
+    return {
+        "id": pub.id,
+        "tipo": pub.tipo,
+        "autor": pub.usuario.nombre,
+        "cedidos": [
+            {
+                "id": tc.id,
+                "fecha": tc.fecha.strftime("%d/%m/%Y"),
+                "franja": tc.franja_horaria.nombre,
+            }
+            for tc in pub.turnos_cedidos if tc.estado == "abierto"
+        ],
+        "aceptados": [
+            {
+                "id": ta.id,
+                "fecha": ta.fecha.strftime("%d/%m/%Y"),
+                "franja": ta.franja_horaria.nombre if not ta.cualquier_franja else None,
+                "cualquierFranja": ta.cualquier_franja,
+            }
+            for ta in pub.turnos_aceptados
+        ],
+    }

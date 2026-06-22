@@ -118,6 +118,11 @@
       {% if pub.mensaje %}
       <p class="match-mensaje">"{{ pub.mensaje }}"</p>
       {% endif %}
+      <div class="pub-acciones pub-acciones--ajena">
+        <button type="button" class="btn btn-primary btn-sm"
+                data-pub-id="{{ pub.id }}"
+                onclick="abrirMeInteresa(this)">{{ _('Me interesa') }}</button>
+      </div>
     </li>
     {% endfor %}
   </ul>
@@ -131,4 +136,150 @@
   </p>
   {% endif %}
 </div>
+
+<!-- Modal "Me interesa" -->
+<div id="modal-me-interesa" class="modal-overlay modal-hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <p class="modal-title" id="mmi-title"></p>
+    <div id="mmi-desc" class="modal-body"></div>
+    <form id="mmi-form" method="post" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" id="mmi-tc" name="turno_cedido_id" value="">
+      <input type="hidden" id="mmi-ta" name="turno_aceptado_id" value="">
+      <input type="hidden" id="mmi-fb" name="franja_b" value="">
+      <div id="mmi-selects" class="mmi-selects"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarMeInteresa()">{{ _('Cancelar') }}</button>
+        <button type="submit" class="btn btn-primary btn-sm">{{ _('Aceptar') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+var _pubData = {{ pub_js_data | tojson }};
+var _franjas  = {{ franjas_js | tojson }};
+
+function cerrarMeInteresa() {
+  document.getElementById('modal-me-interesa').classList.add('modal-hidden');
+}
+
+document.getElementById('modal-me-interesa').addEventListener('click', function (e) {
+  if (e.target === this) cerrarMeInteresa();
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') cerrarMeInteresa();
+});
+
+function _sel(items, inputId, labelText) {
+  var wrap = document.createElement('div');
+  wrap.className = 'form-group mmi-form-group';
+  var lbl = document.createElement('label');
+  lbl.textContent = labelText;
+  var sel = document.createElement('select');
+  sel.className = 'form-control';
+  items.forEach(function (item) {
+    var opt = document.createElement('option');
+    opt.value = item.id;
+    var display = item.franja ? (item.fecha + ' — ' + item.franja) : (item.fecha + ' — Cualquier turno');
+    opt.textContent = display;
+    opt.dataset.cualquierFranja = item.cualquierFranja ? '1' : '0';
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', function () {
+    document.getElementById(inputId).value = this.value;
+    _actualizarSelectorFranja(this);
+  });
+  wrap.appendChild(lbl);
+  wrap.appendChild(sel);
+  return { wrap: wrap, sel: sel };
+}
+
+function _selectorFranja(labelText, inputId) {
+  var wrap = document.createElement('div');
+  wrap.className = 'form-group mmi-form-group';
+  wrap.id = 'mmi-franja-wrap-' + inputId;
+  wrap.style.display = 'none';
+  var lbl = document.createElement('label');
+  lbl.textContent = labelText;
+  var sel = document.createElement('select');
+  sel.className = 'form-control';
+  _franjas.forEach(function (f) {
+    var opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = f.nombre;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', function () {
+    document.getElementById(inputId).value = this.value;
+  });
+  wrap.appendChild(lbl);
+  wrap.appendChild(sel);
+  return wrap;
+}
+
+function _actualizarSelectorFranja(mainSel) {
+  var esCualquiera = mainSel.options[mainSel.selectedIndex].dataset.cualquierFranja === '1';
+  var wrapId = 'mmi-franja-wrap-mmi-fb';
+  var wrap = document.getElementById(wrapId);
+  if (wrap) {
+    wrap.style.display = esCualquiera ? '' : 'none';
+    if (!esCualquiera) document.getElementById('mmi-fb').value = '';
+  }
+}
+
+function abrirMeInteresa(btn) {
+  var pub = _pubData[parseInt(btn.dataset.pubId)];
+  if (!pub) return;
+
+  document.getElementById('mmi-form').action = '/cambios/' + pub.id + '/me-interesa';
+  document.getElementById('mmi-tc').value = '';
+  document.getElementById('mmi-ta').value = '';
+  document.getElementById('mmi-fb').value = '';
+  document.getElementById('mmi-selects').innerHTML = '';
+
+  var desc = document.getElementById('mmi-desc');
+  var selects = document.getElementById('mmi-selects');
+  var tipo = pub.tipo;
+
+  document.getElementById('mmi-title').textContent =
+    tipo === 'regalo'  ? '{{ _("¿Quieres que") }} ' + pub.autor + ' {{ _("trabaje en tu lugar?") }}' :
+    tipo === 'peticion'? '{{ _("¿Quieres cubrir un turno de") }} ' + pub.autor + '?' :
+    tipo === 'junte'   ? '{{ _("Junte de noches con") }} ' + pub.autor :
+                         '{{ _("Cambio con") }} ' + pub.autor;
+
+  if (tipo === 'regalo') {
+    desc.textContent = '{{ _("Selecciona el turno que quieres que te cubra:") }}';
+    var s = _sel(pub.aceptados, 'mmi-ta', '{{ _("Turno a cubrir") }}');
+    document.getElementById('mmi-ta').value = pub.aceptados[0] ? pub.aceptados[0].id : '';
+    selects.appendChild(s.wrap);
+    selects.appendChild(_selectorFranja('{{ _("¿Qué turno tuyo quieres librar?") }}', 'mmi-fb'));
+    _actualizarSelectorFranja(s.sel);
+  } else if (tipo === 'peticion') {
+    desc.textContent = '{{ _("Selecciona el turno que te ofreces a cubrir:") }}';
+    var s = _sel(pub.cedidos, 'mmi-tc', '{{ _("Turno a cubrir") }}');
+    document.getElementById('mmi-tc').value = pub.cedidos[0] ? pub.cedidos[0].id : '';
+    selects.appendChild(s.wrap);
+  } else if (tipo === 'junte') {
+    var html = '<p><strong>{{ _("Noches que cede:") }}</strong> ';
+    html += pub.cedidos.map(function (t) { return t.fecha; }).join(', ') + '</p>';
+    html += '<p><strong>{{ _("Noches que busca:") }}</strong> ';
+    html += pub.aceptados.map(function (t) { return t.fecha; }).join(', ') + '</p>';
+    html += '<p>{{ _("Aceptarás las noches que él/ella cede y le cederás las que busca.") }}</p>';
+    desc.innerHTML = html;
+  } else {
+    desc.textContent = '{{ _("Elige el turno que cubrirás y el que quieres que te cubran:") }}';
+    var sc = _sel(pub.cedidos, 'mmi-tc', '{{ _("Turno de") }} ' + pub.autor + ' {{ _("que cubrirás") }}');
+    document.getElementById('mmi-tc').value = pub.cedidos[0] ? pub.cedidos[0].id : '';
+    var sa = _sel(pub.aceptados, 'mmi-ta', '{{ _("Turno tuyo que") }} ' + pub.autor + ' {{ _("te cubrirá") }}');
+    document.getElementById('mmi-ta').value = pub.aceptados[0] ? pub.aceptados[0].id : '';
+    selects.appendChild(sc.wrap);
+    selects.appendChild(sa.wrap);
+    selects.appendChild(_selectorFranja('{{ _("¿Qué turno quieres librar?") }}', 'mmi-fb'));
+    _actualizarSelectorFranja(sa.sel);
+  }
+
+  document.getElementById('modal-me-interesa').classList.remove('modal-hidden');
+}
+</script>
 {% endblock %}

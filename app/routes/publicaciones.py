@@ -5,7 +5,7 @@ from flask_babel import _
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import FranjaHoraria, GrupoIntercambio, PublicacionCambio
+from app.models import FranjaHoraria, GrupoIntercambio, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default
 from app.matching.service import buscar_matches_para, crear_match_directo
@@ -271,3 +271,95 @@ def eliminar(pub_id):
     eliminar_publicacion(pub)
     flash(_("Publicación eliminada."), "success")
     return redirect(url_for("main.index"))
+
+
+@bp.post("/cambios/<int:pub_id>/me-interesa")
+@login_required
+def me_interesa(pub_id):
+    pub_a = db.get_or_404(PublicacionCambio, pub_id)
+
+    if pub_a.usuario_id == current_user.id:
+        flash(_("No puedes aceptar tu propia publicación."), "warning")
+        return redirect(url_for("main.cambios"))
+
+    if pub_a.estado not in ("abierta", "parcialmente_resuelta"):
+        flash(_("Esta publicación ya no está activa."), "warning")
+        return redirect(url_for("main.cambios"))
+
+    autor = db.session.get(Usuario, pub_a.usuario_id)
+    if (autor.categoria_id != current_user.categoria_id or
+            autor.unidad.grupo_intercambio_id != current_user.unidad.grupo_intercambio_id):
+        abort(403)
+
+    try:
+        pub_b = _crear_publicacion_espejo(pub_a)
+    except ValueError as exc:
+        flash(str(exc), "warning")
+        return redirect(url_for("main.cambios"))
+
+    match = crear_match_directo(pub_a, pub_b)
+    if match is None:
+        eliminar_publicacion(pub_b)
+        flash(_("No fue posible crear el match. Los turnos pueden haber cambiado."), "warning")
+        return redirect(url_for("main.cambios"))
+
+    flash(_("¡Match creado! Ve a «Mis cambios» para confirmar."), "success")
+    return redirect(url_for("main.index"))
+
+
+def _crear_publicacion_espejo(pub_a):
+    """Crea la publicación de current_user que encaja con pub_a y lanza el match."""
+    tipo = pub_a.tipo
+
+    if tipo == "regalo":
+        ta_id = request.form.get("turno_aceptado_id", type=int)
+        if not ta_id:
+            raise ValueError(_("Selecciona el turno que te interesa."))
+        ta = TurnoAceptado.query.filter_by(id=ta_id, publicacion_id=pub_a.id).first()
+        if ta is None:
+            raise ValueError(_("Turno no encontrado en esta publicación."))
+        if ta.cualquier_franja:
+            franja_b = request.form.get("franja_b", type=int)
+            if not franja_b:
+                raise ValueError(_("Especifica el turno que quieres librar."))
+            cedidos = [(ta.fecha, franja_b)]
+        else:
+            cedidos = [(ta.fecha, ta.franja_horaria_id)]
+        return publicar_cambio(current_user.id, cedidos, [], tipo="peticion")
+
+    if tipo == "peticion":
+        tc_id = request.form.get("turno_cedido_id", type=int)
+        if not tc_id:
+            raise ValueError(_("Selecciona el turno que quieres cubrir."))
+        tc = TurnoCedido.query.filter_by(id=tc_id, publicacion_id=pub_a.id, estado="abierto").first()
+        if tc is None:
+            raise ValueError(_("Turno no encontrado o ya resuelto."))
+        return publicar_cambio(current_user.id, [], [(tc.fecha, tc.franja_horaria_id)], tipo="regalo")
+
+    if tipo == "junte":
+        cedidos_b = [(ta.fecha, ta.franja_horaria_id) for ta in pub_a.turnos_aceptados]
+        aceptados_b = [(tc.fecha, tc.franja_horaria_id) for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
+        if not cedidos_b or not aceptados_b:
+            raise ValueError(_("El junte ya no tiene turnos disponibles."))
+        return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="junte")
+
+    if tipo == "cambio":
+        tc_id = request.form.get("turno_cedido_id", type=int)
+        ta_id = request.form.get("turno_aceptado_id", type=int)
+        if not tc_id or not ta_id:
+            raise ValueError(_("Selecciona los dos turnos."))
+        tc = TurnoCedido.query.filter_by(id=tc_id, publicacion_id=pub_a.id, estado="abierto").first()
+        ta = TurnoAceptado.query.filter_by(id=ta_id, publicacion_id=pub_a.id).first()
+        if tc is None or ta is None:
+            raise ValueError(_("Turnos no encontrados en esta publicación."))
+        if ta.cualquier_franja:
+            franja_b = request.form.get("franja_b", type=int)
+            if not franja_b:
+                raise ValueError(_("Especifica el turno que quieres librar."))
+            cedidos_b = [(ta.fecha, franja_b)]
+        else:
+            cedidos_b = [(ta.fecha, ta.franja_horaria_id)]
+        aceptados_b = [(tc.fecha, tc.franja_horaria_id)]
+        return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="cambio")
+
+    raise ValueError(_("Tipo de publicación no reconocido."))
