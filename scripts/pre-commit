@@ -1,0 +1,22 @@
+#!/bin/bash
+# Hook de pre-commit: aborta el commit si las migraciones Alembic tienen
+# múltiples cabezas. Detecta el error en el momento de crear la migración,
+# no al hacer push.
+# Instalar con: scripts/install-hooks.sh
+
+# Solo comprueba si hay archivos de migración en el staging area
+if git diff --cached --name-only | grep -q "migrations/versions/"; then
+    echo "▶ Nueva migración detectada. Verificando cadena Alembic..."
+    HEADS=$(python -m flask db heads 2>/dev/null | grep -c "(head)" || echo 0)
+    if [ "$HEADS" -ne 1 ]; then
+        echo ""
+        echo "✗ Alembic tiene $HEADS cabezas (debe ser exactamente 1). Commit abortado."
+        echo "  Ejecuta: flask db heads"
+        echo "  Corrige el down_revision de la nueva migración para que apunte al head actual."
+        echo "  Consejo: usa 'flask db migrate -m \"mensaje\"' en vez de crear el archivo a mano."
+        exit 1
+    fi
+    echo "✓ Cadena de migraciones correcta (1 head)."
+fi
+
+exit 0

@@ -5,7 +5,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOOKS_DIR="$SCRIPT_DIR/../.git/hooks"
 
+ln -sf "$SCRIPT_DIR/pre-commit" "$HOOKS_DIR/pre-commit"
+chmod +x "$SCRIPT_DIR/pre-commit"
+
 ln -sf "$SCRIPT_DIR/pre-push" "$HOOKS_DIR/pre-push"
 chmod +x "$SCRIPT_DIR/pre-push"
 
-echo "✓ Hooks instalados."
+echo "✓ Hooks instalados (pre-commit + pre-push)."

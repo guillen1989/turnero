@@ -1,6 +1,18 @@
 #!/bin/bash
-# Hook de pre-push: aborta el push si algún test falla.
+# Hook de pre-push: aborta el push si las migraciones tienen múltiples cabezas
+# o si algún test falla.
 # Instalar con: scripts/install-hooks.sh
+
+echo "▶ Verificando cadena de migraciones Alembic..."
+HEADS=$(python -m flask db heads 2>/dev/null | grep -c "(head)" || echo 0)
+if [ "$HEADS" -ne 1 ]; then
+    echo ""
+    echo "✗ Alembic tiene $HEADS cabezas (debe ser exactamente 1). Push abortado."
+    echo "  Ejecuta: flask db heads"
+    echo "  Corrige el down_revision del archivo nuevo para que apunte al head actual."
+    exit 1
+fi
+echo "✓ Cadena de migraciones correcta (1 head)."
 
 echo "▶ Ejecutando tests antes del push..."
 python -m pytest tests/ -q --tb=short 2>&1

@@ -134,6 +134,24 @@ batch_op.alter_column('tipo', nullable=False)
 
 Esto aplica a cualquier columna nueva con `NOT NULL` y sin `server_default`. Si la tabla está vacía en producción (nueva en este deploy), el patrón de un solo paso es seguro.
 
+### Crear migraciones — OBLIGATORIO
+
+**Nunca crear el archivo de migración a mano desde cero.** Alembic escribe el `down_revision` correcto automáticamente; si lo escribes a mano te arriesgas a apuntar a un nodo que no es el head actual, lo que genera múltiples cabezas y crashea el deploy.
+
+Flujo correcto:
+
+```bash
+# 1. Modifica el modelo en app/models.py
+# 2. Genera el esqueleto (Alembic detecta el head actual y lo pone en down_revision)
+flask db migrate -m "descripción breve"
+# 3. Revisa y edita el cuerpo de upgrade()/downgrade() si hace falta
+#    (p. ej. aplicar el patrón de tres pasos para columnas NOT NULL)
+# 4. Verifica que la cadena sigue siendo lineal
+flask db heads   # debe mostrar exactamente 1 head
+```
+
+Si por cualquier razón creas el archivo manualmente, ejecuta `flask db heads` antes de hacer commit y asegúrate de que el resultado es exactamente `1 (head)`. El hook de pre-commit lo comprobará automáticamente si hay archivos de migración en el staging area, y el hook de pre-push lo comprobará siempre.
+
 ---
 
 ## Principios de diseño irrenunciables
