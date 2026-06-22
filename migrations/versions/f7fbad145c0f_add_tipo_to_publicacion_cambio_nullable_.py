@@ -26,7 +26,12 @@ def upgrade():
         batch_op.create_foreign_key(None, 'turno_aceptado', ['turno_aceptado_id'], ['id'])
 
     with op.batch_alter_table('publicacion_cambio', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('tipo', sa.String(length=20), nullable=False))
+        batch_op.add_column(sa.Column('tipo', sa.String(length=20), nullable=True))
+
+    op.execute("UPDATE publicacion_cambio SET tipo = 'cambio' WHERE tipo IS NULL")
+
+    with op.batch_alter_table('publicacion_cambio', schema=None) as batch_op:
+        batch_op.alter_column('tipo', nullable=False)
 
     # ### end Alembic commands ###
 
