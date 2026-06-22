@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Visor de cambios implementado. Pendiente: despliegue en Railway con flask db upgrade.
+Red de seguridad de tests completada. Siguiente: continuar con funcionalidades de producto o despliegue en Railway.
 
 ## Backlog (fuente: .backlog)
 - [x] B1: Mensaje opcional (≤200 chars) al publicar un cambio ✓
@@ -40,6 +40,14 @@ Visor de cambios implementado. Pendiente: despliegue en Railway con flask db upg
 - [x] Fase 9, paso 2: campo es_admin en Usuario · migración · CLI flask init-admin · panel /admin (usuarios, hospitales, unidades, categorías, publicaciones) · 153 tests passing
 - [x] Fase 9, paso 3: jerarquía geográfica País > Provincia > Ciudad > Hospital · modelos Pais/Provincia/Ciudad · migración · API /auth/api/provincias|ciudades|hospitales · cascade JS 4 niveles · CRUD admin para países/provincias/ciudades · panel de perfil y registro actualizados · 155 tests passing
 - [x] Fase 9, paso 4: visor /cambios · filtro por mes y/o día · restringe a mismo grupo+categoría · enlace en nav · 166 tests passing
+- [x] Fix: formularios anidados en /publicar · el form de «nueva franja» estaba dentro del form principal · el navegador fusionaba ambos e incluía accion=nueva_franja en el submit principal · bloqueaba la publicación a todos los usuarios · solución: mover el form de nueva franja fuera del form principal
+- [x] Calidad: hook git pre-push · ejecuta pytest tests/ antes de cada push · aborta si algún test falla · script instalable en scripts/install-hooks.sh
+- [x] Calidad: tests E2E con Playwright · 6 tests en e2e/ contra Chromium headless · cubren login, rutas protegidas, publicación de turno, validación server-side y regresión del bug de formularios anidados · pytest e2e/ los ejecuta · no bloquean el hook pre-push (que solo corre tests/)
+- [x] Calidad: smoke test post-deploy · scripts/smoke_test.py · 7 checks HTTP contra la URL de producción · detecta app caída, migraciones rotas y estáticos inaccesibles · uso: python scripts/smoke_test.py https://tu-app.railway.app
+
+## Backlog de calidad (pendiente)
+- [ ] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar)
+- [ ] Añadir APP_URL al .env local y documentar el paso de smoke test en el proceso de deploy
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
