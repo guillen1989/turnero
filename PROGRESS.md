@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Todas las mejoras del backlog implementadas. Pendiente: despliegue en Railway con flask db upgrade (3 migraciones nuevas).
+Junte de noches implementado y desplegado. Sin pasos pendientes definidos.
 
 ## Backlog (fuente: .backlog)
 - [x] B1: Mensaje opcional (≤200 chars) al publicar un cambio ✓
@@ -50,6 +50,12 @@ Todas las mejoras del backlog implementadas. Pendiente: despliegue en Railway co
 - [x] Calidad: hook git pre-push · ejecuta pytest tests/ antes de cada push · aborta si algún test falla · script instalable en scripts/install-hooks.sh
 - [x] Calidad: tests E2E con Playwright · 6 tests en e2e/ contra Chromium headless · cubren login, rutas protegidas, publicación de turno, validación server-side y regresión del bug de formularios anidados · pytest e2e/ los ejecuta · no bloquean el hook pre-push (que solo corre tests/)
 - [x] Calidad: smoke test post-deploy · scripts/smoke_test.py · 7 checks HTTP contra la URL de producción · detecta app caída, migraciones rotas y estáticos inaccesibles · uso: python scripts/smoke_test.py https://tu-app.railway.app
+- [x] feat: enlace «Mis cambios» añadido a la barra de navegación (apunta al dashboard /)
+- [x] feat: footer de contacto rediseñado con separador, texto descriptivo y estilos integrados
+- [x] feat: selector de tipo de publicación rediseñado como tarjetas con borde, negrita y descripción secundaria
+- [x] feat: nuevo tipo de publicación «Junte de noches» · formulario asistido con selector de semana, cadencia (LMVD / MJS) y cuadrícula de 7 noches · el servidor deriva automáticamente cedidos y aceptados · matching usa el motor existente · 8 tests · 223 tests passing
+- [x] fix(migration): patrón nullable→backfill→NOT NULL aplicado a tipo en publicacion_cambio y cualquier_franja en turno_aceptado · crashes de deploy resueltos
+- [x] feat: sistema de feedback por email · ruta /feedback · envío a domingofestivo@gmail.com via Gmail SMTP · prerellena email si el usuario está autenticado · 7 tests
 
 ## Backlog de calidad (pendiente)
 - [ ] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar)
