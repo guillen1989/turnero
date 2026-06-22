@@ -93,12 +93,12 @@ def buscar_matches_para(publicacion):
 
     tipo = publicacion.tipo
 
-    if tipo == "cambio":
+    if tipo in ("cambio", "junte"):
         cedidos_pub = _cedidos_abiertos(publicacion)
         aceptados_pub = _aceptados(publicacion)
         return [
             c for c in candidatas
-            if c.tipo == "cambio" and detectar_match_directo(
+            if c.tipo == tipo and detectar_match_directo(
                 cedidos_pub, aceptados_pub,
                 _cedidos_abiertos(c), _aceptados(c),
             )
@@ -156,7 +156,7 @@ def crear_match_directo(pub_a, pub_b):
     tipo_a = pub_a.tipo
     tipo_b = pub_b.tipo
 
-    if tipo_a == "cambio" and tipo_b == "cambio":
+    if tipo_a in ("cambio", "junte") and tipo_a == tipo_b:
         aceptados_a = _aceptados(pub_a)
         aceptados_b = _aceptados(pub_b)
         turno_a = _primer_cedido_que_acepta(pub_a, aceptados_b)
