@@ -14,8 +14,8 @@ if [ "$HEADS" -ne 1 ]; then
 fi
 echo "✓ Cadena de migraciones correcta (1 head)."
 
-echo "▶ Ejecutando tests antes del push..."
-python -m pytest tests/ -q --tb=short 2>&1
+echo "▶ Ejecutando tests afectados por los cambios (pytest-testmon)..."
+python -m pytest tests/ -q --tb=short --testmon 2>&1
 STATUS=$?
 
 if [ $STATUS -ne 0 ]; then
@@ -25,5 +25,5 @@ if [ $STATUS -ne 0 ]; then
     exit 1
 fi
 
-echo "✓ Todos los tests pasan. Push permitido."
+echo "✓ Tests pasan. Push permitido."
 exit 0
