@@ -113,6 +113,29 @@ Fase X — <nombre>
 
 ---
 
+## Migraciones de base de datos — OBLIGATORIO
+
+La app tiene datos reales en producción. Una migración mal escrita crashea el deploy para todos los usuarios.
+
+**Regla:** siempre que añadas una columna `NOT NULL` a una tabla que puede tener filas en producción, usa el patrón de tres pasos. Alembic genera el código incorrecto por defecto — corrígelo manualmente antes de hacer commit:
+
+```python
+# ✗ MAL — falla en producción si hay filas existentes
+batch_op.add_column(sa.Column('tipo', sa.String(20), nullable=False))
+
+# ✓ BIEN — tres pasos
+# 1. Añadir como nullable
+batch_op.add_column(sa.Column('tipo', sa.String(20), nullable=True))
+# 2. Rellenar filas existentes con el valor por defecto lógico
+op.execute("UPDATE tabla SET tipo = 'valor_default' WHERE tipo IS NULL")
+# 3. Convertir a NOT NULL
+batch_op.alter_column('tipo', nullable=False)
+```
+
+Esto aplica a cualquier columna nueva con `NOT NULL` y sin `server_default`. Si la tabla está vacía en producción (nueva en este deploy), el patrón de un solo paso es seguro.
+
+---
+
 ## Principios de diseño irrenunciables
 (Detalle completo en `ESPECIFICACION.md`; aquí, como recordatorio permanente:)
 - **Extensibilidad del matching:** el MVP resuelve solo coincidencias 1 a 1, pero el modelo de datos y la interfaz del motor de matching deben permitir cadenas de 3, 4 o más bandas en el futuro sin rediseño.
