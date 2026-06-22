@@ -14,6 +14,28 @@ def health():
     return jsonify({"status": "ok"})
 
 
+def _partners_confirmados(usuario_id):
+    """Devuelve dict {pub_id: nombre_partner} para publicaciones con match confirmado_total."""
+    raw = (
+        MatchCambio.query
+        .join(MatchParticipacion, MatchCambio.id == MatchParticipacion.match_id)
+        .join(PublicacionCambio, MatchParticipacion.publicacion_id == PublicacionCambio.id)
+        .filter(
+            PublicacionCambio.usuario_id == usuario_id,
+            MatchCambio.estado == "confirmado_total",
+        )
+        .distinct()
+        .all()
+    )
+    result = {}
+    for match in raw:
+        mi = next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
+        otra = next((p for p in match.participaciones if p.publicacion.usuario_id != usuario_id), None)
+        if mi and otra:
+            result[mi.publicacion_id] = otra.publicacion.usuario.nombre
+    return result
+
+
 def _matches_activos(usuario_id):
     """Devuelve lista de (match, mi_participacion, otra_participacion) pendientes del usuario."""
     raw = (
@@ -101,12 +123,14 @@ def index():
 
         matches = _matches_activos(current_user.id)
         conteos = _conteos_tabs(current_user.id)
+        partners = _partners_confirmados(current_user.id) if estado_filtro == "confirmada" else {}
         return render_template(
             "main/dashboard.html",
             publicaciones=publicaciones,
             matches=matches,
             estado_filtro=estado_filtro,
             conteos=conteos,
+            partners=partners,
         )
     return render_template("main/index.html")
 

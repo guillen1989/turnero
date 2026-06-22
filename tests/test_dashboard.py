@@ -194,6 +194,34 @@ def test_dashboard_no_muestra_publicaciones_ajenas(client, db):
     assert b"2026-08-01" not in resp.data
 
 
+def test_dashboard_confirmados_muestra_nombre_partner(client, db):
+    """En la pestaña confirmados, se muestra el nombre del compañero del intercambio."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "H1", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = PublicacionCambio(usuario_id=ana.id, estado="confirmada")
+    pub_pedro = PublicacionCambio(usuario_id=pedro.id, estado="confirmada")
+    db.session.add_all([pub_ana, pub_pedro])
+    db.session.flush()
+    tc_ana = TurnoCedido(publicacion_id=pub_ana.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id, estado="resuelto")
+    tc_pedro = TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id, estado="resuelto")
+    db.session.add_all([tc_ana, tc_pedro])
+    db.session.flush()
+    match = MatchCambio(tipo="directo_2", estado="confirmado_total")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_ana.id, turno_cedido_id=tc_ana.id, confirmado=True))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_pedro.id, turno_cedido_id=tc_pedro.id, confirmado=True))
+    db.session.commit()
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/?estado=confirmada")
+    assert b"Pedro" in resp.data
+
+
 def test_dashboard_tabs_muestran_conteos(client, db):
     """Cada pestaña muestra entre paréntesis el número de publicaciones que contiene."""
     usuario = _usuario_y_login(client)

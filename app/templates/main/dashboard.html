@@ -94,6 +94,9 @@
           <span class="turno">{{ turno.fecha }} — {{ turno.franja_horaria.nombre }}</span>
           {% endfor %}
         </div>
+        {% if estado_filtro == 'confirmada' and partners.get(pub.id) %}
+        <div class="pub-partner">{{ _('Con:') }} <strong>{{ partners[pub.id] }}</strong></div>
+        {% endif %}
         {% if pub.esta_activa() %}
         <div class="pub-acciones">
           <a href="{{ url_for('publicaciones.editar', pub_id=pub.id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>
