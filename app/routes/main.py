@@ -67,34 +67,45 @@ _ESTADOS_DASHBOARD = {
 
 
 def _query_pendientes(usuario_id):
+    """Publicaciones del usuario con algún match activo (propuesto o confirmado parcialmente)."""
     return (
         PublicacionCambio.query
         .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
         .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
         .filter(
             PublicacionCambio.usuario_id == usuario_id,
-            MatchParticipacion.confirmado == True,
-            MatchCambio.estado == "confirmado_parcial",
+            MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
         )
         .distinct()
     )
 
 
 def _publicaciones_pendientes(usuario_id):
-    """Publicaciones en las que el usuario ya confirmó pero el otro participante aún no."""
+    """Publicaciones con match activo (pendiente de confirmar por alguna de las partes)."""
     return _query_pendientes(usuario_id).order_by(PublicacionCambio.fecha_creacion.desc()).all()
 
 
 def _conteos_tabs(usuario_id):
-    def _count(estados):
-        return (
+    pendientes_subq = (
+        _query_pendientes(usuario_id)
+        .with_entities(PublicacionCambio.id)
+        .subquery()
+    )
+    from sqlalchemy import select as sa_select
+    pendientes_select = sa_select(pendientes_subq)
+
+    def _count(estados, exclude_pendientes=False):
+        q = (
             PublicacionCambio.query
             .filter_by(usuario_id=usuario_id)
             .filter(PublicacionCambio.estado.in_(estados))
-            .count()
         )
+        if exclude_pendientes:
+            q = q.filter(~PublicacionCambio.id.in_(pendientes_select))
+        return q.count()
+
     return {
-        "abierta": _count(["abierta", "parcialmente_resuelta"]),
+        "abierta": _count(["abierta", "parcialmente_resuelta"], exclude_pendientes=True),
         "pendiente": _query_pendientes(usuario_id).count(),
         "confirmada": _count(["confirmada"]),
         "caducada": _count(["caducada"]),
@@ -111,6 +122,21 @@ def index():
 
         if estado_filtro == "pendiente":
             publicaciones = _publicaciones_pendientes(current_user.id)
+        elif estado_filtro == "abierta":
+            from sqlalchemy import select as sa_select
+            pendientes_subq = (
+                _query_pendientes(current_user.id)
+                .with_entities(PublicacionCambio.id)
+                .subquery()
+            )
+            publicaciones = (
+                PublicacionCambio.query
+                .filter_by(usuario_id=current_user.id)
+                .filter(PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]))
+                .filter(~PublicacionCambio.id.in_(sa_select(pendientes_subq)))
+                .order_by(PublicacionCambio.fecha_creacion.desc())
+                .all()
+            )
         else:
             estados = _ESTADOS_DASHBOARD[estado_filtro]
             publicaciones = (

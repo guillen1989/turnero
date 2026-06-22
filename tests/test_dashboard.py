@@ -151,34 +151,79 @@ def _setup_match_parcial(usuario_confirma, usuario_pendiente, franja):
     return pub_a
 
 
-def test_dashboard_filtro_pendiente_muestra_publicacion_ya_confirmada(client, db):
-    """Pestaña pendiente: aparece la pub del usuario que ya confirmó y espera al otro."""
+def test_dashboard_filtro_pendiente_muestra_pub_con_match_activo(client, db):
+    """Pestaña pendiente: aparece la pub de cualquier usuario con match activo."""
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
     ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
     pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
     db.session.commit()
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    _setup_match_parcial(ana, pedro, franja)
+    _setup_match_parcial(ana, pedro, franja)  # match confirmado_parcial
 
+    # Ana (quien ya confirmó) ve su pub en pendiente
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     resp = client.get("/?estado=pendiente")
     assert b"2026-10-01" in resp.data
 
+    # Pedro (quien aún no confirmó) también ve su pub en pendiente — el match aún está abierto
+    client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
+    resp = client.get("/?estado=pendiente")
+    assert b"2026-10-02" in resp.data
 
-def test_dashboard_filtro_pendiente_excluye_pub_sin_confirmar(client, db):
-    """Pestaña pendiente de Pedro está vacía: él no ha confirmado aún."""
+
+def test_dashboard_activos_excluye_pubs_con_match_pendiente(client, db):
+    """La pestaña activos no muestra publicaciones que ya tienen un match activo."""
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
     ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
     pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
     db.session.commit()
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    _setup_match_parcial(ana, pedro, franja)  # ana confirmó, pedro no
 
-    client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
-    resp = client.get("/?estado=pendiente")
-    assert "No tienes cambios pendientes".encode() in resp.data
+    # pub con match en propuesto → debe aparecer en pendiente, no en activos
+    _setup_match_parcial(ana, pedro, franja)
+    # pub sin match → debe aparecer en activos
+    pub_sin_match = _publicacion(ana, franja, fecha_cedida=date(2026, 12, 1), fecha_aceptada=date(2026, 12, 2))
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp_activos = client.get("/")
+    # Las pub cards usan <span class="turno">; las match cards no.
+    # Así podemos distinguir la lista de publicaciones de la sección de matches.
+    assert b'class="turno">2026-10-01' not in resp_activos.data   # tiene match → fuera de activos
+    assert b'class="turno">2026-12-01' in resp_activos.data        # sin match → en activos
+
+
+def test_dashboard_conteo_pendiente_incluye_match_propuesto(client, db):
+    """El contador pendiente es > 0 aunque el usuario todavía no haya confirmado."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    db.session.commit()
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_a = PublicacionCambio(usuario_id=ana.id)
+    pub_b = PublicacionCambio(usuario_id=pedro.id)
+    db.session.add_all([pub_a, pub_b])
+    db.session.flush()
+    tc_a = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 10, 1), franja_horaria_id=franja.id)
+    tc_b = TurnoCedido(publicacion_id=pub_b.id, fecha=date(2026, 10, 2), franja_horaria_id=franja.id)
+    db.session.add_all([tc_a, tc_b])
+    db.session.flush()
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc_a.id, confirmado=False))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc_b.id, confirmado=False))
+    db.session.commit()
+
+    # Ninguno ha confirmado todavía, pero el contador debe ser 1 para ambos
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/")
+    assert b"Pendientes de confirmar" in resp.data
+    # El contador (1) debe aparecer en la pestaña pendiente
+    assert "(1)".encode() in resp.data
 
 
 def test_dashboard_no_muestra_publicaciones_ajenas(client, db):
