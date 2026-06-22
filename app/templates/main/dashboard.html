@@ -45,15 +45,21 @@
         </span>
         <span class="match-usuario">{{ otra_part.publicacion.usuario.nombre }}</span>
       </div>
+      {% set mi_turno = mi_part.turno_cedido or mi_part.turno_aceptado %}
+      {% set otro_turno = otra_part.turno_cedido or otra_part.turno_aceptado %}
       <div class="match-turnos">
+        {% if mi_turno %}
         <div class="match-turno">
           <span class="match-turno-label">{{ _('Tú quieres librar:') }}</span>
-          {{ mi_part.turno_cedido.fecha }} — {{ mi_part.turno_cedido.franja_horaria.nombre }}
+          {{ mi_turno.fecha }} — {{ mi_turno.franja_horaria.nombre }}
         </div>
+        {% endif %}
+        {% if otro_turno %}
         <div class="match-turno">
           <span class="match-turno-label">{{ _('Librarías:') }}</span>
-          {{ otra_part.turno_cedido.fecha }} — {{ otra_part.turno_cedido.franja_horaria.nombre }}
+          {{ otro_turno.fecha }} — {{ otro_turno.franja_horaria.nombre }}
         </div>
+        {% endif %}
       </div>
       {% if otra_part.publicacion.mensaje %}
       <p class="match-mensaje">"{{ otra_part.publicacion.mensaje }}"</p>
