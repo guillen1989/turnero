@@ -154,6 +154,60 @@ body {
 
 .form-footer a { color: #005a9c; }
 
+/* Selector de tipo de publicación */
+.tipo-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.tipo-opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: #fff;
+}
+
+.tipo-opcion:hover {
+  border-color: #005a9c;
+  background: #f0f6ff;
+}
+
+.tipo-opcion input[type="radio"] {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  accent-color: #005a9c;
+}
+
+.tipo-opcion:has(input:checked) {
+  border-color: #005a9c;
+  background: #f0f6ff;
+}
+
+.tipo-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.tipo-label {
+  font-weight: 700;
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+
+.tipo-desc {
+  font-size: 0.875rem;
+  color: #555;
+  line-height: 1.4;
+}
+
 .site-footer {
   margin-top: 3rem;
   padding: 1.25rem 1rem;

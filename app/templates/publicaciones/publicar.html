@@ -20,18 +20,24 @@
       <div class="tipo-selector">
         <label class="tipo-opcion">
           <input type="radio" name="tipo" value="cambio" id="tipo-cambio" checked>
-          <span class="tipo-label">{{ _('Cambio') }}</span>
-          <span class="tipo-desc">{{ _('Libras un turno y trabajas otro a cambio') }}</span>
+          <div class="tipo-texto">
+            <span class="tipo-label">{{ _('Cambio') }}</span>
+            <span class="tipo-desc">{{ _('Libras un turno y trabajas otro a cambio') }}</span>
+          </div>
         </label>
         <label class="tipo-opcion">
           <input type="radio" name="tipo" value="regalo" id="tipo-regalo">
-          <span class="tipo-label">{{ _('Regalo') }}</span>
-          <span class="tipo-desc">{{ _('Te ofreces a trabajar un turno sin recibir nada a cambio') }}</span>
+          <div class="tipo-texto">
+            <span class="tipo-label">{{ _('Regalo') }}</span>
+            <span class="tipo-desc">{{ _('Te ofreces a trabajar un turno sin recibir nada a cambio') }}</span>
+          </div>
         </label>
         <label class="tipo-opcion">
           <input type="radio" name="tipo" value="peticion" id="tipo-peticion">
-          <span class="tipo-label">{{ _('Petición') }}</span>
-          <span class="tipo-desc">{{ _('Buscas quien trabaje un turno tuyo sin ofrecer nada a cambio') }}</span>
+          <div class="tipo-texto">
+            <span class="tipo-label">{{ _('Petición') }}</span>
+            <span class="tipo-desc">{{ _('Buscas quien trabaje un turno tuyo sin ofrecer nada a cambio') }}</span>
+          </div>
         </label>
       </div>
     </section>
