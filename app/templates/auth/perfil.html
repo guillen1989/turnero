@@ -121,6 +121,22 @@
       </div>
     </div>
 
+    <hr class="perfil-separator">
+    <h2>{{ _('Avisos por email') }}</h2>
+    <div class="form-group form-group--inline">
+      <label>
+        <input type="checkbox" name="avisos_email" {% if current_user.avisos_email %}checked{% endif %}>
+        {{ _('Recibir un email cuando se publique un cambio que encaje con el mío') }}
+      </label>
+    </div>
+    <div class="form-group">
+      <label for="limite_avisos_email">{{ _('Límite de avisos por día') }}</label>
+      <input type="number" id="limite_avisos_email" name="limite_avisos_email"
+             min="1" max="20" value="{{ current_user.limite_avisos_email }}"
+             class="input-narrow">
+      <small class="field-hint">{{ _('El último email del día avisará de que se han alcanzado el límite.') }}</small>
+    </div>
+
     <div class="form-group">
       {{ form.submit(class="btn btn-primary btn-full") }}
     </div>

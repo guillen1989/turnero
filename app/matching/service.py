@@ -19,6 +19,7 @@ from app.models import (
 )
 from app.matching.engine import detectar_match_directo, detectar_match_regalo
 from app.push.sender import enviar_push
+from app.services.email import enviar_aviso_match
 
 
 def _cedidos_abiertos(pub):
@@ -173,5 +174,8 @@ def crear_match_directo(pub_a, pub_b):
 
     enviar_push(pub_a.usuario, "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
     enviar_push(pub_b.usuario, "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
+
+    enviar_aviso_match(pub_a.usuario, pub_a)
+    enviar_aviso_match(pub_b.usuario, pub_b)
 
     return match

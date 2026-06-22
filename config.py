@@ -20,6 +20,13 @@ class Config:
     VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
     VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
     VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "")
+    # Flask-Mail
+    MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "noreply@cambiaturnos.app")
 
 
 class DevelopmentConfig(Config):

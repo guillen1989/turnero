@@ -10,6 +10,7 @@ from app.models.usuario import Usuario
 from app.models.publicacion import PublicacionCambio, TurnoCedido, TurnoAceptado
 from app.models.match import MatchCambio, MatchParticipacion
 from app.models.notificacion import Notificacion
+from app.models.aviso_email import AvisoEmail
 
 __all__ = [
     "Pais",
@@ -27,5 +28,6 @@ __all__ = [
     "MatchCambio",
     "MatchParticipacion",
     "Notificacion",
+    "AvisoEmail",
     "insertar_categorias_semilla",
 ]

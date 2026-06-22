@@ -255,6 +255,12 @@ def perfil():
                 provincia_nombre=provincia_nombre,
                 ciudad_nombre=ciudad_nombre,
             )
+            # Guardar preferencias de email
+            current_user.avisos_email = "avisos_email" in request.form
+            limite = request.form.get("limite_avisos_email", type=int)
+            if limite and 1 <= limite <= 20:
+                current_user.limite_avisos_email = limite
+            db.session.commit()
             flash(_("Perfil actualizado correctamente."), "success")
             return redirect(url_for("main.index"))
 
