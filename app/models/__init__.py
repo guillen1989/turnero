@@ -11,6 +11,7 @@ from app.models.publicacion import PublicacionCambio, TurnoCedido, TurnoAceptado
 from app.models.match import MatchCambio, MatchParticipacion
 from app.models.notificacion import Notificacion
 from app.models.aviso_email import AvisoEmail
+from app.models.feedback import Feedback
 
 __all__ = [
     "Pais",
@@ -29,5 +30,6 @@ __all__ = [
     "MatchParticipacion",
     "Notificacion",
     "AvisoEmail",
+    "Feedback",
     "insertar_categorias_semilla",
 ]

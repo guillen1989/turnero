@@ -1,13 +1,12 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import current_user
-from flask_mail import Message
 
-from app.extensions import mail
+from app.extensions import db
+from app.models import Feedback
 
 bp = Blueprint("feedback", __name__)
 
-DESTINO = "domingofestivo@gmail.com"
 TIPOS = {"error": _("Error en la app"), "sugerencia": _("Sugerencia de mejora")}
 
 
@@ -25,21 +24,21 @@ def nuevo():
             return render_template("feedback/nuevo.html",
                                    email_prefill=email_contacto or email_prefill)
 
-        tipo_label = TIPOS.get(tipo, tipo)
-        asunto = f"[CambiaTurnos] {tipo_label}"
-        cuerpo = (
-            f"Tipo: {tipo_label}\n"
-            f"Email de contacto: {email_contacto or '—'}\n\n"
-            f"{descripcion}"
-        )
-
-        try:
-            mail.send(Message(subject=asunto, recipients=[DESTINO], body=cuerpo))
-            flash(_("Gracias, hemos recibido tu mensaje."), "success")
-            return redirect(url_for("main.index"))
-        except Exception:
-            flash(_("No se pudo enviar el mensaje. Inténtalo de nuevo."), "danger")
+        if tipo not in TIPOS:
+            flash(_("Tipo de mensaje no válido."), "danger")
             return render_template("feedback/nuevo.html",
                                    email_prefill=email_contacto or email_prefill)
+
+        fb = Feedback(
+            tipo=tipo,
+            descripcion=descripcion,
+            email_contacto=email_contacto or None,
+            usuario_id=current_user.id if current_user.is_authenticated else None,
+        )
+        db.session.add(fb)
+        db.session.commit()
+
+        flash(_("Gracias, hemos recibido tu mensaje."), "success")
+        return redirect(url_for("main.index"))
 
     return render_template("feedback/nuevo.html", email_prefill=email_prefill)

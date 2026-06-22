@@ -1,0 +1,34 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ _('Feedback') }} — {{ _('Admin') }}{% endblock %}
+
+{% block admin_content %}
+<h1>{{ _('Mensajes de feedback') }}</h1>
+
+{% if items %}
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>{{ _('Fecha') }}</th>
+      <th>{{ _('Tipo') }}</th>
+      <th>{{ _('Usuario') }}</th>
+      <th>{{ _('Email contacto') }}</th>
+      <th>{{ _('Descripción') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for fb in items %}
+    <tr>
+      <td>{{ fb.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+      <td>{{ fb.tipo }}</td>
+      <td>{{ fb.usuario.nombre if fb.usuario else '—' }}</td>
+      <td>{{ fb.email_contacto or '—' }}</td>
+      <td>{{ fb.descripcion }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>{{ _('No hay mensajes de feedback todavía.') }}</p>
+{% endif %}
+{% endblock %}

@@ -11,7 +11,7 @@ from app.forms.admin import (
 )
 from app.models import (
     Pais, Provincia, Ciudad,
-    Categoria, Hospital, MatchCambio, MatchParticipacion,
+    Categoria, Feedback, Hospital, MatchCambio, MatchParticipacion,
     Notificacion, PublicacionCambio, Unidad, Usuario,
     insertar_categorias_semilla,
 )
@@ -676,3 +676,10 @@ def publicacion_eliminar(id):
     db.session.commit()
     flash(_("Publicación eliminada."), "success")
     return redirect(url_for("admin.publicaciones"))
+
+
+@bp.route("/feedback")
+@admin_required
+def feedback():
+    items = Feedback.query.order_by(Feedback.fecha_creacion.desc()).all()
+    return render_template("admin/feedback.html", items=items)
