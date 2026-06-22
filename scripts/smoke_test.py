@@ -45,13 +45,14 @@ def run(base):
     results = []
 
     # Rutas públicas
-    results.append(check(session, "GET", f"{base}/auth/login",    200, "Iniciar sesión",  "login carga"))
+    results.append(check(session, "GET", f"{base}/auth/login",    200, "CambiaTurnos",    "login carga"))
     results.append(check(session, "GET", f"{base}/manifest.json", 200, "CambiaTurnos",    "PWA manifest"))
     results.append(check(session, "GET", f"{base}/sw.js",         200, None,              "service worker"))
     results.append(check(session, "GET", f"{base}/static/css/main.css", 200, None,        "CSS principal"))
 
+    # Página de inicio anónima → 200 con landing, no 500
+    results.append(check(session, "GET", f"{base}/",         200, None, "/ carga (no 500)"))
     # Rutas protegidas → deben redirigir al login (302), no dar 500
-    results.append(check(session, "GET", f"{base}/",         302, None, "/ redirige (no 500)"))
     results.append(check(session, "GET", f"{base}/publicar", 302, None, "/publicar redirige (no 500)"))
     results.append(check(session, "GET", f"{base}/cambios",  302, None, "/cambios redirige (no 500)"))
 

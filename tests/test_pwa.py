@@ -10,8 +10,8 @@ def test_manifest_json_disponible(client, db):
 def test_manifest_contiene_campos_requeridos(client, db):
     import json
     data = json.loads(client.get("/manifest.json").data)
-    assert data["name"] == "Turnero"
-    assert data["short_name"] == "Turnero"
+    assert data["name"] == "CambiaTurnos"
+    assert data["short_name"] == "CambiaTurnos"
     assert data["start_url"] == "/"
     assert data["display"] == "standalone"
 
