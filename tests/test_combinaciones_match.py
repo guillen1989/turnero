@@ -98,38 +98,110 @@ def test_escenario1_crear_match_regalo_peticion_no_crash(db):
     assert match.estado == "propuesto"
 
 
-# ── Escenario 2: Cambio ↔ Regalo — sin match ─────────────────────────────────
+# ── Escenario 2a: Cambio ↔ Regalo — match parcial ────────────────────────────
 
-def test_escenario2_cambio_no_hace_match_con_regalo(db):
+def test_escenario2a_cambio_hace_match_parcial_con_regalo(db):
     """
-    Un cambio bidireccional NO puede hacer match con un regalo:
-    el regalo no tiene turnos cedidos para satisfacer los aceptados del cambio.
+    user1 cambio: librar día1 mañana, trabajar día2 mañana.
+    user2 regalo: ofrece trabajar día1 mañana.
+    El regalo cubre el cedido del cambio → match parcial.
     """
     u1, u2 = _setup_usuarios()
-    grupo = u1.unidad.grupo_intercambio_id
-    manana = _franja(grupo, "Mañana")
-    tarde  = _franja(grupo, "Tarde")
+    manana = _franja(u1.unidad.grupo_intercambio_id, "Mañana")
+    dia1, dia2 = date(2026, 8, 1), date(2026, 8, 2)
 
-    dia2, dia3, dia4, dia5 = (date(2026, 8, d) for d in (2, 3, 4, 5))
-
-    # user1: cambio — cede día2 tarde + día3 mañana, acepta día4 tarde + día5 tarde
     cambio = PublicacionCambio(usuario_id=u1.id, tipo="cambio")
     db.session.add(cambio)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=cambio.id, fecha=dia2, franja_horaria_id=tarde.id))
-    db.session.add(TurnoCedido(publicacion_id=cambio.id, fecha=dia3, franja_horaria_id=manana.id))
-    db.session.add(TurnoAceptado(publicacion_id=cambio.id, fecha=dia4, franja_horaria_id=tarde.id))
-    db.session.add(TurnoAceptado(publicacion_id=cambio.id, fecha=dia5, franja_horaria_id=tarde.id))
+    db.session.add(TurnoCedido(publicacion_id=cambio.id, fecha=dia1, franja_horaria_id=manana.id))
+    db.session.add(TurnoAceptado(publicacion_id=cambio.id, fecha=dia2, franja_horaria_id=manana.id))
 
-    # user2: regalo — ofrece trabajar día3 mañana (solo aceptado, sin cedidos)
     regalo = PublicacionCambio(usuario_id=u2.id, tipo="regalo")
     db.session.add(regalo)
     db.session.flush()
-    db.session.add(TurnoAceptado(publicacion_id=regalo.id, fecha=dia3, franja_horaria_id=manana.id))
+    db.session.add(TurnoAceptado(publicacion_id=regalo.id, fecha=dia1, franja_horaria_id=manana.id))
     db.session.commit()
 
-    assert buscar_matches_para(cambio) == []
-    assert buscar_matches_para(regalo) == []
+    assert buscar_matches_para(cambio) == [regalo]
+    assert buscar_matches_para(regalo) == [cambio]
+
+
+def test_escenario2a_crear_match_cambio_regalo(db):
+    """crear_match_directo cambio↔regalo crea participaciones correctas."""
+    u1, u2 = _setup_usuarios()
+    manana = _franja(u1.unidad.grupo_intercambio_id, "Mañana")
+    dia1, dia2 = date(2026, 8, 1), date(2026, 8, 2)
+
+    cambio = PublicacionCambio(usuario_id=u1.id, tipo="cambio")
+    db.session.add(cambio)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=cambio.id, fecha=dia1, franja_horaria_id=manana.id))
+    db.session.add(TurnoAceptado(publicacion_id=cambio.id, fecha=dia2, franja_horaria_id=manana.id))
+
+    regalo = PublicacionCambio(usuario_id=u2.id, tipo="regalo")
+    db.session.add(regalo)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=regalo.id, fecha=dia1, franja_horaria_id=manana.id))
+    db.session.commit()
+
+    match = crear_match_directo(cambio, regalo)
+    assert match is not None
+    partics = {p.publicacion_id: p for p in match.participaciones}
+    assert partics[cambio.id].turno_cedido is not None
+    assert partics[regalo.id].turno_aceptado is not None
+
+
+# ── Escenario 2b: Cambio ↔ Petición — match parcial ──────────────────────────
+
+def test_escenario2b_cambio_hace_match_parcial_con_peticion(db):
+    """
+    user1 cambio: librar día1 mañana, trabajar día2 mañana.
+    user2 peticion: librar día2 mañana.
+    La petición cubre el aceptado del cambio → match parcial.
+    """
+    u1, u2 = _setup_usuarios()
+    manana = _franja(u1.unidad.grupo_intercambio_id, "Mañana")
+    dia1, dia2 = date(2026, 8, 1), date(2026, 8, 2)
+
+    cambio = PublicacionCambio(usuario_id=u1.id, tipo="cambio")
+    db.session.add(cambio)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=cambio.id, fecha=dia1, franja_horaria_id=manana.id))
+    db.session.add(TurnoAceptado(publicacion_id=cambio.id, fecha=dia2, franja_horaria_id=manana.id))
+
+    peticion = PublicacionCambio(usuario_id=u2.id, tipo="peticion")
+    db.session.add(peticion)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=peticion.id, fecha=dia2, franja_horaria_id=manana.id))
+    db.session.commit()
+
+    assert buscar_matches_para(cambio) == [peticion]
+    assert buscar_matches_para(peticion) == [cambio]
+
+
+def test_escenario2b_crear_match_cambio_peticion(db):
+    """crear_match_directo cambio↔peticion crea participaciones correctas."""
+    u1, u2 = _setup_usuarios()
+    manana = _franja(u1.unidad.grupo_intercambio_id, "Mañana")
+    dia1, dia2 = date(2026, 8, 1), date(2026, 8, 2)
+
+    cambio = PublicacionCambio(usuario_id=u1.id, tipo="cambio")
+    db.session.add(cambio)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=cambio.id, fecha=dia1, franja_horaria_id=manana.id))
+    db.session.add(TurnoAceptado(publicacion_id=cambio.id, fecha=dia2, franja_horaria_id=manana.id))
+
+    peticion = PublicacionCambio(usuario_id=u2.id, tipo="peticion")
+    db.session.add(peticion)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=peticion.id, fecha=dia2, franja_horaria_id=manana.id))
+    db.session.commit()
+
+    match = crear_match_directo(cambio, peticion)
+    assert match is not None
+    partics = {p.publicacion_id: p for p in match.participaciones}
+    assert partics[cambio.id].turno_aceptado is not None
+    assert partics[peticion.id].turno_cedido is not None
 
 
 # ── Escenario 3: Junte ↔ Junte ───────────────────────────────────────────────

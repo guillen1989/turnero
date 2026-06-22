@@ -83,9 +83,15 @@ def buscar_matches_para(publicacion):
     """
     Devuelve las publicaciones activas que hacen match con `publicacion`.
 
-    - tipo 'cambio': match directo bidireccional contra otras de tipo 'cambio'.
-    - tipo 'regalo': match contra publicaciones de tipo 'peticion' (sus cedidos).
-    - tipo 'peticion': match contra publicaciones de tipo 'regalo' (sus aceptados).
+    Matches completos (bidireccionales):
+      - cambio ↔ cambio, junte ↔ junte
+
+    Matches asimétricos completos:
+      - regalo ↔ peticion
+
+    Matches parciales (un lado satisfecho):
+      - cambio ↔ regalo: el regalo cubre uno de los cedidos del cambio
+      - cambio ↔ peticion: la peticion cubre uno de los aceptados del cambio
     """
     propietario = db.session.get(Usuario, publicacion.usuario_id)
     grupo_id = propietario.unidad.grupo_intercambio_id
@@ -93,33 +99,46 @@ def buscar_matches_para(publicacion):
 
     tipo = publicacion.tipo
 
-    if tipo in ("cambio", "junte"):
+    if tipo == "junte":
         cedidos_pub = _cedidos_abiertos(publicacion)
         aceptados_pub = _aceptados(publicacion)
         return [
             c for c in candidatas
-            if c.tipo == tipo and detectar_match_directo(
+            if c.tipo == "junte" and detectar_match_directo(
                 cedidos_pub, aceptados_pub,
                 _cedidos_abiertos(c), _aceptados(c),
             )
         ]
 
+    if tipo == "cambio":
+        cedidos_pub = _cedidos_abiertos(publicacion)
+        aceptados_pub = _aceptados(publicacion)
+        resultado = []
+        for c in candidatas:
+            if c.tipo == "cambio" and detectar_match_directo(
+                cedidos_pub, aceptados_pub, _cedidos_abiertos(c), _aceptados(c)
+            ):
+                resultado.append(c)
+            elif c.tipo == "regalo" and bool(cedidos_pub & _aceptados(c)):
+                resultado.append(c)
+            elif c.tipo == "peticion" and bool(aceptados_pub & _cedidos_abiertos(c)):
+                resultado.append(c)
+        return resultado
+
     if tipo == "regalo":
         aceptados_pub = _aceptados(publicacion)
         return [
             c for c in candidatas
-            if c.tipo == "peticion" and detectar_match_regalo(
-                aceptados_pub, _cedidos_abiertos(c)
-            )
+            if (c.tipo == "peticion" and detectar_match_regalo(aceptados_pub, _cedidos_abiertos(c)))
+            or (c.tipo == "cambio"   and bool(aceptados_pub & _cedidos_abiertos(c)))
         ]
 
     if tipo == "peticion":
         cedidos_pub = _cedidos_abiertos(publicacion)
         return [
             c for c in candidatas
-            if c.tipo == "regalo" and detectar_match_regalo(
-                _aceptados(c), cedidos_pub
-            )
+            if (c.tipo == "regalo" and detectar_match_regalo(_aceptados(c), cedidos_pub))
+            or (c.tipo == "cambio"  and bool(cedidos_pub & _aceptados(c)))
         ]
 
     return []
@@ -177,6 +196,43 @@ def crear_match_directo(pub_a, pub_b):
         db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc.id))
 
     elif tipo_a == "peticion" and tipo_b == "regalo":
+        tc = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
+        ta = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
+        if not tc or not ta:
+            db.session.rollback()
+            return None
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc.id))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_aceptado_id=ta.id))
+
+    # Matches parciales cambio ↔ regalo/peticion
+    elif tipo_a == "cambio" and tipo_b == "regalo":
+        tc = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
+        ta = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
+        if not tc or not ta:
+            db.session.rollback()
+            return None
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc.id))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_aceptado_id=ta.id))
+
+    elif tipo_a == "regalo" and tipo_b == "cambio":
+        ta = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
+        tc = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
+        if not ta or not tc:
+            db.session.rollback()
+            return None
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_aceptado_id=ta.id))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc.id))
+
+    elif tipo_a == "cambio" and tipo_b == "peticion":
+        ta = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
+        tc = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
+        if not ta or not tc:
+            db.session.rollback()
+            return None
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_aceptado_id=ta.id))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc.id))
+
+    elif tipo_a == "peticion" and tipo_b == "cambio":
         tc = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
         ta = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
         if not tc or not ta:

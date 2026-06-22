@@ -237,8 +237,8 @@ def test_cualquier_franja_hace_match_con_cedido_del_mismo_dia(db):
     assert matches[0].usuario_id == pedro.id
 
 
-def test_cambio_no_hace_match_con_regalo(db):
-    """Una publicación tipo 'cambio' no hace match con una tipo 'regalo'."""
+def test_cambio_hace_match_parcial_con_regalo_cuando_cubre_cedido(db):
+    """Un cambio hace match parcial con un regalo que cubre uno de sus cedidos."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
@@ -249,9 +249,9 @@ def test_cambio_no_hace_match_con_regalo(db):
         fecha_cede=fecha, franja_cede=franja,
         fecha_acepta=fecha, franja_acepta=franja,
     )
-    _pub_regalo(pedro, fecha, franja)
+    pub_regalo = _pub_regalo(pedro, fecha, franja)
 
-    assert buscar_matches_para(pub_cambio) == []
+    assert buscar_matches_para(pub_cambio) == [pub_regalo]
 
 
 def test_no_incluye_publicaciones_inactivas(db):
