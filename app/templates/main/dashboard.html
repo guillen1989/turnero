@@ -134,6 +134,33 @@
         <div class="pub-partner">{{ _('Con:') }} <strong>{{ partners[pub.id] }}</strong></div>
         {% endif %}
         {% if pub.esta_activa() %}
+        {% set app_url = url_for('main.index', _external=True) %}
+        {% if pub.tipo == 'regalo' %}
+          {% set ns = namespace(wa_turnos='') %}
+          {% for t in pub.turnos_aceptados %}
+            {% set franja = _('cualquier turno') if t.cualquier_franja else t.franja_horaria.nombre %}
+            {% if loop.first %}{% set ns.wa_turnos = t.fecha|string + ' (' + franja + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha|string + ' (' + franja + ')' %}{% endif %}
+          {% endfor %}
+          {% set wa_texto = _('Me ofrezco a trabajar en sustitución: ') + ns.wa_turnos + '. ' + _('¿Te interesa? Únete en CambiaTurnos: ') + app_url %}
+        {% elif pub.tipo == 'peticion' %}
+          {% set ns = namespace(wa_turnos='') %}
+          {% for t in pub.turnos_cedidos %}
+            {% if loop.first %}{% set ns.wa_turnos = t.fecha|string + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha|string + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
+          {% endfor %}
+          {% set wa_texto = _('Busco a alguien que me cubra un turno: ') + ns.wa_turnos + '. ' + _('¿Puedes ayudarme? Únete en CambiaTurnos: ') + app_url %}
+        {% elif pub.tipo == 'junte' %}
+          {% set ns = namespace(wa_turnos='') %}
+          {% for t in pub.turnos_cedidos %}
+            {% if loop.first %}{% set ns.wa_turnos = t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
+          {% endfor %}
+          {% set wa_texto = _('Busco compañero/a para un junte de noches: ') + ns.wa_turnos + '. ' + _('¿Te interesa? Únete en CambiaTurnos: ') + app_url %}
+        {% else %}
+          {% set ns = namespace(wa_turnos='') %}
+          {% for t in pub.turnos_cedidos %}
+            {% if loop.first %}{% set ns.wa_turnos = t.fecha|string + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha|string + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
+          {% endfor %}
+          {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar: ') + ns.wa_turnos + '. ' + _('¿Te interesa? Únete en CambiaTurnos: ') + app_url %}
+        {% endif %}
         <div class="pub-acciones">
           <a href="{{ url_for('publicaciones.editar', pub_id=pub.id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>
           <form method="post" action="{{ url_for('publicaciones.eliminar', pub_id=pub.id) }}" style="display:inline"
@@ -141,6 +168,11 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-danger btn-sm">{{ _('Eliminar') }}</button>
           </form>
+          <a href="#"
+             class="btn btn-whatsapp btn-sm"
+             target="_blank" rel="noopener"
+             onclick="this.href='https://wa.me/?text='+encodeURIComponent(this.dataset.texto);return true;"
+             data-texto="{{ wa_texto }}">{{ _('Compartir') }}</a>
         </div>
         {% endif %}
       </li>
