@@ -1,0 +1,17 @@
+#!/bin/bash
+# Hook de pre-push: aborta el push si algún test falla.
+# Instalar con: scripts/install-hooks.sh
+
+echo "▶ Ejecutando tests antes del push..."
+python -m pytest tests/ -q --tb=short 2>&1
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+    echo ""
+    echo "✗ Tests fallidos. Push abortado."
+    echo "  Arregla los tests antes de hacer push."
+    exit 1
+fi
+
+echo "✓ Todos los tests pasan. Push permitido."
+exit 0
