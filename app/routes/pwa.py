@@ -23,7 +23,9 @@ def manifest():
             {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
         ],
     }
-    return Response(json.dumps(data), content_type="application/manifest+json")
+    resp = Response(json.dumps(data), content_type="application/manifest+json")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
 
 
 @bp.get("/sw.js")
