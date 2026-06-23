@@ -21,42 +21,80 @@
 {% set items = sin_leer if tab == 'sin_leer' else leidos %}
 
 {% if items %}
-<table class="admin-table">
-  <thead>
-    <tr>
-      <th>{{ _('Fecha') }}</th>
-      <th>{{ _('Tipo') }}</th>
-      <th>{{ _('Usuario') }}</th>
-      <th>{{ _('Email contacto') }}</th>
-      <th>{{ _('Descripción') }}</th>
-      {% if tab == 'sin_leer' %}<th></th>{% endif %}
-    </tr>
-  </thead>
-  <tbody>
+
+{% if tab == 'sin_leer' %}
+<form method="post" action="{{ url_for('admin.feedback_marcar_leidos') }}" id="fb-bulk-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="fb-bulk-bar">
+    <label class="fb-select-all-label">
+      <input type="checkbox" id="fb-select-all"> {{ _('Seleccionar todos') }}
+    </label>
+    <button type="submit" class="btn btn-secondary btn-sm" id="fb-bulk-btn" disabled>
+      {{ _('Marcar seleccionados como leídos') }}
+    </button>
+  </div>
+{% endif %}
+
+  <ul class="fb-list">
     {% for fb in items %}
-    <tr>
-      <td>{{ fb.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
-      <td>{{ fb.tipo }}</td>
-      <td>{{ fb.usuario.nombre if fb.usuario else '—' }}</td>
-      <td>{{ fb.email_contacto or '—' }}</td>
-      <td>{{ fb.descripcion }}</td>
-      {% if tab == 'sin_leer' %}
-      <td>
-        <form method="post" action="{{ url_for('admin.feedback_marcar_leido', id=fb.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn btn-secondary btn-sm">{{ _('Marcar leído') }}</button>
-        </form>
-      </td>
-      {% endif %}
-    </tr>
+    <li class="fb-card">
+      <div class="fb-card-header">
+        {% if tab == 'sin_leer' %}
+        <label class="fb-checkbox-wrap" aria-label="{{ _('Seleccionar') }}">
+          <input type="checkbox" name="ids" value="{{ fb.id }}" class="fb-checkbox">
+        </label>
+        {% endif %}
+        <span class="fb-tipo-badge fb-tipo--{{ fb.tipo }}">{{ _(fb.tipo) }}</span>
+        <span class="fb-fecha">{{ fb.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</span>
+      </div>
+      <p class="fb-descripcion">{{ fb.descripcion }}</p>
+      <div class="fb-meta">
+        <span class="fb-meta-item">{{ fb.usuario.nombre if fb.usuario else '—' }}</span>
+        {% if fb.email_contacto %}
+        <a href="mailto:{{ fb.email_contacto }}" class="fb-meta-item fb-email">{{ fb.email_contacto }}</a>
+        {% else %}
+        <span class="fb-meta-item">—</span>
+        {% endif %}
+      </div>
+    </li>
     {% endfor %}
-  </tbody>
-</table>
+  </ul>
+
+{% if tab == 'sin_leer' %}
+</form>
+{% endif %}
+
 {% else %}
   {% if tab == 'sin_leer' %}
-  <p>{{ _('No hay mensajes sin leer.') }}</p>
+  <p class="empty-state">{{ _('No hay mensajes sin leer.') }}</p>
   {% else %}
-  <p>{{ _('No hay mensajes leídos todavía.') }}</p>
+  <p class="empty-state">{{ _('No hay mensajes leídos todavía.') }}</p>
   {% endif %}
 {% endif %}
+
+<script>
+(function () {
+  var selectAll = document.getElementById('fb-select-all');
+  var bulkBtn   = document.getElementById('fb-bulk-btn');
+  if (!selectAll) return;
+
+  var checkboxes = document.querySelectorAll('.fb-checkbox');
+
+  function actualizarBoton() {
+    var alguno = Array.from(checkboxes).some(function (cb) { return cb.checked; });
+    bulkBtn.disabled = !alguno;
+    selectAll.indeterminate = alguno && !Array.from(checkboxes).every(function (cb) { return cb.checked; });
+    selectAll.checked = Array.from(checkboxes).every(function (cb) { return cb.checked; });
+  }
+
+  selectAll.addEventListener('change', function () {
+    checkboxes.forEach(function (cb) { cb.checked = selectAll.checked; });
+    actualizarBoton();
+  });
+
+  checkboxes.forEach(function (cb) {
+    cb.addEventListener('change', actualizarBoton);
+  });
+})();
+</script>
 {% endblock %}

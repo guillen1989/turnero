@@ -183,3 +183,32 @@ def test_admin_feedback_requiere_admin(client, db):
     _login(client, email="normal@test.es", es_admin=False)
     resp = client.get("/admin/feedback")
     assert resp.status_code == 403
+
+
+def test_admin_marcar_leidos_bulk(client, db):
+    """El admin puede marcar varios mensajes como leídos a la vez."""
+    _login(client, email="admin@test.es", es_admin=True)
+    fb1 = _post_feedback(client, descripcion="Mensaje 1")
+    fb2 = _post_feedback(client, descripcion="Mensaje 2")
+    fb3 = _post_feedback(client, descripcion="Mensaje 3")
+
+    resp = client.post(
+        "/admin/feedback/marcar-leidos",
+        data={"ids": [fb1.id, fb2.id]},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+
+    _db.session.refresh(fb1)
+    _db.session.refresh(fb2)
+    _db.session.refresh(fb3)
+    assert fb1.leido is True
+    assert fb2.leido is True
+    assert fb3.leido is False
+
+
+def test_admin_marcar_leidos_bulk_sin_ids_no_da_error(client, db):
+    """Enviar el bulk form sin seleccionar nada no falla."""
+    _login(client, email="admin@test.es", es_admin=True)
+    resp = client.post("/admin/feedback/marcar-leidos", data={}, follow_redirects=False)
+    assert resp.status_code == 302

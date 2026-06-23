@@ -704,3 +704,13 @@ def feedback_marcar_leido(id):
     fb.leido = True
     db.session.commit()
     return redirect(url_for("admin.feedback"))
+
+
+@bp.route("/feedback/marcar-leidos", methods=["POST"])
+@admin_required
+def feedback_marcar_leidos():
+    ids = request.form.getlist("ids", type=int)
+    if ids:
+        Feedback.query.filter(Feedback.id.in_(ids)).update({"leido": True}, synchronize_session=False)
+        db.session.commit()
+    return redirect(url_for("admin.feedback", tab="sin_leer"))
