@@ -13,28 +13,30 @@
     </div>
   </div>
 
-  <nav class="estado-tabs">
-    <a href="{{ url_for('main.index', estado='compatible') }}"
-       class="estado-tab {% if estado_filtro == 'compatible' %}estado-tab--active{% endif %}">
-      {{ _('Compatibles') }} <span class="tab-count">({{ conteos.compatible }})</span>
-    </a>
-    <a href="{{ url_for('main.index', estado='abierta') }}"
-       class="estado-tab {% if estado_filtro == 'abierta' %}estado-tab--active{% endif %}">
-      {{ _('Activos') }} <span class="tab-count">({{ conteos.abierta }})</span>
-    </a>
-    <a href="{{ url_for('main.index', estado='pendiente') }}"
-       class="estado-tab {% if estado_filtro == 'pendiente' %}estado-tab--active{% endif %}">
-      {{ _('Pendientes de confirmar') }} <span class="tab-count">({{ conteos.pendiente }})</span>
-    </a>
-    <a href="{{ url_for('main.index', estado='confirmada') }}"
-       class="estado-tab {% if estado_filtro == 'confirmada' %}estado-tab--active{% endif %}">
-      {{ _('Confirmados') }} <span class="tab-count">({{ conteos.confirmada }})</span>
-    </a>
-    <a href="{{ url_for('main.index', estado='caducada') }}"
-       class="estado-tab {% if estado_filtro == 'caducada' %}estado-tab--active{% endif %}">
-      {{ _('Caducados') }} <span class="tab-count">({{ conteos.caducada }})</span>
-    </a>
-  </nav>
+  <div class="dashboard-tabs">
+    <nav class="estado-tabs">
+      <a href="{{ url_for('main.index', estado='compatible') }}"
+         class="estado-tab {% if estado_filtro == 'compatible' %}estado-tab--active{% endif %}">
+        {{ _('Compatibles') }} <span class="tab-count">({{ conteos.compatible }})</span>
+      </a>
+      <a href="{{ url_for('main.index', estado='abierta') }}"
+         class="estado-tab {% if estado_filtro == 'abierta' %}estado-tab--active{% endif %}">
+        {{ _('Activos') }} <span class="tab-count">({{ conteos.abierta }})</span>
+      </a>
+      <a href="{{ url_for('main.index', estado='pendiente') }}"
+         class="estado-tab {% if estado_filtro == 'pendiente' %}estado-tab--active{% endif %}">
+        {{ _('Pendientes de confirmar') }} <span class="tab-count">({{ conteos.pendiente }})</span>
+      </a>
+      <a href="{{ url_for('main.index', estado='confirmada') }}"
+         class="estado-tab {% if estado_filtro == 'confirmada' %}estado-tab--active{% endif %}">
+        {{ _('Confirmados') }} <span class="tab-count">({{ conteos.confirmada }})</span>
+      </a>
+      <a href="{{ url_for('main.index', estado='caducada') }}"
+         class="estado-tab {% if estado_filtro == 'caducada' %}estado-tab--active{% endif %}">
+        {{ _('Caducados') }} <span class="tab-count">({{ conteos.caducada }})</span>
+      </a>
+    </nav>
+  </div>
 
   {% if matches %}
   <section class="matches-section">
