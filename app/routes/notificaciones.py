@@ -31,6 +31,7 @@ def guardar():
     current_user.notif_match = "notif_match" in request.form
     current_user.notif_confirmacion_parcial = "notif_confirmacion_parcial" in request.form
     current_user.notif_confirmado_total = "notif_confirmado_total" in request.form
+    current_user.notif_publicacion = "notif_publicacion" in request.form
     db.session.commit()
     flash(_("Preferencias de notificaciones guardadas."), "success")
     return redirect(url_for("notificaciones.panel"))

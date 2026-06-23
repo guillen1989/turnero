@@ -65,6 +65,17 @@
             <span class="toggle-slider"></span>
           </label>
         </div>
+        <div class="notif-toggle-row">
+          <label class="notif-toggle-label" for="notif_publicacion">
+            {{ _('Un compañero al que sigues publica un cambio') }}
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notif_publicacion" name="notif_publicacion"
+                   {% if current_user.notif_publicacion %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
       </div>
       {% endif %}
     </form>
@@ -73,7 +84,7 @@
   <!-- Sección 2: Suscripciones a publicaciones de compañeros -->
   <section class="notif-section card">
     <h2 class="notif-section-title">{{ _('Seguir compañeros') }}</h2>
-    <p class="notif-section-desc">{{ _('Recibirás una notificación push cada vez que el compañero seleccionado publique un cambio.') }}</p>
+    <p class="notif-section-desc">{{ _('Recibirás una notificación cada vez que el compañero seleccionado publique un cambio.') }}</p>
 
     {% if colegas %}
     <input type="search" id="filtro-colegas" class="notif-filtro-colegas"
