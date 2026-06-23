@@ -190,7 +190,7 @@ def usuario_nuevo():
                 cat_id if cat_id != _OPCION_NUEVA_CATEGORIA else None,
                 cat_nueva,
             )
-            unidad = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
+            unidad, _is_new = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
             u = Usuario(
                 nombre=form.nombre.data.strip(),
                 email=form.email.data.strip().lower(),
@@ -254,7 +254,7 @@ def usuario_editar(id):
                 cat_id if cat_id != _OPCION_NUEVA_CATEGORIA else None,
                 cat_nueva,
             )
-            unidad = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
+            unidad, _is_new = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
             u.nombre = form.nombre.data.strip()
             u.email = form.email.data.strip().lower()
             u.unidad = unidad
@@ -557,7 +557,7 @@ def unidades():
         hospital = db.session.get(Hospital, form.hospital_id.data) or abort(400)
         cat_id = form.categoria_id.data
         categoria = db.session.get(Categoria, cat_id) if cat_id else None
-        encontrar_o_crear_unidad(form.nombre.data, hospital, categoria)
+        _u, _is_new = encontrar_o_crear_unidad(form.nombre.data, hospital, categoria)
         db.session.commit()
         flash(_("Unidad creada."), "success")
         return redirect(url_for("admin.unidades"))

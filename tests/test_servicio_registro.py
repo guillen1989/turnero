@@ -48,9 +48,10 @@ def test_crea_unidad_y_grupo_si_no_existe(db):
     hospital = encontrar_o_crear_hospital("Hospital Norte")
     db.session.commit()
 
-    unidad = encontrar_o_crear_unidad("Urgencias", hospital)
+    unidad, is_new = encontrar_o_crear_unidad("Urgencias", hospital)
     db.session.commit()
 
+    assert is_new is True
     assert Unidad.query.filter_by(nombre="Urgencias").count() == 1
     assert GrupoIntercambio.query.count() == 1
     assert unidad.grupo_intercambio is not None
@@ -64,9 +65,10 @@ def test_reutiliza_unidad_existente_en_mismo_hospital(db):
     db.session.add(Unidad(nombre="Urgencias", hospital=hospital, grupo_intercambio=grupo))
     db.session.commit()
 
-    unidad = encontrar_o_crear_unidad("Urgencias", hospital)
+    unidad, is_new = encontrar_o_crear_unidad("Urgencias", hospital)
     db.session.commit()
 
+    assert is_new is False
     assert Unidad.query.filter_by(nombre="Urgencias").count() == 1
 
 
@@ -79,7 +81,7 @@ def test_misma_unidad_distinto_hospital_se_crea_separada(db):
     db.session.add(Unidad(nombre="Urgencias", hospital=h1, grupo_intercambio=grupo))
     db.session.commit()
 
-    encontrar_o_crear_unidad("Urgencias", h2)
+    _, _ = encontrar_o_crear_unidad("Urgencias", h2)
     db.session.commit()
 
     assert Unidad.query.filter_by(nombre="Urgencias").count() == 2

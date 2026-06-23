@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Turnos de mi unidad') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('Turnos de %(unidad)s', unidad=unidad.nombre) }}</h1>
+  <p class="form-footer">
+    {{ _('Define los tipos de turno de tu unidad. Todos los compañeros de %(unidad)s los verán al publicar o buscar cambios.', unidad=unidad.nombre) }}
+  </p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {# ── Turnos actuales ─────────────────────────────────────────────────── #}
+  <section class="turnos-section">
+    <h2>{{ _('Turnos actuales') }}</h2>
+    {% if franjas %}
+    <table class="turnos-table">
+      <thead>
+        <tr>
+          <th>{{ _('Nombre') }}</th>
+          <th>{{ _('Inicio') }}</th>
+          <th>{{ _('Fin') }}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for franja in franjas %}
+        <tr>
+          <td><strong>{{ franja.nombre }}</strong></td>
+          <td>{{ franja.hora_inicio.strftime('%H:%M') }}</td>
+          <td>{{ franja.hora_fin.strftime('%H:%M') }}</td>
+          <td>
+            <form method="post" action="{{ url_for('unidad.eliminar_franja_route', franja_id=franja.id) }}"
+                  onsubmit="return confirm('{{ _('¿Eliminar el turno «%(nombre)s»?', nombre=franja.nombre) }}')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger btn-sm">{{ _('Eliminar') }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty-state">{{ _('No hay turnos configurados. Aplica una plantilla o añade turnos personalizados.') }}</p>
+    {% endif %}
+  </section>
+
+  {# ── Plantillas predefinidas ──────────────────────────────────────────── #}
+  <section class="turnos-section">
+    <h2>{{ _('Usar una plantilla predefinida') }}</h2>
+    <p>{{ _('Aplica una plantilla para configurar rápidamente los turnos de tu servicio. Los turnos existentes sin publicaciones asociadas se actualizarán; los que tengan publicaciones se conservarán.') }}</p>
+    <div class="plantillas-grid">
+      {% for pid, plantilla in plantillas.items() %}
+      <form method="post" action="{{ url_for('unidad.aplicar_plantilla_route') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="plantilla_id" value="{{ pid }}">
+        <button type="submit" class="btn btn-secondary plantilla-btn">
+          <span class="plantilla-nombre">{{ plantilla.nombre }}</span>
+          <span class="plantilla-desc">{{ plantilla.descripcion }}</span>
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── Añadir turno personalizado ───────────────────────────────────────── #}
+  <section class="turnos-section">
+    <h2>{{ _('Añadir turno personalizado') }}</h2>
+    <form method="post" action="{{ url_for('unidad.agregar_franja_route') }}" class="turno-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="turno-form-fields">
+        <div class="form-group">
+          <label for="nombre-turno">{{ _('Nombre') }}</label>
+          <input type="text" id="nombre-turno" name="nombre"
+                 placeholder="{{ _('Ej: Guardia, Refuerzo…') }}"
+                 maxlength="50" required>
+        </div>
+        <div class="form-group">
+          <label for="hora-inicio">{{ _('Inicio') }}</label>
+          <input type="time" id="hora-inicio" name="hora_inicio" required>
+        </div>
+        <div class="form-group">
+          <label for="hora-fin">{{ _('Fin') }}</label>
+          <input type="time" id="hora-fin" name="hora_fin" required>
+        </div>
+        <button type="submit" class="btn btn-primary">{{ _('Añadir') }}</button>
+      </div>
+    </form>
+  </section>
+
+  <p class="form-footer">
+    <a href="{{ url_for('auth.perfil') }}">{{ _('← Volver al perfil') }}</a>
+    &nbsp;·&nbsp;
+    <a href="{{ url_for('main.index') }}">{{ _('Ir al inicio') }}</a>
+  </p>
+</div>
+{% endblock %}

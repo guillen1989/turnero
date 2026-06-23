@@ -34,7 +34,8 @@ def test_get_registro_devuelve_200(client):
 def test_registro_exitoso_redirige(client, db):
     resp = client.post("/auth/registro", data=_datos_registro(db), follow_redirects=False)
     assert resp.status_code == 302
-    assert resp.headers["Location"].endswith("/")
+    # Unidad nueva → redirige al configurador de turnos; unidad existente → al inicio
+    assert resp.headers["Location"].endswith("/") or "/unidad/turnos" in resp.headers["Location"]
 
 
 def test_registro_crea_usuario_en_bd(client, db):

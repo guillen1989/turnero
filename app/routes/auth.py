@@ -114,6 +114,9 @@ def registro():
                 )
                 login_user(usuario)
                 flash(_("¡Bienvenido/a, %(nombre)s!", nombre=usuario.nombre), "success")
+                if getattr(usuario, "_es_nueva_unidad", False):
+                    flash(_("Tu unidad es nueva. Configura los turnos disponibles en tu servicio."), "info")
+                    return redirect(url_for("unidad.turnos"))
                 return redirect(url_for("main.index"))
             except IntegrityError:
                 db.session.rollback()
@@ -245,7 +248,7 @@ def perfil():
                 if pa:
                     pais_nombre = pa.nombre
 
-            actualizar_perfil(
+            usuario_actualizado = actualizar_perfil(
                 usuario=current_user,
                 hospital_nombre=hospital_nombre,
                 unidad_nombre=unidad_nombre,
@@ -262,6 +265,9 @@ def perfil():
                 current_user.limite_avisos_email = limite
             db.session.commit()
             flash(_("Perfil actualizado correctamente."), "success")
+            if getattr(usuario_actualizado, "_es_nueva_unidad", False):
+                flash(_("Has creado una nueva unidad. Configura sus turnos."), "info")
+                return redirect(url_for("unidad.turnos"))
             return redirect(url_for("main.index"))
 
     elif request.method == "GET":

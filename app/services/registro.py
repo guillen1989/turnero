@@ -83,6 +83,7 @@ def encontrar_o_crear_hospital(nombre, ciudad=None):
 
 
 def encontrar_o_crear_unidad(nombre, hospital, categoria=None):
+    """Devuelve (unidad, is_new). is_new=True si la unidad acaba de crearse."""
     nombre_norm = _normalizar(nombre)
     q = Unidad.query.filter(
         Unidad.hospital_id == hospital.id,
@@ -104,7 +105,8 @@ def encontrar_o_crear_unidad(nombre, hospital, categoria=None):
         )
         db.session.add(unidad)
         db.session.flush()
-    return unidad
+        return unidad, True
+    return unidad, False
 
 
 def encontrar_o_crear_categoria(categoria_id, nombre_nueva):
@@ -144,10 +146,11 @@ def actualizar_perfil(
     ciudad = _resolver_geografia(pais_nombre, provincia_nombre, ciudad_nombre)
     hospital = encontrar_o_crear_hospital(hospital_nombre, ciudad)
     categoria = encontrar_o_crear_categoria(categoria_id, categoria_nueva_nombre)
-    unidad = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
+    unidad, is_new = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
     usuario.unidad = unidad
     usuario.categoria = categoria
     db.session.commit()
+    usuario._es_nueva_unidad = is_new
     return usuario
 
 
@@ -159,7 +162,7 @@ def registrar_usuario(
     ciudad = _resolver_geografia(pais_nombre, provincia_nombre, ciudad_nombre)
     hospital = encontrar_o_crear_hospital(hospital_nombre, ciudad)
     categoria = encontrar_o_crear_categoria(categoria_id, categoria_nueva_nombre)
-    unidad = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
+    unidad, is_new = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
 
     usuario = Usuario(
         nombre=nombre.strip(),
@@ -170,4 +173,5 @@ def registrar_usuario(
     usuario.set_password(password)
     db.session.add(usuario)
     db.session.commit()
+    usuario._es_nueva_unidad = is_new
     return usuario

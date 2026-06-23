@@ -52,6 +52,9 @@ def create_app(config_name=None):
     from app.routes.notificaciones import bp as notificaciones_bp
     app.register_blueprint(notificaciones_bp)
 
+    from app.routes.unidad import bp as unidad_bp
+    app.register_blueprint(unidad_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 
@@ -101,7 +104,7 @@ def _registrar_comandos(app):
 
         # Infraestructura mínima para el usuario admin
         hospital = encontrar_o_crear_hospital("Sistema")
-        unidad = encontrar_o_crear_unidad("Administración", hospital)
+        unidad, _ = encontrar_o_crear_unidad("Administración", hospital)
         cat = Categoria(nombre="Administrador")
         db.session.add(cat)
         db.session.flush()
