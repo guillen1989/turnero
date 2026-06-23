@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Backlog de calidad completado. Sin pasos pendientes definidos.
+Matching a 3 bandas implementado. Sin pasos pendientes definidos.
 
 ## Backlog (fuente: .backlog)
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
@@ -21,6 +21,7 @@ Backlog de calidad completado. Sin pasos pendientes definidos.
 - [x] B10: Ofrecer 'cualquier turno de un día' al publicar ✓
 - [x] B11: Avisos por email con límite diario configurable ✓
 - [x] B12: Notificación por email al admin cuando se recibe un feedback ✓
+- [x] B13: Matching a 3 bandas (ciclo A→B→C→A) — motor puro + servicio + ruta + dashboard ✓
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile

@@ -155,3 +155,75 @@ def test_no_match_cuando_ambos_ceden_lo_mismo_pero_no_se_cruzan():
         cedidos_b={mañana_25},
         aceptados_b={noche_27},
     )
+
+
+# --- Matching a 3 bandas ---
+
+from app.matching.engine import detectar_cadena_3
+
+
+def test_cadena_3_ciclo_completo():
+    """A cede X (B acepta X), B cede Y (C acepta Y), C cede Z (A acepta Z)."""
+    X = (date(2026, 7, 1), 1)
+    Y = (date(2026, 7, 2), 2)
+    Z = (date(2026, 7, 3), 3)
+
+    assert detectar_cadena_3(
+        cedidos_a={X}, aceptados_a={Z},
+        cedidos_b={Y}, aceptados_b={X},
+        cedidos_c={Z}, aceptados_c={Y},
+    )
+
+
+def test_cadena_3_falla_si_ultimo_eslabon_roto():
+    """El ciclo no se cierra porque C ofrece algo que A no acepta."""
+    X = (date(2026, 7, 1), 1)
+    Y = (date(2026, 7, 2), 2)
+    Z = (date(2026, 7, 3), 3)
+    W = (date(2026, 7, 4), 1)
+
+    assert not detectar_cadena_3(
+        cedidos_a={X}, aceptados_a={Z},
+        cedidos_b={Y}, aceptados_b={X},
+        cedidos_c={W}, aceptados_c={Y},  # C cede W, A acepta Z — ciclo roto
+    )
+
+
+def test_cadena_3_falla_si_primer_eslabon_roto():
+    """A→B no se satisface porque B no acepta lo que A cede."""
+    X = (date(2026, 7, 1), 1)
+    Y = (date(2026, 7, 2), 2)
+    Z = (date(2026, 7, 3), 3)
+    W = (date(2026, 7, 4), 1)
+
+    assert not detectar_cadena_3(
+        cedidos_a={X}, aceptados_a={Z},
+        cedidos_b={Y}, aceptados_b={W},  # B acepta W, no X
+        cedidos_c={Z}, aceptados_c={Y},
+    )
+
+
+def test_cadena_3_match_directo_no_es_cadena():
+    """Un match directo A↔B no constituye cadena de 3."""
+    X = (date(2026, 7, 1), 1)
+    Y = (date(2026, 7, 2), 2)
+
+    assert not detectar_cadena_3(
+        cedidos_a={X}, aceptados_a={Y},
+        cedidos_b={Y}, aceptados_b={X},
+        cedidos_c=set(), aceptados_c=set(),
+    )
+
+
+def test_cadena_3_con_multiples_turnos():
+    """La cadena se detecta aunque haya más turnos por publicación."""
+    X = (date(2026, 7, 1), 1)
+    X2 = (date(2026, 7, 5), 1)
+    Y = (date(2026, 7, 2), 2)
+    Z = (date(2026, 7, 3), 3)
+
+    assert detectar_cadena_3(
+        cedidos_a={X, X2}, aceptados_a={Z},
+        cedidos_b={Y}, aceptados_b={X},
+        cedidos_c={Z}, aceptados_c={Y},
+    )

@@ -8,7 +8,7 @@ from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default
-from app.matching.service import buscar_matches_para, crear_match_directo
+from app.matching.service import buscar_cadenas_3_para, buscar_matches_para, crear_match_cadena_3, crear_match_directo
 
 bp = Blueprint("publicaciones", __name__)
 
@@ -185,6 +185,8 @@ def nueva():
         pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
         for candidata in buscar_matches_para(pub):
             crear_match_directo(pub, candidata)
+        for pub_b, pub_c in buscar_cadenas_3_para(pub):
+            crear_match_cadena_3(pub, pub_b, pub_c)
         flash(_("Publicación creada correctamente."), "success")
         return redirect(url_for("main.index"))
 
@@ -256,6 +258,8 @@ def editar(pub_id):
         editar_publicacion(pub, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
         for candidata in buscar_matches_para(pub):
             crear_match_directo(pub, candidata)
+        for pub_b, pub_c in buscar_cadenas_3_para(pub):
+            crear_match_cadena_3(pub, pub_b, pub_c)
         flash(_("Publicación actualizada."), "success")
         return redirect(url_for("main.index"))
 

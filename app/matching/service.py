@@ -17,7 +17,7 @@ from app.models import (
     Unidad,
     Usuario,
 )
-from app.matching.engine import detectar_match_directo, detectar_match_regalo
+from app.matching.engine import detectar_cadena_3, detectar_match_directo, detectar_match_regalo
 from app.push.sender import enviar_push_condicional
 from app.services.email import enviar_aviso_match
 
@@ -249,5 +249,134 @@ def crear_match_directo(pub_a, pub_b):
 
     enviar_aviso_match(pub_a.usuario, pub_a)
     enviar_aviso_match(pub_b.usuario, pub_b)
+
+    return match
+
+
+def _cadenas_3_existentes(pub_id):
+    """Frozensets de pub_ids para cadena_3 matches activos que incluyen pub_id."""
+    from sqlalchemy import select as sa_select
+
+    match_ids = db.session.execute(
+        sa_select(MatchParticipacion.match_id)
+        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
+        .where(
+            MatchParticipacion.publicacion_id == pub_id,
+            MatchCambio.tipo == "cadena_3",
+            MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
+        )
+    ).scalars().all()
+
+    result = set()
+    for mid in match_ids:
+        pub_ids = db.session.execute(
+            sa_select(MatchParticipacion.publicacion_id)
+            .where(MatchParticipacion.match_id == mid)
+        ).scalars().all()
+        result.add(frozenset(pub_ids))
+    return result
+
+
+def buscar_cadenas_3_para(publicacion):
+    """
+    Devuelve lista de pares (pub_b, pub_c) donde publicacion→pub_b→pub_c→publicacion
+    forma un ciclo de intercambio válido a 3 bandas.
+
+    Solo opera sobre publicaciones de tipo 'cambio'.
+    """
+    if publicacion.tipo != "cambio":
+        return []
+
+    propietario = db.session.get(Usuario, publicacion.usuario_id)
+    grupo_id = propietario.unidad.grupo_intercambio_id
+    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+    candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
+
+    cedidos_a = _cedidos_abiertos(publicacion)
+    aceptados_a = _aceptados(publicacion)
+
+    cedidos_por_pub = {c.id: _cedidos_abiertos(c) for c in candidatas_cambio}
+    aceptados_por_pub = {c.id: _aceptados(c) for c in candidatas_cambio}
+
+    existing = _cadenas_3_existentes(publicacion.id)
+    resultado = []
+
+    for pub_b in candidatas_cambio:
+        cedidos_b = cedidos_por_pub[pub_b.id]
+        aceptados_b = aceptados_por_pub[pub_b.id]
+
+        if not (cedidos_a & aceptados_b):
+            continue
+
+        for pub_c in candidatas_cambio:
+            if pub_c.id == pub_b.id:
+                continue
+            if pub_c.usuario_id == pub_b.usuario_id:
+                continue
+
+            cedidos_c = cedidos_por_pub[pub_c.id]
+            aceptados_c = aceptados_por_pub[pub_c.id]
+
+            if detectar_cadena_3(
+                cedidos_a, aceptados_a,
+                cedidos_b, aceptados_b,
+                cedidos_c, aceptados_c,
+            ):
+                key = frozenset({publicacion.id, pub_b.id, pub_c.id})
+                if key not in existing:
+                    resultado.append((pub_b, pub_c))
+                    existing.add(key)
+
+    return resultado
+
+
+def crear_match_cadena_3(pub_a, pub_b, pub_c):
+    """
+    Crea un MatchCambio a 3 bandas para el ciclo pub_a→pub_b→pub_c→pub_a.
+
+    Cada participación registra el turno que ese usuario cede al siguiente
+    en el ciclo.
+    """
+    aceptados_a = _aceptados(pub_a)
+    aceptados_b = _aceptados(pub_b)
+    aceptados_c = _aceptados(pub_c)
+
+    turno_a = _primer_cedido_que_acepta(pub_a, aceptados_b)  # A cede a B
+    turno_b = _primer_cedido_que_acepta(pub_b, aceptados_c)  # B cede a C
+    turno_c = _primer_cedido_que_acepta(pub_c, aceptados_a)  # C cede a A
+
+    if not turno_a or not turno_b or not turno_c:
+        db.session.rollback()
+        return None
+
+    match = MatchCambio(tipo="cadena_3", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=turno_a.id
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=turno_b.id
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_c.id, turno_cedido_id=turno_c.id
+    ))
+
+    for pub in (pub_a, pub_b, pub_c):
+        db.session.add(Notificacion(
+            usuario_id=pub.usuario_id, match_id=match.id, tipo="nuevo_match"
+        ))
+
+    db.session.commit()
+
+    enviar_push_condicional(
+        pub_b.usuario, "match", "Nuevo cambio disponible",
+        "Tienes un posible cambio de turno a 3 bandas."
+    )
+    enviar_push_condicional(
+        pub_c.usuario, "match", "Nuevo cambio disponible",
+        "Tienes un posible cambio de turno a 3 bandas."
+    )
 
     return match

@@ -15,7 +15,7 @@ def health():
 
 
 def _partners_confirmados(usuario_id):
-    """Devuelve dict {pub_id: nombre_partner} para publicaciones con match confirmado_total."""
+    """Devuelve dict {pub_id: nombres_partners} para publicaciones con match confirmado_total."""
     raw = (
         MatchCambio.query
         .join(MatchParticipacion, MatchCambio.id == MatchParticipacion.match_id)
@@ -30,9 +30,10 @@ def _partners_confirmados(usuario_id):
     result = {}
     for match in raw:
         mi = next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
-        otra = next((p for p in match.participaciones if p.publicacion.usuario_id != usuario_id), None)
-        if mi and otra:
-            result[mi.publicacion_id] = otra.publicacion.usuario.nombre
+        otras = [p for p in match.participaciones if p.publicacion.usuario_id != usuario_id]
+        if mi and otras:
+            nombres = " y ".join(p.publicacion.usuario.nombre for p in otras)
+            result[mi.publicacion_id] = nombres
     return result
 
 
@@ -79,7 +80,7 @@ def _query_pendientes(usuario_id):
 
 
 def _matches_para_tab(usuario_id, estado_match):
-    """Devuelve lista de (match, mi_participacion, otra_participacion) para un estado de match."""
+    """Devuelve lista de (match, mi_participacion, [otras_participaciones]) para un estado."""
     raw = (
         MatchCambio.query
         .join(MatchParticipacion, MatchCambio.id == MatchParticipacion.match_id)
@@ -94,9 +95,9 @@ def _matches_para_tab(usuario_id, estado_match):
     resultado = []
     for match in raw:
         mi = next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
-        otra = next((p for p in match.participaciones if p.publicacion.usuario_id != usuario_id), None)
-        if mi and otra:
-            resultado.append((match, mi, otra))
+        otras = [p for p in match.participaciones if p.publicacion.usuario_id != usuario_id]
+        if mi and otras:
+            resultado.append((match, mi, otras))
     return resultado
 
 

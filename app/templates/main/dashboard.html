@@ -38,18 +38,25 @@
 
   {% if matches %}
   <section class="matches-section">
-    {% for match, mi_part, otra_part in matches %}
-    <div class="match-card match--{{ match.estado }}">
+    {% for match, mi_part, otras_parts in matches %}
+    <div class="match-card match--{{ match.estado }}{% if match.tipo == 'cadena_3' %} match--cadena-3{% endif %}">
       <div class="match-header">
         <span class="match-badge match-badge--{{ match.estado }}">
-          {% if estado_filtro == 'compatible' %}{{ _('¡Compatible!') }}
-          {% elif mi_part.confirmado %}{{ _('Esperando al otro usuario') }}
-          {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
+          {% if match.tipo == 'cadena_3' %}
+            {% if estado_filtro == 'compatible' %}{{ _('¡Cambio a 3 bandas!') }}
+            {% elif mi_part.confirmado %}{{ _('Esperando a los demás') }}
+            {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
+          {% else %}
+            {% if estado_filtro == 'compatible' %}{{ _('¡Compatible!') }}
+            {% elif mi_part.confirmado %}{{ _('Esperando al otro usuario') }}
+            {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
+          {% endif %}
         </span>
-        <span class="match-usuario">{{ otra_part.publicacion.usuario.nombre }}</span>
+        <span class="match-usuario">
+          {% for otra in otras_parts %}{{ otra.publicacion.usuario.nombre }}{% if not loop.last %} {{ _('y') }} {% endif %}{% endfor %}
+        </span>
       </div>
       {% set mi_turno = mi_part.turno_cedido or mi_part.turno_aceptado %}
-      {% set otro_turno = otra_part.turno_cedido or otra_part.turno_aceptado %}
       <div class="match-turnos">
         {% if mi_turno %}
         <div class="match-turno">
@@ -57,15 +64,28 @@
           {{ mi_turno.fecha }} — {{ mi_turno.franja_horaria.nombre }}
         </div>
         {% endif %}
-        {% if otro_turno %}
-        <div class="match-turno">
-          <span class="match-turno-label">{{ _('Librarías:') }}</span>
-          {{ otro_turno.fecha }} — {{ otro_turno.franja_horaria.nombre }}
-        </div>
+        {% if match.tipo == 'cadena_3' %}
+          {% for otra in otras_parts %}
+          {% set otro_turno = otra.turno_cedido or otra.turno_aceptado %}
+          {% if otro_turno %}
+          <div class="match-turno">
+            <span class="match-turno-label">{{ otra.publicacion.usuario.nombre }} {{ _('cede:') }}</span>
+            {{ otro_turno.fecha }} — {{ otro_turno.franja_horaria.nombre }}
+          </div>
+          {% endif %}
+          {% endfor %}
+        {% else %}
+          {% set otro_turno = otras_parts[0].turno_cedido or otras_parts[0].turno_aceptado %}
+          {% if otro_turno %}
+          <div class="match-turno">
+            <span class="match-turno-label">{{ _('Librarías:') }}</span>
+            {{ otro_turno.fecha }} — {{ otro_turno.franja_horaria.nombre }}
+          </div>
+          {% endif %}
         {% endif %}
       </div>
-      {% if otra_part.publicacion.mensaje %}
-      <p class="match-mensaje">"{{ otra_part.publicacion.mensaje }}"</p>
+      {% if match.tipo != 'cadena_3' and otras_parts[0].publicacion.mensaje %}
+      <p class="match-mensaje">"{{ otras_parts[0].publicacion.mensaje }}"</p>
       {% endif %}
       {% if not mi_part.confirmado %}
       <div class="match-acciones">
@@ -79,7 +99,10 @@
         </form>
       </div>
       {% else %}
-      <p class="match-esperando">{{ _('Has confirmado. Esperando al otro usuario.') }}</p>
+      <p class="match-esperando">
+        {% if match.tipo == 'cadena_3' %}{{ _('Has confirmado. Esperando a los demás.') }}
+        {% else %}{{ _('Has confirmado. Esperando al otro usuario.') }}{% endif %}
+      </p>
       {% endif %}
     </div>
     {% endfor %}

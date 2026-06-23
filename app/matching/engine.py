@@ -35,3 +35,26 @@ def detectar_match_directo(cedidos_a, aceptados_a, cedidos_b, aceptados_b):
     aceptados_b = frozenset(aceptados_b)
 
     return bool(cedidos_a & aceptados_b) and bool(cedidos_b & aceptados_a)
+
+
+def detectar_cadena_3(cedidos_a, aceptados_a, cedidos_b, aceptados_b, cedidos_c, aceptados_c):
+    """
+    Devuelve True si A→B→C→A forma un ciclo de intercambio válido:
+      - A cede algo que B acepta
+      - B cede algo que C acepta
+      - C cede algo que A acepta
+
+    cedidos_* / aceptados_*: iterables de (fecha: date, franja_horaria_id: int).
+    """
+    cedidos_a = frozenset(cedidos_a)
+    aceptados_a = frozenset(aceptados_a)
+    cedidos_b = frozenset(cedidos_b)
+    aceptados_b = frozenset(aceptados_b)
+    cedidos_c = frozenset(cedidos_c)
+    aceptados_c = frozenset(aceptados_c)
+
+    return (
+        bool(cedidos_a & aceptados_b) and
+        bool(cedidos_b & aceptados_c) and
+        bool(cedidos_c & aceptados_a)
+    )
