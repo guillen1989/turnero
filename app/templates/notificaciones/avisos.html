@@ -7,6 +7,12 @@
   <h1 class="avisos-panel-title">{{ _('Avisos') }}</h1>
 
   {% if avisos %}
+  <div class="avisos-header-actions">
+    <form method="post" action="{{ url_for('notificaciones.borrar_todos_avisos') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-secondary btn-sm">{{ _('Borrar todos') }}</button>
+    </form>
+  </div>
   <ul class="avisos-list">
     {% for aviso in avisos %}
     <li class="aviso-row{% if not aviso.leida %} aviso-row--nueva{% endif %}">
@@ -16,16 +22,28 @@
           <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _(aviso.publicacion.tipo) }}</span>
           <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>
-        {% if aviso.publicacion.esta_activa() %}
-        <a href="{{ url_for('main.cambios') }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver publicación') }}</a>
-        {% else %}
-        <span class="aviso-expirada">{{ _('Publicación ya cerrada') }}</span>
-        {% endif %}
+        <div class="aviso-actions">
+          {% if aviso.publicacion.esta_activa() %}
+          <a href="{{ url_for('main.cambios') }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver publicación') }}</a>
+          {% else %}
+          <span class="aviso-expirada">{{ _('Publicación ya cerrada') }}</span>
+          {% endif %}
+          <form method="post" action="{{ url_for('notificaciones.borrar_aviso', notif_id=aviso.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-ghost aviso-btn-borrar" title="{{ _('Borrar aviso') }}">✕</button>
+          </form>
+        </div>
       {% else %}
         <div class="aviso-info">
           <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>
-        <span class="aviso-expirada">{{ _('Publicación eliminada') }}</span>
+        <div class="aviso-actions">
+          <span class="aviso-expirada">{{ _('Publicación eliminada') }}</span>
+          <form method="post" action="{{ url_for('notificaciones.borrar_aviso', notif_id=aviso.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-ghost aviso-btn-borrar" title="{{ _('Borrar aviso') }}">✕</button>
+          </form>
+        </div>
       {% endif %}
     </li>
     {% endfor %}

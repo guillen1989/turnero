@@ -87,6 +87,27 @@ def avisos():
     return render_template("notificaciones/avisos.html", avisos=notifs)
 
 
+@bp.post("/avisos/<int:notif_id>/borrar")
+@login_required
+def borrar_aviso(notif_id):
+    notif = Notificacion.query.filter_by(
+        id=notif_id, usuario_id=current_user.id
+    ).first_or_404()
+    db.session.delete(notif)
+    db.session.commit()
+    return redirect(url_for("notificaciones.avisos"))
+
+
+@bp.post("/avisos/borrar-todos")
+@login_required
+def borrar_todos_avisos():
+    Notificacion.query.filter_by(
+        usuario_id=current_user.id, tipo="nueva_publicacion_seguido"
+    ).delete()
+    db.session.commit()
+    return redirect(url_for("notificaciones.avisos"))
+
+
 def _colegas_del_usuario(usuario):
     """Usuarios del mismo grupo de intercambio y categoría, excluyendo al propio usuario."""
     grupo_id = usuario.unidad.grupo_intercambio_id
