@@ -10,7 +10,6 @@ from app.models.usuario import Usuario
 from app.models.publicacion import PublicacionCambio, TurnoCedido, TurnoAceptado
 from app.models.match import MatchCambio, MatchParticipacion
 from app.models.notificacion import Notificacion
-from app.models.aviso_email import AvisoEmail
 from app.models.feedback import Feedback
 from app.models.suscripcion_publicaciones import SuscripcionPublicaciones
 
@@ -30,7 +29,6 @@ __all__ = [
     "MatchCambio",
     "MatchParticipacion",
     "Notificacion",
-    "AvisoEmail",
     "Feedback",
     "SuscripcionPublicaciones",
     "insertar_categorias_semilla",

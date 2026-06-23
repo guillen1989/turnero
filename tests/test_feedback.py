@@ -120,19 +120,6 @@ def test_nuevo_feedback_tiene_leido_false(client, db):
     assert fb.leido is False
 
 
-# --- Envío de email desactivado ---
-
-def test_post_feedback_no_envia_email(client, db):
-    """El formulario ya no dispara envío de email (sistema desactivado)."""
-    client.application.config["FEEDBACK_RECIPIENT_EMAIL"] = "admin@test.es"
-    with patch("app.services.email._enviar_correo") as mock_correo:
-        client.post("/feedback", data={
-            "tipo": "error",
-            "descripcion": "La app no carga en Safari.",
-            "email_contacto": "usuario@test.es",
-        })
-        mock_correo.assert_not_called()
-
 
 # --- Panel de feedback del admin ---
 

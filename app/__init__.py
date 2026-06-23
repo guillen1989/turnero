@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request
 from config import config
-from app.extensions import db, migrate, babel, login_manager, csrf, mail
+from app.extensions import db, migrate, babel, login_manager, csrf
 
 
 def create_app(config_name=None):
@@ -13,7 +13,6 @@ def create_app(config_name=None):
 
     db.init_app(app)
     migrate.init_app(app, db)
-    mail.init_app(app)
     babel.init_app(app, locale_selector=_get_locale)
     csrf.init_app(app)
 

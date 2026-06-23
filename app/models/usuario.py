@@ -20,8 +20,6 @@ class Usuario(UserMixin, db.Model):
     notif_confirmacion_parcial = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     notif_confirmado_total = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     es_admin = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
-    avisos_email = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
-    limite_avisos_email = db.Column(db.Integer, nullable=False, default=3, server_default="3")
     fecha_registro = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )

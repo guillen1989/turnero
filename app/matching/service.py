@@ -19,7 +19,6 @@ from app.models import (
 )
 from app.matching.engine import detectar_cadena_3, detectar_match_directo, detectar_match_regalo
 from app.push.sender import enviar_push_condicional
-from app.services.email import enviar_aviso_match
 
 
 def _cedidos_abiertos(pub):
@@ -246,8 +245,6 @@ def crear_match_directo(pub_a, pub_b):
     db.session.commit()
 
     enviar_push_condicional(pub_b.usuario, "match", "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
-    enviar_aviso_match(pub_a.usuario, pub_a)
-    enviar_aviso_match(pub_b.usuario, pub_b)
 
     return match
 
