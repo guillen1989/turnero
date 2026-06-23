@@ -70,7 +70,7 @@ def test_dashboard_muestra_publicaciones_propias(client, db):
     franja = _franja(usuario.unidad.grupo_intercambio_id)
     _publicacion(usuario, franja)
     resp = client.get("/?estado=abierta")
-    assert b"2026-08-01" in resp.data
+    assert b"01/08/2026" in resp.data
 
 
 def test_dashboard_tab_compatible_es_default(client, db):
@@ -131,8 +131,8 @@ def test_dashboard_activos_muestra_solo_publicaciones_sin_match(client, db):
     db.session.commit()
 
     resp = client.get("/?estado=abierta")
-    assert b"2026-10-01" in resp.data
-    assert b"2026-11-01" not in resp.data
+    assert b"01/10/2026" in resp.data
+    assert b"01/11/2026" not in resp.data
 
 
 def test_dashboard_filtro_estado_caducada(client, db):
@@ -144,8 +144,8 @@ def test_dashboard_filtro_estado_caducada(client, db):
     db.session.commit()
 
     resp = client.get("/?estado=caducada")
-    assert b"2026-11-01" in resp.data
-    assert b"2026-10-01" not in resp.data
+    assert b"01/11/2026" in resp.data
+    assert b"01/10/2026" not in resp.data
 
 
 def test_dashboard_filtro_estado_confirmada(client, db):
@@ -157,8 +157,8 @@ def test_dashboard_filtro_estado_confirmada(client, db):
     db.session.commit()
 
     resp = client.get("/?estado=confirmada")
-    assert b"2026-11-01" in resp.data
-    assert b"2026-10-01" not in resp.data
+    assert b"01/11/2026" in resp.data
+    assert b"01/10/2026" not in resp.data
 
 
 def _setup_match_parcial(usuario_confirma, usuario_pendiente, franja):
@@ -193,12 +193,12 @@ def test_dashboard_tab_pendiente_muestra_match_confirmado_parcial(client, db):
     # Ana (quien ya confirmó) ve la match card en pendiente
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     resp = client.get("/?estado=pendiente")
-    assert b"2026-10-01" in resp.data
+    assert b"01/10/2026" in resp.data
 
     # Pedro (quien aún no confirmó) también la ve en pendiente
     client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
     resp = client.get("/?estado=pendiente")
-    assert b"2026-10-02" in resp.data
+    assert b"02/10/2026" in resp.data
 
 
 def test_dashboard_tab_pendiente_no_muestra_match_propuesto(client, db):
@@ -228,10 +228,10 @@ def test_dashboard_tab_pendiente_no_muestra_match_propuesto(client, db):
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     # En compatibles aparece
     resp_compat = client.get("/")
-    assert b"2026-10-01" in resp_compat.data
+    assert b"01/10/2026" in resp_compat.data
     # En pendientes NO aparece
     resp_pend = client.get("/?estado=pendiente")
-    assert b"2026-10-01" not in resp_pend.data
+    assert b"01/10/2026" not in resp_pend.data
 
 
 def test_dashboard_activos_excluye_pubs_con_match_activo(client, db):
@@ -251,8 +251,8 @@ def test_dashboard_activos_excluye_pubs_con_match_activo(client, db):
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     resp_activos = client.get("/?estado=abierta")
     # Las pub cards usan <span class="turno">; las match cards no.
-    assert b'class="turno">2026-10-01' not in resp_activos.data   # tiene match → fuera de activos
-    assert b'class="turno">2026-12-01' in resp_activos.data        # sin match → en activos
+    assert b'class="turno">01/10/2026' not in resp_activos.data   # tiene match → fuera de activos
+    assert b'class="turno">01/12/2026' in resp_activos.data        # sin match → en activos
 
 
 def test_dashboard_tab_compatible_conteo_match_propuesto(client, db):
@@ -294,7 +294,7 @@ def test_dashboard_no_muestra_publicaciones_ajenas(client, db):
     _publicacion(otro, franja)
     resp = client.get("/?estado=abierta")
     assert b"No tienes publicaciones" in resp.data
-    assert b"2026-08-01" not in resp.data
+    assert b"01/08/2026" not in resp.data
 
 
 def test_dashboard_confirmados_muestra_nombre_partner(client, db):
