@@ -19,6 +19,7 @@ from app.models import (
 )
 from app.matching.engine import detectar_cadena_3, detectar_match_directo, detectar_match_regalo
 from app.push.sender import enviar_push_condicional
+from sqlalchemy.orm import selectinload
 
 
 def _cedidos_abiertos(pub):
@@ -63,7 +64,12 @@ def _primer_cedido_que_acepta(pub, aceptados_contraparte):
 
 
 def _candidatas_base(publicacion, propietario, grupo_id):
-    """Consulta base de candidatas activas del mismo grupo y categoría."""
+    """Consulta base de candidatas activas del mismo grupo y categoría.
+
+    Carga turnos_cedidos y turnos_aceptados en la misma consulta (2 SELECT IN
+    adicionales) para evitar el N+1 que se produciría al acceder a ellos
+    durante el matching.
+    """
     return (
         PublicacionCambio.query
         .join(Usuario, PublicacionCambio.usuario_id == Usuario.id)
@@ -74,6 +80,10 @@ def _candidatas_base(publicacion, propietario, grupo_id):
             PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
             Usuario.categoria_id == propietario.categoria_id,
             Unidad.grupo_intercambio_id == grupo_id,
+        )
+        .options(
+            selectinload(PublicacionCambio.turnos_cedidos),
+            selectinload(PublicacionCambio.turnos_aceptados),
         )
         .all()
     )
