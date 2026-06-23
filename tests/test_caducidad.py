@@ -129,16 +129,19 @@ def test_no_caduca_si_algun_turno_cedido_es_futuro(db):
     assert pub.estado == "abierta"
 
 
-def test_devuelve_lista_de_publicaciones_caducadas(db):
+def test_devuelve_conteo_de_publicaciones_caducadas(db):
     u = _usuario()
     franja = _franja(u.unidad.grupo_intercambio_id)
     pub_pasada = _pub(u, PASADO, franja)
     pub_futura = _pub(u, FUTURO, franja)
 
-    resultado = caducar_publicaciones_expiradas(hoy=HOY)
+    total = caducar_publicaciones_expiradas(hoy=HOY)
 
-    assert pub_pasada in resultado
-    assert pub_futura not in resultado
+    assert total == 1
+    db.session.refresh(pub_pasada)
+    db.session.refresh(pub_futura)
+    assert pub_pasada.estado == "caducada"
+    assert pub_futura.estado == "abierta"
 
 
 def test_no_caduca_turno_resuelto_aunque_sea_pasado(db):

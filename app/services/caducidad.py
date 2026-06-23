@@ -1,40 +1,80 @@
 from datetime import date
 
+from sqlalchemy import exists, select as sa_select, update as sa_update
+
 from app.extensions import db
-from app.models import PublicacionCambio
+from app.models import PublicacionCambio, TurnoCedido, TurnoAceptado
 
 
 def caducar_publicaciones_expiradas(hoy=None):
     """
-    Marca como 'caducada' toda publicación activa cuyos turnos cedidos abiertos
+    Marca como 'caducada' toda publicación activa cuyos turnos relevantes
     tienen todos fecha estrictamente anterior a `hoy`.
 
-    Acepta `hoy` como parámetro para que los tests puedan fijar la fecha
-    sin depender del reloj real.
+    Ejecuta dos UPDATE SQL directos sin cargar objetos en memoria:
+    - Para cambio/peticion/junte: caduca si no queda ningún turno cedido
+      abierto con fecha >= hoy (pero sí existe al menos uno).
+    - Para regalo: caduca si no queda ningún turno aceptado con fecha >= hoy.
 
-    Devuelve la lista de publicaciones que han caducado en esta llamada.
+    Acepta `hoy` como parámetro para que los tests puedan fijar la fecha.
+    Devuelve el número total de publicaciones caducadas.
     """
     if hoy is None:
         hoy = date.today()
 
-    activas = PublicacionCambio.query.filter(
-        PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta"))
-    ).all()
+    tiene_cedido_abierto = exists(
+        sa_select(TurnoCedido.id).where(
+            TurnoCedido.publicacion_id == PublicacionCambio.id,
+            TurnoCedido.estado == "abierto",
+        )
+    )
+    tiene_cedido_vigente = exists(
+        sa_select(TurnoCedido.id).where(
+            TurnoCedido.publicacion_id == PublicacionCambio.id,
+            TurnoCedido.estado == "abierto",
+            TurnoCedido.fecha >= hoy,
+        )
+    )
 
-    caducadas = []
-    for pub in activas:
-        if pub.tipo == "regalo":
-            # Para regalos: caduca si todos los turnos ofrecidos ya han pasado.
-            if pub.turnos_aceptados and all(t.fecha < hoy for t in pub.turnos_aceptados):
-                pub.estado = "caducada"
-                caducadas.append(pub)
-        else:
-            turnos_abiertos = [t for t in pub.turnos_cedidos if t.estado == "abierto"]
-            if turnos_abiertos and all(t.fecha < hoy for t in turnos_abiertos):
-                pub.estado = "caducada"
-                caducadas.append(pub)
+    stmt_cedidos = (
+        sa_update(PublicacionCambio)
+        .where(
+            PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
+            PublicacionCambio.tipo.in_(("cambio", "peticion", "junte")),
+            tiene_cedido_abierto,
+            ~tiene_cedido_vigente,
+        )
+        .values(estado="caducada")
+        .execution_options(synchronize_session=False)
+    )
 
-    if caducadas:
+    tiene_aceptado = exists(
+        sa_select(TurnoAceptado.id).where(
+            TurnoAceptado.publicacion_id == PublicacionCambio.id,
+        )
+    )
+    tiene_aceptado_vigente = exists(
+        sa_select(TurnoAceptado.id).where(
+            TurnoAceptado.publicacion_id == PublicacionCambio.id,
+            TurnoAceptado.fecha >= hoy,
+        )
+    )
+
+    stmt_regalos = (
+        sa_update(PublicacionCambio)
+        .where(
+            PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
+            PublicacionCambio.tipo == "regalo",
+            tiene_aceptado,
+            ~tiene_aceptado_vigente,
+        )
+        .values(estado="caducada")
+        .execution_options(synchronize_session=False)
+    )
+
+    n1 = db.session.execute(stmt_cedidos).rowcount
+    n2 = db.session.execute(stmt_regalos).rowcount
+    total = n1 + n2
+    if total:
         db.session.commit()
-
-    return caducadas
+    return total
