@@ -71,6 +71,7 @@ def _candidatas_base(publicacion, propietario, grupo_id):
         .join(Unidad, Usuario.unidad_id == Unidad.id)
         .filter(
             PublicacionCambio.id != publicacion.id,
+            PublicacionCambio.usuario_id != propietario.id,
             PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
             Usuario.categoria_id == propietario.categoria_id,
             Unidad.grupo_intercambio_id == grupo_id,

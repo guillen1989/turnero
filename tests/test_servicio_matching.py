@@ -274,3 +274,23 @@ def test_no_incluye_publicaciones_inactivas(db):
     db.session.commit()
 
     assert buscar_matches_para(pub_ana) == []
+
+
+def test_no_hace_match_con_publicaciones_propias(db):
+    """Un usuario no puede hacer match con sus propias otras publicaciones."""
+    ana = _usuario("Ana", "ana@test.es")
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub1 = _publicacion(
+        ana,
+        fecha_cede=date(2026, 9, 1), franja_cede=franja,
+        fecha_acepta=date(2026, 9, 2), franja_acepta=franja,
+    )
+    _publicacion(
+        ana,
+        fecha_cede=date(2026, 9, 2), franja_cede=franja,
+        fecha_acepta=date(2026, 9, 1), franja_acepta=franja,
+    )
+
+    # Aunque pub1 y pub2 son complementarias, no deben hacer match entre sí
+    assert buscar_matches_para(pub1) == []
