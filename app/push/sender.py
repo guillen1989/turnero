@@ -5,6 +5,7 @@ permiso revocado, servicio push caído, etc. El flujo de negocio
 no debe depender de si la notificación llega o no.
 """
 import json
+import threading
 
 from flask import current_app
 from pywebpush import WebPushException, webpush
@@ -19,8 +20,8 @@ _PREF_ATTR = {
 
 def enviar_push(usuario, titulo, cuerpo):
     """
-    Envía una notificación push al usuario.
-    No hace nada si el usuario no tiene suscripción guardada
+    Envía una notificación push al usuario en un hilo daemon para no bloquear
+    el worker. No hace nada si el usuario no tiene suscripción guardada
     o si las claves VAPID no están configuradas.
     """
     if not usuario.push_subscription:
@@ -30,19 +31,28 @@ def enviar_push(usuario, titulo, cuerpo):
     if not vapid_private_key:
         return
 
-    vapid_claims = {
-        "sub": f"mailto:{current_app.config.get('VAPID_CLAIM_EMAIL', '')}"
-    }
+    app = current_app._get_current_object()
+    usuario_id = usuario.id
+    subscription = json.loads(usuario.push_subscription)
+    vapid_claims = {"sub": f"mailto:{current_app.config.get('VAPID_CLAIM_EMAIL', '')}"}
+    data = json.dumps({"title": titulo, "body": cuerpo})
 
-    try:
-        webpush(
-            subscription_info=json.loads(usuario.push_subscription),
-            data=json.dumps({"title": titulo, "body": cuerpo}),
-            vapid_private_key=vapid_private_key,
-            vapid_claims=vapid_claims,
-        )
-    except Exception as exc:
-        current_app.logger.warning("Push no entregado a usuario %s: %s", usuario.id, exc)
+    def _send():
+        try:
+            webpush(
+                subscription_info=subscription,
+                data=data,
+                vapid_private_key=vapid_private_key,
+                vapid_claims=vapid_claims,
+            )
+        except Exception as exc:
+            app.logger.warning("Push no entregado a usuario %s: %s", usuario_id, exc)
+
+    # En tests se ejecuta síncronamente para que los mocks funcionen
+    if app.config.get("TESTING"):
+        _send()
+    else:
+        threading.Thread(target=_send, daemon=True).start()
 
 
 def enviar_push_condicional(usuario, tipo, titulo, cuerpo):

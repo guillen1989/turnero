@@ -267,14 +267,19 @@ def _cadenas_3_existentes(pub_id):
         )
     ).scalars().all()
 
-    result = set()
-    for mid in match_ids:
-        pub_ids = db.session.execute(
-            sa_select(MatchParticipacion.publicacion_id)
-            .where(MatchParticipacion.match_id == mid)
-        ).scalars().all()
-        result.add(frozenset(pub_ids))
-    return result
+    if not match_ids:
+        return set()
+
+    rows = db.session.execute(
+        sa_select(MatchParticipacion.match_id, MatchParticipacion.publicacion_id)
+        .where(MatchParticipacion.match_id.in_(match_ids))
+    ).all()
+
+    agrupado = {}
+    for mid, pid in rows:
+        agrupado.setdefault(mid, set()).add(pid)
+
+    return {frozenset(pubs) for pubs in agrupado.values()}
 
 
 def buscar_cadenas_3_para(publicacion):

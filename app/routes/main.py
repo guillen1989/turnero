@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 from sqlalchemy import and_, exists, extract, or_
+from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
 from app.extensions import db
 from app.models import FranjaHoraria, MatchCambio, MatchParticipacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
@@ -23,6 +24,11 @@ def _partners_confirmados(usuario_id):
         .filter(
             PublicacionCambio.usuario_id == usuario_id,
             MatchCambio.estado == "confirmado_total",
+        )
+        .options(
+            selectinload(MatchCambio.participaciones)
+            .joinedload(MatchParticipacion.publicacion)
+            .joinedload(PublicacionCambio.usuario)
         )
         .distinct()
         .all()
@@ -88,6 +94,11 @@ def _matches_para_tab(usuario_id, estado_match):
         .filter(
             PublicacionCambio.usuario_id == usuario_id,
             MatchCambio.estado == estado_match,
+        )
+        .options(
+            selectinload(MatchCambio.participaciones)
+            .joinedload(MatchParticipacion.publicacion)
+            .joinedload(PublicacionCambio.usuario)
         )
         .distinct()
         .all()
@@ -217,6 +228,13 @@ def cambios():
             PublicacionCambio.usuario_id != current_user.id,
             Usuario.categoria_id == current_user.categoria_id,
             Unidad.grupo_intercambio_id == grupo_id,
+        )
+        .options(
+            contains_eager(PublicacionCambio.usuario),
+            selectinload(PublicacionCambio.turnos_cedidos)
+            .joinedload(TurnoCedido.franja_horaria),
+            selectinload(PublicacionCambio.turnos_aceptados)
+            .joinedload(TurnoAceptado.franja_horaria),
         )
     )
 

@@ -41,8 +41,14 @@ def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, 
 def _notificar_suscriptores(publicador, pub):
     """Crea notificaciones in-app y envía push a los suscriptores del publicador."""
     suscripciones = SuscripcionPublicaciones.query.filter_by(publicador_id=publicador.id).all()
+    if not suscripciones:
+        return
+
+    ids = [s.suscriptor_id for s in suscripciones]
+    suscriptores = {u.id: u for u in Usuario.query.filter(Usuario.id.in_(ids)).all()}
+
     for suscripcion in suscripciones:
-        suscriptor = db.session.get(Usuario, suscripcion.suscriptor_id)
+        suscriptor = suscriptores.get(suscripcion.suscriptor_id)
         if suscriptor:
             db.session.add(Notificacion(
                 usuario_id=suscriptor.id,
