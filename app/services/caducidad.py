@@ -1,9 +1,14 @@
 from datetime import date
 
+from flask import current_app
 from sqlalchemy import exists, select as sa_select, update as sa_update
 
 from app.extensions import db
 from app.models import PublicacionCambio, TurnoCedido, TurnoAceptado
+
+# Fecha de la última ejecución en este proceso. Con un único worker de gunicorn
+# esto evita repetir el UPDATE en cada request del mismo día calendario.
+_ultima_caducidad: date | None = None
 
 
 def caducar_publicaciones_expiradas(hoy=None):
@@ -17,10 +22,18 @@ def caducar_publicaciones_expiradas(hoy=None):
     - Para regalo: caduca si no queda ningún turno aceptado con fecha >= hoy.
 
     Acepta `hoy` como parámetro para que los tests puedan fijar la fecha.
+    Cuando se llama sin parámetro (producción) se ejecuta como mucho una vez
+    por día calendario en el mismo proceso.
     Devuelve el número total de publicaciones caducadas.
     """
-    if hoy is None:
-        hoy = date.today()
+    global _ultima_caducidad
+    hoy_real = hoy if hoy is not None else date.today()
+
+    # En producción evita repetir el UPDATE más de una vez por día.
+    # En tests (hoy explícito o TESTING=True) siempre ejecuta.
+    testing = current_app.config.get("TESTING", False)
+    if hoy is None and not testing and _ultima_caducidad == hoy_real:
+        return 0
 
     tiene_cedido_abierto = exists(
         sa_select(TurnoCedido.id).where(
@@ -32,10 +45,9 @@ def caducar_publicaciones_expiradas(hoy=None):
         sa_select(TurnoCedido.id).where(
             TurnoCedido.publicacion_id == PublicacionCambio.id,
             TurnoCedido.estado == "abierto",
-            TurnoCedido.fecha >= hoy,
+            TurnoCedido.fecha >= hoy_real,
         )
     )
-
     stmt_cedidos = (
         sa_update(PublicacionCambio)
         .where(
@@ -56,10 +68,9 @@ def caducar_publicaciones_expiradas(hoy=None):
     tiene_aceptado_vigente = exists(
         sa_select(TurnoAceptado.id).where(
             TurnoAceptado.publicacion_id == PublicacionCambio.id,
-            TurnoAceptado.fecha >= hoy,
+            TurnoAceptado.fecha >= hoy_real,
         )
     )
-
     stmt_regalos = (
         sa_update(PublicacionCambio)
         .where(
@@ -77,4 +88,8 @@ def caducar_publicaciones_expiradas(hoy=None):
     total = n1 + n2
     if total:
         db.session.commit()
+
+    if hoy is None:
+        _ultima_caducidad = hoy_real
+
     return total

@@ -160,93 +160,91 @@ def _primer_aceptado_que_cubre(pub, cedidos_contraparte):
     return None
 
 
-def crear_match_directo(pub_a, pub_b):
-    """
-    Crea un MatchCambio directo (2 bandas) entre pub_a y pub_b.
+def _roles_cambio_simétrico(pub_a, pub_b):
+    """cambio↔cambio o junte↔junte: ambos ceden un turno al otro."""
+    tc_a = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
+    tc_b = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
+    return tc_a, None, tc_b, None
 
-    Soporta los tres tipos de publicación:
-    - cambio ↔ cambio: intercambio clásico, ambos ceden turno.
-    - regalo ↔ peticion: regalo da (turno_aceptado), peticion recibe (turno_cedido).
-    """
+
+def _roles_regalo_peticion(pub_a, pub_b):
+    ta_a = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
+    tc_b = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
+    return None, ta_a, tc_b, None
+
+
+def _roles_peticion_regalo(pub_a, pub_b):
+    tc_a = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
+    ta_b = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
+    return tc_a, None, None, ta_b
+
+
+def _roles_cambio_regalo(pub_a, pub_b):
+    tc_a = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
+    ta_b = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
+    return tc_a, None, None, ta_b
+
+
+def _roles_regalo_cambio(pub_a, pub_b):
+    ta_a = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
+    tc_b = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
+    return None, ta_a, tc_b, None
+
+
+def _roles_cambio_peticion(pub_a, pub_b):
+    ta_a = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
+    tc_b = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
+    return None, ta_a, tc_b, None
+
+
+def _roles_peticion_cambio(pub_a, pub_b):
+    tc_a = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
+    ta_b = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
+    return tc_a, None, None, ta_b
+
+
+# (tipo_a, tipo_b) → handler(pub_a, pub_b) → (tc_a, ta_a, tc_b, ta_b)
+# Cada handler devuelve el turno cedido y aceptado que aporta cada publicación.
+# None significa que esa publicación no aporta ese tipo de turno.
+_ROLES_HANDLER = {
+    ("cambio",  "cambio"):   _roles_cambio_simétrico,
+    ("junte",   "junte"):    _roles_cambio_simétrico,
+    ("regalo",  "peticion"): _roles_regalo_peticion,
+    ("peticion","regalo"):   _roles_peticion_regalo,
+    ("cambio",  "regalo"):   _roles_cambio_regalo,
+    ("regalo",  "cambio"):   _roles_regalo_cambio,
+    ("cambio",  "peticion"): _roles_cambio_peticion,
+    ("peticion","cambio"):   _roles_peticion_cambio,
+}
+
+
+def crear_match_directo(pub_a, pub_b):
+    """Crea un MatchCambio directo (2 bandas) entre pub_a y pub_b."""
+    handler = _ROLES_HANDLER.get((pub_a.tipo, pub_b.tipo))
+    if handler is None:
+        return None
+
     match = MatchCambio(tipo="directo_2", estado="propuesto")
     db.session.add(match)
     db.session.flush()
 
-    tipo_a = pub_a.tipo
-    tipo_b = pub_b.tipo
+    tc_a, ta_a, tc_b, ta_b = handler(pub_a, pub_b)
 
-    if tipo_a in ("cambio", "junte") and tipo_a == tipo_b:
-        aceptados_a = _aceptados(pub_a)
-        aceptados_b = _aceptados(pub_b)
-        turno_a = _primer_cedido_que_acepta(pub_a, aceptados_b)
-        turno_b = _primer_cedido_que_acepta(pub_b, aceptados_a)
-        if not turno_a or not turno_b:
-            db.session.rollback()
-            return None
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=turno_a.id))
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=turno_b.id))
+    if (tc_a is None and ta_a is None) or (tc_b is None and ta_b is None):
+        db.session.rollback()
+        return None
 
-    elif tipo_a == "regalo" and tipo_b == "peticion":
-        ta = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
-        tc = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
-        if not ta or not tc:
-            db.session.rollback()
-            return None
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_aceptado_id=ta.id))
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc.id))
+    kwargs_a = {"turno_cedido_id": tc_a.id} if tc_a else {"turno_aceptado_id": ta_a.id}
+    kwargs_b = {"turno_cedido_id": tc_b.id} if tc_b else {"turno_aceptado_id": ta_b.id}
 
-    elif tipo_a == "peticion" and tipo_b == "regalo":
-        tc = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
-        ta = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
-        if not tc or not ta:
-            db.session.rollback()
-            return None
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc.id))
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_aceptado_id=ta.id))
-
-    # Matches parciales cambio ↔ regalo/peticion
-    elif tipo_a == "cambio" and tipo_b == "regalo":
-        tc = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
-        ta = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
-        if not tc or not ta:
-            db.session.rollback()
-            return None
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc.id))
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_aceptado_id=ta.id))
-
-    elif tipo_a == "regalo" and tipo_b == "cambio":
-        ta = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
-        tc = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
-        if not ta or not tc:
-            db.session.rollback()
-            return None
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_aceptado_id=ta.id))
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc.id))
-
-    elif tipo_a == "cambio" and tipo_b == "peticion":
-        ta = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
-        tc = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
-        if not ta or not tc:
-            db.session.rollback()
-            return None
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_aceptado_id=ta.id))
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc.id))
-
-    elif tipo_a == "peticion" and tipo_b == "cambio":
-        tc = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
-        ta = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
-        if not tc or not ta:
-            db.session.rollback()
-            return None
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc.id))
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_aceptado_id=ta.id))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, **kwargs_a))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, **kwargs_b))
 
     db.session.add(Notificacion(usuario_id=pub_a.usuario_id, match_id=match.id, tipo="nuevo_match"))
     db.session.add(Notificacion(usuario_id=pub_b.usuario_id, match_id=match.id, tipo="nuevo_match"))
     db.session.commit()
 
     enviar_push_condicional(pub_b.usuario, "match", "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
-
     enviar_aviso_match(pub_a.usuario, pub_a)
     enviar_aviso_match(pub_b.usuario, pub_b)
 
