@@ -417,6 +417,7 @@ body {
 .estado-tab { flex: 1 1 calc(33% - 0.4rem); padding: 0.45rem 0.5rem; text-decoration: none; color: #555; border-radius: 6px; font-size: 0.88rem; border: 1.5px solid #ddd; background: #f7f7f7; text-align: center; white-space: nowrap; }
 .estado-tab:hover { background: #ebebeb; color: #1a1a1a; }
 .estado-tab--active { color: #fff; background: #005a9c; border-color: #005a9c; font-weight: 600; }
+.estado-tabs--compact .estado-tab { flex: 0 0 auto; }
 .tab-count { font-size: 0.82em; opacity: 0.8; }
 
 /* Publish / Edit form */

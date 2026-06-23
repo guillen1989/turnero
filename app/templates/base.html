@@ -20,6 +20,7 @@
         <a href="{{ url_for('notificaciones.panel') }}">{{ _('Notificaciones') }}</a>
         <a href="{{ url_for('auth.perfil') }}">{{ _('Mi perfil') }}</a>
         {% if current_user.es_admin %}<a href="{{ url_for('admin.index') }}">{{ _('Administración') }}</a>{% endif %}
+        {% if current_user.es_admin %}<a href="{{ url_for('admin.feedback') }}">{{ _('Feedback') }}</a>{% endif %}
         <a href="{{ url_for('auth.logout') }}">{{ _('Cerrar sesión') }}</a>
       {% else %}
         <a href="{{ url_for('auth.login') }}">{{ _('Entrar') }}</a>
