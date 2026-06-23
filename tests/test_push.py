@@ -139,43 +139,91 @@ def _teardown_vapid(app, old_key, old_email):
     app.config["VAPID_CLAIM_EMAIL"] = old_email
 
 
-def test_push_match_incluye_url_compatibles(app, db):
+def test_push_match_incluye_url_y_tag(app, db):
     from app.push.sender import enviar_push_condicional
     u = _usuario_con_sub(db)
     old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
     _setup_vapid(app)
     try:
         with patch("app.push.sender.webpush") as mock_wp:
-            enviar_push_condicional(u, "match", "Nuevo match", "Tienes un cambio compatible.")
+            enviar_push_condicional(u, "match")
             payload = _payload_enviado(mock_wp)
             assert payload["url"] == "/?estado=compatible"
+            assert payload["tag"] == "match"
     finally:
         _teardown_vapid(app, old_key, old_email)
 
 
-def test_push_confirmacion_parcial_incluye_url_pendiente(app, db):
+def test_push_confirmacion_parcial_incluye_url_y_tag(app, db):
     from app.push.sender import enviar_push_condicional
     u = _usuario_con_sub(db)
     old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
     _setup_vapid(app)
     try:
         with patch("app.push.sender.webpush") as mock_wp:
-            enviar_push_condicional(u, "confirmacion_parcial", "Pendiente", "La otra parte confirmó.")
+            enviar_push_condicional(u, "confirmacion_parcial")
             payload = _payload_enviado(mock_wp)
             assert payload["url"] == "/?estado=pendiente"
+            assert payload["tag"] == "confirmacion_parcial"
     finally:
         _teardown_vapid(app, old_key, old_email)
 
 
-def test_push_confirmado_total_incluye_url_confirmados(app, db):
+def test_push_confirmado_total_incluye_url_y_tag(app, db):
     from app.push.sender import enviar_push_condicional
     u = _usuario_con_sub(db)
     old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
     _setup_vapid(app)
     try:
         with patch("app.push.sender.webpush") as mock_wp:
-            enviar_push_condicional(u, "confirmado_total", "Confirmado", "Cambio cerrado.")
+            enviar_push_condicional(u, "confirmado_total")
             payload = _payload_enviado(mock_wp)
             assert payload["url"] == "/?estado=confirmada"
+            assert payload["tag"] == "confirmado_total"
+    finally:
+        _teardown_vapid(app, old_key, old_email)
+
+
+def test_push_condicional_mensaje_refleja_conteo(app, db):
+    """El cuerpo de la push dice 'Tienes N compatibles nuevos' según la BD."""
+    from datetime import date
+
+    from app.models import MatchCambio, MatchParticipacion, PublicacionCambio, TurnoCedido, insertar_categorias_semilla
+    from app.push.sender import enviar_push_condicional
+
+    insertar_categorias_semilla()
+    from app.models import Categoria, FranjaHoraria
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    u1 = registrar_usuario("Ana", "ana_cnt@test.es", "pass", "H1", "Urgencias", cat.id)
+    u2 = registrar_usuario("Pedro", "pedro_cnt@test.es", "pass", "H1", "Urgencias", cat.id)
+    u1.push_subscription = json.dumps(SUBSCRIPTION)
+    db.session.commit()
+
+    franja = FranjaHoraria.query.filter_by(grupo_intercambio_id=u1.unidad.grupo_intercambio_id).first()
+
+    # Crea 2 matches propuestos para u1
+    for i in range(2):
+        pub_a = PublicacionCambio(usuario_id=u1.id)
+        pub_b = PublicacionCambio(usuario_id=u2.id)
+        db.session.add_all([pub_a, pub_b])
+        db.session.flush()
+        tc_a = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 8, i + 1), franja_horaria_id=franja.id)
+        tc_b = TurnoCedido(publicacion_id=pub_b.id, fecha=date(2026, 9, i + 1), franja_horaria_id=franja.id)
+        db.session.add_all([tc_a, tc_b])
+        db.session.flush()
+        match = MatchCambio(tipo="directo_2", estado="propuesto")
+        db.session.add(match)
+        db.session.flush()
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc_a.id))
+        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc_b.id))
+    db.session.commit()
+
+    old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
+    _setup_vapid(app)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push_condicional(u1, "match")
+            payload = _payload_enviado(mock_wp)
+            assert "2" in payload["body"]
     finally:
         _teardown_vapid(app, old_key, old_email)

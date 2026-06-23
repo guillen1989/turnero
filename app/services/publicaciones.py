@@ -55,12 +55,7 @@ def _notificar_suscriptores(publicador, pub):
                 publicacion_id=pub.id,
                 tipo="nueva_publicacion_seguido",
             ))
-            enviar_push_condicional(
-                suscriptor,
-                "publicacion",
-                f"{publicador.nombre} ha publicado un cambio",
-                "Hay una nueva publicación de alguien a quien sigues.",
-            )
+            enviar_push_condicional(suscriptor, "publicacion")
     db.session.commit()
 
 

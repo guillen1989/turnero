@@ -32,6 +32,8 @@ self.addEventListener('push', event => {
     icon: '/static/icons/icon-192.png',
     badge: '/static/icons/badge-72.png',
     data: { url: data.url || '/' },
+    tag: data.tag || undefined,
+    renotify: !!data.tag,
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });

@@ -169,7 +169,7 @@ def test_push_condicional_no_envia_si_push_inactivo(app, db):
     app.config["VAPID_PRIVATE_KEY"] = "fake-key"
     app.config["VAPID_CLAIM_EMAIL"] = "admin@test.es"
     with patch("app.push.sender.webpush") as mock_wp:
-        enviar_push_condicional(usuario, "match", "Título", "Cuerpo")
+        enviar_push_condicional(usuario, "match")
         mock_wp.assert_not_called()
 
 
@@ -184,7 +184,7 @@ def test_push_condicional_no_envia_si_tipo_desactivado(app, db):
     app.config["VAPID_PRIVATE_KEY"] = "fake-key"
     app.config["VAPID_CLAIM_EMAIL"] = "admin@test.es"
     with patch("app.push.sender.webpush") as mock_wp:
-        enviar_push_condicional(usuario, "match", "Título", "Cuerpo")
+        enviar_push_condicional(usuario, "match")
         mock_wp.assert_not_called()
 
 
@@ -266,7 +266,7 @@ def test_push_condicional_envia_cuando_activo(app, db):
     app.config["VAPID_CLAIM_EMAIL"] = "admin@test.es"
     try:
         with patch("app.push.sender.webpush") as mock_wp:
-            enviar_push_condicional(usuario, "match", "Título", "Cuerpo")
+            enviar_push_condicional(usuario, "match")
             mock_wp.assert_called_once()
     finally:
         app.config["VAPID_PRIVATE_KEY"] = old_key

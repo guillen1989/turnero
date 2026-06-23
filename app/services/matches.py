@@ -40,12 +40,7 @@ def confirmar_participacion(match, usuario_id):
                 tipo="confirmado_total",
             ))
             if p.publicacion.usuario_id != usuario_id:
-                enviar_push_condicional(
-                    p.publicacion.usuario,
-                    "confirmado_total",
-                    "¡Cambio confirmado!",
-                    "Ambas partes han confirmado el cambio.",
-                )
+                enviar_push_condicional(p.publicacion.usuario, "confirmado_total")
     else:
         match.estado = "confirmado_parcial"
         for p in match.participaciones:
@@ -55,12 +50,7 @@ def confirmar_participacion(match, usuario_id):
                     match_id=match.id,
                     tipo="confirmacion_parcial",
                 ))
-                enviar_push_condicional(
-                    p.publicacion.usuario,
-                    "confirmacion_parcial",
-                    "Cambio pendiente de tu confirmación",
-                    "La otra parte ya confirmó. Revisa el cambio.",
-                )
+                enviar_push_condicional(p.publicacion.usuario, "confirmacion_parcial")
 
     db.session.commit()
 
@@ -78,10 +68,5 @@ def rechazar_match(match, usuario_id):
                 match_id=match.id,
                 tipo="rechazo",
             ))
-            enviar_push_condicional(
-                p.publicacion.usuario,
-                "confirmacion_parcial",
-                "Cambio rechazado",
-                "La otra parte rechazó el cambio propuesto.",
-            )
+            enviar_push_condicional(p.publicacion.usuario, "confirmacion_parcial")
     db.session.commit()

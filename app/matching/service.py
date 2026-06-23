@@ -254,7 +254,7 @@ def crear_match_directo(pub_a, pub_b):
     db.session.add(Notificacion(usuario_id=pub_b.usuario_id, match_id=match.id, tipo="nuevo_match"))
     db.session.commit()
 
-    enviar_push_condicional(pub_b.usuario, "match", "Nuevo cambio disponible", "Tienes un posible cambio de turno.")
+    enviar_push_condicional(pub_b.usuario, "match")
 
     return match
 
@@ -381,13 +381,7 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
 
     db.session.commit()
 
-    enviar_push_condicional(
-        pub_b.usuario, "match", "Nuevo cambio disponible",
-        "Tienes un posible cambio de turno a 3 bandas."
-    )
-    enviar_push_condicional(
-        pub_c.usuario, "match", "Nuevo cambio disponible",
-        "Tienes un posible cambio de turno a 3 bandas."
-    )
+    enviar_push_condicional(pub_b.usuario, "match")
+    enviar_push_condicional(pub_c.usuario, "match")
 
     return match
