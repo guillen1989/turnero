@@ -27,11 +27,18 @@ def panel():
 @bp.post("/notificaciones/guardar")
 @login_required
 def guardar():
+    activando_push = "push_activo" in request.form and not current_user.push_activo
     current_user.push_activo = "push_activo" in request.form
-    current_user.notif_match = "notif_match" in request.form
-    current_user.notif_confirmacion_parcial = "notif_confirmacion_parcial" in request.form
-    current_user.notif_confirmado_total = "notif_confirmado_total" in request.form
-    current_user.notif_publicacion = "notif_publicacion" in request.form
+    if activando_push:
+        current_user.notif_match = True
+        current_user.notif_confirmacion_parcial = True
+        current_user.notif_confirmado_total = True
+        current_user.notif_publicacion = True
+    else:
+        current_user.notif_match = "notif_match" in request.form
+        current_user.notif_confirmacion_parcial = "notif_confirmacion_parcial" in request.form
+        current_user.notif_confirmado_total = "notif_confirmado_total" in request.form
+        current_user.notif_publicacion = "notif_publicacion" in request.form
     db.session.commit()
     flash(_("Preferencias de notificaciones guardadas."), "success")
     return redirect(url_for("notificaciones.panel"))

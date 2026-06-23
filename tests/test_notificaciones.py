@@ -67,14 +67,36 @@ def test_guardar_desactiva_push_global(client, db):
 
 
 def test_guardar_activa_preferencias_individuales(client, db):
+    """Al activar el push maestro, todos los tipos individuales se ponen a True."""
     usuario = _usuario()
     usuario.push_activo = False
     usuario.notif_match = False
+    usuario.notif_confirmacion_parcial = False
+    usuario.notif_confirmado_total = False
+    usuario.notif_publicacion = False
+    db.session.commit()
+    _login(client, "user@test.es")
+    client.post("/notificaciones/guardar", data={"push_activo": "on"})
+    db.session.refresh(usuario)
+    assert usuario.push_activo is True
+    assert usuario.notif_match is True
+    assert usuario.notif_confirmacion_parcial is True
+    assert usuario.notif_confirmado_total is True
+    assert usuario.notif_publicacion is True
+
+
+def test_guardar_individuales_con_push_ya_activo(client, db):
+    """Si push ya estaba activo, los individuales se guardan según el formulario."""
+    usuario = _usuario()
+    usuario.push_activo = True
+    usuario.notif_match = True
+    usuario.notif_confirmacion_parcial = True
     db.session.commit()
     _login(client, "user@test.es")
     client.post("/notificaciones/guardar", data={
         "push_activo": "on",
         "notif_match": "on",
+        # notif_confirmacion_parcial ausente → False
     })
     db.session.refresh(usuario)
     assert usuario.push_activo is True
