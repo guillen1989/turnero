@@ -93,6 +93,24 @@ def _extraer_turnos(prefix):
     return turnos
 
 
+def _validar_turnos(tipo, cedidos, aceptados, hoy):
+    """Valida mínimos de turnos y fechas. Devuelve mensaje de error o None."""
+    if tipo == "cambio":
+        if not cedidos:
+            return _("Debes indicar al menos un turno que cedes.")
+        if not aceptados:
+            return _("Debes indicar al menos un turno que aceptarías.")
+    elif tipo == "regalo":
+        if not aceptados:
+            return _("Debes indicar al menos un turno que ofreces trabajar.")
+    elif tipo == "peticion":
+        if not cedidos:
+            return _("Debes indicar al menos un turno que quieres librar.")
+    if any(f < hoy for f, _ in cedidos + aceptados):
+        return _("Las fechas de los turnos no pueden ser anteriores a hoy.")
+    return None
+
+
 def _asegurar_franjas(grupo_intercambio_id):
     """Añade al grupo cualquier franja por defecto que falte."""
     grupo = db.session.get(GrupoIntercambio, grupo_intercambio_id)
@@ -159,26 +177,10 @@ def nueva():
             cedidos  = _extraer_turnos("cedida")
             aceptados = _extraer_turnos("aceptada")
 
-        if tipo == "cambio":
-            if not cedidos:
-                flash(_("Debes indicar al menos un turno que cedes."), "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
-            if not aceptados:
-                flash(_("Debes indicar al menos un turno que aceptarías."), "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
-        elif tipo == "regalo":
-            if not aceptados:
-                flash(_("Debes indicar al menos un turno que ofreces trabajar."), "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
-        elif tipo == "peticion":
-            if not cedidos:
-                flash(_("Debes indicar al menos un turno que quieres librar."), "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
-
         if tipo != "junte":
-            todas_fechas = cedidos + aceptados
-            if any(f < hoy for f, _ in todas_fechas):
-                flash(_("Las fechas de los turnos no pueden ser anteriores a hoy."), "danger")
+            error = _validar_turnos(tipo, cedidos, aceptados, hoy)
+            if error:
+                flash(error, "danger")
                 return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
 
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
@@ -234,24 +236,9 @@ def editar(pub_id):
         aceptados = _extraer_turnos("aceptada")
         hoy = date.today()
 
-        if tipo == "cambio":
-            if not cedidos:
-                flash(_("Debes indicar al menos un turno que cedes."), "danger")
-                return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=hoy.isoformat())
-            if not aceptados:
-                flash(_("Debes indicar al menos un turno que aceptarías."), "danger")
-                return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=hoy.isoformat())
-        elif tipo == "regalo":
-            if not aceptados:
-                flash(_("Debes indicar al menos un turno que ofreces trabajar."), "danger")
-                return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=hoy.isoformat())
-        elif tipo == "peticion":
-            if not cedidos:
-                flash(_("Debes indicar al menos un turno que quieres librar."), "danger")
-                return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=hoy.isoformat())
-
-        if any(f < hoy for f, _ in cedidos + aceptados):
-            flash(_("Las fechas de los turnos no pueden ser anteriores a hoy."), "danger")
+        error = _validar_turnos(tipo, cedidos, aceptados, hoy)
+        if error:
+            flash(error, "danger")
             return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=hoy.isoformat())
 
         mensaje = request.form.get("mensaje", "").strip()[:200] or None

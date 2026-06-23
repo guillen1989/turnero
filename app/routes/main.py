@@ -15,6 +15,14 @@ def health():
     return jsonify({"status": "ok"})
 
 
+def _mi_participacion(match, usuario_id):
+    return next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
+
+
+def _otras_participaciones(match, usuario_id):
+    return [p for p in match.participaciones if p.publicacion.usuario_id != usuario_id]
+
+
 def _partners_confirmados(usuario_id):
     """Devuelve dict {pub_id: nombres_partners} para publicaciones con match confirmado_total."""
     raw = (
@@ -35,54 +43,38 @@ def _partners_confirmados(usuario_id):
     )
     result = {}
     for match in raw:
-        mi = next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
-        otras = [p for p in match.participaciones if p.publicacion.usuario_id != usuario_id]
+        mi = _mi_participacion(match, usuario_id)
+        otras = _otras_participaciones(match, usuario_id)
         if mi and otras:
             nombres = " y ".join(p.publicacion.usuario.nombre for p in otras)
             result[mi.publicacion_id] = nombres
     return result
 
 
-def _query_con_match_activo(usuario_id):
-    """Publicaciones del usuario con cualquier match activo (propuesto o confirmado_parcial)."""
+def _query_publicaciones_con_match(usuario_id, estados_match):
+    """Publicaciones del usuario que tienen algún match en alguno de los estados dados."""
     return (
         PublicacionCambio.query
         .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
         .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
         .filter(
             PublicacionCambio.usuario_id == usuario_id,
-            MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
+            MatchCambio.estado.in_(estados_match),
         )
         .distinct()
     )
+
+
+def _query_con_match_activo(usuario_id):
+    return _query_publicaciones_con_match(usuario_id, ["propuesto", "confirmado_parcial"])
 
 
 def _query_compatibles(usuario_id):
-    """Publicaciones del usuario con match en estado 'propuesto' (nadie ha confirmado aún)."""
-    return (
-        PublicacionCambio.query
-        .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
-        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
-        .filter(
-            PublicacionCambio.usuario_id == usuario_id,
-            MatchCambio.estado == "propuesto",
-        )
-        .distinct()
-    )
+    return _query_publicaciones_con_match(usuario_id, ["propuesto"])
 
 
 def _query_pendientes(usuario_id):
-    """Publicaciones del usuario con match en estado 'confirmado_parcial' (una parte ha confirmado)."""
-    return (
-        PublicacionCambio.query
-        .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
-        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
-        .filter(
-            PublicacionCambio.usuario_id == usuario_id,
-            MatchCambio.estado == "confirmado_parcial",
-        )
-        .distinct()
-    )
+    return _query_publicaciones_con_match(usuario_id, ["confirmado_parcial"])
 
 
 def _matches_para_tab(usuario_id, estado_match):
@@ -105,8 +97,8 @@ def _matches_para_tab(usuario_id, estado_match):
     )
     resultado = []
     for match in raw:
-        mi = next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
-        otras = [p for p in match.participaciones if p.publicacion.usuario_id != usuario_id]
+        mi = _mi_participacion(match, usuario_id)
+        otras = _otras_participaciones(match, usuario_id)
         if mi and otras:
             resultado.append((match, mi, otras))
     return resultado
