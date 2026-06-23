@@ -140,7 +140,7 @@
     </section>
 
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary">{{ _('Publicar') }}</button>
+      <button type="submit" class="btn btn-primary" id="btn-publicar">{{ _('Publicar') }}</button>
       <a href="{{ url_for('main.index') }}" class="btn btn-secondary">{{ _('Cancelar') }}</a>
     </div>
   </form>
@@ -274,15 +274,22 @@
 
   document.getElementById('publicar-form').addEventListener('submit', function(e) {
     var tipo = document.querySelector('input[name="tipo"]:checked');
-    if (!tipo || tipo.value !== 'junte') return;
-    var n = nochesRequeridas();
-    if (!n) return;
-    var seleccionadas = document.querySelectorAll('input[name="junte_noches"]:checked').length;
-    if (seleccionadas !== n) {
-      e.preventDefault();
-      var hint = document.getElementById('noches-hint');
-      hint.style.color = '#c0392b';
-      hint.textContent = '{{ _("Debes seleccionar exactamente") }} ' + n + ' {{ _("noches") }} (' + seleccionadas + '/' + n + ' {{ _("seleccionadas") }})';
+    if (tipo && tipo.value === 'junte') {
+      var n = nochesRequeridas();
+      if (n) {
+        var seleccionadas = document.querySelectorAll('input[name="junte_noches"]:checked').length;
+        if (seleccionadas !== n) {
+          e.preventDefault();
+          var hint = document.getElementById('noches-hint');
+          hint.style.color = '#c0392b';
+          hint.textContent = '{{ _("Debes seleccionar exactamente") }} ' + n + ' {{ _("noches") }} (' + seleccionadas + '/' + n + ' {{ _("seleccionadas") }})';
+        }
+      }
+    }
+    if (!e.defaultPrevented) {
+      var btn = document.getElementById('btn-publicar');
+      btn.disabled = true;
+      btn.textContent = '{{ _("Publicando…") }}';
     }
   });
 })();
