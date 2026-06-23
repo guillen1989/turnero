@@ -1,14 +1,18 @@
 """Tests para la ruta /feedback (formulario de contacto)."""
 from unittest.mock import patch
 
-from app.models import Categoria, Feedback, insertar_categorias_semilla
+from app.extensions import db as _db
+from app.models import Categoria, Feedback, Usuario, insertar_categorias_semilla
 from app.services.registro import registrar_usuario
 
 
-def _login(client, email="u@test.es"):
+def _login(client, email="u@test.es", es_admin=False):
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
     u = registrar_usuario("Test", email, "pass1234", "H", "U", cat.id)
+    if es_admin:
+        u.es_admin = True
+        _db.session.commit()
     client.post("/auth/login", data={"email": email, "password": "pass1234"})
     return u
 
@@ -103,10 +107,23 @@ def test_post_feedback_tipo_invalido_vuelve_al_form(client, db):
     assert Feedback.query.count() == 0
 
 
-# --- Notificación por email al admin ---
+# --- Campo leido ---
 
-def test_post_feedback_envia_email_al_admin(client, db):
-    """Al recibir feedback, se envía un email de notificación al admin configurado."""
+def test_nuevo_feedback_tiene_leido_false(client, db):
+    """Los mensajes nuevos se crean con leido=False."""
+    client.post("/feedback", data={
+        "tipo": "error",
+        "descripcion": "La app no carga en Safari.",
+        "email_contacto": "",
+    })
+    fb = Feedback.query.first()
+    assert fb.leido is False
+
+
+# --- Envío de email desactivado ---
+
+def test_post_feedback_no_envia_email(client, db):
+    """El formulario ya no dispara envío de email (sistema desactivado)."""
     client.application.config["FEEDBACK_RECIPIENT_EMAIL"] = "admin@test.es"
     with patch("app.services.email._enviar_correo") as mock_correo:
         client.post("/feedback", data={
@@ -114,18 +131,55 @@ def test_post_feedback_envia_email_al_admin(client, db):
             "descripcion": "La app no carga en Safari.",
             "email_contacto": "usuario@test.es",
         })
-        mock_correo.assert_called_once()
-        destinatario = mock_correo.call_args[0][0]
-        assert destinatario == "admin@test.es"
-
-
-def test_post_feedback_no_envia_email_si_no_hay_destinatario(client, db):
-    """Si FEEDBACK_RECIPIENT_EMAIL no está configurado, no se intenta enviar email."""
-    client.application.config["FEEDBACK_RECIPIENT_EMAIL"] = ""
-    with patch("app.services.email._enviar_correo") as mock_correo:
-        client.post("/feedback", data={
-            "tipo": "sugerencia",
-            "descripcion": "Añadir modo oscuro.",
-            "email_contacto": "",
-        })
         mock_correo.assert_not_called()
+
+
+# --- Panel de feedback del admin ---
+
+def _post_feedback(client, tipo="error", descripcion="Descripción de prueba."):
+    client.post("/feedback", data={
+        "tipo": tipo,
+        "descripcion": descripcion,
+        "email_contacto": "",
+    })
+    return Feedback.query.order_by(Feedback.id.desc()).first()
+
+
+def test_admin_feedback_sin_leer_contiene_nuevos(client, db):
+    """El panel admin muestra los mensajes nuevos en la pestaña sin leer."""
+    _login(client, email="admin@test.es", es_admin=True)
+    _post_feedback(client)
+    resp = client.get("/admin/feedback")
+    assert resp.status_code == 200
+    assert b"sin_leer" in resp.data or "Descripción de prueba.".encode() in resp.data
+
+
+def test_admin_marcar_leido(client, db):
+    """El admin puede marcar un mensaje como leído."""
+    _login(client, email="admin@test.es", es_admin=True)
+    fb = _post_feedback(client)
+    assert fb.leido is False
+
+    resp = client.post(f"/admin/feedback/{fb.id}/marcar-leido", follow_redirects=False)
+    assert resp.status_code == 302
+
+    _db.session.refresh(fb)
+    assert fb.leido is True
+
+
+def test_admin_marcar_leido_mueve_a_pestana_leidos(client, db):
+    """Un mensaje marcado como leído aparece en la pestaña de leídos."""
+    _login(client, email="admin@test.es", es_admin=True)
+    fb = _post_feedback(client)
+    client.post(f"/admin/feedback/{fb.id}/marcar-leido")
+
+    resp = client.get("/admin/feedback?tab=leidos")
+    assert resp.status_code == 200
+    assert "Descripción de prueba.".encode() in resp.data
+
+
+def test_admin_feedback_requiere_admin(client, db):
+    """Un usuario normal no puede acceder al panel de feedback."""
+    _login(client, email="normal@test.es", es_admin=False)
+    resp = client.get("/admin/feedback")
+    assert resp.status_code == 403

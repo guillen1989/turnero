@@ -681,5 +681,26 @@ def publicacion_eliminar(id):
 @bp.route("/feedback")
 @admin_required
 def feedback():
-    items = Feedback.query.order_by(Feedback.fecha_creacion.desc()).all()
-    return render_template("admin/feedback.html", items=items)
+    tab = request.args.get("tab", "sin_leer")
+    sin_leer = (
+        Feedback.query
+        .filter_by(leido=False)
+        .order_by(Feedback.fecha_creacion.desc())
+        .all()
+    )
+    leidos = (
+        Feedback.query
+        .filter_by(leido=True)
+        .order_by(Feedback.fecha_creacion.desc())
+        .all()
+    )
+    return render_template("admin/feedback.html", sin_leer=sin_leer, leidos=leidos, tab=tab)
+
+
+@bp.route("/feedback/<int:id>/marcar-leido", methods=["POST"])
+@admin_required
+def feedback_marcar_leido(id):
+    fb = db.session.get(Feedback, id) or abort(404)
+    fb.leido = True
+    db.session.commit()
+    return redirect(url_for("admin.feedback"))

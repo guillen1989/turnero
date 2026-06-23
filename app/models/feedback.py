@@ -12,5 +12,6 @@ class Feedback(db.Model):
     email_contacto  = db.Column(db.String(200), nullable=True)
     usuario_id      = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=True)
     fecha_creacion  = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    leido           = db.Column(db.Boolean, nullable=False, default=False)
 
     usuario = db.relationship("Usuario", backref="feedbacks")

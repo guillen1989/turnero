@@ -5,6 +5,21 @@
 {% block admin_content %}
 <h1>{{ _('Mensajes de feedback') }}</h1>
 
+<div class="estado-tabs">
+  <a href="{{ url_for('admin.feedback', tab='sin_leer') }}"
+     class="estado-tab{% if tab == 'sin_leer' %} estado-tab--active{% endif %}">
+    {{ _('Sin leer') }}
+    {% if sin_leer %}<span class="tab-count">({{ sin_leer|length }})</span>{% endif %}
+  </a>
+  <a href="{{ url_for('admin.feedback', tab='leidos') }}"
+     class="estado-tab{% if tab == 'leidos' %} estado-tab--active{% endif %}">
+    {{ _('Leídos') }}
+    {% if leidos %}<span class="tab-count">({{ leidos|length }})</span>{% endif %}
+  </a>
+</div>
+
+{% set items = sin_leer if tab == 'sin_leer' else leidos %}
+
 {% if items %}
 <table class="admin-table">
   <thead>
@@ -14,6 +29,7 @@
       <th>{{ _('Usuario') }}</th>
       <th>{{ _('Email contacto') }}</th>
       <th>{{ _('Descripción') }}</th>
+      {% if tab == 'sin_leer' %}<th></th>{% endif %}
     </tr>
   </thead>
   <tbody>
@@ -24,11 +40,23 @@
       <td>{{ fb.usuario.nombre if fb.usuario else '—' }}</td>
       <td>{{ fb.email_contacto or '—' }}</td>
       <td>{{ fb.descripcion }}</td>
+      {% if tab == 'sin_leer' %}
+      <td>
+        <form method="post" action="{{ url_for('admin.feedback_marcar_leido', id=fb.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-secondary btn-sm">{{ _('Marcar leído') }}</button>
+        </form>
+      </td>
+      {% endif %}
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% else %}
-<p>{{ _('No hay mensajes de feedback todavía.') }}</p>
+  {% if tab == 'sin_leer' %}
+  <p>{{ _('No hay mensajes sin leer.') }}</p>
+  {% else %}
+  <p>{{ _('No hay mensajes leídos todavía.') }}</p>
+  {% endif %}
 {% endif %}
 {% endblock %}

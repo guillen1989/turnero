@@ -38,7 +38,7 @@ def nuevo():
         )
         db.session.add(fb)
         db.session.commit()
-        enviar_notificacion_feedback(fb)
+        # enviar_notificacion_feedback(fb)  # desactivado: los admins consultan el panel
 
         flash(_("Gracias, hemos recibido tu mensaje."), "success")
         return redirect(url_for("main.index"))
