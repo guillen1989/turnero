@@ -110,3 +110,72 @@ def test_ignora_excepcion_webpush(app, db):
     finally:
         app.config["VAPID_PRIVATE_KEY"] = old_key
         app.config["VAPID_CLAIM_EMAIL"] = old_email
+
+
+# --- URL de destino según tipo de notificación ---
+
+def _usuario_con_sub(db):
+    insertar_categorias_semilla()
+    from app.models import Categoria
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    u = registrar_usuario("Test", "push_url@test.es", "pass", "H", "U", cat.id)
+    u.push_subscription = json.dumps(SUBSCRIPTION)
+    db.session.commit()
+    return u
+
+
+def _payload_enviado(mock_wp):
+    data_arg = mock_wp.call_args.kwargs.get("data") or mock_wp.call_args.args[1]
+    return json.loads(data_arg)
+
+
+def _setup_vapid(app):
+    app.config["VAPID_PRIVATE_KEY"] = "fake-key"
+    app.config["VAPID_CLAIM_EMAIL"] = "admin@test.es"
+
+
+def _teardown_vapid(app, old_key, old_email):
+    app.config["VAPID_PRIVATE_KEY"] = old_key
+    app.config["VAPID_CLAIM_EMAIL"] = old_email
+
+
+def test_push_match_incluye_url_compatibles(app, db):
+    from app.push.sender import enviar_push_condicional
+    u = _usuario_con_sub(db)
+    old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
+    _setup_vapid(app)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push_condicional(u, "match", "Nuevo match", "Tienes un cambio compatible.")
+            payload = _payload_enviado(mock_wp)
+            assert payload["url"] == "/?estado=compatible"
+    finally:
+        _teardown_vapid(app, old_key, old_email)
+
+
+def test_push_confirmacion_parcial_incluye_url_pendiente(app, db):
+    from app.push.sender import enviar_push_condicional
+    u = _usuario_con_sub(db)
+    old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
+    _setup_vapid(app)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push_condicional(u, "confirmacion_parcial", "Pendiente", "La otra parte confirmó.")
+            payload = _payload_enviado(mock_wp)
+            assert payload["url"] == "/?estado=pendiente"
+    finally:
+        _teardown_vapid(app, old_key, old_email)
+
+
+def test_push_confirmado_total_incluye_url_confirmados(app, db):
+    from app.push.sender import enviar_push_condicional
+    u = _usuario_con_sub(db)
+    old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
+    _setup_vapid(app)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push_condicional(u, "confirmado_total", "Confirmado", "Cambio cerrado.")
+            payload = _payload_enviado(mock_wp)
+            assert payload["url"] == "/?estado=confirmada"
+    finally:
+        _teardown_vapid(app, old_key, old_email)

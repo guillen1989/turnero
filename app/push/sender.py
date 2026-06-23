@@ -17,8 +17,16 @@ _PREF_ATTR = {
     "confirmado_total": "notif_confirmado_total",
 }
 
+# Mapa de tipo de notificación → URL de destino al tocar la push
+_URL_POR_TIPO = {
+    "match": "/?estado=compatible",
+    "confirmacion_parcial": "/?estado=pendiente",
+    "confirmado_total": "/?estado=confirmada",
+    "publicacion": "/avisos",
+}
 
-def enviar_push(usuario, titulo, cuerpo):
+
+def enviar_push(usuario, titulo, cuerpo, url="/"):
     """
     Envía una notificación push al usuario en un hilo daemon para no bloquear
     el worker. No hace nada si el usuario no tiene suscripción guardada
@@ -35,7 +43,7 @@ def enviar_push(usuario, titulo, cuerpo):
     usuario_id = usuario.id
     subscription = json.loads(usuario.push_subscription)
     vapid_claims = {"sub": f"mailto:{current_app.config.get('VAPID_CLAIM_EMAIL', '')}"}
-    data = json.dumps({"title": titulo, "body": cuerpo})
+    data = json.dumps({"title": titulo, "body": cuerpo, "url": url})
 
     def _send():
         try:
@@ -67,4 +75,5 @@ def enviar_push_condicional(usuario, tipo, titulo, cuerpo):
     attr = _PREF_ATTR.get(tipo)
     if attr and not getattr(usuario, attr, True):
         return
-    enviar_push(usuario, titulo, cuerpo)
+    url = _URL_POR_TIPO.get(tipo, "/")
+    enviar_push(usuario, titulo, cuerpo, url)
