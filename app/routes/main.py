@@ -36,15 +36,57 @@ def _partners_confirmados(usuario_id):
     return result
 
 
-def _matches_activos(usuario_id):
-    """Devuelve lista de (match, mi_participacion, otra_participacion) pendientes del usuario."""
+def _query_con_match_activo(usuario_id):
+    """Publicaciones del usuario con cualquier match activo (propuesto o confirmado_parcial)."""
+    return (
+        PublicacionCambio.query
+        .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
+        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
+        .filter(
+            PublicacionCambio.usuario_id == usuario_id,
+            MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
+        )
+        .distinct()
+    )
+
+
+def _query_compatibles(usuario_id):
+    """Publicaciones del usuario con match en estado 'propuesto' (nadie ha confirmado aún)."""
+    return (
+        PublicacionCambio.query
+        .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
+        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
+        .filter(
+            PublicacionCambio.usuario_id == usuario_id,
+            MatchCambio.estado == "propuesto",
+        )
+        .distinct()
+    )
+
+
+def _query_pendientes(usuario_id):
+    """Publicaciones del usuario con match en estado 'confirmado_parcial' (una parte ha confirmado)."""
+    return (
+        PublicacionCambio.query
+        .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
+        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
+        .filter(
+            PublicacionCambio.usuario_id == usuario_id,
+            MatchCambio.estado == "confirmado_parcial",
+        )
+        .distinct()
+    )
+
+
+def _matches_para_tab(usuario_id, estado_match):
+    """Devuelve lista de (match, mi_participacion, otra_participacion) para un estado de match."""
     raw = (
         MatchCambio.query
         .join(MatchParticipacion, MatchCambio.id == MatchParticipacion.match_id)
         .join(PublicacionCambio, MatchParticipacion.publicacion_id == PublicacionCambio.id)
         .filter(
             PublicacionCambio.usuario_id == usuario_id,
-            MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
+            MatchCambio.estado == estado_match,
         )
         .distinct()
         .all()
@@ -59,6 +101,7 @@ def _matches_activos(usuario_id):
 
 
 _ESTADOS_DASHBOARD = {
+    "compatible": None,
     "abierta": ["abierta", "parcialmente_resuelta"],
     "pendiente": None,
     "confirmada": ["confirmada"],
@@ -66,46 +109,28 @@ _ESTADOS_DASHBOARD = {
 }
 
 
-def _query_pendientes(usuario_id):
-    """Publicaciones del usuario con algún match activo (propuesto o confirmado parcialmente)."""
-    return (
-        PublicacionCambio.query
-        .join(MatchParticipacion, PublicacionCambio.id == MatchParticipacion.publicacion_id)
-        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
-        .filter(
-            PublicacionCambio.usuario_id == usuario_id,
-            MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
-        )
-        .distinct()
-    )
-
-
-def _publicaciones_pendientes(usuario_id):
-    """Publicaciones con match activo (pendiente de confirmar por alguna de las partes)."""
-    return _query_pendientes(usuario_id).order_by(PublicacionCambio.fecha_creacion.desc()).all()
-
-
 def _conteos_tabs(usuario_id):
-    pendientes_subq = (
-        _query_pendientes(usuario_id)
+    from sqlalchemy import select as sa_select
+    activos_subq = (
+        _query_con_match_activo(usuario_id)
         .with_entities(PublicacionCambio.id)
         .subquery()
     )
-    from sqlalchemy import select as sa_select
-    pendientes_select = sa_select(pendientes_subq)
+    activos_select = sa_select(activos_subq)
 
-    def _count(estados, exclude_pendientes=False):
+    def _count(estados, exclude_active=False):
         q = (
             PublicacionCambio.query
             .filter_by(usuario_id=usuario_id)
             .filter(PublicacionCambio.estado.in_(estados))
         )
-        if exclude_pendientes:
-            q = q.filter(~PublicacionCambio.id.in_(pendientes_select))
+        if exclude_active:
+            q = q.filter(~PublicacionCambio.id.in_(activos_select))
         return q.count()
 
     return {
-        "abierta": _count(["abierta", "parcialmente_resuelta"], exclude_pendientes=True),
+        "compatible": _query_compatibles(usuario_id).count(),
+        "abierta": _count(["abierta", "parcialmente_resuelta"], exclude_active=True),
         "pendiente": _query_pendientes(usuario_id).count(),
         "confirmada": _count(["confirmada"]),
         "caducada": _count(["caducada"]),
@@ -116,16 +141,20 @@ def _conteos_tabs(usuario_id):
 def index():
     if current_user.is_authenticated:
         caducar_publicaciones_expiradas()
-        estado_filtro = request.args.get("estado", "abierta")
+        estado_filtro = request.args.get("estado", "compatible")
         if estado_filtro not in _ESTADOS_DASHBOARD:
-            estado_filtro = "abierta"
+            estado_filtro = "compatible"
 
-        if estado_filtro == "pendiente":
-            publicaciones = _publicaciones_pendientes(current_user.id)
+        if estado_filtro == "compatible":
+            publicaciones = []
+            matches = _matches_para_tab(current_user.id, "propuesto")
+        elif estado_filtro == "pendiente":
+            publicaciones = []
+            matches = _matches_para_tab(current_user.id, "confirmado_parcial")
         elif estado_filtro == "abierta":
             from sqlalchemy import select as sa_select
-            pendientes_subq = (
-                _query_pendientes(current_user.id)
+            activos_subq = (
+                _query_con_match_activo(current_user.id)
                 .with_entities(PublicacionCambio.id)
                 .subquery()
             )
@@ -133,10 +162,11 @@ def index():
                 PublicacionCambio.query
                 .filter_by(usuario_id=current_user.id)
                 .filter(PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]))
-                .filter(~PublicacionCambio.id.in_(sa_select(pendientes_subq)))
+                .filter(~PublicacionCambio.id.in_(sa_select(activos_subq)))
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
             )
+            matches = []
         else:
             estados = _ESTADOS_DASHBOARD[estado_filtro]
             publicaciones = (
@@ -146,8 +176,8 @@ def index():
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
             )
+            matches = []
 
-        matches = _matches_activos(current_user.id)
         conteos = _conteos_tabs(current_user.id)
         partners = _partners_confirmados(current_user.id) if estado_filtro == "confirmada" else {}
         return render_template(

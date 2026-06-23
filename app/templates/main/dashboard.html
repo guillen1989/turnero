@@ -14,6 +14,10 @@
   </div>
 
   <nav class="estado-tabs">
+    <a href="{{ url_for('main.index', estado='compatible') }}"
+       class="estado-tab {% if estado_filtro == 'compatible' %}estado-tab--active{% endif %}">
+      {{ _('Compatibles') }} <span class="tab-count">({{ conteos.compatible }})</span>
+    </a>
     <a href="{{ url_for('main.index', estado='abierta') }}"
        class="estado-tab {% if estado_filtro == 'abierta' %}estado-tab--active{% endif %}">
       {{ _('Activos') }} <span class="tab-count">({{ conteos.abierta }})</span>
@@ -34,13 +38,13 @@
 
   {% if matches %}
   <section class="matches-section">
-    <h2 class="matches-title">{{ _('Cambios compatibles encontrados') }}</h2>
     {% for match, mi_part, otra_part in matches %}
     <div class="match-card match--{{ match.estado }}">
       <div class="match-header">
         <span class="match-badge match-badge--{{ match.estado }}">
-          {% if match.estado == 'propuesto' %}{{ _('Pendiente de confirmar') }}
-          {% else %}{{ _('Esperando al otro usuario') }}{% endif %}
+          {% if estado_filtro == 'compatible' %}{{ _('¡Compatible!') }}
+          {% elif mi_part.confirmado %}{{ _('Esperando al otro usuario') }}
+          {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
         </span>
         <span class="match-usuario">{{ otra_part.publicacion.usuario.nombre }}</span>
       </div>
@@ -80,9 +84,8 @@
     </div>
     {% endfor %}
   </section>
-  {% endif %}
 
-  {% if publicaciones %}
+  {% elif publicaciones %}
     <ul class="publicaciones-list">
       {% for pub in publicaciones %}
       <li class="publicacion-card publicacion--{{ pub.estado }}">
@@ -185,9 +188,11 @@
       </li>
       {% endfor %}
     </ul>
+
   {% else %}
     <p class="empty-state">
-      {% if estado_filtro == 'pendiente' %}{{ _('No tienes cambios pendientes de confirmar por el otro usuario.') }}
+      {% if estado_filtro == 'compatible' %}{{ _('No tienes cambios compatibles aún.') }}
+      {% elif estado_filtro == 'pendiente' %}{{ _('No tienes cambios pendientes de confirmar.') }}
       {% elif estado_filtro == 'confirmada' %}{{ _('No tienes publicaciones confirmadas.') }}
       {% elif estado_filtro == 'caducada' %}{{ _('No tienes publicaciones caducadas.') }}
       {% else %}{{ _('No tienes publicaciones activas.') }}{% endif %}
