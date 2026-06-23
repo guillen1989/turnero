@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
-from app.models import SuscripcionPublicaciones, Unidad, Usuario
+from app.models import Notificacion, SuscripcionPublicaciones, Unidad, Usuario
 
 bp = Blueprint("notificaciones", __name__)
 
@@ -62,6 +62,21 @@ def cancelar_suscripcion(uid):
     ).delete()
     db.session.commit()
     return redirect(url_for("notificaciones.panel"))
+
+
+@bp.get("/avisos")
+@login_required
+def avisos():
+    notifs = (
+        Notificacion.query
+        .filter_by(usuario_id=current_user.id, tipo="nueva_publicacion_seguido")
+        .order_by(Notificacion.fecha.desc())
+        .all()
+    )
+    for n in notifs:
+        n.leida = True
+    db.session.commit()
+    return render_template("notificaciones/avisos.html", avisos=notifs)
 
 
 def _colegas_del_usuario(usuario):

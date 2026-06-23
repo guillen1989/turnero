@@ -3,6 +3,7 @@ from app.models import MatchCambio, MatchParticipacion, Notificacion, Publicacio
 from app.push.sender import enviar_push_condicional
 
 
+
 def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, tipo="cambio"):
     """
     Crea una PublicacionCambio con los turnos indicados.
@@ -32,23 +33,29 @@ def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, 
     db.session.commit()
 
     publicador = db.session.get(Usuario, usuario_id)
-    _notificar_suscriptores(publicador)
+    _notificar_suscriptores(publicador, pub)
 
     return pub
 
 
-def _notificar_suscriptores(publicador):
-    """Envía push a los usuarios suscritos a las publicaciones de publicador."""
+def _notificar_suscriptores(publicador, pub):
+    """Crea notificaciones in-app y envía push a los suscriptores del publicador."""
     suscripciones = SuscripcionPublicaciones.query.filter_by(publicador_id=publicador.id).all()
     for suscripcion in suscripciones:
         suscriptor = db.session.get(Usuario, suscripcion.suscriptor_id)
         if suscriptor:
+            db.session.add(Notificacion(
+                usuario_id=suscriptor.id,
+                publicacion_id=pub.id,
+                tipo="nueva_publicacion_seguido",
+            ))
             enviar_push_condicional(
                 suscriptor,
                 "publicacion",
                 f"{publicador.nombre} ha publicado un cambio",
                 "Hay una nueva publicación de alguien a quien sigues.",
             )
+    db.session.commit()
 
 
 def cancelar_publicacion(pub):

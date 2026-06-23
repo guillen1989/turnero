@@ -603,6 +603,27 @@ body {
 .notif-colega-nombre { font-size: 0.95rem; flex: 1; }
 .notif-sin-resultados { text-align: center; color: #888; padding: 1rem 0; font-size: 0.9rem; }
 
+/* Bell icon + badge */
+.nav-bell { position: relative; display: inline-flex; align-items: center; padding: 0.3rem 0.5rem; color: rgba(255,255,255,0.75); text-decoration: none; border-radius: 999px; transition: background .15s, color .15s; }
+.nav-bell:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.nav-bell--activa { color: #fff; }
+.nav-bell-icon { width: 1.2rem; height: 1.2rem; }
+.nav-bell-badge { position: absolute; top: 0; right: 0; background: #ef4444; color: #fff; border-radius: 999px; font-size: 0.62rem; font-weight: 700; min-width: 1rem; height: 1rem; display: flex; align-items: center; justify-content: center; padding: 0 0.18rem; line-height: 1; }
+
+/* Avisos panel */
+.avisos-panel { max-width: 640px; margin: 0 auto; }
+.avisos-panel-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
+.avisos-list { list-style: none; padding: 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.aviso-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.75rem 1rem; border-top: 1px solid #f0f0f0; }
+.aviso-row:first-child { border-top: none; }
+.aviso-info { display: flex; align-items: center; gap: 0.5rem; flex: 1; flex-wrap: wrap; }
+.aviso-autor { font-weight: 600; font-size: 0.95rem; }
+.aviso-fecha { font-size: 0.82rem; color: #888; }
+.aviso-expirada { font-size: 0.82rem; color: #aaa; white-space: nowrap; }
+.aviso-btn { white-space: nowrap; }
+.avisos-footer-link { margin-top: 1.25rem; font-size: 0.88rem; color: #555; }
+.avisos-footer-link a { color: #005a9c; }
+
 /* Confirmation modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
 .modal-overlay.modal-hidden { display: none; }

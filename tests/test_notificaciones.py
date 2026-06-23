@@ -1,10 +1,12 @@
 """Tests del panel de notificaciones y suscripciones a publicaciones."""
 import json
+from datetime import date
 from unittest.mock import patch
 
 from app.extensions import db
-from app.models import Categoria, SuscripcionPublicaciones, insertar_categorias_semilla
+from app.models import Categoria, Notificacion, SuscripcionPublicaciones, insertar_categorias_semilla
 from app.push.sender import enviar_push_condicional
+from app.services.publicaciones import publicar_cambio
 from app.services.registro import registrar_usuario
 
 
@@ -162,6 +164,70 @@ def test_push_condicional_no_envia_si_tipo_desactivado(app, db):
     with patch("app.push.sender.webpush") as mock_wp:
         enviar_push_condicional(usuario, "match", "Título", "Cuerpo")
         mock_wp.assert_not_called()
+
+
+# --- Avisos in-app por publicaciones de seguidos ---
+
+def _franja_id(usuario):
+    return usuario.unidad.grupo_intercambio.franjas_horarias.first().id
+
+
+def test_publicar_crea_notificacion_inapp_para_suscriptor(app, db):
+    u1 = _usuario()
+    u2 = _usuario2()
+    db.session.add(SuscripcionPublicaciones(suscriptor_id=u1.id, publicador_id=u2.id))
+    db.session.commit()
+    franja = _franja_id(u2)
+    with patch("app.push.sender.webpush"):
+        publicar_cambio(u2.id, [(date(2025, 1, 10), franja)], [(date(2025, 1, 11), franja)])
+    notif = Notificacion.query.filter_by(usuario_id=u1.id, tipo="nueva_publicacion_seguido").first()
+    assert notif is not None
+    assert notif.publicacion_id is not None
+    assert notif.leida is False
+
+
+def test_publicar_no_crea_notificacion_si_sin_suscriptores(app, db):
+    u2 = _usuario2()
+    franja = _franja_id(u2)
+    with patch("app.push.sender.webpush"):
+        publicar_cambio(u2.id, [(date(2025, 1, 10), franja)], [(date(2025, 1, 11), franja)])
+    notifs = Notificacion.query.filter_by(tipo="nueva_publicacion_seguido").all()
+    assert len(notifs) == 0
+
+
+def test_avisos_no_leidos_aparece_en_nav(client, db):
+    u1 = _usuario()
+    u2 = _usuario2()
+    db.session.add(Notificacion(
+        usuario_id=u1.id, publicacion_id=None, tipo="nueva_publicacion_seguido", leida=False
+    ))
+    db.session.commit()
+    _login(client, "user@test.es")
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert "nav-bell--activa" in html
+    assert "nav-bell-badge" in html
+
+
+def test_avisos_panel_marca_notificaciones_leidas(client, db):
+    u1 = _usuario()
+    u2 = _usuario2()
+    db.session.add(Notificacion(
+        usuario_id=u1.id, publicacion_id=None, tipo="nueva_publicacion_seguido", leida=False
+    ))
+    db.session.commit()
+    _login(client, "user@test.es")
+    client.get("/avisos")
+    notif = Notificacion.query.filter_by(usuario_id=u1.id, tipo="nueva_publicacion_seguido").first()
+    assert notif.leida is True
+
+
+def test_avisos_panel_muestra_empty_state_sin_avisos(client, db):
+    _usuario()
+    _login(client, "user@test.es")
+    resp = client.get("/avisos")
+    assert resp.status_code == 200
+    assert "Avisos" in resp.data.decode()
 
 
 def test_push_condicional_envia_cuando_activo(app, db):

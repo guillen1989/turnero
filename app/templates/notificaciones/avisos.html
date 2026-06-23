@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Avisos') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="avisos-panel">
+  <h1 class="avisos-panel-title">{{ _('Avisos') }}</h1>
+
+  {% if avisos %}
+  <ul class="avisos-list">
+    {% for aviso in avisos %}
+    <li class="aviso-row{% if not aviso.leida %} aviso-row--nueva{% endif %}">
+      {% if aviso.publicacion %}
+        <div class="aviso-info">
+          <span class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</span>
+          <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _(aviso.publicacion.tipo) }}</span>
+          <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        {% if aviso.publicacion.esta_activa() %}
+        <a href="{{ url_for('main.cambios') }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver publicación') }}</a>
+        {% else %}
+        <span class="aviso-expirada">{{ _('Publicación ya cerrada') }}</span>
+        {% endif %}
+      {% else %}
+        <div class="aviso-info">
+          <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        <span class="aviso-expirada">{{ _('Publicación eliminada') }}</span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty-state">{{ _('No tienes avisos todavía. Sigue a compañeros desde el panel de Notificaciones para recibir avisos cuando publiquen.') }}</p>
+  {% endif %}
+
+  <p class="avisos-footer-link">
+    <a href="{{ url_for('notificaciones.panel') }}">{{ _('Gestionar notificaciones y seguimientos') }}</a>
+  </p>
+</div>
+{% endblock %}

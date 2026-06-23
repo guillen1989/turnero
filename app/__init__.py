@@ -58,6 +58,22 @@ def create_app(config_name=None):
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 
+    @app.context_processor
+    def _inject_avisos_no_leidos():
+        from flask_login import current_user
+        try:
+            if current_user.is_authenticated:
+                from app.models import Notificacion
+                count = Notificacion.query.filter_by(
+                    usuario_id=current_user.id,
+                    tipo="nueva_publicacion_seguido",
+                    leida=False,
+                ).count()
+                return {"avisos_no_leidos": count}
+        except Exception:
+            pass
+        return {"avisos_no_leidos": 0}
+
     _registrar_comandos(app)
 
     return app
