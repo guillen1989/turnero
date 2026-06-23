@@ -190,6 +190,19 @@ def test_me_interesa_peticion_crea_regalo_espejo(client, db):
 # Junte (tipo)
 # ---------------------------------------------------------------------------
 
+def test_me_interesa_push_va_al_autor_no_al_que_hace_clic(client, db):
+    """La push debe notificar a Ana (autora), no a Pedro (quien hace clic)."""
+    ana, pedro, franja = _setup()
+    pub_a, tc_a, ta_a = _pub_cambio(ana, franja)
+    _login(client, "pedro@test.es")
+    with patch("app.matching.service.enviar_push_condicional") as mock_push:
+        client.post(f"/cambios/{pub_a.id}/me-interesa",
+                    data={"turno_cedido_id": tc_a.id, "turno_aceptado_id": ta_a.id})
+    mock_push.assert_called_once()
+    usuario_notificado = mock_push.call_args.args[0]
+    assert usuario_notificado.id == ana.id
+
+
 def test_me_interesa_junte_crea_match(client, db):
     ana, pedro, franja = _setup()
 

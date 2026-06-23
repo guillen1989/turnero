@@ -297,7 +297,7 @@ def me_interesa(pub_id):
         flash(str(exc), "warning")
         return redirect(url_for("main.cambios"))
 
-    match = crear_match_directo(pub_a, pub_b)
+    match = crear_match_directo(pub_b, pub_a)
     if match is None:
         eliminar_publicacion(pub_b)
         flash(_("No fue posible crear el match. Los turnos pueden haber cambiado."), "warning")
