@@ -114,7 +114,7 @@ _ESTADOS_DASHBOARD = {
 
 
 def _conteos_tabs(usuario_id):
-    from sqlalchemy import select as sa_select
+    from sqlalchemy import func, select as sa_select
     activos_subq = (
         _query_con_match_activo(usuario_id)
         .with_entities(PublicacionCambio.id)
@@ -122,22 +122,30 @@ def _conteos_tabs(usuario_id):
     )
     activos_select = sa_select(activos_subq)
 
-    def _count(estados, exclude_active=False):
-        q = (
-            PublicacionCambio.query
-            .filter_by(usuario_id=usuario_id)
-            .filter(PublicacionCambio.estado.in_(estados))
+    abiertas = (
+        PublicacionCambio.query
+        .filter_by(usuario_id=usuario_id)
+        .filter(PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]))
+        .filter(~PublicacionCambio.id.in_(activos_select))
+        .count()
+    )
+
+    est_rows = db.session.execute(
+        sa_select(PublicacionCambio.estado, func.count(PublicacionCambio.id).label("n"))
+        .where(
+            PublicacionCambio.usuario_id == usuario_id,
+            PublicacionCambio.estado.in_(["confirmada", "caducada"]),
         )
-        if exclude_active:
-            q = q.filter(~PublicacionCambio.id.in_(activos_select))
-        return q.count()
+        .group_by(PublicacionCambio.estado)
+    ).all()
+    est_counts = {row.estado: row.n for row in est_rows}
 
     return {
         "compatible": _query_compatibles(usuario_id).count(),
-        "abierta": _count(["abierta", "parcialmente_resuelta"], exclude_active=True),
+        "abierta": abiertas,
         "pendiente": _query_pendientes(usuario_id).count(),
-        "confirmada": _count(["confirmada"]),
-        "caducada": _count(["caducada"]),
+        "confirmada": est_counts.get("confirmada", 0),
+        "caducada": est_counts.get("caducada", 0),
     }
 
 

@@ -6,6 +6,8 @@ from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, Usuario, FranjaHoraria,
 )
 
+_OPCION_NUEVA = 0
+
 _FRANJAS_DEFAULT = [
     ("Mañana", time(7, 0), time(15, 0)),
     ("Tarde", time(15, 0), time(23, 0)),
@@ -107,6 +109,47 @@ def encontrar_o_crear_unidad(nombre, hospital, categoria=None):
         db.session.flush()
         return unidad, True
     return unidad, False
+
+
+def resolver_hospital(hospital_id, hospital_nuevo):
+    if hospital_id == _OPCION_NUEVA or hospital_id is None:
+        nombre = (hospital_nuevo or "").strip()
+        return nombre if nombre else None
+    h = db.session.get(Hospital, hospital_id)
+    return h.nombre if h else None
+
+
+def resolver_unidad(unidad_id, unidad_nuevo):
+    if unidad_id == _OPCION_NUEVA or unidad_id is None:
+        nombre = (unidad_nuevo or "").strip()
+        return nombre if nombre else None
+    u = db.session.get(Unidad, unidad_id)
+    return u.nombre if u else None
+
+
+def resolver_geo(pais_id, pais_nuevo, provincia_id, provincia_nueva, ciudad_id, ciudad_nueva):
+    if pais_id and pais_id != _OPCION_NUEVA:
+        pais = db.session.get(Pais, pais_id)
+    else:
+        nombre = (pais_nuevo or "").strip()
+        pais = encontrar_o_crear_pais(nombre) if nombre else None
+    if pais is None:
+        return None
+
+    if provincia_id and provincia_id != _OPCION_NUEVA:
+        provincia = db.session.get(Provincia, provincia_id)
+    else:
+        nombre = (provincia_nueva or "").strip()
+        provincia = encontrar_o_crear_provincia(nombre, pais) if nombre else None
+    if provincia is None:
+        return None
+
+    if ciudad_id and ciudad_id != _OPCION_NUEVA:
+        ciudad = db.session.get(Ciudad, ciudad_id)
+    else:
+        nombre = (ciudad_nueva or "").strip()
+        ciudad = encontrar_o_crear_ciudad(nombre, provincia) if nombre else None
+    return ciudad
 
 
 def encontrar_o_crear_categoria(categoria_id, nombre_nueva):

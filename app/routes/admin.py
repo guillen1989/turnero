@@ -22,11 +22,11 @@ from app.services.registro import (
     encontrar_o_crear_pais,
     encontrar_o_crear_provincia,
     encontrar_o_crear_ciudad,
+    resolver_geo, resolver_hospital, resolver_unidad,
 )
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
-_OPCION_NUEVA = 0
 _OPCION_NUEVA_CATEGORIA = 0
 
 
@@ -75,51 +75,6 @@ def _choices_ciudades():
 
 
 # ---------------------------------------------------------------------------
-# Helpers de resolución (igual que en auth.py)
-# ---------------------------------------------------------------------------
-
-def _resolver_geo(pais_id, pais_nuevo, provincia_id, provincia_nueva, ciudad_id, ciudad_nueva):
-    if pais_id and pais_id != _OPCION_NUEVA:
-        pais = db.session.get(Pais, pais_id)
-    else:
-        nombre = (pais_nuevo or "").strip()
-        pais = encontrar_o_crear_pais(nombre) if nombre else None
-    if pais is None:
-        return None
-
-    if provincia_id and provincia_id != _OPCION_NUEVA:
-        provincia = db.session.get(Provincia, provincia_id)
-    else:
-        nombre = (provincia_nueva or "").strip()
-        provincia = encontrar_o_crear_provincia(nombre, pais) if nombre else None
-    if provincia is None:
-        return None
-
-    if ciudad_id and ciudad_id != _OPCION_NUEVA:
-        ciudad = db.session.get(Ciudad, ciudad_id)
-    else:
-        nombre = (ciudad_nueva or "").strip()
-        ciudad = encontrar_o_crear_ciudad(nombre, provincia) if nombre else None
-    return ciudad
-
-
-def _resolver_hospital(hospital_id, hospital_nuevo):
-    if hospital_id == _OPCION_NUEVA or hospital_id is None:
-        nombre = (hospital_nuevo or "").strip()
-        return nombre if nombre else None
-    h = db.session.get(Hospital, hospital_id)
-    return h.nombre if h else None
-
-
-def _resolver_unidad(unidad_id, unidad_nuevo):
-    if unidad_id == _OPCION_NUEVA or unidad_id is None:
-        nombre = (unidad_nuevo or "").strip()
-        return nombre if nombre else None
-    u = db.session.get(Unidad, unidad_id)
-    return u.nombre if u else None
-
-
-# ---------------------------------------------------------------------------
 # Vista general
 # ---------------------------------------------------------------------------
 
@@ -160,13 +115,13 @@ def usuario_nuevo():
         hospital_id = request.form.get("hospital_id", type=int)
         unidad_id = request.form.get("unidad_id", type=int)
 
-        ciudad = _resolver_geo(
+        ciudad = resolver_geo(
             pais_id, form.pais_nuevo.data,
             provincia_id, form.provincia_nueva.data,
             ciudad_id, form.ciudad_nueva.data,
         )
-        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
-        unidad_nombre = _resolver_unidad(unidad_id, form.unidad_nuevo.data)
+        hospital_nombre = resolver_hospital(hospital_id, form.hospital_nuevo.data)
+        unidad_nombre = resolver_unidad(unidad_id, form.unidad_nuevo.data)
         cat_id = form.categoria_id.data or None
         cat_nueva = form.categoria_nueva.data or None
 
@@ -227,13 +182,13 @@ def usuario_editar(id):
         hospital_id = request.form.get("hospital_id", type=int)
         unidad_id = request.form.get("unidad_id", type=int)
 
-        ciudad = _resolver_geo(
+        ciudad = resolver_geo(
             pais_id, form.pais_nuevo.data,
             provincia_id, form.provincia_nueva.data,
             ciudad_id, form.ciudad_nueva.data,
         )
-        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
-        unidad_nombre = _resolver_unidad(unidad_id, form.unidad_nuevo.data)
+        hospital_nombre = resolver_hospital(hospital_id, form.hospital_nuevo.data)
+        unidad_nombre = resolver_unidad(unidad_id, form.unidad_nuevo.data)
         cat_id = form.categoria_id.data or None
         cat_nueva = form.categoria_nueva.data or None
 

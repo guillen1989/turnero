@@ -10,6 +10,7 @@ from app.models.usuario import Usuario
 from app.services.registro import (
     actualizar_perfil, registrar_usuario,
     encontrar_o_crear_pais, encontrar_o_crear_provincia, encontrar_o_crear_ciudad,
+    resolver_hospital, resolver_unidad,
 )
 
 bp = Blueprint("auth", __name__)
@@ -26,22 +27,6 @@ def _choices_categorias():
     choices.append((_OPCION_NUEVA_CATEGORIA, _("— Añadir nueva categoría —")))
     return choices
 
-
-
-def _resolver_hospital(hospital_id, hospital_nuevo):
-    if hospital_id == _OPCION_NUEVA or hospital_id is None:
-        nombre = (hospital_nuevo or "").strip()
-        return nombre if nombre else None
-    h = db.session.get(Hospital, hospital_id)
-    return h.nombre if h else None
-
-
-def _resolver_unidad(unidad_id, unidad_nuevo):
-    if unidad_id == _OPCION_NUEVA or unidad_id is None:
-        nombre = (unidad_nuevo or "").strip()
-        return nombre if nombre else None
-    u = db.session.get(Unidad, unidad_id)
-    return u.nombre if u else None
 
 
 # ---------------------------------------------------------------------------
@@ -63,8 +48,8 @@ def registro():
         hospital_id = request.form.get("hospital_id", type=int)
         unidad_id = request.form.get("unidad_id", type=int)
 
-        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
-        unidad_nombre = _resolver_unidad(unidad_id, form.unidad_nuevo.data)
+        hospital_nombre = resolver_hospital(hospital_id, form.hospital_nuevo.data)
+        unidad_nombre = resolver_unidad(unidad_id, form.unidad_nuevo.data)
         categoria_id = form.categoria_id.data or None
         categoria_nueva = form.categoria_nueva.data or None
 
@@ -212,8 +197,8 @@ def perfil():
         hospital_id = request.form.get("hospital_id", type=int)
         unidad_id = request.form.get("unidad_id", type=int)
 
-        hospital_nombre = _resolver_hospital(hospital_id, form.hospital_nuevo.data)
-        unidad_nombre = _resolver_unidad(unidad_id, form.unidad_nuevo.data)
+        hospital_nombre = resolver_hospital(hospital_id, form.hospital_nuevo.data)
+        unidad_nombre = resolver_unidad(unidad_id, form.unidad_nuevo.data)
         categoria_id = form.categoria_id.data or None
         categoria_nueva = form.categoria_nueva.data or None
 
