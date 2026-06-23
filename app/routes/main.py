@@ -141,7 +141,7 @@ def _conteos_tabs(usuario_id):
     est_counts = {row.estado: row.n for row in est_rows}
 
     return {
-        "compatible": _query_compatibles(usuario_id).count(),
+        "compatible": len(_matches_para_tab(usuario_id, "propuesto")),
         "abierta": abiertas,
         "pendiente": _query_pendientes(usuario_id).count(),
         "confirmada": est_counts.get("confirmada", 0),

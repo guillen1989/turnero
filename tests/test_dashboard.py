@@ -325,6 +325,26 @@ def test_dashboard_confirmados_muestra_nombre_partner(client, db):
     assert b"Pedro" in resp.data
 
 
+def test_contador_compatibles_ignora_self_matches(client, db):
+    """El contador de Compatibles no cuenta matches donde ambas publicaciones son del mismo usuario."""
+    usuario = _usuario_y_login(client)
+    franja = _franja(usuario.unidad.grupo_intercambio_id)
+    pub1 = _publicacion(usuario, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
+    pub2 = _publicacion(usuario, franja, fecha_cedida=date(2026, 9, 2), fecha_aceptada=date(2026, 9, 1))
+    # Crea un self-match artificial entre las dos publicaciones del mismo usuario
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub1.id))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub2.id))
+    db.session.commit()
+
+    resp = client.get("/")
+    assert b"Compatibles" in resp.data
+    # El contador debe ser 0: el tab mostraría vacío, el contador debe coincidir
+    assert "(0)".encode() in resp.data
+
+
 def test_dashboard_tabs_muestran_conteos(client, db):
     """Cada pestaña muestra entre paréntesis el número de publicaciones que contiene."""
     usuario = _usuario_y_login(client)
