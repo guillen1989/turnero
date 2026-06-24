@@ -23,6 +23,38 @@ def _otras_participaciones(match, usuario_id):
     return [p for p in match.participaciones if p.publicacion.usuario_id != usuario_id]
 
 
+def _calcular_trabajas(match):
+    """Para cada participación devuelve un dict {fecha, franja} del turno que trabaja,
+    o None si no trabaja nada (coincidencia parcial).
+
+    Regla: en el ciclo A→B→C→A cada participante trabaja el turno cedido del
+    participante anterior.  Para coincidencias parciales (regalo/petición), quien
+    tiene turno_aceptado ya lo trabaja explícitamente; quien no tiene ningún
+    'trabaja' recibe None.
+    """
+    partes = sorted(match.participaciones, key=lambda p: p.id)
+    n = len(partes)
+    trabajas = {}
+    for i, part in enumerate(partes):
+        if part.turno_aceptado:
+            ta = part.turno_aceptado
+            cualquier = ta.cualquier_franja
+            trabajas[part.id] = {
+                "fecha": ta.fecha.strftime("%d/%m/%Y"),
+                "franja": None if cualquier else ta.franja_horaria.nombre,
+            }
+        elif part.turno_cedido:
+            prev = partes[(i - 1) % n]
+            tc = prev.turno_cedido  # None para coincidencias parciales
+            trabajas[part.id] = (
+                {"fecha": tc.fecha.strftime("%d/%m/%Y"), "franja": tc.franja_horaria.nombre}
+                if tc else None
+            )
+        else:
+            trabajas[part.id] = None
+    return trabajas
+
+
 def _partners_confirmados(usuario_id):
     """Devuelve dict {pub_id: nombres_partners} para publicaciones con match confirmado_total."""
     raw = (
@@ -100,7 +132,7 @@ def _matches_para_tab(usuario_id, estado_match):
         mi = _mi_participacion(match, usuario_id)
         otras = _otras_participaciones(match, usuario_id)
         if mi and otras:
-            resultado.append((match, mi, otras))
+            resultado.append((match, mi, otras, _calcular_trabajas(match)))
     return resultado
 
 

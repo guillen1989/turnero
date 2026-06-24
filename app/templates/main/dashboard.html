@@ -40,7 +40,7 @@
 
   {% if matches %}
   <section class="matches-section">
-    {% for match, mi_part, otras_parts in matches %}
+    {% for match, mi_part, otras_parts, trabajas in matches %}
     {% set es_parcial = (match.tipo != 'cadena_3') and (mi_part.publicacion.tipo == 'cambio') and (otras_parts[0].publicacion.tipo in ('regalo', 'peticion')) %}
     <div class="match-card match--{{ match.estado }}{% if match.tipo == 'cadena_3' %} match--cadena-3{% endif %}">
       <div class="match-header">
@@ -60,36 +60,35 @@
           {% for otra in otras_parts %}{{ otra.publicacion.usuario.nombre }}{% if not loop.last %} {{ _('y') }} {% endif %}{% endfor %}
         </span>
       </div>
-      {% set mi_turno = mi_part.turno_cedido or mi_part.turno_aceptado %}
       <div class="match-turnos">
-        {% if mi_turno %}
+        {% if mi_part.turno_cedido %}
         <div class="match-turno">
-          <span class="match-turno-label">
-            {% if mi_part.turno_cedido %}{{ _('Tú libras:') }}{% else %}{{ _('Tú trabajas:') }}{% endif %}
-          </span>
-          {{ mi_turno.fecha.strftime('%d/%m/%Y') }} — {{ mi_turno.franja_horaria.nombre }}
+          <span class="match-turno-label">{{ _('Tú libras:') }}</span>
+          {{ mi_part.turno_cedido.fecha.strftime('%d/%m/%Y') }} — {{ mi_part.turno_cedido.franja_horaria.nombre }}
         </div>
         {% endif %}
-        {% if match.tipo == 'cadena_3' %}
-          {% for otra in otras_parts %}
-          {% set otro_turno = otra.turno_cedido or otra.turno_aceptado %}
-          {% if otro_turno %}
-          <div class="match-turno">
-            <span class="match-turno-label">{{ otra.publicacion.usuario.nombre }} {{ _('cede:') }}</span>
-            {{ otro_turno.fecha.strftime('%d/%m/%Y') }} — {{ otro_turno.franja_horaria.nombre }}
-          </div>
-          {% endif %}
-          {% endfor %}
-        {% else %}
-          {% set otra_p = otras_parts[0] %}
-          {% set otro_turno = otra_p.turno_cedido or otra_p.turno_aceptado %}
-          {% if otro_turno %}
-          <div class="match-turno">
-            <span class="match-turno-label">{{ otra_p.publicacion.usuario.nombre }} {% if otra_p.turno_cedido %}{{ _('libra:') }}{% else %}{{ _('trabaja:') }}{% endif %}</span>
-            {{ otro_turno.fecha.strftime('%d/%m/%Y') }} — {{ otro_turno.franja_horaria.nombre }}
-          </div>
-          {% endif %}
+        {% set mi_trabaja = trabajas[mi_part.id] %}
+        {% if mi_trabaja %}
+        <div class="match-turno">
+          <span class="match-turno-label">{{ _('Tú trabajas:') }}</span>
+          {{ mi_trabaja.fecha }} — {{ mi_trabaja.franja or _('cualquier turno') }}
+        </div>
         {% endif %}
+        {% for otra in otras_parts %}
+        {% if otra.turno_cedido %}
+        <div class="match-turno">
+          <span class="match-turno-label">{{ otra.publicacion.usuario.nombre }} {{ _('libra:') }}</span>
+          {{ otra.turno_cedido.fecha.strftime('%d/%m/%Y') }} — {{ otra.turno_cedido.franja_horaria.nombre }}
+        </div>
+        {% endif %}
+        {% set otra_trabaja = trabajas[otra.id] %}
+        {% if otra_trabaja %}
+        <div class="match-turno">
+          <span class="match-turno-label">{{ otra.publicacion.usuario.nombre }} {{ _('trabaja:') }}</span>
+          {{ otra_trabaja.fecha }} — {{ otra_trabaja.franja or _('cualquier turno') }}
+        </div>
+        {% endif %}
+        {% endfor %}
       </div>
       {% if es_parcial %}
       <p class="match-aviso-parcial">
