@@ -1,3 +1,5 @@
+from urllib.parse import quote as urlquote
+
 from flask import Blueprint, jsonify, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_babel import _
@@ -17,6 +19,28 @@ bp = Blueprint("auth", __name__)
 
 _OPCION_NUEVA = 0
 _OPCION_NUEVA_CATEGORIA = 0
+
+
+def _datos_invitacion():
+    """Lee los parámetros inv_* del query string y devuelve un dict con los IDs
+    geográficos necesarios para pre-rellenar el formulario de registro."""
+    inv_hospital_id = request.args.get("inv_hospital", type=int)
+    if not inv_hospital_id:
+        return {}
+    hospital = db.session.get(Hospital, inv_hospital_id)
+    if not hospital:
+        return {}
+    ciudad = hospital.ciudad
+    provincia = ciudad.provincia if ciudad else None
+    pais = provincia.pais if provincia else None
+    return {
+        "pais_id": pais.id if pais else None,
+        "provincia_id": provincia.id if provincia else None,
+        "ciudad_id": ciudad.id if ciudad else None,
+        "hospital_id": hospital.id,
+        "unidad_id": request.args.get("inv_unidad", type=int),
+        "categoria_id": request.args.get("inv_categoria", type=int),
+    }
 
 
 def _choices_categorias():
@@ -107,8 +131,12 @@ def registro():
                 db.session.rollback()
                 flash(_("Ese correo ya está registrado."), "danger")
 
+    inv = _datos_invitacion()
+    if request.method == "GET" and inv.get("categoria_id"):
+        form.categoria_id.data = inv["categoria_id"]
+
     paises = Pais.query.order_by(Pais.nombre).all()
-    return render_template("auth/registro.html", form=form, paises=paises)
+    return render_template("auth/registro.html", form=form, paises=paises, inv=inv)
 
 
 @bp.route("/login", methods=["GET", "POST"])
@@ -334,4 +362,22 @@ def perfil_cuenta():
         form.nombre.data = current_user.nombre
         form.email.data = current_user.email
 
-    return render_template("auth/perfil_cuenta.html", form=form)
+    invite_url = url_for(
+        "auth.registro",
+        inv_hospital=current_user.unidad.hospital.id,
+        inv_unidad=current_user.unidad_id,
+        inv_categoria=current_user.categoria_id,
+        _external=True,
+    )
+    hospital_nombre = current_user.unidad.hospital.nombre
+    unidad_nombre = current_user.unidad.nombre
+    texto_wa = _(
+        "¡Únete a Turnero! Usamos esta app en %(hospital)s / %(unidad)s para "
+        "intercambiar turnos. Regístrate con este enlace y tus datos ya estarán "
+        "pre-rellenados: %(url)s",
+        hospital=hospital_nombre,
+        unidad=unidad_nombre,
+        url=invite_url,
+    )
+    wa_url = "https://wa.me/?text=" + urlquote(texto_wa)
+    return render_template("auth/perfil_cuenta.html", form=form, invite_url=invite_url, wa_url=wa_url)

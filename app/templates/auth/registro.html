@@ -43,10 +43,11 @@
 
     <div class="form-group">
       <label>{{ _('País') }}</label>
-      <select id="pais-select" name="pais_id">
+      <select id="pais-select" name="pais_id"
+              {% if inv.pais_id %}data-selected-pais="{{ inv.pais_id }}"{% endif %}>
         <option value="">{{ _('— Selecciona país —') }}</option>
         {% for p in paises %}
-          <option value="{{ p.id }}">{{ p.nombre }}</option>
+          <option value="{{ p.id }}" {% if p.id == inv.pais_id %}selected{% endif %}>{{ p.nombre }}</option>
         {% endfor %}
         <option value="0">{{ _('— Añadir nuevo país —') }}</option>
       </select>
@@ -58,7 +59,8 @@
 
     <div class="form-group">
       <label>{{ _('Provincia') }}</label>
-      <select id="provincia-select" name="provincia_id">
+      <select id="provincia-select" name="provincia_id"
+              {% if inv.provincia_id %}data-selected-provincia="{{ inv.provincia_id }}"{% endif %}>
         <option value="">{{ _('— Selecciona primero el país —') }}</option>
         <option value="0">{{ _('— Añadir nueva provincia —') }}</option>
       </select>
@@ -70,7 +72,8 @@
 
     <div class="form-group">
       <label>{{ _('Ciudad') }}</label>
-      <select id="ciudad-select" name="ciudad_id">
+      <select id="ciudad-select" name="ciudad_id"
+              {% if inv.ciudad_id %}data-selected-ciudad="{{ inv.ciudad_id }}"{% endif %}>
         <option value="">{{ _('— Selecciona primero la provincia —') }}</option>
         <option value="0">{{ _('— Añadir nueva ciudad —') }}</option>
       </select>
@@ -82,7 +85,8 @@
 
     <div class="form-group">
       <label>{{ _('Hospital') }}</label>
-      <select id="hospital-select" name="hospital_id">
+      <select id="hospital-select" name="hospital_id"
+              {% if inv.hospital_id %}data-selected-hospital="{{ inv.hospital_id }}"{% endif %}>
         <option value="">{{ _('— Selecciona primero la ciudad —') }}</option>
         <option value="0">{{ _('— Añadir nuevo hospital —') }}</option>
       </select>
@@ -110,7 +114,8 @@
 
     <div class="form-group">
       <label>{{ _('Unidad / servicio') }}</label>
-      <select id="unidad-select" name="unidad_id">
+      <select id="unidad-select" name="unidad_id"
+              {% if inv.unidad_id %}data-selected-unidad="{{ inv.unidad_id }}"{% endif %}>
         <option value="">{{ _('— Selecciona primero hospital y categoría —') }}</option>
         <option value="0">{{ _('— Añadir nueva unidad —') }}</option>
       </select>

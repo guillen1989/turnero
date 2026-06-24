@@ -67,5 +67,37 @@
   <p class="form-footer">
     <a href="{{ url_for('main.index') }}">{{ _('← Volver al inicio') }}</a>
   </p>
+
+  <div class="invite-section">
+    <h2 class="invite-title">{{ _('Invitar a un compañero') }}</h2>
+    <p class="invite-desc">
+      {{ _('Comparte este enlace con un compañero de tu unidad. Al abrirlo, su formulario de registro ya vendrá pre-rellenado con vuestro hospital, unidad y categoría.') }}
+    </p>
+    <div class="invite-link-row">
+      <input type="text" id="invite-url" class="invite-link-input" readonly
+             value="{{ invite_url }}">
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-invite"
+              onclick="copiarEnlace()">{{ _('Copiar') }}</button>
+    </div>
+    <a href="{{ wa_url }}" target="_blank" rel="noopener" class="btn btn-wa btn-full" style="margin-top:0.75rem">
+      {{ _('Enviar por WhatsApp') }}
+    </a>
+  </div>
 </div>
+
+<script>
+function copiarEnlace() {
+  var inp = document.getElementById('invite-url');
+  inp.select();
+  inp.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(inp.value).then(function () {
+    var btn = document.getElementById('btn-copy-invite');
+    var orig = btn.textContent;
+    btn.textContent = '{{ _("¡Copiado!") }}';
+    setTimeout(function () { btn.textContent = orig; }, 1800);
+  }).catch(function () {
+    document.execCommand('copy');
+  });
+}
+</script>
 {% endblock %}
