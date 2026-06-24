@@ -7,7 +7,7 @@ from app.services.eventos import registrar_evento
 from app.services.publicaciones import publicar_cambio, cancelar_publicacion
 from app.services.registro import registrar_usuario
 from app.matching.service import crear_match_directo, buscar_matches_para
-from app.services.matches import confirmar_participacion
+from app.services.matches import confirmar_participacion, rechazar_match
 
 
 def _usuario(nombre, email, hospital="H1", unidad="U1"):
@@ -79,6 +79,23 @@ def test_cancelar_publicacion_registra_publication_cancelled(db):
     ev = Event.query.filter_by(user_id=ana.id, event_type="publication_cancelled").first()
     assert ev is not None
     assert ev.entity_id == pub.id
+
+
+def test_rechazar_match_registra_match_cancelled_para_todos(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+
+    pub_ana = _pub(ana, date(2026, 7, 1), date(2026, 7, 2))
+    pub_pedro = _pub(pedro, date(2026, 7, 2), date(2026, 7, 1))
+
+    match = crear_match_directo(pub_ana, pub_pedro)
+    rechazar_match(match, ana.id)
+
+    assert Event.query.filter_by(event_type="match_cancelled").count() == 2
+    for usuario in (ana, pedro):
+        ev = Event.query.filter_by(user_id=usuario.id, event_type="match_cancelled").first()
+        assert ev is not None
+        assert ev.entity_id == match.id
 
 
 def test_confirmar_match_registra_match_confirmed(db):

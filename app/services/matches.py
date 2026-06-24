@@ -71,4 +71,5 @@ def rechazar_match(match, usuario_id):
                 tipo="rechazo",
             ))
             enviar_push_condicional(p.publicacion.usuario, "confirmacion_parcial")
+        registrar_evento(p.publicacion.usuario_id, "match_cancelled", match.id)
     db.session.commit()
