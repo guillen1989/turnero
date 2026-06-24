@@ -104,20 +104,23 @@
       <button type="submit" class="btn btn-primary btn-sm">{{ _('Filtrar') }}</button>
       {% if mes or dia or nombre or franja_id or tipo %}
       <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary btn-sm">{{ _('Limpiar') }}</a>
-      {% endif %}
-      {% if mes or dia or nombre or franja_id or tipo %}
-      <form method="post" action="{{ url_for('busquedas.guardar') }}" style="display:inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="mes" value="{{ mes or '' }}">
-        <input type="hidden" name="dia" value="{{ dia or '' }}">
-        <input type="hidden" name="franja" value="{{ franja_id or '' }}">
-        <input type="hidden" name="tipo" value="{{ tipo }}">
-        <input type="hidden" name="usuario" value="{{ nombre }}">
-        <button type="submit" class="btn btn-secondary btn-sm">{{ _('Guardar búsqueda como alerta') }}</button>
-      </form>
+      <button type="submit" form="form-guardar-alerta" class="btn btn-secondary btn-sm">{{ _('Guardar búsqueda como alerta') }}</button>
       {% endif %}
     </div>
   </form>
+
+  {# Form separado para guardar alerta — fuera del form de filtros para evitar anidamiento inválido.
+     El botón lo referencia con form="form-guardar-alerta" (atributo HTML5). #}
+  {% if mes or dia or nombre or franja_id or tipo %}
+  <form id="form-guardar-alerta" method="post" action="{{ url_for('busquedas.guardar') }}" style="display:none">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="mes" value="{{ mes or '' }}">
+    <input type="hidden" name="dia" value="{{ dia or '' }}">
+    <input type="hidden" name="franja" value="{{ franja_id or '' }}">
+    <input type="hidden" name="tipo" value="{{ tipo }}">
+    <input type="hidden" name="usuario" value="{{ nombre }}">
+  </form>
+  {% endif %}
 
   {% if publicaciones %}
   <ul class="publicaciones-list">
