@@ -264,25 +264,22 @@ function abrirMeInteresa(btn) {
   document.getElementById('mmi-fb').value = '';
   document.getElementById('mmi-selects').innerHTML = '';
 
+  if (pub.tipo === 'regalo') {
+    document.getElementById('mmi-form').submit();
+    return;
+  }
+
   var desc = document.getElementById('mmi-desc');
   var selects = document.getElementById('mmi-selects');
   var tipo = pub.tipo;
 
   document.getElementById('mmi-title').textContent =
-    tipo === 'regalo'     ? '{{ _("¿Quieres que") }} ' + pub.autor + ' {{ _("trabaje en tu lugar?") }}' :
     tipo === 'peticion'   ? '{{ _("¿Quieres cubrir un turno de") }} ' + pub.autor + '?' :
     tipo === 'junte'      ? '{{ _("Junte de noches con") }} ' + pub.autor :
     tipo === 'cambio_dia' ? '{{ _("Cambio de turno en el día con") }} ' + pub.autor :
                             '{{ _("Cambio con") }} ' + pub.autor;
 
-  if (tipo === 'regalo') {
-    desc.textContent = '{{ _("Selecciona el turno que quieres que te cubra:") }}';
-    var s = _sel(pub.aceptados, 'mmi-ta', '{{ _("Turno a cubrir") }}');
-    document.getElementById('mmi-ta').value = pub.aceptados[0] ? pub.aceptados[0].id : '';
-    selects.appendChild(s.wrap);
-    selects.appendChild(_selectorFranja('{{ _("¿Qué turno tuyo quieres librar?") }}', 'mmi-fb'));
-    _actualizarSelectorFranja(s.sel);
-  } else if (tipo === 'peticion') {
+  if (tipo === 'peticion') {
     desc.textContent = '{{ _("Selecciona el turno que te ofreces a cubrir:") }}';
     var s = _sel(pub.cedidos, 'mmi-tc', '{{ _("Turno a cubrir") }}');
     document.getElementById('mmi-tc').value = pub.cedidos[0] ? pub.cedidos[0].id : '';

@@ -347,19 +347,13 @@ def _crear_publicacion_espejo(pub_a):
     tipo = pub_a.tipo
 
     if tipo == "regalo":
-        ta_id = request.form.get("turno_aceptado_id", type=int)
-        if not ta_id:
-            raise ValueError(_("Selecciona el turno que te interesa."))
-        ta = TurnoAceptado.query.filter_by(id=ta_id, publicacion_id=pub_a.id).first()
-        if ta is None:
-            raise ValueError(_("Turno no encontrado en esta publicación."))
-        if ta.cualquier_franja:
-            franja_b = request.form.get("franja_b", type=int)
-            if not franja_b:
-                raise ValueError(_("Especifica el turno que quieres librar."))
-            cedidos = [(ta.fecha, franja_b)]
-        else:
-            cedidos = [(ta.fecha, ta.franja_horaria_id)]
+        cedidos = [
+            (ta.fecha, ta.franja_horaria_id)
+            for ta in pub_a.turnos_aceptados
+            if not ta.cualquier_franja
+        ]
+        if not cedidos:
+            raise ValueError(_("Este regalo no tiene turnos disponibles."))
         return publicar_cambio(current_user.id, cedidos, [], tipo="peticion")
 
     if tipo == "peticion":

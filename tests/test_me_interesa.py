@@ -158,13 +158,15 @@ def test_me_interesa_regalo_crea_peticion_espejo(client, db):
     _login(client, "pedro@test.es")
     with patch("app.push.sender.webpush"):
         resp = client.post(f"/cambios/{pub_a.id}/me-interesa",
-                           data={"turno_aceptado_id": ta_a.id},
+                           data={},
                            follow_redirects=False)
     assert resp.status_code == 302
     assert MatchCambio.query.count() == 1
     pub_b = PublicacionCambio.query.filter_by(usuario_id=pedro.id).first()
     assert pub_b is not None
     assert pub_b.tipo == "peticion"
+    assert pub_b.turnos_cedidos[0].franja_horaria_id == ta_a.franja_horaria_id
+    assert pub_b.turnos_cedidos[0].fecha == ta_a.fecha
 
 
 # ---------------------------------------------------------------------------
