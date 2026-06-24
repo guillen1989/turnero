@@ -4,7 +4,23 @@ from config import config
 from app.extensions import db, migrate, babel, login_manager, csrf
 
 
+def _init_sentry():
+    dsn = os.environ.get("SENTRY_DSN")
+    if not dsn:
+        return
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+    sentry_sdk.init(
+        dsn=dsn,
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=0.1,
+        environment=os.environ.get("FLASK_ENV", "production"),
+    )
+
+
 def create_app(config_name=None):
+    _init_sentry()
+
     if config_name is None:
         config_name = os.environ.get("FLASK_ENV", "default")
 
