@@ -19,12 +19,19 @@
       {% if aviso.publicacion %}
         <div class="aviso-info">
           <span class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</span>
+          {% if aviso.tipo == 'contraoferta' %}
+          <span class="aviso-tipo tipo-badge tipo-badge--cambio">{{ _('Contraoferta') }}</span>
+          {% else %}
           <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _(aviso.publicacion.tipo) }}</span>
+          {% endif %}
           <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>
+        {% if aviso.tipo == 'contraoferta' and aviso.publicacion.mensaje %}
+        <p class="aviso-mensaje">"{{ aviso.publicacion.mensaje }}"</p>
+        {% endif %}
         <div class="aviso-actions">
           {% if aviso.publicacion.esta_activa() %}
-          <a href="{{ url_for('main.cambios') }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver publicación') }}</a>
+          <a href="{{ url_for('main.cambios', usuario=aviso.publicacion.usuario.nombre) }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver publicación') }}</a>
           {% else %}
           <span class="aviso-expirada">{{ _('Publicación ya cerrada') }}</span>
           {% endif %}
@@ -49,7 +56,7 @@
     {% endfor %}
   </ul>
   {% else %}
-  <p class="empty-state">{{ _('No tienes avisos todavía. Sigue a compañeros desde el panel de Notificaciones para recibir avisos cuando publiquen.') }}</p>
+  <p class="empty-state">{{ _('No tienes avisos todavía. Sigue a compañeros desde el panel de Notificaciones para recibir avisos cuando publiquen, o recibe contraofertas a tus publicaciones de cambio.') }}</p>
   {% endif %}
 
   <p class="avisos-footer-link">

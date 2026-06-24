@@ -728,7 +728,17 @@ body {
 .aviso-fecha { font-size: 0.82rem; color: #888; }
 .aviso-expirada { font-size: 0.82rem; color: #aaa; white-space: nowrap; }
 .aviso-btn { white-space: nowrap; }
+.aviso-row { flex-wrap: wrap; }
+.aviso-mensaje { font-size: 0.85rem; color: #555; font-style: italic; width: 100%; margin: 0.25rem 0 0; }
 .avisos-footer-link { margin-top: 1.25rem; font-size: 0.88rem; color: #555; }
+
+/* Contraoferta */
+.contraoferta-original { background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+.contraoferta-original h2 { font-size: 1rem; margin: 0 0 0.6rem; }
+.pub-original-detalle { font-size: 0.9rem; }
+.pub-original-detalle .turnos-cedidos,
+.pub-original-detalle .turnos-aceptados { margin-bottom: 0.4rem; }
+.contraoferta-hint { font-size: 0.82rem; color: #6b7280; margin: 0.75rem 0 0; border-top: 1px solid #e5e7eb; padding-top: 0.5rem; }
 .avisos-footer-link a { color: #005a9c; }
 
 /* Confirmation modal */

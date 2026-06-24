@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Hacer contraoferta') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Hacer contraoferta') }}</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert--{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="contraoferta-original">
+    <h2>{{ _('Publicación de') }} {{ pub.usuario.nombre }}</h2>
+    <div class="pub-original-detalle">
+      <div class="turnos-cedidos">
+        <strong>{{ _('Quiere librar:') }}</strong>
+        {% for t in pub.turnos_cedidos %}
+        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
+        {% endfor %}
+      </div>
+      <div class="turnos-aceptados">
+        <strong>{{ _('Se ofrece a trabajar:') }}</strong>
+        {% for t in pub.turnos_aceptados %}
+        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {% if t.cualquier_franja %}{{ _('Cualquier turno') }}{% else %}{{ t.franja_horaria.nombre }}{% endif %}</span>
+        {% endfor %}
+      </div>
+      {% if pub.mensaje %}
+      <p class="match-mensaje">"{{ pub.mensaje }}"</p>
+      {% endif %}
+    </div>
+    <p class="contraoferta-hint">
+      {{ _('Tu contraoferta debe incluir al menos un turno que coincida con alguno de los turnos anteriores (que cedes o que aceptas).') }}
+    </p>
+  </div>
+
+  <form method="post" id="contraoferta-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <section class="turnos-section turnos-section--ceder">
+      <h2>{{ _('Turnos que yo quiero librar') }}</h2>
+      <div id="cedidos-list">
+        <div class="turno-row">
+          <div class="turno-row-campo">
+            <label>{{ _('Fecha') }}</label>
+            <input type="date" name="fecha_cedida_0" min="{{ today }}">
+          </div>
+          <div class="turno-row-campo">
+            <label>{{ _('Tipo de turno') }}</label>
+            <select name="franja_cedida_0">
+              <option value="">{{ _('— Selecciona —') }}</option>
+              {% for f in franjas %}
+              <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-add-cedida">
+        {{ _('+ Añadir otro turno a librar') }}
+      </button>
+    </section>
+
+    <section class="turnos-section turnos-section--aceptar">
+      <h2>{{ _('Turnos que yo me ofrezco a trabajar') }}</h2>
+      <div id="aceptados-list">
+        <div class="turno-row">
+          <div class="turno-row-campo">
+            <label>{{ _('Fecha') }}</label>
+            <input type="date" name="fecha_aceptada_0" min="{{ today }}">
+          </div>
+          <div class="turno-row-campo">
+            <label>{{ _('Tipo de turno') }}</label>
+            <select name="franja_aceptada_0">
+              <option value="">{{ _('— Selecciona —') }}</option>
+              {% for f in franjas %}
+              <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-add-aceptada">
+        {{ _('+ Añadir otro turno que puedo trabajar') }}
+      </button>
+    </section>
+
+    <section class="turnos-section">
+      <h2>{{ _('Mensaje (opcional)') }}</h2>
+      <textarea name="mensaje" maxlength="200" rows="3"
+        placeholder="{{ _('Explica tu propuesta a') }} {{ pub.usuario.nombre }} {{ _('(máx. 200 caracteres)') }}"
+        class="mensaje-textarea"></textarea>
+    </section>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">{{ _('Enviar contraoferta') }}</button>
+      <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary">{{ _('Cancelar') }}</a>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  var franjaOptions = `{% for f in franjas %}<option value="{{ f.id }}">{{ f.nombre }}</option>{% endfor %}`;
+
+  function addRow(listId, prefix) {
+    var list = document.getElementById(listId);
+    var idx = list.children.length;
+    var div = document.createElement('div');
+    div.className = 'turno-row';
+    div.innerHTML =
+      '<div class="turno-row-campo">' +
+        '<label>{{ _("Fecha") }}</label>' +
+        '<input type="date" name="fecha_' + prefix + '_' + idx + '" min="{{ today }}">' +
+      '</div>' +
+      '<div class="turno-row-campo">' +
+        '<label>{{ _("Tipo de turno") }}</label>' +
+        '<select name="franja_' + prefix + '_' + idx + '">' +
+          '<option value="">{{ _("— Selecciona —") }}</option>' +
+          franjaOptions +
+        '</select>' +
+      '</div>' +
+      '<button type="button" class="btn-remove" onclick="this.parentElement.remove()">✕</button>';
+    list.appendChild(div);
+  }
+
+  document.getElementById('btn-add-cedida').addEventListener('click', function () {
+    addRow('cedidos-list', 'cedida');
+  });
+  document.getElementById('btn-add-aceptada').addEventListener('click', function () {
+    addRow('aceptados-list', 'aceptada');
+  });
+})();
+</script>
+{% endblock %}

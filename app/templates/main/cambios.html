@@ -144,6 +144,10 @@
         <button type="button" class="btn btn-primary btn-sm"
                 data-pub-id="{{ pub.id }}"
                 onclick="abrirMeInteresa(this)">{{ _('Me interesa') }}</button>
+        {% if pub.tipo == 'cambio' %}
+        <a href="{{ url_for('publicaciones.contraoferta', pub_id=pub.id) }}"
+           class="btn btn-secondary btn-sm">{{ _('Contraoferta') }}</a>
+        {% endif %}
       </div>
     </li>
     {% endfor %}

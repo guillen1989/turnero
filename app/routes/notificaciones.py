@@ -77,7 +77,10 @@ def cancelar_suscripcion(uid):
 def avisos():
     notifs = (
         Notificacion.query
-        .filter_by(usuario_id=current_user.id, tipo="nueva_publicacion_seguido")
+        .filter(
+            Notificacion.usuario_id == current_user.id,
+            Notificacion.tipo.in_(("nueva_publicacion_seguido", "contraoferta")),
+        )
         .order_by(Notificacion.fecha.desc())
         .all()
     )
@@ -101,8 +104,9 @@ def borrar_aviso(notif_id):
 @bp.post("/avisos/borrar-todos")
 @login_required
 def borrar_todos_avisos():
-    Notificacion.query.filter_by(
-        usuario_id=current_user.id, tipo="nueva_publicacion_seguido"
+    Notificacion.query.filter(
+        Notificacion.usuario_id == current_user.id,
+        Notificacion.tipo.in_(("nueva_publicacion_seguido", "contraoferta")),
     ).delete()
     db.session.commit()
     return redirect(url_for("notificaciones.avisos"))

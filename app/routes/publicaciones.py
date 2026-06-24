@@ -5,7 +5,7 @@ from flask_babel import _
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import FranjaHoraria, GrupoIntercambio, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
+from app.models import FranjaHoraria, GrupoIntercambio, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default
 from app.matching.service import buscar_cadenas_3_para, buscar_matches_para, crear_match_cadena_3, crear_match_directo
@@ -405,3 +405,87 @@ def _crear_publicacion_espejo(pub_a):
         return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="cambio")
 
     raise ValueError(_("Tipo de publicación no reconocido."))
+
+
+def _turnos_pub_como_set(pub):
+    """Conjunto de (fecha, franja_id) de todos los turnos de una publicación."""
+    cedidos = {(t.fecha, t.franja_horaria_id) for t in pub.turnos_cedidos}
+    aceptados = {(t.fecha, t.franja_horaria_id) for t in pub.turnos_aceptados}
+    return cedidos | aceptados
+
+
+@bp.route("/cambios/<int:pub_id>/contraoferta", methods=["GET", "POST"])
+@login_required
+def contraoferta(pub_id):
+    pub_original = PublicacionCambio.query.filter_by(
+        id=pub_id, tipo="cambio"
+    ).first_or_404()
+
+    if pub_original.estado not in ("abierta", "parcialmente_resuelta"):
+        flash(_("Esta publicación ya no está activa."), "warning")
+        return redirect(url_for("main.cambios"))
+
+    if pub_original.usuario_id == current_user.id:
+        flash(_("No puedes hacer una contraoferta a tu propia publicación."), "warning")
+        return redirect(url_for("main.cambios"))
+
+    autor = db.session.get(Usuario, pub_original.usuario_id)
+    if (autor.categoria_id != current_user.categoria_id or
+            autor.unidad.grupo_intercambio_id != current_user.unidad.grupo_intercambio_id):
+        abort(403)
+
+    grupo_id = current_user.unidad.grupo_intercambio_id
+    franjas = (
+        FranjaHoraria.query
+        .filter_by(grupo_intercambio_id=grupo_id)
+        .order_by(FranjaHoraria.hora_inicio)
+        .all()
+    )
+    hoy = date.today()
+
+    if request.method == "POST":
+        cedidos = _extraer_turnos("cedida")
+        aceptados = _extraer_turnos("aceptada")
+        mensaje = request.form.get("mensaje", "").strip()[:200]
+
+        if not cedidos:
+            flash(_("Debes indicar al menos un turno que cedes."), "danger")
+            return render_template("main/contraoferta.html", pub=pub_original, franjas=franjas, today=hoy)
+        if not aceptados:
+            flash(_("Debes indicar al menos un turno que aceptarías."), "danger")
+            return render_template("main/contraoferta.html", pub=pub_original, franjas=franjas, today=hoy)
+        if any(f < hoy for f, _ in cedidos + aceptados):
+            flash(_("Las fechas de los turnos no pueden ser anteriores a hoy."), "danger")
+            return render_template("main/contraoferta.html", pub=pub_original, franjas=franjas, today=hoy)
+
+        turnos_original = _turnos_pub_como_set(pub_original)
+        turnos_pedro = {(f, fid) for f, fid in cedidos + aceptados}
+        if not (turnos_pedro & turnos_original):
+            flash(
+                _("La contraoferta debe coincidir con al menos una parte de la publicación original."),
+                "danger",
+            )
+            return render_template("main/contraoferta.html", pub=pub_original, franjas=franjas, today=hoy)
+
+        pub_nueva = publicar_cambio(current_user.id, cedidos, aceptados, tipo="cambio", mensaje=mensaje)
+
+        for candidata in buscar_matches_para(pub_nueva):
+            if not crear_match_directo(pub_nueva, candidata):
+                for candidata2 in buscar_cadenas_3_para(pub_nueva):
+                    pass
+
+        notif = Notificacion(
+            usuario_id=pub_original.usuario_id,
+            publicacion_id=pub_nueva.id,
+            tipo="contraoferta",
+        )
+        db.session.add(notif)
+        db.session.commit()
+
+        from app.push.sender import enviar_push_condicional
+        enviar_push_condicional(autor, "contraoferta")
+
+        flash(_("Tu contraoferta ha sido enviada. El autor de la publicación recibirá un aviso."), "success")
+        return redirect(url_for("main.index"))
+
+    return render_template("main/contraoferta.html", pub=pub_original, franjas=franjas, today=hoy)
