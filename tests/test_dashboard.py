@@ -54,7 +54,7 @@ def test_index_autenticado_muestra_dashboard(client, db):
 
 def test_dashboard_sin_publicaciones_muestra_estado_vacio(client, db):
     _usuario_y_login(client)
-    # La pestaña por defecto es "Compatibles"; sin matches, muestra estado vacío
+    # La pestaña por defecto es "Activos"; sin nada, muestra estado vacío
     resp = client.get("/")
     assert "No tienes".encode() in resp.data
 
@@ -73,15 +73,14 @@ def test_dashboard_muestra_publicaciones_propias(client, db):
     assert b"01/08/2026" in resp.data
 
 
-def test_dashboard_tab_compatible_es_default(client, db):
-    """La pestaña Compatibles es la activa al entrar sin parámetro de estado."""
+def test_dashboard_tab_activos_es_default(client, db):
+    """La pestaña Activos es la activa al entrar sin parámetro de estado."""
     _usuario_y_login(client)
     resp = client.get("/")
     assert b"estado-tab--active" in resp.data
-    # La pestaña activa debe contener "Compatibles"
     html = resp.data.decode()
     idx = html.find("estado-tab--active")
-    assert "Compatibles" in html[idx:idx + 200]
+    assert "Activos" in html[idx:idx + 200]
 
 
 def test_dashboard_tab_compatible_muestra_match_propuesto(client, db):
@@ -110,15 +109,16 @@ def test_dashboard_tab_compatible_muestra_match_propuesto(client, db):
     assert b"Rechazar" in resp.data
 
 
-def test_dashboard_por_defecto_no_muestra_pub_cards(client, db):
-    """La pestaña por defecto (Compatibles) no muestra tarjetas de publicaciones."""
+def test_dashboard_activos_muestra_pub_sin_match(client, db):
+    """La pestaña por defecto (Activos) muestra publicaciones sin match junto con los compatibles."""
     usuario = _usuario_y_login(client)
     franja = _franja(usuario.unidad.grupo_intercambio_id)
     _publicacion(usuario, franja, fecha_cedida=date(2026, 10, 1), fecha_aceptada=date(2026, 10, 2))
 
     resp = client.get("/")
-    # La pub no tiene match, así que no aparece en compatibles
-    assert b'class="turno"' not in resp.data
+    # La pub sin match aparece en Activos
+    assert b'class="turno"' in resp.data
+    assert b"01/10/2026" in resp.data
 
 
 def test_dashboard_activos_muestra_solo_publicaciones_sin_match(client, db):
@@ -255,8 +255,8 @@ def test_dashboard_activos_excluye_pubs_con_match_activo(client, db):
     assert b'class="turno">01/12/2026' in resp_activos.data        # sin match → en activos
 
 
-def test_dashboard_tab_compatible_conteo_match_propuesto(client, db):
-    """El contador de Compatibles es > 0 cuando hay un match propuesto, aunque nadie haya confirmado."""
+def test_dashboard_tab_activos_conteo_con_match_propuesto(client, db):
+    """El contador de Activos incluye el match propuesto (compatible)."""
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
     ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
@@ -281,8 +281,9 @@ def test_dashboard_tab_compatible_conteo_match_propuesto(client, db):
 
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     resp = client.get("/")
-    assert b"Compatibles" in resp.data
-    assert "(1)".encode() in resp.data  # el contador de Compatibles
+    html = resp.data.decode()
+    assert "Activos" in html
+    assert "(1)" in html  # 1 compatible, 0 abierta = 1 activo
 
 
 def test_dashboard_no_muestra_publicaciones_ajenas(client, db):
@@ -325,8 +326,8 @@ def test_dashboard_confirmados_muestra_nombre_partner(client, db):
     assert b"Pedro" in resp.data
 
 
-def test_contador_compatibles_ignora_self_matches(client, db):
-    """El contador de Compatibles no cuenta matches donde ambas publicaciones son del mismo usuario."""
+def test_contador_activos_ignora_self_matches(client, db):
+    """El contador de Activos no cuenta matches donde ambas publicaciones son del mismo usuario."""
     usuario = _usuario_y_login(client)
     franja = _franja(usuario.unidad.grupo_intercambio_id)
     pub1 = _publicacion(usuario, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
@@ -340,9 +341,10 @@ def test_contador_compatibles_ignora_self_matches(client, db):
     db.session.commit()
 
     resp = client.get("/")
-    assert b"Compatibles" in resp.data
-    # El contador debe ser 0: el tab mostraría vacío, el contador debe coincidir
-    assert "(0)".encode() in resp.data
+    html = resp.data.decode()
+    assert "Activos" in html
+    # self-match no cuenta como compatible, y pubs con match propuesto se excluyen de abierta → (0)
+    assert "(0)" in html
 
 
 def test_dashboard_tabs_muestran_conteos(client, db):

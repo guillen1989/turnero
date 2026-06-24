@@ -136,12 +136,14 @@ def _matches_para_tab(usuario_id, estado_match):
 
 
 _ESTADOS_DASHBOARD = {
-    "compatible": None,
-    "abierta": ["abierta", "parcialmente_resuelta"],
-    "pendiente": None,
+    "activos": None,   # handled specially
+    "pendiente": None,  # handled specially
     "confirmada": ["confirmada"],
     "caducada": ["caducada"],
 }
+
+# Backward-compat aliases: old URL params map to the new state name
+_ALIASES_ESTADO = {"compatible": "activos", "abierta": "activos"}
 
 
 def _conteos_tabs(usuario_id):
@@ -172,8 +174,7 @@ def _conteos_tabs(usuario_id):
     est_counts = {row.estado: row.n for row in est_rows}
 
     return {
-        "compatible": len(_matches_para_tab(usuario_id, "propuesto")),
-        "abierta": abiertas,
+        "activos": len(_matches_para_tab(usuario_id, "propuesto")) + abiertas,
         "pendiente": _query_pendientes(usuario_id).count(),
         "confirmada": est_counts.get("confirmada", 0),
         "caducada": est_counts.get("caducada", 0),
@@ -184,21 +185,12 @@ def _conteos_tabs(usuario_id):
 def index():
     if current_user.is_authenticated:
         caducar_publicaciones_expiradas()
-        estado_filtro = request.args.get("estado", "compatible")
+        estado_filtro = request.args.get("estado", "activos")
+        estado_filtro = _ALIASES_ESTADO.get(estado_filtro, estado_filtro)
         if estado_filtro not in _ESTADOS_DASHBOARD:
-            estado_filtro = "compatible"
+            estado_filtro = "activos"
 
-        if estado_filtro == "compatible":
-            publicaciones = []
-            matches = _matches_para_tab(current_user.id, "propuesto")
-            Notificacion.query.filter_by(
-                usuario_id=current_user.id, tipo="nuevo_match", leida=False
-            ).update({"leida": True})
-            db.session.commit()
-        elif estado_filtro == "pendiente":
-            publicaciones = []
-            matches = _matches_para_tab(current_user.id, "confirmado_parcial")
-        elif estado_filtro == "abierta":
+        if estado_filtro == "activos":
             from sqlalchemy import select as sa_select
             activos_subq = (
                 _query_con_match_activo(current_user.id)
@@ -213,7 +205,14 @@ def index():
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
             )
-            matches = []
+            matches = _matches_para_tab(current_user.id, "propuesto")
+            Notificacion.query.filter_by(
+                usuario_id=current_user.id, tipo="nuevo_match", leida=False
+            ).update({"leida": True})
+            db.session.commit()
+        elif estado_filtro == "pendiente":
+            publicaciones = []
+            matches = _matches_para_tab(current_user.id, "confirmado_parcial")
         else:
             estados = _ESTADOS_DASHBOARD[estado_filtro]
             publicaciones = (

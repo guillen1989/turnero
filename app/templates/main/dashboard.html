@@ -15,13 +15,9 @@
 
   <div class="dashboard-tabs">
     <nav class="estado-tabs">
-      <a href="{{ url_for('main.index', estado='compatible') }}"
-         class="estado-tab {% if estado_filtro == 'compatible' %}estado-tab--active{% endif %}">
-        {{ _('Compatibles') }} <span class="tab-count">({{ conteos.compatible }})</span>
-      </a>
-      <a href="{{ url_for('main.index', estado='abierta') }}"
-         class="estado-tab {% if estado_filtro == 'abierta' %}estado-tab--active{% endif %}">
-        {{ _('Activos') }} <span class="tab-count">({{ conteos.abierta }})</span>
+      <a href="{{ url_for('main.index', estado='activos') }}"
+         class="estado-tab {% if estado_filtro == 'activos' %}estado-tab--active{% endif %}">
+        {{ _('Activos') }} <span class="tab-count">({{ conteos.activos }})</span>
       </a>
       <a href="{{ url_for('main.index', estado='pendiente') }}"
          class="estado-tab {% if estado_filtro == 'pendiente' %}estado-tab--active{% endif %}">
@@ -44,13 +40,13 @@
     {% set es_parcial = (match.tipo != 'cadena_3') and (mi_part.publicacion.tipo == 'cambio') and (otras_parts[0].publicacion.tipo in ('regalo', 'peticion')) %}
     <div class="match-card match--{{ match.estado }}{% if match.tipo == 'cadena_3' %} match--cadena-3{% endif %}">
       <div class="match-header">
-        <span class="match-badge match-badge--{{ match.estado }}{% if es_parcial and estado_filtro == 'compatible' %} match-badge--parcial{% endif %}">
+        <span class="match-badge match-badge--{{ match.estado }}{% if es_parcial and match.estado == 'propuesto' %} match-badge--parcial{% endif %}">
           {% if match.tipo == 'cadena_3' %}
-            {% if estado_filtro == 'compatible' %}{{ _('¡Cambio a 3 bandas!') }}
+            {% if match.estado == 'propuesto' %}{{ _('¡Cambio a 3 bandas!') }}
             {% elif mi_part.confirmado %}{{ _('Esperando a los demás') }}
             {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
           {% else %}
-            {% if estado_filtro == 'compatible' %}
+            {% if match.estado == 'propuesto' %}
               {% if es_parcial %}{{ _('¡Coincidencia parcial!') }}{% else %}{{ _('¡Compatible!') }}{% endif %}
             {% elif mi_part.confirmado %}{{ _('Esperando al otro usuario') }}
             {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
@@ -123,7 +119,9 @@
     {% endfor %}
   </section>
 
-  {% elif publicaciones %}
+  {% endif %}
+
+  {% if publicaciones %}
     <ul class="publicaciones-list">
       {% for pub in publicaciones %}
       <li class="publicacion-card publicacion--{{ pub.estado }}">
@@ -239,13 +237,13 @@
       {% endfor %}
     </ul>
 
-  {% else %}
+  {% elif not matches %}
     <p class="empty-state">
-      {% if estado_filtro == 'compatible' %}{{ _('No tienes cambios compatibles aún.') }}
+      {% if estado_filtro == 'activos' %}{{ _('No tienes publicaciones activas.') }}
       {% elif estado_filtro == 'pendiente' %}{{ _('No tienes cambios pendientes de confirmar.') }}
       {% elif estado_filtro == 'confirmada' %}{{ _('No tienes publicaciones confirmadas.') }}
       {% elif estado_filtro == 'caducada' %}{{ _('No tienes publicaciones caducadas.') }}
-      {% else %}{{ _('No tienes publicaciones activas.') }}{% endif %}
+      {% endif %}
     </p>
   {% endif %}
 
