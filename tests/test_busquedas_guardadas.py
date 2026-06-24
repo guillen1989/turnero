@@ -275,7 +275,7 @@ def test_cambios_muestra_boton_guardar_con_filtro(client, db):
     _login(client, "u1@test.es")
     resp = client.get("/cambios?tipo=regalo")
     assert resp.status_code == 200
-    assert "Guardar como alerta" in resp.data.decode()
+    assert "Guardar búsqueda como alerta" in resp.data.decode()
 
 
 def test_cambios_sin_filtro_no_muestra_boton_guardar(client, db):
@@ -283,7 +283,7 @@ def test_cambios_sin_filtro_no_muestra_boton_guardar(client, db):
     _login(client, "u1@test.es")
     resp = client.get("/cambios")
     assert resp.status_code == 200
-    assert "Guardar como alerta" not in resp.data.decode()
+    assert "Guardar búsqueda como alerta" not in resp.data.decode()
 
 
 def test_avisos_muestra_alerta_busqueda_guardada(client, db):

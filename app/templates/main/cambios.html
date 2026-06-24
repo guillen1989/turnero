@@ -1,27 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Cambios publicados') }} — {{ _('Turnero') }}{% endblock %}
+{% block title %}{{ _('Buscar cambios') }} — {{ _('Turnero') }}{% endblock %}
 
 {% block content %}
 <div class="cambios-page">
   <div class="dashboard-header">
-    <h1>{{ _('Cambios publicados') }}</h1>
-    <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">{{ _('Publicar cambio') }}</a>
+    <h1>{{ _('Buscar cambios') }}</h1>
   </div>
 
   <!-- Pestañas -->
-  <div class="cambios-tabs">
-    <a href="{{ url_for('main.cambios', mes=mes or '', dia=dia or '', franja=franja_id or '', tipo=tipo, usuario=nombre, tab='resultados') }}"
-       class="cambios-tab {% if tab != 'alertas' %}cambios-tab--activa{% endif %}">
-      {{ _('Resultados') }}
-    </a>
-    <a href="{{ url_for('main.cambios', tab='alertas') }}"
-       class="cambios-tab {% if tab == 'alertas' %}cambios-tab--activa{% endif %}">
-      {{ _('Mis alertas') }}
-      {% if busquedas %}
-      <span class="cambios-tab-badge">{{ busquedas|length }}</span>
-      {% endif %}
-    </a>
+  <div class="dashboard-tabs">
+    <nav class="estado-tabs">
+      <a href="{{ url_for('main.cambios', mes=mes or '', dia=dia or '', franja=franja_id or '', tipo=tipo, usuario=nombre, tab='resultados') }}"
+         class="estado-tab {% if tab != 'alertas' %}estado-tab--active{% endif %}">
+        {{ _('Resultados') }}
+      </a>
+      <a href="{{ url_for('main.cambios', tab='alertas') }}"
+         class="estado-tab {% if tab == 'alertas' %}estado-tab--active{% endif %}">
+        {{ _('Mis alertas') }}{% if busquedas %} <span class="tab-count">({{ busquedas|length }})</span>{% endif %}
+      </a>
+    </nav>
   </div>
 
   {% if tab == 'alertas' %}
@@ -107,20 +105,19 @@
       {% if mes or dia or nombre or franja_id or tipo %}
       <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary btn-sm">{{ _('Limpiar') }}</a>
       {% endif %}
+      {% if mes or dia or nombre or franja_id or tipo %}
+      <form method="post" action="{{ url_for('busquedas.guardar') }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="mes" value="{{ mes or '' }}">
+        <input type="hidden" name="dia" value="{{ dia or '' }}">
+        <input type="hidden" name="franja" value="{{ franja_id or '' }}">
+        <input type="hidden" name="tipo" value="{{ tipo }}">
+        <input type="hidden" name="usuario" value="{{ nombre }}">
+        <button type="submit" class="btn btn-secondary btn-sm">{{ _('Guardar búsqueda como alerta') }}</button>
+      </form>
+      {% endif %}
     </div>
   </form>
-
-  {% if mes or dia or nombre or franja_id or tipo %}
-  <form method="post" action="{{ url_for('busquedas.guardar') }}" class="cambios-guardar-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="mes" value="{{ mes or '' }}">
-    <input type="hidden" name="dia" value="{{ dia or '' }}">
-    <input type="hidden" name="franja" value="{{ franja_id or '' }}">
-    <input type="hidden" name="tipo" value="{{ tipo }}">
-    <input type="hidden" name="usuario" value="{{ nombre }}">
-    <button type="submit" class="btn btn-secondary btn-sm">{{ _('Guardar como alerta') }}</button>
-  </form>
-  {% endif %}
 
   {% if publicaciones %}
   <ul class="publicaciones-list">
