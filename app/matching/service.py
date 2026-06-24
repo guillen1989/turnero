@@ -151,6 +151,17 @@ def buscar_matches_para(publicacion):
             or (c.tipo == "cambio"  and bool(cedidos_pub & _aceptados(c)))
         ]
 
+    if tipo == "cambio_dia":
+        cedidos_pub = _cedidos_abiertos(publicacion)
+        aceptados_pub = _aceptados(publicacion)
+        return [
+            c for c in candidatas
+            if c.tipo == "cambio_dia" and detectar_match_directo(
+                cedidos_pub, aceptados_pub,
+                _cedidos_abiertos(c), _aceptados(c),
+            )
+        ]
+
     return []
 
 
@@ -217,8 +228,9 @@ def _roles_peticion_cambio(pub_a, pub_b):
 # Cada handler devuelve el turno cedido y aceptado que aporta cada publicación.
 # None significa que esa publicación no aporta ese tipo de turno.
 _ROLES_HANDLER = {
-    ("cambio",  "cambio"):   _roles_cambio_simétrico,
-    ("junte",   "junte"):    _roles_cambio_simétrico,
+    ("cambio",     "cambio"):     _roles_cambio_simétrico,
+    ("junte",      "junte"):      _roles_cambio_simétrico,
+    ("cambio_dia", "cambio_dia"): _roles_cambio_simétrico,
     ("regalo",  "peticion"): _roles_regalo_peticion,
     ("peticion","regalo"):   _roles_peticion_regalo,
     ("cambio",  "regalo"):   _roles_cambio_regalo,

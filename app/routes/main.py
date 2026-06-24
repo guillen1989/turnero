@@ -211,7 +211,7 @@ def cambios():
     nombre = request.args.get("usuario", "").strip()
     franja_id = request.args.get("franja", type=int)
     tipo = request.args.get("tipo", "").strip()
-    _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte"}
+    _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte", "cambio_dia"}
     if tipo not in _TIPOS_VALIDOS:
         tipo = ""
 

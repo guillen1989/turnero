@@ -145,6 +145,14 @@
           <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</span>
           {% endfor %}
         </div>
+        {% elif pub.tipo == 'cambio_dia' %}
+        <span class="tipo-badge tipo-badge--cambio-dia">{{ _('Cambio de turno en el día') }}</span>
+        <div class="turnos-cedidos">
+          <strong>{{ _('Quiero cambiar:') }}</strong>
+          {% set tc = pub.turnos_cedidos[0] %}
+          {% set ta = pub.turnos_aceptados[0] %}
+          <span class="turno">{{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ ta.franja_horaria.nombre }}</span>
+        </div>
         {% else %}
         <span class="tipo-badge tipo-badge--cambio">{{ _('Cambio') }}</span>
         <div class="turnos-cedidos">
@@ -188,6 +196,10 @@
             {% if loop.first %}{% set ns.wa_turnos = t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
           {% endfor %}
           {% set wa_texto = _('Busco compañero/a para un junte de noches: ') + ns.wa_turnos + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
+        {% elif pub.tipo == 'cambio_dia' %}
+          {% set tc = pub.turnos_cedidos[0] %}
+          {% set ta = pub.turnos_aceptados[0] %}
+          {% set wa_texto = _('Busco cambio de turno en el día: tengo el ') + tc.franja_horaria.nombre + _(' del ') + tc.fecha.strftime('%d/%m/%Y') + _(' y busco el ') + ta.franja_horaria.nombre + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
         {% else %}
           {% set ns = namespace(wa_turnos='') %}
           {% for t in pub.turnos_cedidos %}

@@ -46,6 +46,41 @@
             <span class="tipo-desc">{{ _('Reorganizas con un compañero las noches de una semana para trabajarlas seguidas') }}</span>
           </div>
         </label>
+        <label class="tipo-opcion">
+          <input type="radio" name="tipo" value="cambio_dia" id="tipo-cambio-dia">
+          <div class="tipo-texto">
+            <span class="tipo-label">{{ _('Cambio de turno en el día') }}</span>
+            <span class="tipo-desc">{{ _('Cambias tu turno de mañana a tarde (o viceversa) el mismo día') }}</span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="turnos-section" id="section-cambio-dia" style="display:none">
+      <h2>{{ _('¿Qué turno quieres cambiar?') }}</h2>
+      <div class="form-group">
+        <label for="fecha_cambio_dia">{{ _('Día') }}</label>
+        <input type="date" id="fecha_cambio_dia" name="fecha_cambio_dia" min="{{ today }}">
+      </div>
+      <div class="turno-row">
+        <div class="turno-row-campo">
+          <label for="franja_cedida_dia">{{ _('Mi turno actual (que cedo)') }}</label>
+          <select id="franja_cedida_dia" name="franja_cedida_dia">
+            <option value="">{{ _('— Selecciona —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="turno-row-campo">
+          <label for="franja_aceptada_dia">{{ _('Turno que deseo (que acepto)') }}</label>
+          <select id="franja_aceptada_dia" name="franja_aceptada_dia">
+            <option value="">{{ _('— Selecciona —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
     </section>
 
@@ -205,13 +240,16 @@
   // Mostrar/ocultar secciones según tipo de publicación
   function actualizarSecciones() {
     var tipo = document.querySelector('input[name="tipo"]:checked').value;
-    var secCedidos  = document.getElementById('section-cedidos');
+    var secCedidos   = document.getElementById('section-cedidos');
     var secAceptados = document.getElementById('section-aceptados');
-    var secJunte    = document.getElementById('section-junte');
-    var esJunte = (tipo === 'junte');
-    secJunte.style.display    = esJunte ? '' : 'none';
-    secCedidos.style.display  = esJunte || tipo === 'regalo'   ? 'none' : '';
-    secAceptados.style.display = esJunte || tipo === 'peticion' ? 'none' : '';
+    var secJunte     = document.getElementById('section-junte');
+    var secCambioDia = document.getElementById('section-cambio-dia');
+    var esJunte    = (tipo === 'junte');
+    var esCambioDia = (tipo === 'cambio_dia');
+    secJunte.style.display     = esJunte     ? '' : 'none';
+    secCambioDia.style.display = esCambioDia ? '' : 'none';
+    secCedidos.style.display   = esJunte || esCambioDia || tipo === 'regalo'   ? 'none' : '';
+    secAceptados.style.display = esJunte || esCambioDia || tipo === 'peticion' ? 'none' : '';
   }
 
   document.querySelectorAll('input[name="tipo"]').forEach(function (radio) {

@@ -69,6 +69,38 @@ def _extraer_turnos_junte():
     return cedidos, aceptados, None
 
 
+def _extraer_turnos_cambio_dia(hoy):
+    """Procesa el formulario de cambio de turno en el día.
+
+    Devuelve (cedidos, aceptados, error_msg). error_msg es None si todo va bien.
+    """
+    fecha_str = request.form.get("fecha_cambio_dia", "").strip()
+    franja_cedida_str = request.form.get("franja_cedida_dia", "").strip()
+    franja_aceptada_str = request.form.get("franja_aceptada_dia", "").strip()
+
+    if not fecha_str:
+        return [], [], _("Indica la fecha del cambio.")
+    if not franja_cedida_str:
+        return [], [], _("Indica tu turno actual.")
+    if not franja_aceptada_str:
+        return [], [], _("Indica el turno que deseas.")
+
+    try:
+        from datetime import datetime as _dt
+        fecha = _dt.strptime(fecha_str, "%Y-%m-%d").date()
+        franja_cedida_id = int(franja_cedida_str)
+        franja_aceptada_id = int(franja_aceptada_str)
+    except (ValueError, TypeError):
+        return [], [], _("Datos del cambio de turno incorrectos.")
+
+    if franja_cedida_id == franja_aceptada_id:
+        return [], [], _("El turno que cedes y el que deseas deben ser diferentes.")
+    if fecha < hoy:
+        return [], [], _("Las fechas de los turnos no pueden ser anteriores a hoy.")
+
+    return [(fecha, franja_cedida_id)], [(fecha, franja_aceptada_id)], None
+
+
 def _extraer_turnos(prefix):
     """Extrae pares (fecha, franja_id) del form con claves fecha_{prefix}_N / franja_{prefix}_N.
 
@@ -106,6 +138,13 @@ def _validar_turnos(tipo, cedidos, aceptados, hoy):
     elif tipo == "peticion":
         if not cedidos:
             return _("Debes indicar al menos un turno que quieres librar.")
+    elif tipo == "cambio_dia":
+        if not cedidos or not aceptados:
+            return _("Debes indicar el turno que cedes y el que deseas.")
+        if cedidos[0][0] != aceptados[0][0]:
+            return _("El turno cedido y el deseado deben ser del mismo día.")
+        if cedidos[0][1] == aceptados[0][1]:
+            return _("El turno que cedes y el que deseas deben ser diferentes.")
     if any(f < hoy for f, _ in cedidos + aceptados):
         return _("Las fechas de los turnos no pueden ser anteriores a hoy.")
     return None
@@ -163,7 +202,7 @@ def nueva():
 
     if request.method == "POST":
         tipo = request.form.get("tipo", "cambio")
-        if tipo not in ("cambio", "regalo", "peticion", "junte"):
+        if tipo not in ("cambio", "regalo", "peticion", "junte", "cambio_dia"):
             tipo = "cambio"
 
         hoy = date.today()
@@ -173,11 +212,16 @@ def nueva():
             if error:
                 flash(error, "danger")
                 return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
+        elif tipo == "cambio_dia":
+            cedidos, aceptados, error = _extraer_turnos_cambio_dia(hoy)
+            if error:
+                flash(error, "danger")
+                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
         else:
             cedidos  = _extraer_turnos("cedida")
             aceptados = _extraer_turnos("aceptada")
 
-        if tipo != "junte":
+        if tipo not in ("junte", "cambio_dia"):
             error = _validar_turnos(tipo, cedidos, aceptados, hoy)
             if error:
                 flash(error, "danger")
@@ -229,7 +273,7 @@ def editar(pub_id):
 
     if request.method == "POST":
         tipo = request.form.get("tipo", pub.tipo)
-        if tipo not in ("cambio", "regalo", "peticion"):
+        if tipo not in ("cambio", "regalo", "peticion", "cambio_dia"):
             tipo = pub.tipo
 
         cedidos = _extraer_turnos("cedida")
@@ -333,6 +377,13 @@ def _crear_publicacion_espejo(pub_a):
         if not cedidos_b or not aceptados_b:
             raise ValueError(_("El junte ya no tiene turnos disponibles."))
         return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="junte")
+
+    if tipo == "cambio_dia":
+        cedidos_b = [(ta.fecha, ta.franja_horaria_id) for ta in pub_a.turnos_aceptados]
+        aceptados_b = [(tc.fecha, tc.franja_horaria_id) for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
+        if not cedidos_b or not aceptados_b:
+            raise ValueError(_("Este cambio de turno ya no está disponible."))
+        return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="cambio_dia")
 
     if tipo == "cambio":
         tc_id = request.form.get("turno_cedido_id", type=int)

@@ -3,7 +3,7 @@ from app.extensions import db
 
 ESTADOS_PUBLICACION = ("abierta", "parcialmente_resuelta", "confirmada", "cancelada", "caducada")
 ESTADOS_TURNO_CEDIDO = ("abierto", "resuelto")
-TIPOS_PUBLICACION = ("cambio", "regalo", "peticion")
+TIPOS_PUBLICACION = ("cambio", "regalo", "peticion", "junte", "cambio_dia")
 
 
 class PublicacionCambio(db.Model):

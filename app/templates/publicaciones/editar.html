@@ -33,6 +33,11 @@
           <span class="tipo-label">{{ _('Petición') }}</span>
           <span class="tipo-desc">{{ _('Buscas quien trabaje un turno tuyo sin ofrecer nada a cambio') }}</span>
         </label>
+        <label class="tipo-opcion">
+          <input type="radio" name="tipo" value="cambio_dia" {% if pub.tipo == 'cambio_dia' %}checked{% endif %}>
+          <span class="tipo-label">{{ _('Cambio de turno en el día') }}</span>
+          <span class="tipo-desc">{{ _('Cambias tu turno de mañana a tarde (o viceversa) el mismo día') }}</span>
+        </label>
       </div>
     </section>
 
@@ -147,8 +152,13 @@
 
   function actualizarSecciones() {
     var tipo = document.querySelector('input[name="tipo"]:checked').value;
-    document.getElementById('section-cedidos').style.display = (tipo === 'regalo') ? 'none' : '';
+    var esCambioDia = (tipo === 'cambio_dia');
+    document.getElementById('section-cedidos').style.display  = (tipo === 'regalo')  ? 'none' : '';
     document.getElementById('section-aceptados').style.display = (tipo === 'peticion') ? 'none' : '';
+    // Para cambio_dia, los dos bloques quedan visibles (1 cedido + 1 aceptado)
+    // y el "+" de añadir más filas se oculta.
+    document.getElementById('btn-add-cedida').style.display   = esCambioDia ? 'none' : '';
+    document.getElementById('btn-add-aceptada').style.display = esCambioDia ? 'none' : '';
   }
 
   document.querySelectorAll('input[name="tipo"]').forEach(function (radio) {

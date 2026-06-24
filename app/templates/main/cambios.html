@@ -47,7 +47,8 @@
           <option value="cambio"   {% if tipo == 'cambio'   %}selected{% endif %}>{{ _('Cambio') }}</option>
           <option value="regalo"   {% if tipo == 'regalo'   %}selected{% endif %}>{{ _('Regalo') }}</option>
           <option value="peticion" {% if tipo == 'peticion' %}selected{% endif %}>{{ _('Petición') }}</option>
-          <option value="junte"    {% if tipo == 'junte'    %}selected{% endif %}>{{ _('Junte de noches') }}</option>
+          <option value="junte"      {% if tipo == 'junte'      %}selected{% endif %}>{{ _('Junte de noches') }}</option>
+          <option value="cambio_dia" {% if tipo == 'cambio_dia' %}selected{% endif %}>{{ _('Cambio de turno en el día') }}</option>
         </select>
       </div>
       <div class="form-group">
@@ -107,6 +108,17 @@
         <a class="turno turno--link"
            href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day) }}">{{ turno.fecha.strftime('%d/%m/%Y') }}</a>
         {% endfor %}
+      </div>
+      {% elif pub.tipo == 'cambio_dia' %}
+      <span class="tipo-badge tipo-badge--cambio-dia">{{ _('Cambio de turno en el día') }}</span>
+      <div class="turnos-cedidos">
+        <strong>{{ _('Quiere cambiar:') }}</strong>
+        {% set tc = pub.turnos_cedidos[0] %}
+        {% set ta = pub.turnos_aceptados[0] %}
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=tc.fecha.month, dia=tc.fecha.day, tipo='cambio_dia') }}">
+          {{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ ta.franja_horaria.nombre }}
+        </a>
       </div>
       {% else %}
       <span class="tipo-badge tipo-badge--cambio">{{ _('Cambio') }}</span>
@@ -253,10 +265,11 @@ function abrirMeInteresa(btn) {
   var tipo = pub.tipo;
 
   document.getElementById('mmi-title').textContent =
-    tipo === 'regalo'  ? '{{ _("¿Quieres que") }} ' + pub.autor + ' {{ _("trabaje en tu lugar?") }}' :
-    tipo === 'peticion'? '{{ _("¿Quieres cubrir un turno de") }} ' + pub.autor + '?' :
-    tipo === 'junte'   ? '{{ _("Junte de noches con") }} ' + pub.autor :
-                         '{{ _("Cambio con") }} ' + pub.autor;
+    tipo === 'regalo'     ? '{{ _("¿Quieres que") }} ' + pub.autor + ' {{ _("trabaje en tu lugar?") }}' :
+    tipo === 'peticion'   ? '{{ _("¿Quieres cubrir un turno de") }} ' + pub.autor + '?' :
+    tipo === 'junte'      ? '{{ _("Junte de noches con") }} ' + pub.autor :
+    tipo === 'cambio_dia' ? '{{ _("Cambio de turno en el día con") }} ' + pub.autor :
+                            '{{ _("Cambio con") }} ' + pub.autor;
 
   if (tipo === 'regalo') {
     desc.textContent = '{{ _("Selecciona el turno que quieres que te cubra:") }}';
@@ -276,6 +289,13 @@ function abrirMeInteresa(btn) {
     html += '<p><strong>{{ _("Noches que busca:") }}</strong> ';
     html += pub.aceptados.map(function (t) { return t.fecha; }).join(', ') + '</p>';
     html += '<p>{{ _("Aceptarás las noches que él/ella cede y le cederás las que busca.") }}</p>';
+    desc.innerHTML = html;
+  } else if (tipo === 'cambio_dia') {
+    var tc = pub.cedidos[0];
+    var ta = pub.aceptados[0];
+    var html = '<p><strong>{{ _("Tiene el turno de:") }}</strong> ' + tc.franja + ' ' + tc.fecha + '</p>';
+    html += '<p><strong>{{ _("Quiere el turno de:") }}</strong> ' + ta.franja + ' ' + ta.fecha + '</p>';
+    html += '<p>{{ _("Si aceptas, le das tu turno de") }} ' + ta.franja + ' {{ _("y él/ella te da el de") }} ' + tc.franja + '.</p>';
     desc.innerHTML = html;
   } else {
     desc.textContent = '{{ _("Elige el turno que cubrirás y el que quieres que te cubran:") }}';

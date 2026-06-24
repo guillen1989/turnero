@@ -52,7 +52,7 @@ def caducar_publicaciones_expiradas(hoy=None):
         sa_update(PublicacionCambio)
         .where(
             PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
-            PublicacionCambio.tipo.in_(("cambio", "peticion", "junte")),
+            PublicacionCambio.tipo.in_(("cambio", "peticion", "junte", "cambio_dia")),
             tiene_cedido_abierto,
             ~tiene_cedido_vigente,
         )

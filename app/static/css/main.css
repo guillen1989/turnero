@@ -464,7 +464,8 @@ body {
 .tipo-badge--cambio  { background: #dbeafe; color: #1e40af; }
 .tipo-badge--regalo  { background: #dcfce7; color: #15803d; }
 .tipo-badge--peticion { background: #fef3c7; color: #92400e; }
-.tipo-badge--junte   { background: #ede9fe; color: #5b21b6; }
+.tipo-badge--junte      { background: #ede9fe; color: #5b21b6; }
+.tipo-badge--cambio-dia { background: #ccfbf1; color: #0f766e; }
 
 .estado-badge {
   display: inline-block;
