@@ -357,12 +357,16 @@ def _crear_publicacion_espejo(pub_a):
         return publicar_cambio(current_user.id, cedidos, [], tipo="peticion")
 
     if tipo == "peticion":
-        tc_id = request.form.get("turno_cedido_id", type=int)
-        if not tc_id:
-            raise ValueError(_("Selecciona el turno que quieres cubrir."))
-        tc = TurnoCedido.query.filter_by(id=tc_id, publicacion_id=pub_a.id, estado="abierto").first()
-        if tc is None:
-            raise ValueError(_("Turno no encontrado o ya resuelto."))
+        cedidos_abiertos = [tc for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
+        if len(cedidos_abiertos) == 1 and cedidos_abiertos[0].franja_horaria_id is not None:
+            tc = cedidos_abiertos[0]
+        else:
+            tc_id = request.form.get("turno_cedido_id", type=int)
+            if not tc_id:
+                raise ValueError(_("Selecciona el turno que quieres cubrir."))
+            tc = TurnoCedido.query.filter_by(id=tc_id, publicacion_id=pub_a.id, estado="abierto").first()
+            if tc is None:
+                raise ValueError(_("Turno no encontrado o ya resuelto."))
         return publicar_cambio(current_user.id, [], [(tc.fecha, tc.franja_horaria_id)], tipo="regalo")
 
     if tipo == "junte":

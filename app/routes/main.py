@@ -297,7 +297,8 @@ def _pub_js_data(pub):
             {
                 "id": tc.id,
                 "fecha": tc.fecha.strftime("%d/%m/%Y"),
-                "franja": tc.franja_horaria.nombre,
+                "franja": tc.franja_horaria.nombre if tc.franja_horaria_id is not None else None,
+                "cualquierFranja": tc.franja_horaria_id is None,
             }
             for tc in pub.turnos_cedidos if tc.estado == "abierto"
         ],

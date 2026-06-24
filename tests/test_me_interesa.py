@@ -174,18 +174,37 @@ def test_me_interesa_regalo_crea_peticion_espejo(client, db):
 # ---------------------------------------------------------------------------
 
 def test_me_interesa_peticion_crea_regalo_espejo(client, db):
+    """Petición con un cedido específico: flujo sin form data (salto de diálogo)."""
     ana, pedro, franja = _setup()
     pub_a, tc_a = _pub_peticion(ana, franja)
     _login(client, "pedro@test.es")
     with patch("app.push.sender.webpush"):
         resp = client.post(f"/cambios/{pub_a.id}/me-interesa",
-                           data={"turno_cedido_id": tc_a.id},
+                           data={},
                            follow_redirects=False)
     assert resp.status_code == 302
     assert MatchCambio.query.count() == 1
     pub_b = PublicacionCambio.query.filter_by(usuario_id=pedro.id).first()
     assert pub_b is not None
     assert pub_b.tipo == "regalo"
+    assert pub_b.turnos_aceptados[0].franja_horaria_id == tc_a.franja_horaria_id
+    assert pub_b.turnos_aceptados[0].fecha == tc_a.fecha
+
+
+def test_me_interesa_peticion_multiturn_requiere_seleccion(client, db):
+    """Petición con varios cedidos: sin form data no crea match."""
+    ana, pedro, franja = _setup()
+    pub_a = PublicacionCambio(usuario_id=ana.id, tipo="peticion")
+    db.session.add(pub_a)
+    db.session.flush()
+    tc1 = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 9, 3), franja_horaria_id=franja.id)
+    tc2 = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 9, 4), franja_horaria_id=franja.id)
+    db.session.add_all([tc1, tc2])
+    db.session.commit()
+    _login(client, "pedro@test.es")
+    resp = client.post(f"/cambios/{pub_a.id}/me-interesa", data={}, follow_redirects=True)
+    assert MatchCambio.query.count() == 0
+    assert "Selecciona el turno" in resp.get_data(as_text=True)
 
 
 # ---------------------------------------------------------------------------

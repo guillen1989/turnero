@@ -280,6 +280,11 @@ function abrirMeInteresa(btn) {
                             '{{ _("Cambio con") }} ' + pub.autor;
 
   if (tipo === 'peticion') {
+    if (pub.cedidos.length === 1 && !pub.cedidos[0].cualquierFranja) {
+      document.getElementById('mmi-tc').value = pub.cedidos[0].id;
+      document.getElementById('mmi-form').submit();
+      return;
+    }
     desc.textContent = '{{ _("Selecciona el turno que te ofreces a cubrir:") }}';
     var s = _sel(pub.cedidos, 'mmi-tc', '{{ _("Turno a cubrir") }}');
     document.getElementById('mmi-tc').value = pub.cedidos[0] ? pub.cedidos[0].id : '';
