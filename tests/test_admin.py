@@ -262,3 +262,113 @@ def test_admin_lista_publicaciones(client, db):
     _login_admin(client, db)
     resp = client.get("/admin/publicaciones")
     assert resp.status_code == 200
+
+
+def test_admin_elimina_publicacion_sin_matches(client, db):
+    """El admin puede eliminar una publicación sin matches asociados."""
+    from app.extensions import db as _db
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="pub_owner@test.es")
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+    pub = PublicacionCambio(usuario_id=u.id)
+    _db.session.add(pub)
+    _db.session.flush()
+    _db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    _db.session.commit()
+    pub_id = pub.id
+
+    resp = client.post(
+        f"/admin/publicaciones/{pub_id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert PublicacionCambio.query.get(pub_id) is None
+
+
+def test_admin_elimina_publicacion_con_matches(client, db):
+    """El admin puede eliminar una publicación que tiene matches asociados (no crash)."""
+    from unittest.mock import patch
+    from app.extensions import db as _db
+    from app.models import MatchCambio, MatchParticipacion, Notificacion
+    from app.matching.service import crear_match_directo
+    from app.services.registro import registrar_usuario as reg
+    insertar_categorias_semilla()
+    cat_id = _cat_id(db)
+
+    _login_admin(client, db)
+
+    u1 = reg("Owner", "owner_m@test.es", "pass", "H1", "Urgencias", cat_id)
+    u2 = reg("Other", "other_m@test.es", "pass", "H1", "Urgencias", cat_id)
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u1.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+
+    pub1 = PublicacionCambio(usuario_id=u1.id, tipo="cambio")
+    pub2 = PublicacionCambio(usuario_id=u2.id, tipo="cambio")
+    _db.session.add_all([pub1, pub2])
+    _db.session.flush()
+    _db.session.add(TurnoCedido(publicacion_id=pub1.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    _db.session.add(TurnoAceptado(publicacion_id=pub1.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+    _db.session.add(TurnoCedido(publicacion_id=pub2.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+    _db.session.add(TurnoAceptado(publicacion_id=pub2.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    _db.session.commit()
+
+    with patch("app.push.sender.webpush"):
+        match = crear_match_directo(pub1, pub2)
+    pub1_id = pub1.id
+    match_id = match.id
+
+    resp = client.post(
+        f"/admin/publicaciones/{pub1_id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert PublicacionCambio.query.get(pub1_id) is None
+    assert MatchCambio.query.get(match_id) is None
+
+
+def test_admin_elimina_publicacion_y_borra_sus_notificaciones(client, db):
+    """Eliminar una publicación con match también limpia las Notificacion del match."""
+    from unittest.mock import patch
+    from app.extensions import db as _db
+    from app.models import MatchCambio, Notificacion
+    from app.matching.service import crear_match_directo
+    from app.services.registro import registrar_usuario as reg
+    insertar_categorias_semilla()
+    cat_id = _cat_id(db)
+
+    _login_admin(client, db)
+
+    u1 = reg("Ow2", "ow2@test.es", "pass", "H1", "Urgencias", cat_id)
+    u2 = reg("Ot2", "ot2@test.es", "pass", "H1", "Urgencias", cat_id)
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u1.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+
+    pub1 = PublicacionCambio(usuario_id=u1.id, tipo="cambio")
+    pub2 = PublicacionCambio(usuario_id=u2.id, tipo="cambio")
+    _db.session.add_all([pub1, pub2])
+    _db.session.flush()
+    _db.session.add(TurnoCedido(publicacion_id=pub1.id, fecha=date(2026, 9, 3), franja_horaria_id=franja.id))
+    _db.session.add(TurnoAceptado(publicacion_id=pub1.id, fecha=date(2026, 9, 4), franja_horaria_id=franja.id))
+    _db.session.add(TurnoCedido(publicacion_id=pub2.id, fecha=date(2026, 9, 4), franja_horaria_id=franja.id))
+    _db.session.add(TurnoAceptado(publicacion_id=pub2.id, fecha=date(2026, 9, 3), franja_horaria_id=franja.id))
+    _db.session.commit()
+
+    with patch("app.push.sender.webpush"):
+        match = crear_match_directo(pub1, pub2)
+    match_id = match.id
+    pub1_id = pub1.id
+
+    client.post(
+        f"/admin/publicaciones/{pub1_id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert Notificacion.query.filter_by(match_id=match_id).count() == 0
