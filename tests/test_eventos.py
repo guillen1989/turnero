@@ -4,7 +4,7 @@ from datetime import date
 from app.extensions import db
 from app.models import Categoria, Event, FranjaHoraria, MatchCambio, insertar_categorias_semilla
 from app.services.eventos import registrar_evento
-from app.services.publicaciones import publicar_cambio
+from app.services.publicaciones import publicar_cambio, cancelar_publicacion
 from app.services.registro import registrar_usuario
 from app.matching.service import crear_match_directo, buscar_matches_para
 from app.services.matches import confirmar_participacion
@@ -68,6 +68,17 @@ def test_crear_match_registra_match_found_para_ambas_partes(db):
         ev = Event.query.filter_by(user_id=usuario.id, event_type="match_found").first()
         assert ev is not None
         assert ev.entity_id == match.id
+
+
+def test_cancelar_publicacion_registra_publication_cancelled(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pub = _pub(ana, date(2026, 7, 1), date(2026, 7, 2))
+
+    cancelar_publicacion(pub)
+
+    ev = Event.query.filter_by(user_id=ana.id, event_type="publication_cancelled").first()
+    assert ev is not None
+    assert ev.entity_id == pub.id
 
 
 def test_confirmar_match_registra_match_confirmed(db):

@@ -66,6 +66,8 @@ def cancelar_publicacion(pub):
     """Marca la publicación como cancelada. Requiere que esté activa."""
     pub.estado = "cancelada"
     db.session.commit()
+    registrar_evento(pub.usuario_id, "publication_cancelled", pub.id)
+    db.session.commit()
 
 
 def _eliminar_matches_de_publicacion(pub_id):
