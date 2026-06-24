@@ -83,6 +83,7 @@ def test_guardar_activa_preferencias_individuales(client, db):
     assert usuario.notif_confirmacion_parcial is True
     assert usuario.notif_confirmado_total is True
     assert usuario.notif_publicacion is True
+    assert usuario.notif_busqueda_guardada is True
 
 
 def test_guardar_individuales_con_push_ya_activo(client, db):
@@ -102,6 +103,21 @@ def test_guardar_individuales_con_push_ya_activo(client, db):
     assert usuario.push_activo is True
     assert usuario.notif_match is True
     assert usuario.notif_confirmacion_parcial is False
+
+
+def test_guardar_desactiva_notif_busqueda_guardada(client, db):
+    """El toggle de búsquedas guardadas se puede desactivar independientemente."""
+    usuario = _usuario()
+    usuario.push_activo = True
+    usuario.notif_busqueda_guardada = True
+    db.session.commit()
+    _login(client, "user@test.es")
+    client.post("/notificaciones/guardar", data={
+        "push_activo": "on",
+        # notif_busqueda_guardada ausente → False
+    })
+    db.session.refresh(usuario)
+    assert usuario.notif_busqueda_guardada is False
 
 
 # --- Suscripciones ---

@@ -118,6 +118,7 @@ def notificar_busquedas_guardadas(pub):
             db.session.add(Notificacion(
                 usuario_id=busqueda.usuario_id,
                 publicacion_id=pub.id,
+                busqueda_guardada_id=busqueda.id,
                 tipo="alerta_busqueda_guardada",
             ))
             usuario = db.session.get(Usuario, busqueda.usuario_id)

@@ -14,5 +14,7 @@ instance/
 htmlcov/
 .backlog
 .backlog.swo
+.notes
+.notes.*
 .testmondata
 .testmondata*

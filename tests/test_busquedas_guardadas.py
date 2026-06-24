@@ -297,3 +297,34 @@ def test_avisos_muestra_alerta_busqueda_guardada(client, db):
     resp = client.get("/avisos")
     assert resp.status_code == 200
     assert "Alerta" in resp.data.decode()
+
+
+def test_avisos_alerta_enlaza_a_resultados_de_busqueda(client, db):
+    """El aviso de alerta lleva a /cambios con los filtros de la búsqueda guardada."""
+    u1 = _usuario()
+    u2 = _usuario2()
+    guardar_busqueda(u1.id, {"tipo": "regalo"})
+    franja = _franja_id(u2)
+    with patch("app.push.sender.webpush"):
+        publicar_cambio(u2.id, [], [(date(2025, 7, 10), franja)], tipo="regalo")
+    _login(client, "u1@test.es")
+    resp = client.get("/avisos")
+    body = resp.data.decode()
+    assert "Ver resultados" in body
+    assert "tipo=regalo" in body
+
+
+def test_notif_busqueda_guardada_vincula_busqueda_al_crear(app, db):
+    """La notificación creada por alerta lleva el busqueda_guardada_id correcto."""
+    u1 = _usuario()
+    u2 = _usuario2()
+    busqueda = guardar_busqueda(u1.id, {"tipo": "regalo"})
+    franja = _franja_id(u2)
+    with app.app_context():
+        with patch("app.push.sender.webpush"):
+            publicar_cambio(u2.id, [], [(date(2025, 7, 10), franja)], tipo="regalo")
+        notif = Notificacion.query.filter_by(
+            usuario_id=u1.id, tipo="alerta_busqueda_guardada"
+        ).first()
+        assert notif is not None
+        assert notif.busqueda_guardada_id == busqueda.id

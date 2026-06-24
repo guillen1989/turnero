@@ -76,6 +76,17 @@
             <span class="toggle-slider"></span>
           </label>
         </div>
+        <div class="notif-toggle-row">
+          <label class="notif-toggle-label" for="notif_busqueda_guardada">
+            {{ _('Una publicación nueva coincide con alguna de tus búsquedas guardadas') }}
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notif_busqueda_guardada" name="notif_busqueda_guardada"
+                   {% if current_user.notif_busqueda_guardada %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
       </div>
       {% endif %}
     </form>

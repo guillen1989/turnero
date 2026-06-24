@@ -18,7 +18,7 @@ _PREF_ATTR = {
     "confirmado_total": "notif_confirmado_total",
     "publicacion": "notif_publicacion",
     "contraoferta": "notif_match",
-    "busqueda_guardada": "notif_publicacion",
+    "busqueda_guardada": "notif_busqueda_guardada",
 }
 
 # Mapa de tipo de notificación → URL de destino al tocar la push
