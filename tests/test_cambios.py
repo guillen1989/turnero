@@ -220,6 +220,69 @@ def test_cambios_filtro_mes_y_dia_incluye_turno_aceptado(client, db):
     assert b"05/09/2026" in resp.data
 
 
+def test_cambios_filtro_tipo_cambio(client, db):
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+
+    pub_cambio = _publicar(u2, date(2026, 9, 1), date(2026, 9, 2))
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u2.unidad.grupo_intercambio_id
+    ).first()
+    pub_regalo = PublicacionCambio(usuario_id=u2.id, tipo="regalo")
+    db.session.add(pub_regalo)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=pub_regalo.id, fecha=date(2026, 9, 3), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    resp = client.get("/cambios?tipo=cambio")
+    assert b"01/09/2026" in resp.data
+    assert b"03/09/2026" not in resp.data
+
+
+def test_cambios_filtro_tipo_regalo(client, db):
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+
+    _publicar(u2, date(2026, 9, 1), date(2026, 9, 2))  # cambio normal
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u2.unidad.grupo_intercambio_id
+    ).first()
+    pub_regalo = PublicacionCambio(usuario_id=u2.id, tipo="regalo")
+    db.session.add(pub_regalo)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=pub_regalo.id, fecha=date(2026, 9, 10), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    resp = client.get("/cambios?tipo=regalo")
+    assert b"10/09/2026" in resp.data
+    assert b"01/09/2026" not in resp.data
+
+
+def test_cambios_sin_filtro_tipo_muestra_todos(client, db):
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+
+    _publicar(u2, date(2026, 9, 1), date(2026, 9, 2))
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u2.unidad.grupo_intercambio_id
+    ).first()
+    pub_regalo = PublicacionCambio(usuario_id=u2.id, tipo="regalo")
+    db.session.add(pub_regalo)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=pub_regalo.id, fecha=date(2026, 9, 10), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    resp = client.get("/cambios")
+    assert b"01/09/2026" in resp.data
+    assert b"10/09/2026" in resp.data
+
+
 def test_cambios_filtro_franja(client, db):
     u1 = _usuario(email="u1@test.es")
     u2 = _usuario(email="u2@test.es")

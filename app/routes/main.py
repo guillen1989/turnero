@@ -210,6 +210,10 @@ def cambios():
     dia = request.args.get("dia", type=int)
     nombre = request.args.get("usuario", "").strip()
     franja_id = request.args.get("franja", type=int)
+    tipo = request.args.get("tipo", "").strip()
+    _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte"}
+    if tipo not in _TIPOS_VALIDOS:
+        tipo = ""
 
     grupo_id = current_user.unidad.grupo_intercambio_id
     franjas = (
@@ -267,6 +271,8 @@ def cambios():
                  TurnoAceptado.franja_horaria_id == franja_id)
         )
         q = q.filter(or_(cedido_franja, aceptado_franja))
+    if tipo:
+        q = q.filter(PublicacionCambio.tipo == tipo)
 
     publicaciones = q.distinct().order_by(PublicacionCambio.fecha_creacion.desc()).all()
 
@@ -274,8 +280,8 @@ def cambios():
     franjas_js = [{"id": f.id, "nombre": f.nombre} for f in franjas]
 
     return render_template("main/cambios.html", publicaciones=publicaciones,
-                           mes=mes, dia=dia, nombre=nombre, franja_id=franja_id, franjas=franjas,
-                           pub_js_data=pub_js_data, franjas_js=franjas_js)
+                           mes=mes, dia=dia, nombre=nombre, franja_id=franja_id, tipo=tipo,
+                           franjas=franjas, pub_js_data=pub_js_data, franjas_js=franjas_js)
 
 
 def _pub_js_data(pub):

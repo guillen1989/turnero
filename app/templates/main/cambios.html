@@ -41,6 +41,16 @@
         </select>
       </div>
       <div class="form-group">
+        <label>{{ _('Tipo de cambio') }}</label>
+        <select name="tipo">
+          <option value="">{{ _('— Todos los tipos —') }}</option>
+          <option value="cambio"   {% if tipo == 'cambio'   %}selected{% endif %}>{{ _('Cambio') }}</option>
+          <option value="regalo"   {% if tipo == 'regalo'   %}selected{% endif %}>{{ _('Regalo') }}</option>
+          <option value="peticion" {% if tipo == 'peticion' %}selected{% endif %}>{{ _('Petición') }}</option>
+          <option value="junte"    {% if tipo == 'junte'    %}selected{% endif %}>{{ _('Junte de noches') }}</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>{{ _('Usuario') }}</label>
         <input type="text" name="usuario"
                placeholder="{{ _('Nombre del compañero') }}"
@@ -49,7 +59,7 @@
     </div>
     <div class="cambios-filtro-actions">
       <button type="submit" class="btn btn-primary btn-sm">{{ _('Filtrar') }}</button>
-      {% if mes or dia or nombre or franja_id %}
+      {% if mes or dia or nombre or franja_id or tipo %}
       <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary btn-sm">{{ _('Limpiar') }}</a>
       {% endif %}
     </div>
@@ -128,7 +138,7 @@
   </ul>
   {% else %}
   <p class="empty-state">
-    {% if mes or dia or nombre or franja_id %}
+    {% if mes or dia or nombre or franja_id or tipo %}
       {{ _('No hay cambios publicados con ese filtro.') }}
     {% else %}
       {{ _('No hay cambios publicados por otros compañeros en este momento.') }}
