@@ -13,17 +13,21 @@ from pywebpush import WebPushException, webpush
 # Mapa de tipo de notificación → atributo de preferencia en Usuario
 _PREF_ATTR = {
     "match": "notif_match",
+    "match_parcial": "notif_match",
     "confirmacion_parcial": "notif_confirmacion_parcial",
     "confirmado_total": "notif_confirmado_total",
     "publicacion": "notif_publicacion",
+    "contraoferta": "notif_match",
 }
 
 # Mapa de tipo de notificación → URL de destino al tocar la push
 _URL_POR_TIPO = {
     "match": "/?estado=compatible",
+    "match_parcial": "/?estado=compatible",
     "confirmacion_parcial": "/?estado=pendiente",
     "confirmado_total": "/?estado=confirmada",
     "publicacion": "/avisos",
+    "contraoferta": "/avisos",
 }
 
 # Textos por tipo: (título, cuerpo_singular, cuerpo_plural)
@@ -32,6 +36,11 @@ _TEXTOS = {
         "Turnero",
         "Tienes 1 compatible nuevo",
         "Tienes {} compatibles nuevos",
+    ),
+    "match_parcial": (
+        "Turnero",
+        "Tienes 1 coincidencia parcial nueva",
+        "Tienes {} coincidencias parciales nuevas",
     ),
     "confirmacion_parcial": (
         "Turnero",
@@ -48,6 +57,11 @@ _TEXTOS = {
         "Hay 1 publicación nueva de compañeros",
         "Hay {} publicaciones nuevas de compañeros",
     ),
+    "contraoferta": (
+        "Turnero",
+        "Tienes 1 contraoferta nueva",
+        "Tienes {} contraofertas nuevas",
+    ),
 }
 
 
@@ -58,7 +72,7 @@ def _contar_pendientes(usuario, tipo):
     from app.extensions import db
     from app.models import MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio
 
-    if tipo == "match":
+    if tipo in ("match", "match_parcial"):
         return db.session.scalar(
             sa_select(func.count(MatchParticipacion.id))
             .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)

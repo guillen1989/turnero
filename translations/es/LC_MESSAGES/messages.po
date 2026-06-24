@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-24 07:46+0200\n"
+"POT-Creation-Date: 2026-06-24 08:06+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -639,7 +639,7 @@ msgstr ""
 #: app/templates/auth/perfil.html:3 app/templates/auth/perfil_cuenta.html:3
 #: app/templates/auth/registro.html:3 app/templates/base.html:14
 #: app/templates/feedback/nuevo.html:3 app/templates/main/cambios.html:3
-#: app/templates/main/dashboard.html:3 app/templates/main/dashboard.html:243
+#: app/templates/main/dashboard.html:3 app/templates/main/dashboard.html:256
 #: app/templates/main/index.html:5 app/templates/notificaciones/avisos.html:3
 #: app/templates/notificaciones/panel.html:3
 #: app/templates/publicaciones/editar.html:3
@@ -804,7 +804,7 @@ msgstr ""
 #: app/templates/admin/categorias.html:31 app/templates/admin/ciudades.html:36
 #: app/templates/admin/hospitales.html:38 app/templates/admin/paises.html:31
 #: app/templates/admin/provincias.html:34 app/templates/admin/unidades.html:37
-#: app/templates/admin/usuarios.html:33 app/templates/main/dashboard.html:211
+#: app/templates/admin/usuarios.html:33 app/templates/main/dashboard.html:224
 msgid "Editar"
 msgstr ""
 
@@ -817,7 +817,7 @@ msgstr ""
 #: app/templates/admin/provincias.html:37
 #: app/templates/admin/publicaciones.html:40
 #: app/templates/admin/unidades.html:40 app/templates/admin/usuarios.html:37
-#: app/templates/main/dashboard.html:216 app/templates/main/dashboard.html:247
+#: app/templates/main/dashboard.html:229 app/templates/main/dashboard.html:260
 #: app/templates/unidad/turnos.html:41
 msgid "Eliminar"
 msgstr ""
@@ -834,7 +834,7 @@ msgstr ""
 #: app/templates/admin/unidad_form.html:27
 #: app/templates/admin/usuario_form.html:144
 #: app/templates/feedback/nuevo.html:49 app/templates/main/cambios.html:174
-#: app/templates/main/dashboard.html:246
+#: app/templates/main/dashboard.html:259
 #: app/templates/publicaciones/editar.html:116
 #: app/templates/publicaciones/publicar.html:179
 msgid "Cancelar"
@@ -1239,34 +1239,34 @@ msgid "— Todos los tipos —"
 msgstr ""
 
 #: app/templates/main/cambios.html:47 app/templates/main/cambios.html:124
-#: app/templates/main/dashboard.html:157
+#: app/templates/main/dashboard.html:170
 #: app/templates/publicaciones/editar.html:23
 #: app/templates/publicaciones/publicar.html:24
 msgid "Cambio"
 msgstr ""
 
 #: app/templates/main/cambios.html:48 app/templates/main/cambios.html:79
-#: app/templates/main/dashboard.html:119
+#: app/templates/main/dashboard.html:132
 #: app/templates/publicaciones/editar.html:28
 #: app/templates/publicaciones/publicar.html:31
 msgid "Regalo"
 msgstr ""
 
 #: app/templates/main/cambios.html:49 app/templates/main/cambios.html:88
-#: app/templates/main/dashboard.html:127
+#: app/templates/main/dashboard.html:140
 #: app/templates/publicaciones/editar.html:33
 #: app/templates/publicaciones/publicar.html:38
 msgid "Petición"
 msgstr ""
 
 #: app/templates/main/cambios.html:50 app/templates/main/cambios.html:97
-#: app/templates/main/dashboard.html:135
+#: app/templates/main/dashboard.html:148
 #: app/templates/publicaciones/publicar.html:45
 msgid "Junte de noches"
 msgstr ""
 
 #: app/templates/main/cambios.html:51 app/templates/main/cambios.html:113
-#: app/templates/main/dashboard.html:149
+#: app/templates/main/dashboard.html:162
 #: app/templates/publicaciones/editar.html:38
 #: app/templates/publicaciones/publicar.html:52
 msgid "Cambio de turno en el día"
@@ -1452,152 +1452,172 @@ msgstr ""
 msgid "Caducados"
 msgstr ""
 
-#: app/templates/main/dashboard.html:48
+#: app/templates/main/dashboard.html:49
 msgid "¡Cambio a 3 bandas!"
 msgstr ""
 
-#: app/templates/main/dashboard.html:49
+#: app/templates/main/dashboard.html:50
 msgid "Esperando a los demás"
 msgstr ""
 
-#: app/templates/main/dashboard.html:50 app/templates/main/dashboard.html:54
+#: app/templates/main/dashboard.html:51 app/templates/main/dashboard.html:56
 msgid "Pendiente de tu confirmación"
 msgstr ""
 
-#: app/templates/main/dashboard.html:52
+#: app/templates/main/dashboard.html:54
+msgid "¡Coincidencia parcial!"
+msgstr ""
+
+#: app/templates/main/dashboard.html:54
 msgid "¡Compatible!"
 msgstr ""
 
-#: app/templates/main/dashboard.html:53
+#: app/templates/main/dashboard.html:55
 msgid "Esperando al otro usuario"
 msgstr ""
 
-#: app/templates/main/dashboard.html:58
+#: app/templates/main/dashboard.html:60
 msgid "y"
 msgstr ""
 
-#: app/templates/main/dashboard.html:65
+#: app/templates/main/dashboard.html:68
 msgid "Tú quieres librar:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:74
+#: app/templates/main/dashboard.html:68
+msgid "Trabajarías:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:78
 msgid "cede:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:83
+#: app/templates/main/dashboard.html:87
 msgid "Librarías:"
 msgstr ""
 
 #: app/templates/main/dashboard.html:96
+msgid ""
+"Coincidencia parcial: este usuario se ofrece a cubrirte un turno sin "
+"pedir nada a cambio. Tu turno ofrecido quedará sin cubrir."
+msgstr ""
+
+#: app/templates/main/dashboard.html:98
+msgid ""
+"Coincidencia parcial: este usuario quiere que le cubras un turno, pero el"
+" tuyo cedido quedará sin cubrir."
+msgstr ""
+
+#: app/templates/main/dashboard.html:109
 msgid "Confirmar"
 msgstr ""
 
-#: app/templates/main/dashboard.html:100
+#: app/templates/main/dashboard.html:113
 msgid "Rechazar"
 msgstr ""
 
-#: app/templates/main/dashboard.html:105
+#: app/templates/main/dashboard.html:118
 msgid "Has confirmado. Esperando a los demás."
 msgstr ""
 
-#: app/templates/main/dashboard.html:106
+#: app/templates/main/dashboard.html:119
 msgid "Has confirmado. Esperando al otro usuario."
 msgstr ""
 
-#: app/templates/main/dashboard.html:121 app/templates/main/dashboard.html:165
+#: app/templates/main/dashboard.html:134 app/templates/main/dashboard.html:178
 msgid "Me ofrezco a trabajar:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:123 app/templates/main/dashboard.html:167
+#: app/templates/main/dashboard.html:136 app/templates/main/dashboard.html:180
 msgid "Cualquier turno"
 msgstr ""
 
-#: app/templates/main/dashboard.html:129 app/templates/main/dashboard.html:159
+#: app/templates/main/dashboard.html:142 app/templates/main/dashboard.html:172
 msgid "Quiero librar:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:137
+#: app/templates/main/dashboard.html:150
 msgid "Noches que cedo:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:143
+#: app/templates/main/dashboard.html:156
 msgid "Noches que tomo:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:151
+#: app/templates/main/dashboard.html:164
 msgid "Quiero cambiar:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:175
+#: app/templates/main/dashboard.html:188
 msgid "Con:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:183
+#: app/templates/main/dashboard.html:196
 msgid "cualquier turno"
 msgstr ""
 
-#: app/templates/main/dashboard.html:186
+#: app/templates/main/dashboard.html:199
 msgid "Me ofrezco a trabajar en sustitución: "
 msgstr ""
 
-#: app/templates/main/dashboard.html:186 app/templates/main/dashboard.html:198
-#: app/templates/main/dashboard.html:202 app/templates/main/dashboard.html:208
+#: app/templates/main/dashboard.html:199 app/templates/main/dashboard.html:211
+#: app/templates/main/dashboard.html:215 app/templates/main/dashboard.html:221
 msgid "¿Te interesa? Únete en Turnero:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:192
+#: app/templates/main/dashboard.html:205
 msgid "Busco a alguien que me cubra un turno: "
 msgstr ""
 
-#: app/templates/main/dashboard.html:192
+#: app/templates/main/dashboard.html:205
 msgid "¿Puedes ayudarme? Únete en Turnero:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:198
+#: app/templates/main/dashboard.html:211
 msgid "Busco compañero/a para un junte de noches: "
 msgstr ""
 
-#: app/templates/main/dashboard.html:202
+#: app/templates/main/dashboard.html:215
 msgid "Busco cambio de turno en el día: tengo el "
 msgstr ""
 
-#: app/templates/main/dashboard.html:202
+#: app/templates/main/dashboard.html:215
 msgid " del "
 msgstr ""
 
-#: app/templates/main/dashboard.html:202
+#: app/templates/main/dashboard.html:215
 msgid " y busco el "
 msgstr ""
 
-#: app/templates/main/dashboard.html:208
+#: app/templates/main/dashboard.html:221
 msgid "Busco compañero/a para un cambio de turno. Quiero librar: "
 msgstr ""
 
-#: app/templates/main/dashboard.html:222
+#: app/templates/main/dashboard.html:235
 msgid "Compartir"
 msgstr ""
 
-#: app/templates/main/dashboard.html:231
+#: app/templates/main/dashboard.html:244
 msgid "No tienes cambios compatibles aún."
 msgstr ""
 
-#: app/templates/main/dashboard.html:232
+#: app/templates/main/dashboard.html:245
 msgid "No tienes cambios pendientes de confirmar."
 msgstr ""
 
-#: app/templates/main/dashboard.html:233
+#: app/templates/main/dashboard.html:246
 msgid "No tienes publicaciones confirmadas."
 msgstr ""
 
-#: app/templates/main/dashboard.html:234
+#: app/templates/main/dashboard.html:247
 msgid "No tienes publicaciones caducadas."
 msgstr ""
 
-#: app/templates/main/dashboard.html:235
+#: app/templates/main/dashboard.html:248
 msgid "No tienes publicaciones activas."
 msgstr ""
 
-#: app/templates/main/dashboard.html:244
+#: app/templates/main/dashboard.html:257
 msgid ""
 "¿Seguro que quieres eliminar esta publicación? Esta acción no se puede "
 "deshacer."

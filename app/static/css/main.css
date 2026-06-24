@@ -392,6 +392,17 @@ body {
 }
 
 .match-badge--confirmado_parcial { background: #dbeafe; color: #1e40af; }
+.match-badge--parcial { background: #fed7aa; color: #9a3412; }
+
+.match-aviso-parcial {
+  font-size: 0.82rem;
+  color: #92400e;
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  padding: 0.35rem 0.6rem;
+  margin: 0.5rem 0 0.25rem;
+  border-radius: 0 4px 4px 0;
+}
 
 .match-usuario { font-weight: 600; font-size: 0.9rem; }
 

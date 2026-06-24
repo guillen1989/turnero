@@ -41,15 +41,17 @@
   {% if matches %}
   <section class="matches-section">
     {% for match, mi_part, otras_parts in matches %}
+    {% set es_parcial = (match.tipo != 'cadena_3') and (mi_part.publicacion.tipo == 'cambio') and (otras_parts[0].publicacion.tipo in ('regalo', 'peticion')) %}
     <div class="match-card match--{{ match.estado }}{% if match.tipo == 'cadena_3' %} match--cadena-3{% endif %}">
       <div class="match-header">
-        <span class="match-badge match-badge--{{ match.estado }}">
+        <span class="match-badge match-badge--{{ match.estado }}{% if es_parcial and estado_filtro == 'compatible' %} match-badge--parcial{% endif %}">
           {% if match.tipo == 'cadena_3' %}
             {% if estado_filtro == 'compatible' %}{{ _('¡Cambio a 3 bandas!') }}
             {% elif mi_part.confirmado %}{{ _('Esperando a los demás') }}
             {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
           {% else %}
-            {% if estado_filtro == 'compatible' %}{{ _('¡Compatible!') }}
+            {% if estado_filtro == 'compatible' %}
+              {% if es_parcial %}{{ _('¡Coincidencia parcial!') }}{% else %}{{ _('¡Compatible!') }}{% endif %}
             {% elif mi_part.confirmado %}{{ _('Esperando al otro usuario') }}
             {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
           {% endif %}
@@ -62,7 +64,9 @@
       <div class="match-turnos">
         {% if mi_turno %}
         <div class="match-turno">
-          <span class="match-turno-label">{{ _('Tú quieres librar:') }}</span>
+          <span class="match-turno-label">
+            {% if mi_part.turno_cedido %}{{ _('Tú quieres librar:') }}{% else %}{{ _('Trabajarías:') }}{% endif %}
+          </span>
           {{ mi_turno.fecha.strftime('%d/%m/%Y') }} — {{ mi_turno.franja_horaria.nombre }}
         </div>
         {% endif %}
@@ -86,6 +90,15 @@
           {% endif %}
         {% endif %}
       </div>
+      {% if es_parcial %}
+      <p class="match-aviso-parcial">
+        {% if otras_parts[0].publicacion.tipo == 'regalo' %}
+          {{ _('Coincidencia parcial: este usuario se ofrece a cubrirte un turno sin pedir nada a cambio. Tu turno ofrecido quedará sin cubrir.') }}
+        {% else %}
+          {{ _('Coincidencia parcial: este usuario quiere que le cubras un turno, pero el tuyo cedido quedará sin cubrir.') }}
+        {% endif %}
+      </p>
+      {% endif %}
       {% if match.tipo != 'cadena_3' and otras_parts[0].publicacion.mensaje %}
       <p class="match-mensaje">"{{ otras_parts[0].publicacion.mensaje }}"</p>
       {% endif %}

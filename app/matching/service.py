@@ -224,6 +224,11 @@ def _roles_peticion_cambio(pub_a, pub_b):
     return tc_a, None, None, ta_b
 
 
+_PARES_PARCIALES = frozenset({
+    ("cambio", "regalo"), ("regalo", "cambio"),
+    ("cambio", "peticion"), ("peticion", "cambio"),
+})
+
 # (tipo_a, tipo_b) → handler(pub_a, pub_b) → (tc_a, ta_a, tc_b, ta_b)
 # Cada handler devuelve el turno cedido y aceptado que aporta cada publicación.
 # None significa que esa publicación no aporta ese tipo de turno.
@@ -266,7 +271,14 @@ def crear_match_directo(pub_a, pub_b):
     db.session.add(Notificacion(usuario_id=pub_b.usuario_id, match_id=match.id, tipo="nuevo_match"))
     db.session.commit()
 
-    enviar_push_condicional(pub_b.usuario, "match")
+    tipos_par = (pub_a.tipo, pub_b.tipo)
+    if tipos_par in _PARES_PARCIALES:
+        usuario_cambio = pub_a.usuario if pub_a.tipo == "cambio" else pub_b.usuario
+        usuario_otro = pub_b.usuario if pub_a.tipo == "cambio" else pub_a.usuario
+        enviar_push_condicional(usuario_cambio, "match_parcial")
+        enviar_push_condicional(usuario_otro, "match")
+    else:
+        enviar_push_condicional(pub_b.usuario, "match")
 
     return match
 
