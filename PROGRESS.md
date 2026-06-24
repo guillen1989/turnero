@@ -71,6 +71,7 @@ Sin pasos pendientes definidos.
 - [x] refactor+perf: resolver_geo/hospital/unidad extraídos a services/registro · _conteos_tabs consolida confirmada+caducada en 1 GROUP BY · 316 tests passing
 - [x] fix(ui): «Me interesa» en publicaciones Regalo omite el diálogo de selección de turno y pasa directamente a pendiente de confirmar · backend auto-usa los turnos_aceptados del regalo como cedidos de la petición espejo · 375 tests passing
 - [x] fix(ui): «Me interesa» en Petición de turno único pasa directo sin diálogo · _pub_js_data añade cualquierFranja a cedidos y defiende contra franja_horaria=None · con varios cedidos o cedido de cualquier turno mantiene el diálogo · 376 tests passing
+- [x] feat(ui): tarjetas de match muestran «libra» y «trabaja» de cada parte implicada · _calcular_trabajas() aplica fórmula (i-1)%N sobre el ciclo de participaciones · cubre cambio directo, cadena a 3 bandas y coincidencias parciales · 376 tests passing
 
 ## Backlog de calidad (pendiente)
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓
