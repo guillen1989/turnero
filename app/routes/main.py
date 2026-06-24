@@ -9,6 +9,11 @@ from app.services.caducidad import caducar_publicaciones_expiradas
 
 bp = Blueprint("main", __name__)
 
+@bp.route("/debug-sentry")
+  def debug_sentry():
+      raise Exception("Test de error desde GlitchTip")
+
+
 
 @bp.get("/health")
 def health():

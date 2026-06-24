@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-06-20 11:28+0200\n"
+"POT-Creation-Date: 2026-06-24 08:54+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,4 +16,2107 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#: app/forms/admin.py:8 app/forms/admin.py:23 app/forms/admin.py:29
+#: app/forms/admin.py:42 app/templates/admin/usuarios.html:14
+#: app/templates/publicaciones/publicar.html:191
+#: app/templates/unidad/turnos.html:25 app/templates/unidad/turnos.html:78
+msgid "Nombre"
+msgstr ""
+
+#: app/forms/admin.py:9 app/forms/auth.py:13 app/forms/auth.py:68
+#: app/forms/auth.py:85
+msgid "Correo electrónico"
+msgstr ""
+
+#: app/forms/admin.py:10
+msgid "Contraseña (dejar vacío para no cambiar)"
+msgstr ""
+
+#: app/forms/admin.py:11 app/forms/auth.py:25 app/forms/auth.py:44
+msgid "Nuevo país"
+msgstr ""
+
+#: app/forms/admin.py:12 app/forms/auth.py:26 app/forms/auth.py:45
+msgid "Nueva provincia"
+msgstr ""
+
+#: app/forms/admin.py:13 app/forms/auth.py:27 app/forms/auth.py:46
+msgid "Nueva ciudad"
+msgstr ""
+
+#: app/forms/admin.py:14
+msgid "Nuevo hospital"
+msgstr ""
+
+#: app/forms/admin.py:15
+msgid "Nueva unidad"
+msgstr ""
+
+#: app/forms/admin.py:16 app/forms/admin.py:49
+#: app/templates/admin/categorias.html:20 app/templates/admin/unidades.html:23
+#: app/templates/admin/usuarios.html:18
+msgid "Categoría"
+msgstr ""
+
+#: app/forms/admin.py:17
+msgid "Nueva categoría"
+msgstr ""
+
+#: app/forms/admin.py:18
+msgid "Administrador"
+msgstr ""
+
+#: app/forms/admin.py:19 app/forms/admin.py:25 app/forms/admin.py:31
+#: app/forms/admin.py:37 app/forms/admin.py:43 app/forms/admin.py:50
+msgid "Guardar"
+msgstr ""
+
+#: app/forms/admin.py:24 app/templates/admin/ciudades.html:21
+#: app/templates/admin/hospitales.html:21 app/templates/admin/paises.html:20
+#: app/templates/admin/provincias.html:21
+#: app/templates/admin/usuario_form.html:30 app/templates/auth/perfil.html:18
+#: app/templates/auth/registro.html:45
+msgid "País"
+msgstr ""
+
+#: app/forms/admin.py:30 app/templates/admin/ciudades.html:22
+#: app/templates/admin/hospitales.html:22
+#: app/templates/admin/provincias.html:22
+#: app/templates/admin/usuario_form.html:46 app/templates/auth/perfil.html:34
+#: app/templates/auth/registro.html:61
+msgid "Provincia"
+msgstr ""
+
+#: app/forms/admin.py:35 app/templates/admin/hospitales.html:12
+#: app/templates/admin/usuario_form.html:100 app/templates/auth/perfil.html:88
+#: app/templates/auth/registro.html:94
+msgid "Nombre del hospital"
+msgstr ""
+
+#: app/forms/admin.py:36 app/templates/admin/ciudades.html:23
+#: app/templates/admin/hospitales.html:23
+#: app/templates/admin/usuario_form.html:66 app/templates/auth/perfil.html:54
+#: app/templates/auth/registro.html:74
+msgid "Ciudad"
+msgstr ""
+
+#: app/forms/admin.py:47 app/templates/admin/unidades.html:13
+#: app/templates/admin/usuario_form.html:132 app/templates/auth/perfil.html:124
+#: app/templates/auth/registro.html:123
+msgid "Nombre de la unidad"
+msgstr ""
+
+#: app/forms/admin.py:48 app/templates/admin/hospitales.html:24
+#: app/templates/admin/unidades.html:22
+#: app/templates/admin/usuario_form.html:86
+#: app/templates/admin/usuarios.html:16 app/templates/auth/perfil.html:74
+#: app/templates/auth/registro.html:87
+msgid "Hospital"
+msgstr ""
+
+#: app/forms/auth.py:9 app/forms/auth.py:64
+msgid "Nombre completo"
+msgstr ""
+
+#: app/forms/auth.py:17 app/forms/auth.py:89
+msgid "Contraseña"
+msgstr ""
+
+#: app/forms/auth.py:18 app/forms/auth.py:74
+msgid "Mínimo 8 caracteres"
+msgstr ""
+
+#: app/forms/auth.py:21
+msgid "Repite la contraseña"
+msgstr ""
+
+#: app/forms/auth.py:22 app/forms/auth.py:78
+msgid "Las contraseñas no coinciden"
+msgstr ""
+
+#: app/forms/auth.py:28 app/forms/auth.py:47
+msgid "Nombre del nuevo hospital"
+msgstr ""
+
+#: app/forms/auth.py:29 app/forms/auth.py:48
+msgid "Nombre de la nueva unidad"
+msgstr ""
+
+#: app/forms/auth.py:31 app/forms/auth.py:50
+msgid "Categoría profesional"
+msgstr ""
+
+#: app/forms/auth.py:37 app/forms/auth.py:56
+msgid "Nombre de la nueva categoría"
+msgstr ""
+
+#: app/forms/auth.py:40 app/templates/auth/registro.html:3
+#: app/templates/auth/registro.html:7 app/templates/base.html:43
+#: app/templates/main/index.html:8
+msgid "Crear cuenta"
+msgstr ""
+
+#: app/forms/auth.py:59 app/forms/auth.py:80
+#: app/templates/publicaciones/editar.html:115
+msgid "Guardar cambios"
+msgstr ""
+
+#: app/forms/auth.py:71
+msgid "Contraseña actual"
+msgstr ""
+
+#: app/forms/auth.py:73
+msgid "Nueva contraseña"
+msgstr ""
+
+#: app/forms/auth.py:77
+msgid "Repite la nueva contraseña"
+msgstr ""
+
+#: app/forms/auth.py:92 app/templates/auth/login.html:3
+#: app/templates/auth/login.html:7 app/templates/base.html:42
+#: app/templates/main/index.html:9
+msgid "Entrar"
+msgstr ""
+
+#: app/routes/admin.py:50 app/routes/auth.py:51
+msgid "— Añadir nueva categoría —"
+msgstr ""
+
+#: app/routes/admin.py:56
+msgid "— Sin categoría —"
+msgstr ""
+
+#: app/routes/admin.py:130 app/routes/admin.py:197 app/routes/auth.py:82
+#: app/routes/auth.py:235
+msgid "Selecciona un hospital o escribe el nombre de uno nuevo."
+msgstr ""
+
+#: app/routes/admin.py:133 app/routes/admin.py:200 app/routes/auth.py:85
+#: app/routes/auth.py:238
+msgid "Selecciona una unidad o escribe el nombre de una nueva."
+msgstr ""
+
+#: app/routes/admin.py:136 app/routes/admin.py:203 app/routes/auth.py:88
+#: app/routes/auth.py:241
+msgid "Indica una categoría o escribe una nueva."
+msgstr ""
+
+#: app/routes/admin.py:139
+msgid "La contraseña es obligatoria para usuarios nuevos."
+msgstr ""
+
+#: app/routes/admin.py:159
+msgid "Usuario creado."
+msgstr ""
+
+#: app/routes/admin.py:164
+msgid "Nuevo usuario"
+msgstr ""
+
+#: app/routes/admin.py:221
+msgid "Usuario actualizado."
+msgstr ""
+
+#: app/routes/admin.py:250
+msgid "Editar usuario"
+msgstr ""
+
+#: app/routes/admin.py:269
+msgid "No puedes eliminarte a ti mismo."
+msgstr ""
+
+#: app/routes/admin.py:297
+msgid "Usuario eliminado."
+msgstr ""
+
+#: app/routes/admin.py:312
+msgid "País creado."
+msgstr ""
+
+#: app/routes/admin.py:326
+msgid "País actualizado."
+msgstr ""
+
+#: app/routes/admin.py:328
+msgid "Editar país"
+msgstr ""
+
+#: app/routes/admin.py:336
+msgid "No se puede eliminar: el país tiene provincias asociadas."
+msgstr ""
+
+#: app/routes/admin.py:340
+msgid "País eliminado."
+msgstr ""
+
+#: app/routes/admin.py:357
+msgid "Provincia creada."
+msgstr ""
+
+#: app/routes/admin.py:373
+msgid "Provincia actualizada."
+msgstr ""
+
+#: app/routes/admin.py:377
+msgid "Editar provincia"
+msgstr ""
+
+#: app/routes/admin.py:385
+msgid "No se puede eliminar: la provincia tiene ciudades asociadas."
+msgstr ""
+
+#: app/routes/admin.py:389
+msgid "Provincia eliminada."
+msgstr ""
+
+#: app/routes/admin.py:406
+msgid "Ciudad creada."
+msgstr ""
+
+#: app/routes/admin.py:422
+msgid "Ciudad actualizada."
+msgstr ""
+
+#: app/routes/admin.py:426
+msgid "Editar ciudad"
+msgstr ""
+
+#: app/routes/admin.py:434
+msgid "No se puede eliminar: la ciudad tiene hospitales asociados."
+msgstr ""
+
+#: app/routes/admin.py:438
+msgid "Ciudad eliminada."
+msgstr ""
+
+#: app/routes/admin.py:450 app/routes/admin.py:467
+msgid "— Sin ciudad —"
+msgstr ""
+
+#: app/routes/admin.py:456
+msgid "Hospital creado."
+msgstr ""
+
+#: app/routes/admin.py:473
+msgid "Hospital actualizado."
+msgstr ""
+
+#: app/routes/admin.py:477
+msgid "Editar hospital"
+msgstr ""
+
+#: app/routes/admin.py:487
+msgid "No se puede eliminar: alguna de sus unidades tiene usuarios asociados."
+msgstr ""
+
+#: app/routes/admin.py:495
+#, python-format
+msgid "Hospital eliminado junto con sus %(n)s unidades."
+msgstr ""
+
+#: app/routes/admin.py:497
+msgid "Hospital eliminado."
+msgstr ""
+
+#: app/routes/admin.py:517
+msgid "Unidad creada."
+msgstr ""
+
+#: app/routes/admin.py:536
+msgid "Unidad actualizada."
+msgstr ""
+
+#: app/routes/admin.py:541
+msgid "Editar unidad"
+msgstr ""
+
+#: app/routes/admin.py:549
+msgid "No se puede eliminar: la unidad tiene usuarios asociados."
+msgstr ""
+
+#: app/routes/admin.py:553
+msgid "Unidad eliminada."
+msgstr ""
+
+#: app/routes/admin.py:568
+msgid "Categoría creada."
+msgstr ""
+
+#: app/routes/admin.py:582
+msgid "Categoría actualizada."
+msgstr ""
+
+#: app/routes/admin.py:584
+msgid "Editar categoría"
+msgstr ""
+
+#: app/routes/admin.py:592
+msgid "No se puede eliminar: la categoría tiene usuarios asociados."
+msgstr ""
+
+#: app/routes/admin.py:596
+msgid "Categoría eliminada."
+msgstr ""
+
+#: app/routes/admin.py:622 app/routes/publicaciones.py:251
+msgid "Publicación cancelada."
+msgstr ""
+
+#: app/routes/admin.py:632 app/routes/publicaciones.py:307
+msgid "Publicación eliminada."
+msgstr ""
+
+#: app/routes/auth.py:125
+#, python-format
+msgid "¡Bienvenido/a, %(nombre)s!"
+msgstr ""
+
+#: app/routes/auth.py:127
+msgid "Tu unidad es nueva. Configura los turnos disponibles en tu servicio."
+msgstr ""
+
+#: app/routes/auth.py:132
+msgid "Ese correo ya está registrado."
+msgstr ""
+
+#: app/routes/auth.py:154
+msgid "Correo o contraseña incorrectos."
+msgstr ""
+
+#: app/routes/auth.py:163
+msgid "Has cerrado sesión."
+msgstr ""
+
+#: app/routes/auth.py:275
+msgid "Perfil actualizado correctamente."
+msgstr ""
+
+#: app/routes/auth.py:277
+msgid "Has creado una nueva unidad. Configura sus turnos."
+msgstr ""
+
+#: app/routes/auth.py:341
+msgid ""
+"Debes introducir tu contraseña actual para cambiar el correo o la "
+"contraseña."
+msgstr ""
+
+#: app/routes/auth.py:348
+msgid "Ese correo ya está registrado por otro usuario."
+msgstr ""
+
+#: app/routes/auth.py:358
+msgid "Datos de cuenta actualizados correctamente."
+msgstr ""
+
+#: app/routes/auth.py:375
+#, python-format
+msgid ""
+"¡Únete a Turnero! Usamos esta app en %(hospital)s / %(unidad)s para "
+"intercambiar turnos. Regístrate con este enlace y tus datos ya estarán "
+"pre-rellenados: %(url)s"
+msgstr ""
+
+#: app/routes/feedback.py:10
+msgid "Error en la app"
+msgstr ""
+
+#: app/routes/feedback.py:10
+msgid "Sugerencia de mejora"
+msgstr ""
+
+#: app/routes/feedback.py:23
+msgid "Por favor, completa todos los campos obligatorios."
+msgstr ""
+
+#: app/routes/feedback.py:28
+msgid "Tipo de mensaje no válido."
+msgstr ""
+
+#: app/routes/feedback.py:40
+msgid "Gracias, hemos recibido tu mensaje."
+msgstr ""
+
+#: app/routes/matches.py:30
+msgid "Has confirmado tu parte del cambio."
+msgstr ""
+
+#: app/routes/matches.py:39
+msgid "Has rechazado el cambio."
+msgstr ""
+
+#: app/routes/notificaciones.py:43
+msgid "Preferencias de notificaciones guardadas."
+msgstr ""
+
+#: app/routes/notificaciones.py:51
+msgid "No puedes suscribirte a tus propias publicaciones."
+msgstr ""
+
+#: app/routes/publicaciones.py:31
+msgid "Indica la semana del junte."
+msgstr ""
+
+#: app/routes/publicaciones.py:33
+msgid "Selecciona tu cadencia de noches."
+msgstr ""
+
+#: app/routes/publicaciones.py:40
+msgid "No hay turno nocturno configurado para tu unidad."
+msgstr ""
+
+#: app/routes/publicaciones.py:47
+msgid "Datos del junte incorrectos."
+msgstr ""
+
+#: app/routes/publicaciones.py:53
+msgid "La semana del junte no puede ser anterior a la semana actual."
+msgstr ""
+
+#: app/routes/publicaciones.py:59
+#, python-format
+msgid "Debes seleccionar exactamente %(n)s noches."
+msgstr ""
+
+#: app/routes/publicaciones.py:65
+msgid "Debes seleccionar noches diferentes a las que ya tienes."
+msgstr ""
+
+#: app/routes/publicaciones.py:67
+msgid "Debes incluir al menos una noche de la otra cadencia."
+msgstr ""
+
+#: app/routes/publicaciones.py:82
+msgid "Indica la fecha del cambio."
+msgstr ""
+
+#: app/routes/publicaciones.py:84
+msgid "Indica tu turno actual."
+msgstr ""
+
+#: app/routes/publicaciones.py:86
+msgid "Indica el turno que deseas."
+msgstr ""
+
+#: app/routes/publicaciones.py:94
+msgid "Datos del cambio de turno incorrectos."
+msgstr ""
+
+#: app/routes/publicaciones.py:97 app/routes/publicaciones.py:147
+msgid "El turno que cedes y el que deseas deben ser diferentes."
+msgstr ""
+
+#: app/routes/publicaciones.py:99 app/routes/publicaciones.py:149
+#: app/routes/publicaciones.py:458
+msgid "Las fechas de los turnos no pueden ser anteriores a hoy."
+msgstr ""
+
+#: app/routes/publicaciones.py:132 app/routes/publicaciones.py:452
+msgid "Debes indicar al menos un turno que cedes."
+msgstr ""
+
+#: app/routes/publicaciones.py:134 app/routes/publicaciones.py:455
+msgid "Debes indicar al menos un turno que aceptarías."
+msgstr ""
+
+#: app/routes/publicaciones.py:137
+msgid "Debes indicar al menos un turno que ofreces trabajar."
+msgstr ""
+
+#: app/routes/publicaciones.py:140
+msgid "Debes indicar al menos un turno que quieres librar."
+msgstr ""
+
+#: app/routes/publicaciones.py:143
+msgid "Debes indicar el turno que cedes y el que deseas."
+msgstr ""
+
+#: app/routes/publicaciones.py:145
+msgid "El turno cedido y el deseado deben ser del mismo día."
+msgstr ""
+
+#: app/routes/publicaciones.py:190
+#, python-format
+msgid "Tipo de turno «%(n)s» creado."
+msgstr ""
+
+#: app/routes/publicaciones.py:192
+msgid "Ya existe un turno con ese nombre."
+msgstr ""
+
+#: app/routes/publicaciones.py:194
+msgid "Datos del turno incorrectos."
+msgstr ""
+
+#: app/routes/publicaciones.py:236
+msgid "Publicación creada correctamente."
+msgstr ""
+
+#: app/routes/publicaciones.py:262
+msgid "Solo puedes editar publicaciones activas."
+msgstr ""
+
+#: app/routes/publicaciones.py:294
+msgid "Publicación actualizada."
+msgstr ""
+
+#: app/routes/publicaciones.py:317
+msgid "No puedes aceptar tu propia publicación."
+msgstr ""
+
+#: app/routes/publicaciones.py:321 app/routes/publicaciones.py:425
+msgid "Esta publicación ya no está activa."
+msgstr ""
+
+#: app/routes/publicaciones.py:338
+msgid "No fue posible crear el match. Los turnos pueden haber cambiado."
+msgstr ""
+
+#: app/routes/publicaciones.py:341
+msgid "¡Match creado! Ve a «Mis cambios» para confirmar."
+msgstr ""
+
+#: app/routes/publicaciones.py:352
+msgid "Selecciona el turno que te interesa."
+msgstr ""
+
+#: app/routes/publicaciones.py:355
+msgid "Turno no encontrado en esta publicación."
+msgstr ""
+
+#: app/routes/publicaciones.py:359 app/routes/publicaciones.py:400
+msgid "Especifica el turno que quieres librar."
+msgstr ""
+
+#: app/routes/publicaciones.py:368
+msgid "Selecciona el turno que quieres cubrir."
+msgstr ""
+
+#: app/routes/publicaciones.py:371
+msgid "Turno no encontrado o ya resuelto."
+msgstr ""
+
+#: app/routes/publicaciones.py:378
+msgid "El junte ya no tiene turnos disponibles."
+msgstr ""
+
+#: app/routes/publicaciones.py:385
+msgid "Este cambio de turno ya no está disponible."
+msgstr ""
+
+#: app/routes/publicaciones.py:392
+msgid "Selecciona los dos turnos."
+msgstr ""
+
+#: app/routes/publicaciones.py:396
+msgid "Turnos no encontrados en esta publicación."
+msgstr ""
+
+#: app/routes/publicaciones.py:407
+msgid "Tipo de publicación no reconocido."
+msgstr ""
+
+#: app/routes/publicaciones.py:429
+msgid "No puedes hacer una contraoferta a tu propia publicación."
+msgstr ""
+
+#: app/routes/publicaciones.py:465
+msgid ""
+"La contraoferta debe coincidir con al menos una parte de la publicación "
+"original."
+msgstr ""
+
+#: app/routes/publicaciones.py:488
+msgid ""
+"Tu contraoferta ha sido enviada. El autor de la publicación recibirá un "
+"aviso."
+msgstr ""
+
+#: app/routes/unidad.py:50
+msgid "Plantilla aplicada. Revisa los turnos resultantes."
+msgstr ""
+
+#: app/routes/unidad.py:64
+msgid "El nombre del turno es obligatorio."
+msgstr ""
+
+#: app/routes/unidad.py:71
+msgid "Formato de hora no válido. Usa HH:MM."
+msgstr ""
+
+#: app/routes/unidad.py:78
+#, python-format
+msgid "Turno «%(nombre)s» añadido."
+msgstr ""
+
+#: app/routes/unidad.py:91
+msgid "Turno eliminado."
+msgstr ""
+
+#: app/templates/base.html:7
+msgid "Cambio de turnos"
+msgstr ""
+
+#: app/templates/admin/index.html:3 app/templates/auth/login.html:3
+#: app/templates/auth/perfil.html:3 app/templates/auth/perfil_cuenta.html:3
+#: app/templates/auth/registro.html:3 app/templates/base.html:14
+#: app/templates/feedback/nuevo.html:3 app/templates/main/cambios.html:3
+#: app/templates/main/contraoferta.html:3 app/templates/main/dashboard.html:3
+#: app/templates/main/dashboard.html:256 app/templates/main/index.html:5
+#: app/templates/notificaciones/avisos.html:3
+#: app/templates/notificaciones/panel.html:3
+#: app/templates/publicaciones/editar.html:3
+#: app/templates/publicaciones/publicar.html:3
+#: app/templates/unidad/turnos.html:3
+msgid "Turnero"
+msgstr ""
+
+#: app/templates/base.html:18 app/templates/notificaciones/avisos.html:3
+#: app/templates/notificaciones/avisos.html:7
+msgid "Avisos"
+msgstr ""
+
+#: app/templates/base.html:22
+msgid "Menú"
+msgstr ""
+
+#: app/templates/base.html:29
+msgid "Mis cambios"
+msgstr ""
+
+#: app/templates/base.html:30
+msgid "Buscar cambios"
+msgstr ""
+
+#: app/templates/base.html:31 app/templates/notificaciones/panel.html:3
+#: app/templates/notificaciones/panel.html:7
+msgid "Notificaciones"
+msgstr ""
+
+#: app/templates/auth/perfil.html:3 app/templates/auth/perfil.html:7
+#: app/templates/auth/perfil_cuenta.html:3
+#: app/templates/auth/perfil_cuenta.html:7 app/templates/base.html:32
+msgid "Mi perfil"
+msgstr ""
+
+#: app/templates/base.html:34
+msgid "Administración"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:15 app/templates/admin/feedback.html:3
+#: app/templates/base.html:35
+msgid "Feedback"
+msgstr ""
+
+#: app/templates/base.html:38
+msgid "Cerrar sesión"
+msgstr ""
+
+#: app/templates/base.html:53 app/templates/base.html:68
+msgid "Instala Turnero"
+msgstr ""
+
+#: app/templates/base.html:54
+msgid "Accede más rápido desde tu pantalla de inicio"
+msgstr ""
+
+#: app/templates/base.html:58
+msgid "Instalar"
+msgstr ""
+
+#: app/templates/base.html:59 app/templates/base.html:74
+msgid "Cerrar"
+msgstr ""
+
+#: app/templates/base.html:69
+msgid "Pulsa"
+msgstr ""
+
+#: app/templates/base.html:71
+msgid "y luego \"Añadir a pantalla de inicio\""
+msgstr ""
+
+#: app/templates/base.html:92
+msgid "¿Tienes algún problema o sugerencia?"
+msgstr ""
+
+#: app/templates/base.html:186
+msgid "Notificaciones activas ✓"
+msgstr ""
+
+#: app/templates/base.html:189
+msgid "Activar notificaciones"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:6
+msgid "Resumen"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:7 app/templates/admin/categorias.html:21
+#: app/templates/admin/index.html:10 app/templates/admin/unidades.html:25
+#: app/templates/admin/usuarios.html:3 app/templates/admin/usuarios.html:7
+msgid "Usuarios"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:8 app/templates/admin/paises.html:3
+#: app/templates/admin/paises.html:6
+msgid "Países"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:9 app/templates/admin/paises.html:21
+#: app/templates/admin/provincias.html:3 app/templates/admin/provincias.html:6
+msgid "Provincias"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:10 app/templates/admin/ciudades.html:3
+#: app/templates/admin/ciudades.html:6 app/templates/admin/provincias.html:23
+msgid "Ciudades"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:11 app/templates/admin/ciudades.html:24
+#: app/templates/admin/hospitales.html:3 app/templates/admin/hospitales.html:6
+#: app/templates/admin/index.html:14
+msgid "Hospitales"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:12
+#: app/templates/admin/hospitales.html:25 app/templates/admin/index.html:18
+#: app/templates/admin/unidades.html:3 app/templates/admin/unidades.html:6
+msgid "Unidades"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:13 app/templates/admin/categorias.html:3
+#: app/templates/admin/index.html:22
+msgid "Categorías"
+msgstr ""
+
+#: app/templates/admin/base_admin.html:14 app/templates/admin/index.html:26
+#: app/templates/admin/publicaciones.html:3
+msgid "Cambios"
+msgstr ""
+
+#: app/templates/admin/categorias.html:3 app/templates/admin/ciudad_form.html:3
+#: app/templates/admin/ciudades.html:3 app/templates/admin/feedback.html:3
+#: app/templates/admin/hospital_form.html:3
+#: app/templates/admin/hospitales.html:3 app/templates/admin/nombre_form.html:3
+#: app/templates/admin/paises.html:3 app/templates/admin/provincia_form.html:3
+#: app/templates/admin/provincias.html:3
+#: app/templates/admin/publicaciones.html:3
+#: app/templates/admin/unidad_form.html:3 app/templates/admin/unidades.html:3
+#: app/templates/admin/usuario_form.html:3 app/templates/admin/usuarios.html:3
+#: app/templates/admin/usuarios.html:19
+msgid "Admin"
+msgstr ""
+
+#: app/templates/admin/categorias.html:6
+msgid "Categorías profesionales"
+msgstr ""
+
+#: app/templates/admin/categorias.html:11
+msgid "Nombre de la categoría"
+msgstr ""
+
+#: app/templates/admin/categorias.html:22 app/templates/admin/ciudades.html:25
+#: app/templates/admin/hospitales.html:26 app/templates/admin/paises.html:22
+#: app/templates/admin/provincias.html:24
+#: app/templates/admin/publicaciones.html:16
+#: app/templates/admin/unidades.html:26 app/templates/admin/usuarios.html:20
+msgid "Acciones"
+msgstr ""
+
+#: app/templates/admin/categorias.html:31 app/templates/admin/ciudades.html:36
+#: app/templates/admin/hospitales.html:38 app/templates/admin/paises.html:31
+#: app/templates/admin/provincias.html:34 app/templates/admin/unidades.html:37
+#: app/templates/admin/usuarios.html:33 app/templates/main/dashboard.html:224
+msgid "Editar"
+msgstr ""
+
+#: app/templates/admin/categorias.html:32
+msgid "¿Eliminar esta categoría?"
+msgstr ""
+
+#: app/templates/admin/categorias.html:34 app/templates/admin/ciudades.html:39
+#: app/templates/admin/hospitales.html:42 app/templates/admin/paises.html:34
+#: app/templates/admin/provincias.html:37
+#: app/templates/admin/publicaciones.html:40
+#: app/templates/admin/unidades.html:40 app/templates/admin/usuarios.html:37
+#: app/templates/main/dashboard.html:229 app/templates/main/dashboard.html:260
+#: app/templates/unidad/turnos.html:41
+msgid "Eliminar"
+msgstr ""
+
+#: app/templates/admin/categorias.html:39
+msgid "No hay categorías."
+msgstr ""
+
+#: app/templates/admin/ciudad_form.html:22
+#: app/templates/admin/hospital_form.html:22
+#: app/templates/admin/nombre_form.html:17
+#: app/templates/admin/provincia_form.html:22
+#: app/templates/admin/publicaciones.html:35
+#: app/templates/admin/unidad_form.html:27
+#: app/templates/admin/usuario_form.html:144
+#: app/templates/feedback/nuevo.html:49 app/templates/main/cambios.html:178
+#: app/templates/main/contraoferta.html:99
+#: app/templates/main/dashboard.html:259
+#: app/templates/publicaciones/editar.html:116
+#: app/templates/publicaciones/publicar.html:179
+msgid "Cancelar"
+msgstr ""
+
+#: app/templates/admin/ciudades.html:12
+#: app/templates/admin/usuario_form.html:80 app/templates/auth/perfil.html:68
+#: app/templates/auth/registro.html:81
+msgid "Nombre de la ciudad"
+msgstr ""
+
+#: app/templates/admin/ciudades.html:37
+msgid "¿Eliminar esta ciudad?"
+msgstr ""
+
+#: app/templates/admin/ciudades.html:44
+msgid "No hay ciudades."
+msgstr ""
+
+#: app/templates/admin/feedback.html:6
+msgid "Mensajes de feedback"
+msgstr ""
+
+#: app/templates/admin/feedback.html:11
+msgid "Sin leer"
+msgstr ""
+
+#: app/templates/admin/feedback.html:16
+msgid "Leídos"
+msgstr ""
+
+#: app/templates/admin/feedback.html:30
+msgid "Seleccionar todos"
+msgstr ""
+
+#: app/templates/admin/feedback.html:33
+msgid "Marcar seleccionados como leídos"
+msgstr ""
+
+#: app/templates/admin/feedback.html:43
+msgid "Seleccionar"
+msgstr ""
+
+#: app/templates/admin/feedback.html:69
+msgid "No hay mensajes sin leer."
+msgstr ""
+
+#: app/templates/admin/feedback.html:71
+msgid "No hay mensajes leídos todavía."
+msgstr ""
+
+#: app/templates/admin/hospitales.html:40
+#, python-format
+msgid ""
+"¿Eliminar este hospital? Se eliminarán también sus %(n)s unidades. Esta "
+"acción no se puede deshacer."
+msgstr ""
+
+#: app/templates/admin/hospitales.html:40
+msgid "¿Eliminar este hospital?"
+msgstr ""
+
+#: app/templates/admin/hospitales.html:47
+msgid "No hay hospitales."
+msgstr ""
+
+#: app/templates/admin/index.html:3 app/templates/admin/index.html:6
+msgid "Panel de administración"
+msgstr ""
+
+#: app/templates/admin/paises.html:11 app/templates/admin/usuario_form.html:40
+#: app/templates/auth/perfil.html:28 app/templates/auth/registro.html:55
+msgid "Nombre del país"
+msgstr ""
+
+#: app/templates/admin/paises.html:32
+msgid "¿Eliminar este país?"
+msgstr ""
+
+#: app/templates/admin/paises.html:39
+msgid "No hay países."
+msgstr ""
+
+#: app/templates/admin/provincias.html:12
+#: app/templates/admin/usuario_form.html:60 app/templates/auth/perfil.html:48
+#: app/templates/auth/registro.html:68
+msgid "Nombre de la provincia"
+msgstr ""
+
+#: app/templates/admin/provincias.html:35
+msgid "¿Eliminar esta provincia?"
+msgstr ""
+
+#: app/templates/admin/provincias.html:42
+msgid "No hay provincias."
+msgstr ""
+
+#: app/templates/admin/publicaciones.html:6
+msgid "Cambios de todos los usuarios"
+msgstr ""
+
+#: app/templates/admin/publicaciones.html:11
+msgid "ID"
+msgstr ""
+
+#: app/templates/admin/publicaciones.html:12 app/templates/main/cambios.html:55
+msgid "Usuario"
+msgstr ""
+
+#: app/templates/admin/publicaciones.html:13
+msgid "Estado"
+msgstr ""
+
+#: app/templates/admin/publicaciones.html:14
+#: app/templates/main/contraoferta.html:47
+#: app/templates/main/contraoferta.html:71
+#: app/templates/main/contraoferta.html:115
+#: app/templates/publicaciones/editar.html:50
+#: app/templates/publicaciones/editar.html:81
+#: app/templates/publicaciones/editar.html:132
+#: app/templates/publicaciones/publicar.html:126
+#: app/templates/publicaciones/publicar.html:150
+#: app/templates/publicaciones/publicar.html:219
+msgid "Fecha"
+msgstr ""
+
+#: app/templates/admin/publicaciones.html:15
+msgid "Turnos cede"
+msgstr ""
+
+#: app/templates/admin/publicaciones.html:38
+msgid "¿Eliminar permanentemente?"
+msgstr ""
+
+#: app/templates/admin/publicaciones.html:45
+msgid "No hay cambios registrados."
+msgstr ""
+
+#: app/templates/admin/unidades.html:24 app/templates/admin/usuarios.html:17
+#: app/templates/auth/perfil.html:10 app/templates/auth/perfil_cuenta.html:10
+msgid "Unidad"
+msgstr ""
+
+#: app/templates/admin/unidades.html:38
+msgid "¿Eliminar esta unidad?"
+msgstr ""
+
+#: app/templates/admin/unidades.html:45
+msgid "No hay unidades."
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:33 app/templates/auth/perfil.html:21
+#: app/templates/auth/registro.html:48
+msgid "— Selecciona país —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:37 app/templates/auth/perfil.html:25
+#: app/templates/auth/registro.html:52
+msgid "— Añadir nuevo país —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:50 app/templates/auth/perfil.html:38
+msgid "— Selecciona provincia —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:55 app/templates/auth/perfil.html:43
+#: app/templates/auth/registro.html:64
+msgid "— Selecciona primero el país —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:57 app/templates/auth/perfil.html:45
+#: app/templates/auth/registro.html:65
+msgid "— Añadir nueva provincia —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:70 app/templates/auth/perfil.html:58
+msgid "— Selecciona ciudad —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:75 app/templates/auth/perfil.html:63
+#: app/templates/auth/registro.html:77
+msgid "— Selecciona primero la provincia —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:77 app/templates/auth/perfil.html:65
+#: app/templates/auth/registro.html:78
+msgid "— Añadir nueva ciudad —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:90 app/templates/auth/perfil.html:78
+msgid "— Selecciona hospital —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:95 app/templates/auth/perfil.html:83
+#: app/templates/auth/registro.html:90
+msgid "— Selecciona primero la ciudad —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:97 app/templates/auth/perfil.html:85
+#: app/templates/auth/registro.html:91
+msgid "— Añadir nuevo hospital —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:118 app/templates/auth/perfil.html:110
+#: app/templates/auth/registro.html:116
+msgid "Unidad / servicio"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:122 app/templates/auth/perfil.html:114
+msgid "— Selecciona unidad —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:127 app/templates/auth/perfil.html:119
+#: app/templates/auth/registro.html:119
+msgid "— Selecciona primero hospital y categoría —"
+msgstr ""
+
+#: app/templates/admin/usuario_form.html:129 app/templates/auth/perfil.html:121
+#: app/templates/auth/registro.html:120
+msgid "— Añadir nueva unidad —"
+msgstr ""
+
+#: app/templates/admin/usuarios.html:8
+msgid "+ Nuevo usuario"
+msgstr ""
+
+#: app/templates/admin/usuarios.html:15
+msgid "Email"
+msgstr ""
+
+#: app/templates/admin/usuarios.html:31
+msgid "Sí"
+msgstr ""
+
+#: app/templates/admin/usuarios.html:35
+msgid "¿Eliminar este usuario?"
+msgstr ""
+
+#: app/templates/admin/usuarios.html:43
+msgid "No hay usuarios."
+msgstr ""
+
+#: app/templates/auth/login.html:34
+msgid "¿No tienes cuenta?"
+msgstr ""
+
+#: app/templates/auth/login.html:34
+msgid "Créala aquí"
+msgstr ""
+
+#: app/templates/auth/perfil.html:11 app/templates/auth/perfil_cuenta.html:11
+msgid "Cuenta"
+msgstr ""
+
+#: app/templates/auth/perfil.html:135 app/templates/auth/perfil_cuenta.html:68
+msgid "← Volver al inicio"
+msgstr ""
+
+#: app/templates/auth/perfil.html:137
+msgid "Configurar turnos de mi unidad →"
+msgstr ""
+
+#: app/templates/auth/perfil_cuenta.html:35
+msgid ""
+"Solo necesitas rellenar los campos de contraseña si quieres cambiar el "
+"correo o la clave."
+msgstr ""
+
+#: app/templates/auth/perfil_cuenta.html:72
+msgid "Invitar a un compañero"
+msgstr ""
+
+#: app/templates/auth/perfil_cuenta.html:74
+msgid ""
+"Comparte este enlace con un compañero de tu unidad. Al abrirlo, su "
+"formulario de registro ya vendrá pre-rellenado con vuestro hospital, "
+"unidad y categoría."
+msgstr ""
+
+#: app/templates/auth/perfil_cuenta.html:80
+msgid "Copiar"
+msgstr ""
+
+#: app/templates/auth/perfil_cuenta.html:83
+msgid "Enviar por WhatsApp"
+msgstr ""
+
+#: app/templates/auth/perfil_cuenta.html:96
+msgid "¡Copiado!"
+msgstr ""
+
+#: app/templates/auth/registro.html:134
+msgid "¿Ya tienes cuenta?"
+msgstr ""
+
+#: app/templates/auth/registro.html:134
+msgid "Entra aquí"
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:3 app/templates/feedback/nuevo.html:7
+msgid "Contacto"
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:8
+msgid "¿Has encontrado un error o tienes una sugerencia? Cuéntanos."
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:20
+msgid "Tipo"
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:24
+msgid "Reportar un error"
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:28
+msgid "Sugerir una mejora"
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:34
+msgid "Descripción"
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:36
+msgid "Describe el error o la mejora con el mayor detalle posible"
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:41
+msgid "Tu email (opcional)"
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:44
+msgid "Para poder responderte"
+msgstr ""
+
+#: app/templates/feedback/nuevo.html:48
+msgid "Enviar"
+msgstr ""
+
+#: app/templates/main/cambios.html:3 app/templates/main/cambios.html:8
+msgid "Cambios publicados"
+msgstr ""
+
+#: app/templates/main/cambios.html:9 app/templates/main/dashboard.html:10
+#: app/templates/publicaciones/publicar.html:3
+msgid "Publicar cambio"
+msgstr ""
+
+#: app/templates/main/cambios.html:15
+msgid "Mes"
+msgstr ""
+
+#: app/templates/main/cambios.html:17
+msgid "— Todos los meses —"
+msgstr ""
+
+#: app/templates/main/cambios.html:19
+msgid "Enero"
+msgstr ""
+
+#: app/templates/main/cambios.html:19
+msgid "Febrero"
+msgstr ""
+
+#: app/templates/main/cambios.html:19
+msgid "Marzo"
+msgstr ""
+
+#: app/templates/main/cambios.html:20
+msgid "Abril"
+msgstr ""
+
+#: app/templates/main/cambios.html:20
+msgid "Mayo"
+msgstr ""
+
+#: app/templates/main/cambios.html:20
+msgid "Junio"
+msgstr ""
+
+#: app/templates/main/cambios.html:21
+msgid "Julio"
+msgstr ""
+
+#: app/templates/main/cambios.html:21
+msgid "Agosto"
+msgstr ""
+
+#: app/templates/main/cambios.html:21
+msgid "Septiembre"
+msgstr ""
+
+#: app/templates/main/cambios.html:22
+msgid "Octubre"
+msgstr ""
+
+#: app/templates/main/cambios.html:22
+msgid "Noviembre"
+msgstr ""
+
+#: app/templates/main/cambios.html:22
+msgid "Diciembre"
+msgstr ""
+
+#: app/templates/main/cambios.html:29
+#: app/templates/publicaciones/publicar.html:62
+msgid "Día"
+msgstr ""
+
+#: app/templates/main/cambios.html:31
+msgid "Cualquier día"
+msgstr ""
+
+#: app/templates/main/cambios.html:35
+msgid "Turno"
+msgstr ""
+
+#: app/templates/main/cambios.html:37
+msgid "— Todos los turnos —"
+msgstr ""
+
+#: app/templates/main/cambios.html:44
+msgid "Tipo de cambio"
+msgstr ""
+
+#: app/templates/main/cambios.html:46
+msgid "— Todos los tipos —"
+msgstr ""
+
+#: app/templates/main/cambios.html:47 app/templates/main/cambios.html:124
+#: app/templates/main/dashboard.html:170
+#: app/templates/publicaciones/editar.html:23
+#: app/templates/publicaciones/publicar.html:24
+msgid "Cambio"
+msgstr ""
+
+#: app/templates/main/cambios.html:48 app/templates/main/cambios.html:79
+#: app/templates/main/dashboard.html:132
+#: app/templates/publicaciones/editar.html:28
+#: app/templates/publicaciones/publicar.html:31
+msgid "Regalo"
+msgstr ""
+
+#: app/templates/main/cambios.html:49 app/templates/main/cambios.html:88
+#: app/templates/main/dashboard.html:140
+#: app/templates/publicaciones/editar.html:33
+#: app/templates/publicaciones/publicar.html:38
+msgid "Petición"
+msgstr ""
+
+#: app/templates/main/cambios.html:50 app/templates/main/cambios.html:97
+#: app/templates/main/dashboard.html:148
+#: app/templates/publicaciones/publicar.html:45
+msgid "Junte de noches"
+msgstr ""
+
+#: app/templates/main/cambios.html:51 app/templates/main/cambios.html:113
+#: app/templates/main/dashboard.html:162
+#: app/templates/publicaciones/editar.html:38
+#: app/templates/publicaciones/publicar.html:52
+msgid "Cambio de turno en el día"
+msgstr ""
+
+#: app/templates/main/cambios.html:57
+msgid "Nombre del compañero"
+msgstr ""
+
+#: app/templates/main/cambios.html:62
+msgid "Filtrar"
+msgstr ""
+
+#: app/templates/main/cambios.html:64
+msgid "Limpiar"
+msgstr ""
+
+#: app/templates/main/cambios.html:81
+msgid "Se ofrece a trabajar (sin recibir nada):"
+msgstr ""
+
+#: app/templates/main/cambios.html:90
+msgid "Quiere librar (sin ofrecer nada):"
+msgstr ""
+
+#: app/templates/main/cambios.html:99
+msgid "Cede las noches:"
+msgstr ""
+
+#: app/templates/main/cambios.html:106
+msgid "Busca las noches:"
+msgstr ""
+
+#: app/templates/main/cambios.html:115
+msgid "Quiere cambiar:"
+msgstr ""
+
+#: app/templates/main/cambios.html:126 app/templates/main/contraoferta.html:19
+msgid "Quiere librar:"
+msgstr ""
+
+#: app/templates/main/cambios.html:133 app/templates/main/contraoferta.html:25
+msgid "Se ofrece a trabajar:"
+msgstr ""
+
+#: app/templates/main/cambios.html:146
+msgid "Me interesa"
+msgstr ""
+
+#: app/templates/main/cambios.html:149
+#: app/templates/notificaciones/avisos.html:23
+msgid "Contraoferta"
+msgstr ""
+
+#: app/templates/main/cambios.html:158
+msgid "No hay cambios publicados con ese filtro."
+msgstr ""
+
+#: app/templates/main/cambios.html:160
+msgid "No hay cambios publicados por otros compañeros en este momento."
+msgstr ""
+
+#: app/templates/main/cambios.html:179
+msgid "Aceptar"
+msgstr ""
+
+#: app/templates/main/cambios.html:272
+msgid "¿Quieres que"
+msgstr ""
+
+#: app/templates/main/cambios.html:272
+msgid "trabaje en tu lugar?"
+msgstr ""
+
+#: app/templates/main/cambios.html:273
+msgid "¿Quieres cubrir un turno de"
+msgstr ""
+
+#: app/templates/main/cambios.html:274
+msgid "Junte de noches con"
+msgstr ""
+
+#: app/templates/main/cambios.html:275
+msgid "Cambio de turno en el día con"
+msgstr ""
+
+#: app/templates/main/cambios.html:276
+msgid "Cambio con"
+msgstr ""
+
+#: app/templates/main/cambios.html:279
+msgid "Selecciona el turno que quieres que te cubra:"
+msgstr ""
+
+#: app/templates/main/cambios.html:280 app/templates/main/cambios.html:287
+msgid "Turno a cubrir"
+msgstr ""
+
+#: app/templates/main/cambios.html:283
+msgid "¿Qué turno tuyo quieres librar?"
+msgstr ""
+
+#: app/templates/main/cambios.html:286
+msgid "Selecciona el turno que te ofreces a cubrir:"
+msgstr ""
+
+#: app/templates/main/cambios.html:291
+msgid "Noches que cede:"
+msgstr ""
+
+#: app/templates/main/cambios.html:293
+msgid "Noches que busca:"
+msgstr ""
+
+#: app/templates/main/cambios.html:295
+msgid "Aceptarás las noches que él/ella cede y le cederás las que busca."
+msgstr ""
+
+#: app/templates/main/cambios.html:300
+msgid "Tiene el turno de:"
+msgstr ""
+
+#: app/templates/main/cambios.html:301
+msgid "Quiere el turno de:"
+msgstr ""
+
+#: app/templates/main/cambios.html:302
+msgid "Si aceptas, le das tu turno de"
+msgstr ""
+
+#: app/templates/main/cambios.html:302
+msgid "y él/ella te da el de"
+msgstr ""
+
+#: app/templates/main/cambios.html:305
+msgid "Elige el turno que cubrirás y el que quieres que te cubran:"
+msgstr ""
+
+#: app/templates/main/cambios.html:306
+msgid "Turno de"
+msgstr ""
+
+#: app/templates/main/cambios.html:306
+msgid "que cubrirás"
+msgstr ""
+
+#: app/templates/main/cambios.html:308
+msgid "Turno tuyo que"
+msgstr ""
+
+#: app/templates/main/cambios.html:308
+msgid "te cubrirá"
+msgstr ""
+
+#: app/templates/main/cambios.html:312
+msgid "¿Qué turno quieres librar?"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:3
+#: app/templates/main/contraoferta.html:7
+msgid "Hacer contraoferta"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:16
+msgid "Publicación de"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:27
+#: app/templates/main/dashboard.html:136 app/templates/main/dashboard.html:180
+msgid "Cualquier turno"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:35
+msgid ""
+"Tu contraoferta debe incluir al menos un turno que coincida con alguno de"
+" los turnos anteriores (que cedes o que aceptas)."
+msgstr ""
+
+#: app/templates/main/contraoferta.html:43
+msgid "Turnos que yo quiero librar"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:51
+#: app/templates/main/contraoferta.html:75
+#: app/templates/main/contraoferta.html:119
+#: app/templates/publicaciones/editar.html:54
+#: app/templates/publicaciones/editar.html:85
+#: app/templates/publicaciones/editar.html:136
+#: app/templates/publicaciones/publicar.html:130
+#: app/templates/publicaciones/publicar.html:154
+#: app/templates/publicaciones/publicar.html:223
+msgid "Tipo de turno"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:53
+#: app/templates/main/contraoferta.html:77
+#: app/templates/main/contraoferta.html:121
+#: app/templates/publicaciones/editar.html:56
+#: app/templates/publicaciones/editar.html:87
+#: app/templates/publicaciones/editar.html:138
+#: app/templates/publicaciones/publicar.html:69
+#: app/templates/publicaciones/publicar.html:78
+#: app/templates/publicaciones/publicar.html:132
+#: app/templates/publicaciones/publicar.html:156
+#: app/templates/publicaciones/publicar.html:225
+msgid "— Selecciona —"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:62
+#: app/templates/publicaciones/editar.html:71
+#: app/templates/publicaciones/publicar.html:141
+msgid "+ Añadir otro turno a librar"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:67
+msgid "Turnos que yo me ofrezco a trabajar"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:86
+#: app/templates/publicaciones/editar.html:103
+#: app/templates/publicaciones/publicar.html:166
+msgid "+ Añadir otro turno que puedo trabajar"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:91
+#: app/templates/publicaciones/editar.html:108
+#: app/templates/publicaciones/publicar.html:171
+msgid "Mensaje (opcional)"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:93
+msgid "Explica tu propuesta a"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:93
+msgid "(máx. 200 caracteres)"
+msgstr ""
+
+#: app/templates/main/contraoferta.html:98
+msgid "Enviar contraoferta"
+msgstr ""
+
+#: app/templates/main/dashboard.html:3 app/templates/main/dashboard.html:8
+msgid "Mis cambios publicados"
+msgstr ""
+
+#: app/templates/main/dashboard.html:11
+msgid "Actualizar"
+msgstr ""
+
+#: app/templates/main/dashboard.html:12
+msgid "Instalar app"
+msgstr ""
+
+#: app/templates/main/dashboard.html:20
+msgid "Compatibles"
+msgstr ""
+
+#: app/templates/main/dashboard.html:24
+msgid "Activos"
+msgstr ""
+
+#: app/templates/main/dashboard.html:28
+msgid "Pendientes de confirmar"
+msgstr ""
+
+#: app/templates/main/dashboard.html:32
+msgid "Confirmados"
+msgstr ""
+
+#: app/templates/main/dashboard.html:36
+msgid "Caducados"
+msgstr ""
+
+#: app/templates/main/dashboard.html:49
+msgid "¡Cambio a 3 bandas!"
+msgstr ""
+
+#: app/templates/main/dashboard.html:50
+msgid "Esperando a los demás"
+msgstr ""
+
+#: app/templates/main/dashboard.html:51 app/templates/main/dashboard.html:56
+msgid "Pendiente de tu confirmación"
+msgstr ""
+
+#: app/templates/main/dashboard.html:54
+msgid "¡Coincidencia parcial!"
+msgstr ""
+
+#: app/templates/main/dashboard.html:54
+msgid "¡Compatible!"
+msgstr ""
+
+#: app/templates/main/dashboard.html:55
+msgid "Esperando al otro usuario"
+msgstr ""
+
+#: app/templates/main/dashboard.html:60
+msgid "y"
+msgstr ""
+
+#: app/templates/main/dashboard.html:68
+msgid "Tú quieres librar:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:68
+msgid "Trabajarías:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:78
+msgid "cede:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:87
+msgid "Librarías:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:96
+msgid ""
+"Coincidencia parcial: este usuario se ofrece a cubrirte un turno sin "
+"pedir nada a cambio. Tu turno ofrecido quedará sin cubrir."
+msgstr ""
+
+#: app/templates/main/dashboard.html:98
+msgid ""
+"Coincidencia parcial: este usuario quiere que le cubras un turno, pero el"
+" tuyo cedido quedará sin cubrir."
+msgstr ""
+
+#: app/templates/main/dashboard.html:109
+msgid "Confirmar"
+msgstr ""
+
+#: app/templates/main/dashboard.html:113
+msgid "Rechazar"
+msgstr ""
+
+#: app/templates/main/dashboard.html:118
+msgid "Has confirmado. Esperando a los demás."
+msgstr ""
+
+#: app/templates/main/dashboard.html:119
+msgid "Has confirmado. Esperando al otro usuario."
+msgstr ""
+
+#: app/templates/main/dashboard.html:134 app/templates/main/dashboard.html:178
+msgid "Me ofrezco a trabajar:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:142 app/templates/main/dashboard.html:172
+msgid "Quiero librar:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:150
+msgid "Noches que cedo:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:156
+msgid "Noches que tomo:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:164
+msgid "Quiero cambiar:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:188
+msgid "Con:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:196
+msgid "cualquier turno"
+msgstr ""
+
+#: app/templates/main/dashboard.html:199
+msgid "Me ofrezco a trabajar en sustitución: "
+msgstr ""
+
+#: app/templates/main/dashboard.html:199 app/templates/main/dashboard.html:211
+#: app/templates/main/dashboard.html:215 app/templates/main/dashboard.html:221
+msgid "¿Te interesa? Únete en Turnero:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:205
+msgid "Busco a alguien que me cubra un turno: "
+msgstr ""
+
+#: app/templates/main/dashboard.html:205
+msgid "¿Puedes ayudarme? Únete en Turnero:"
+msgstr ""
+
+#: app/templates/main/dashboard.html:211
+msgid "Busco compañero/a para un junte de noches: "
+msgstr ""
+
+#: app/templates/main/dashboard.html:215
+msgid "Busco cambio de turno en el día: tengo el "
+msgstr ""
+
+#: app/templates/main/dashboard.html:215
+msgid " del "
+msgstr ""
+
+#: app/templates/main/dashboard.html:215
+msgid " y busco el "
+msgstr ""
+
+#: app/templates/main/dashboard.html:221
+msgid "Busco compañero/a para un cambio de turno. Quiero librar: "
+msgstr ""
+
+#: app/templates/main/dashboard.html:235
+msgid "Compartir"
+msgstr ""
+
+#: app/templates/main/dashboard.html:244
+msgid "No tienes cambios compatibles aún."
+msgstr ""
+
+#: app/templates/main/dashboard.html:245
+msgid "No tienes cambios pendientes de confirmar."
+msgstr ""
+
+#: app/templates/main/dashboard.html:246
+msgid "No tienes publicaciones confirmadas."
+msgstr ""
+
+#: app/templates/main/dashboard.html:247
+msgid "No tienes publicaciones caducadas."
+msgstr ""
+
+#: app/templates/main/dashboard.html:248
+msgid "No tienes publicaciones activas."
+msgstr ""
+
+#: app/templates/main/dashboard.html:257
+msgid ""
+"¿Seguro que quieres eliminar esta publicación? Esta acción no se puede "
+"deshacer."
+msgstr ""
+
+#: app/templates/main/index.html:6
+msgid "Intercambia turnos con tus compañeros de forma sencilla."
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:13
+msgid "Borrar todos"
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:34
+msgid "Ver publicación"
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:36
+msgid "Publicación ya cerrada"
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:40
+#: app/templates/notificaciones/avisos.html:51
+msgid "Borrar aviso"
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:48
+msgid "Publicación eliminada"
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:59
+msgid ""
+"No tienes avisos todavía. Sigue a compañeros desde el panel de "
+"Notificaciones para recibir avisos cuando publiquen, o recibe "
+"contraofertas a tus publicaciones de cambio."
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:63
+msgid "Gestionar notificaciones y seguimientos"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:11
+msgid "Notificaciones push"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:22
+msgid "Recibir notificaciones push"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:23
+msgid "Activa o desactiva todas las notificaciones push a la vez."
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:37
+msgid "Nuevo cambio compatible encontrado"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:48
+msgid "El otro usuario confirmó o rechazó el cambio"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:59
+msgid "Cambio confirmado por todos los implicados"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:70
+msgid "Un compañero al que sigues publica un cambio"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:86
+msgid "Seguir compañeros"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:87
+msgid ""
+"Recibirás una notificación cada vez que el compañero seleccionado "
+"publique un cambio."
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:91
+msgid "Buscar compañero…"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:99
+msgid "Dejar de seguir"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:104
+msgid "Seguir"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:110
+msgid "Ningún compañero coincide con la búsqueda."
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:112
+msgid "No hay compañeros de tu misma categoría y grupo para seguir."
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:123
+msgid "Tu navegador no soporta notificaciones push."
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:130
+msgid ""
+"Las notificaciones están bloqueadas en el navegador. Desbloquéalas en los"
+" ajustes del sistema."
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:136
+msgid "Este navegador está suscrito a notificaciones push."
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:138
+msgid "Este navegador no está suscrito todavía."
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:138
+msgid "Activar en este navegador"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:146
+msgid "Las notificaciones están bloqueadas en el navegador."
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:3
+msgid "Editar cambio"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:7
+msgid "Editar cambio de turno"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:19
+msgid "Tipo de publicación"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:24
+#: app/templates/publicaciones/publicar.html:25
+msgid "Libras un turno y trabajas otro a cambio"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:29
+#: app/templates/publicaciones/publicar.html:32
+msgid "Te ofreces a trabajar un turno sin recibir nada a cambio"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:34
+#: app/templates/publicaciones/publicar.html:39
+msgid "Buscas quien trabaje un turno tuyo sin ofrecer nada a cambio"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:39
+#: app/templates/publicaciones/publicar.html:53
+msgid "Cambias tu turno de mañana a tarde (o viceversa) el mismo día"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:45
+#: app/templates/publicaciones/publicar.html:122
+msgid "Turnos que quiero librar"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:76
+#: app/templates/publicaciones/publicar.html:146
+msgid "Turnos que quiero trabajar"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:88
+#: app/templates/publicaciones/editar.html:123
+#: app/templates/publicaciones/publicar.html:157
+#: app/templates/publicaciones/publicar.html:210
+msgid "✦ Cualquier turno de ese día"
+msgstr ""
+
+#: app/templates/publicaciones/editar.html:110
+#: app/templates/publicaciones/publicar.html:173
+msgid ""
+"Escribe un mensaje para el usuario con el que hagas match (máx. 200 "
+"caracteres)"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:7
+msgid "Publicar cambio de turno"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:19
+msgid "¿Qué tipo de publicación quieres hacer?"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:46
+msgid ""
+"Reorganizas con un compañero las noches de una semana para trabajarlas "
+"seguidas"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:60
+msgid "¿Qué turno quieres cambiar?"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:67
+msgid "Mi turno actual (que cedo)"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:76
+msgid "Turno que deseo (que acepto)"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:89
+msgid "Semana del junte"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:91
+msgid "Puedes seleccionar cualquier día de esa semana"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:95
+msgid "Mi cadencia esa semana"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:100
+msgid "4 noches"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:101
+msgid "Lun · Mié · Vie · Dom"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:107
+msgid "3 noches"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:108
+msgid "Mar · Jue · Sáb"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:115
+msgid "Noches que trabajarás tú tras el junte"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:116
+msgid "Selecciona exactamente las noches que quieres trabajar."
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:178
+msgid "Publicar"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:184
+msgid "¿No encuentras tu tipo de turno?"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:185
+msgid ""
+"Añade un nuevo tipo de turno para tu unidad y estará disponible para "
+"todos tus compañeros."
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:192
+msgid "Ej: Guardia 24h"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:195
+msgid "Hora inicio"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:199
+msgid "Hora fin"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:203
+msgid "Guardar tipo de turno"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:275
+msgid "Selecciona exactamente"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:275
+#: app/templates/publicaciones/publicar.html:323
+msgid "noches"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:275
+#: app/templates/publicaciones/publicar.html:323
+msgid "seleccionadas"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:323
+msgid "Debes seleccionar exactamente"
+msgstr ""
+
+#: app/templates/publicaciones/publicar.html:330
+msgid "Publicando…"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:3
+msgid "Turnos de mi unidad"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:7
+#, python-format
+msgid "Turnos de %(unidad)s"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:9
+#, python-format
+msgid ""
+"Define los tipos de turno de tu unidad. Todos los compañeros de "
+"%(unidad)s los verán al publicar o buscar cambios."
+msgstr ""
+
+#: app/templates/unidad/turnos.html:20
+msgid "Turnos actuales"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:26 app/templates/unidad/turnos.html:84
+msgid "Inicio"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:27 app/templates/unidad/turnos.html:88
+msgid "Fin"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:39
+#, python-format
+msgid "¿Eliminar el turno «%(nombre)s»?"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:49
+msgid ""
+"No hay turnos configurados. Aplica una plantilla o añade turnos "
+"personalizados."
+msgstr ""
+
+#: app/templates/unidad/turnos.html:55
+msgid "Usar una plantilla predefinida"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:56
+msgid ""
+"Aplica una plantilla para configurar rápidamente los turnos de tu "
+"servicio. Los turnos existentes sin publicaciones asociadas se "
+"actualizarán; los que tengan publicaciones se conservarán."
+msgstr ""
+
+#: app/templates/unidad/turnos.html:73
+msgid "Añadir turno personalizado"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:80
+msgid "Ej: Guardia, Refuerzo…"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:91
+msgid "Añadir"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:97
+msgid "← Volver al perfil"
+msgstr ""
+
+#: app/templates/unidad/turnos.html:99
+msgid "Ir al inicio"
+msgstr ""
 
