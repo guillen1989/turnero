@@ -13,6 +13,7 @@ from app.models.notificacion import Notificacion
 from app.models.feedback import Feedback
 from app.models.suscripcion_publicaciones import SuscripcionPublicaciones
 from app.models.event import Event
+from app.models.busqueda_guardada import BusquedaGuardada
 
 __all__ = [
     "Pais",
@@ -33,5 +34,6 @@ __all__ = [
     "Feedback",
     "SuscripcionPublicaciones",
     "Event",
+    "BusquedaGuardada",
     "insertar_categorias_semilla",
 ]

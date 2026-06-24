@@ -41,6 +41,9 @@ class Usuario(UserMixin, db.Model):
         backref="publicador",
         lazy="dynamic",
     )
+    busquedas_guardadas = db.relationship(
+        "BusquedaGuardada", back_populates="usuario", lazy="dynamic"
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

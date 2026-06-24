@@ -70,6 +70,9 @@ def create_app(config_name=None):
     from app.routes.unidad import bp as unidad_bp
     app.register_blueprint(unidad_bp)
 
+    from app.routes.busquedas import bp as busquedas_bp
+    app.register_blueprint(busquedas_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 
@@ -79,10 +82,10 @@ def create_app(config_name=None):
         try:
             if current_user.is_authenticated:
                 from app.models import Notificacion
-                count = Notificacion.query.filter_by(
-                    usuario_id=current_user.id,
-                    tipo="nueva_publicacion_seguido",
-                    leida=False,
+                count = Notificacion.query.filter(
+                    Notificacion.usuario_id == current_user.id,
+                    Notificacion.tipo.in_(["nueva_publicacion_seguido", "alerta_busqueda_guardada"]),
+                    Notificacion.leida.is_(False),
                 ).count()
                 return {"avisos_no_leidos": count}
         except Exception:

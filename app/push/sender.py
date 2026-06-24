@@ -18,6 +18,7 @@ _PREF_ATTR = {
     "confirmado_total": "notif_confirmado_total",
     "publicacion": "notif_publicacion",
     "contraoferta": "notif_match",
+    "busqueda_guardada": "notif_publicacion",
 }
 
 # Mapa de tipo de notificación → URL de destino al tocar la push
@@ -28,6 +29,7 @@ _URL_POR_TIPO = {
     "confirmado_total": "/?estado=confirmada",
     "publicacion": "/avisos",
     "contraoferta": "/avisos",
+    "busqueda_guardada": "/avisos",
 }
 
 # Textos por tipo: (título, cuerpo_singular, cuerpo_plural)
@@ -61,6 +63,11 @@ _TEXTOS = {
         "Turnero",
         "Tienes 1 contraoferta nueva",
         "Tienes {} contraofertas nuevas",
+    ),
+    "busqueda_guardada": (
+        "Turnero",
+        "Hay 1 publicación nueva que coincide con tus alertas",
+        "Hay {} publicaciones nuevas que coinciden con tus alertas",
     ),
 }
 
@@ -109,6 +116,15 @@ def _contar_pendientes(usuario, tipo):
             sa_select(func.count(Notificacion.id)).where(
                 Notificacion.usuario_id == usuario.id,
                 Notificacion.tipo == "nueva_publicacion_seguido",
+                Notificacion.leida.is_(False),
+            )
+        )
+
+    if tipo == "busqueda_guardada":
+        return db.session.scalar(
+            sa_select(func.count(Notificacion.id)).where(
+                Notificacion.usuario_id == usuario.id,
+                Notificacion.tipo == "alerta_busqueda_guardada",
                 Notificacion.leida.is_(False),
             )
         )

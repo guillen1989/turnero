@@ -9,19 +9,63 @@
     <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">{{ _('Publicar cambio') }}</a>
   </div>
 
+  <!-- Pestañas -->
+  <div class="cambios-tabs">
+    <a href="{{ url_for('main.cambios', mes=mes or '', dia=dia or '', franja=franja_id or '', tipo=tipo, usuario=nombre, tab='resultados') }}"
+       class="cambios-tab {% if tab != 'alertas' %}cambios-tab--activa{% endif %}">
+      {{ _('Resultados') }}
+    </a>
+    <a href="{{ url_for('main.cambios', tab='alertas') }}"
+       class="cambios-tab {% if tab == 'alertas' %}cambios-tab--activa{% endif %}">
+      {{ _('Mis alertas') }}
+      {% if busquedas %}
+      <span class="cambios-tab-badge">{{ busquedas|length }}</span>
+      {% endif %}
+    </a>
+  </div>
+
+  {% if tab == 'alertas' %}
+  <!-- Pestaña: Mis alertas -->
+  <div class="busquedas-guardadas">
+    {% if busquedas %}
+    <ul class="busquedas-list">
+      {% for b in busquedas %}
+      <li class="busqueda-card">
+        <div class="busqueda-info">
+          <span class="busqueda-nombre">{{ b.nombre }}</span>
+          <span class="busqueda-fecha">{{ b.creada_en.strftime('%d/%m/%Y') }}</span>
+        </div>
+        <div class="busqueda-acciones">
+          <a href="{{ url_for('main.cambios', **b.url_params) }}" class="btn btn-primary btn-sm">{{ _('Aplicar') }}</a>
+          <form method="post" action="{{ url_for('busquedas.eliminar', busqueda_id=b.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-ghost btn-sm"
+                    onclick="return confirm('{{ _('¿Eliminar esta alerta?') }}')">{{ _('Eliminar') }}</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty-state">{{ _('No tienes alertas guardadas. Aplica un filtro en la pestaña Resultados y guárdalo como alerta.') }}</p>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <!-- Pestaña: Resultados -->
   <form method="get" class="cambios-filtro" action="{{ url_for('main.cambios') }}">
     <div class="cambios-filtro-fields">
       <div class="form-group">
         <label>{{ _('Mes') }}</label>
         <select name="mes">
           <option value="">{{ _('— Todos los meses —') }}</option>
-          {% for n, nombre in [
+          {% for n, nombre_mes in [
             (1,  _('Enero')),   (2,  _('Febrero')), (3,  _('Marzo')),
             (4,  _('Abril')),   (5,  _('Mayo')),    (6,  _('Junio')),
             (7,  _('Julio')),   (8,  _('Agosto')),  (9,  _('Septiembre')),
             (10, _('Octubre')), (11, _('Noviembre')),(12, _('Diciembre'))
           ] %}
-          <option value="{{ n }}" {% if mes == n %}selected{% endif %}>{{ nombre }}</option>
+          <option value="{{ n }}" {% if mes == n %}selected{% endif %}>{{ nombre_mes }}</option>
           {% endfor %}
         </select>
       </div>
@@ -65,6 +109,18 @@
       {% endif %}
     </div>
   </form>
+
+  {% if mes or dia or nombre or franja_id or tipo %}
+  <form method="post" action="{{ url_for('busquedas.guardar') }}" class="cambios-guardar-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="mes" value="{{ mes or '' }}">
+    <input type="hidden" name="dia" value="{{ dia or '' }}">
+    <input type="hidden" name="franja" value="{{ franja_id or '' }}">
+    <input type="hidden" name="tipo" value="{{ tipo }}">
+    <input type="hidden" name="usuario" value="{{ nombre }}">
+    <button type="submit" class="btn btn-secondary btn-sm">{{ _('Guardar como alerta') }}</button>
+  </form>
+  {% endif %}
 
   {% if publicaciones %}
   <ul class="publicaciones-list">
@@ -161,6 +217,7 @@
     {% endif %}
   </p>
   {% endif %}
+  {% endif %}{# fin tab resultados #}
 </div>
 
 <!-- Modal "Me interesa" -->

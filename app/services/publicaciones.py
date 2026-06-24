@@ -2,6 +2,7 @@ from app.extensions import db
 from app.models import MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, SuscripcionPublicaciones, TurnoCedido, TurnoAceptado, Usuario
 from app.push.sender import enviar_push_condicional
 from app.services.eventos import registrar_evento
+from app.services.busquedas_guardadas import notificar_busquedas_guardadas
 
 
 
@@ -37,6 +38,7 @@ def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, 
 
     publicador = db.session.get(Usuario, usuario_id)
     _notificar_suscriptores(publicador, pub)
+    notificar_busquedas_guardadas(pub)
 
     return pub
 

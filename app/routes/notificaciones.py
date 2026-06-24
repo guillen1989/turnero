@@ -79,7 +79,7 @@ def avisos():
         Notificacion.query
         .filter(
             Notificacion.usuario_id == current_user.id,
-            Notificacion.tipo.in_(("nueva_publicacion_seguido", "contraoferta")),
+            Notificacion.tipo.in_(("nueva_publicacion_seguido", "contraoferta", "alerta_busqueda_guardada")),
         )
         .order_by(Notificacion.fecha.desc())
         .all()
@@ -106,7 +106,7 @@ def borrar_aviso(notif_id):
 def borrar_todos_avisos():
     Notificacion.query.filter(
         Notificacion.usuario_id == current_user.id,
-        Notificacion.tipo.in_(("nueva_publicacion_seguido", "contraoferta")),
+        Notificacion.tipo.in_(("nueva_publicacion_seguido", "contraoferta", "alerta_busqueda_guardada")),
     ).delete()
     db.session.commit()
     return redirect(url_for("notificaciones.avisos"))

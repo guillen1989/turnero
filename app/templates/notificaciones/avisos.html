@@ -21,6 +21,8 @@
           <span class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</span>
           {% if aviso.tipo == 'contraoferta' %}
           <span class="aviso-tipo tipo-badge tipo-badge--cambio">{{ _('Contraoferta') }}</span>
+          {% elif aviso.tipo == 'alerta_busqueda_guardada' %}
+          <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _('Alerta') }}</span>
           {% else %}
           <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _(aviso.publicacion.tipo) }}</span>
           {% endif %}

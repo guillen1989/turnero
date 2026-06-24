@@ -4,7 +4,7 @@ from sqlalchemy import and_, exists, extract, or_
 from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
 from app.extensions import db
-from app.models import FranjaHoraria, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
+from app.models import BusquedaGuardada, FranjaHoraria, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
 from app.services.caducidad import caducar_publicaciones_expiradas
 
 bp = Blueprint("main", __name__)
@@ -314,9 +314,18 @@ def cambios():
     pub_js_data = {pub.id: _pub_js_data(pub) for pub in publicaciones}
     franjas_js = [{"id": f.id, "nombre": f.nombre} for f in franjas]
 
+    tab = request.args.get("tab", "resultados")
+    busquedas = (
+        BusquedaGuardada.query
+        .filter_by(usuario_id=current_user.id)
+        .order_by(BusquedaGuardada.creada_en.desc())
+        .all()
+    )
+
     return render_template("main/cambios.html", publicaciones=publicaciones,
                            mes=mes, dia=dia, nombre=nombre, franja_id=franja_id, tipo=tipo,
-                           franjas=franjas, pub_js_data=pub_js_data, franjas_js=franjas_js)
+                           franjas=franjas, pub_js_data=pub_js_data, franjas_js=franjas_js,
+                           tab=tab, busquedas=busquedas)
 
 
 def _pub_js_data(pub):
