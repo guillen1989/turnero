@@ -175,3 +175,84 @@ def test_perfil_actualiza_hospital_y_unidad(client, db):
     _db.session.refresh(usuario)
     assert usuario.unidad.nombre == "UCI"
     assert usuario.unidad.hospital.nombre == "Hospital Nuevo"
+
+
+# --- Perfil / Cuenta ---
+
+def test_get_perfil_cuenta_requiere_autenticacion(client):
+    resp = client.get("/auth/perfil/cuenta", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
+def test_get_perfil_cuenta_devuelve_200(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/perfil/cuenta")
+    assert resp.status_code == 200
+    assert b"Ana" in resp.data
+
+
+def test_perfil_cuenta_actualiza_nombre(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    client.post(
+        "/auth/perfil/cuenta",
+        data={"nombre": "Ana Pérez", "email": "ana@test.es", "password_actual": "", "password_nuevo": "", "password_nuevo2": ""},
+        follow_redirects=True,
+    )
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert usuario.nombre == "Ana Pérez"
+
+
+def test_perfil_cuenta_actualiza_email_con_contraseña_correcta(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    resp = client.post(
+        "/auth/perfil/cuenta",
+        data={"nombre": "Ana García", "email": "nueva@test.es", "password_actual": "contraseña123", "password_nuevo": "", "password_nuevo2": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert usuario.email == "nueva@test.es"
+
+
+def test_perfil_cuenta_rechaza_cambio_email_sin_contraseña(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    client.post(
+        "/auth/perfil/cuenta",
+        data={"nombre": "Ana García", "email": "nueva@test.es", "password_actual": "", "password_nuevo": "", "password_nuevo2": ""},
+        follow_redirects=True,
+    )
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert usuario.email == "ana@test.es"
+
+
+def test_perfil_cuenta_cambia_contraseña(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    client.post(
+        "/auth/perfil/cuenta",
+        data={"nombre": "Ana García", "email": "ana@test.es", "password_actual": "contraseña123", "password_nuevo": "nueva_clave_99", "password_nuevo2": "nueva_clave_99"},
+        follow_redirects=True,
+    )
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert usuario.check_password("nueva_clave_99")
+
+
+def test_perfil_cuenta_rechaza_contraseña_nueva_sin_actual(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    client.post(
+        "/auth/perfil/cuenta",
+        data={"nombre": "Ana García", "email": "ana@test.es", "password_actual": "", "password_nuevo": "nueva_clave_99", "password_nuevo2": "nueva_clave_99"},
+        follow_redirects=True,
+    )
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert not usuario.check_password("nueva_clave_99")

@@ -6,6 +6,11 @@
 <div class="card">
   <h1>{{ _('Mi perfil') }}</h1>
 
+  <nav class="estado-tabs" style="margin-bottom:1.25rem">
+    <a href="{{ url_for('auth.perfil') }}" class="estado-tab estado-tab--active">{{ _('Unidad') }}</a>
+    <a href="{{ url_for('auth.perfil_cuenta') }}" class="estado-tab">{{ _('Cuenta') }}</a>
+  </nav>
+
   <form method="POST" novalidate>
     {{ form.hidden_tag() }}
 

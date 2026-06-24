@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import Pais, Provincia, Ciudad, Hospital, Unidad, Categoria
-from app.forms.auth import LoginForm, PerfilForm, RegistroForm
+from app.forms.auth import CuentaForm, LoginForm, PerfilForm, RegistroForm
 from app.models.usuario import Usuario
 from app.services.registro import (
     actualizar_perfil, registrar_usuario,
@@ -292,3 +292,46 @@ def perfil():
         current_hospitales=current_hospitales,
         current_unidades=current_unidades,
     )
+
+
+# ---------------------------------------------------------------------------
+# Perfil — pestaña Cuenta (nombre, email, contraseña)
+# ---------------------------------------------------------------------------
+
+@bp.route("/perfil/cuenta", methods=["GET", "POST"])
+@login_required
+def perfil_cuenta():
+    form = CuentaForm()
+
+    if form.validate_on_submit():
+        nuevo_email = form.email.data.strip().lower()
+        cambio_email = nuevo_email != current_user.email
+        cambio_password = bool(form.password_nuevo.data)
+
+        if cambio_email or cambio_password:
+            if not form.password_actual.data or not current_user.check_password(form.password_actual.data):
+                flash(_("Debes introducir tu contraseña actual para cambiar el correo o la contraseña."), "danger")
+                return render_template("auth/perfil_cuenta.html", form=form)
+
+        if cambio_email:
+            if Usuario.query.filter(
+                Usuario.email == nuevo_email, Usuario.id != current_user.id
+            ).first():
+                flash(_("Ese correo ya está registrado por otro usuario."), "danger")
+                return render_template("auth/perfil_cuenta.html", form=form)
+            current_user.email = nuevo_email
+
+        current_user.nombre = form.nombre.data.strip()
+
+        if cambio_password:
+            current_user.set_password(form.password_nuevo.data)
+
+        db.session.commit()
+        flash(_("Datos de cuenta actualizados correctamente."), "success")
+        return redirect(url_for("auth.perfil_cuenta"))
+
+    elif request.method == "GET":
+        form.nombre.data = current_user.nombre
+        form.email.data = current_user.email
+
+    return render_template("auth/perfil_cuenta.html", form=form)

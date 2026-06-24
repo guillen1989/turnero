@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Mi perfil') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('Mi perfil') }}</h1>
+
+  <nav class="estado-tabs" style="margin-bottom:1.25rem">
+    <a href="{{ url_for('auth.perfil') }}" class="estado-tab">{{ _('Unidad') }}</a>
+    <a href="{{ url_for('auth.perfil_cuenta') }}" class="estado-tab estado-tab--active">{{ _('Cuenta') }}</a>
+  </nav>
+
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="form-group">
+      {{ form.nombre.label }}
+      {{ form.nombre(autocomplete="name") }}
+      {% for error in form.nombre.errors %}
+        <p class="field-error">{{ error }}</p>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.email.label }}
+      {{ form.email(autocomplete="email") }}
+      {% for error in form.email.errors %}
+        <p class="field-error">{{ error }}</p>
+      {% endfor %}
+    </div>
+
+    <hr style="margin:1.25rem 0; border:none; border-top:1px solid #e5e7eb">
+    <p style="font-size:0.9rem; color:#666; margin-bottom:1rem">
+      {{ _('Solo necesitas rellenar los campos de contraseña si quieres cambiar el correo o la clave.') }}
+    </p>
+
+    <div class="form-group">
+      {{ form.password_actual.label }}
+      {{ form.password_actual(autocomplete="current-password") }}
+      {% for error in form.password_actual.errors %}
+        <p class="field-error">{{ error }}</p>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.password_nuevo.label }}
+      {{ form.password_nuevo(autocomplete="new-password") }}
+      {% for error in form.password_nuevo.errors %}
+        <p class="field-error">{{ error }}</p>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.password_nuevo2.label }}
+      {{ form.password_nuevo2(autocomplete="new-password") }}
+      {% for error in form.password_nuevo2.errors %}
+        <p class="field-error">{{ error }}</p>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ form.submit(class="btn btn-primary btn-full") }}
+    </div>
+  </form>
+
+  <p class="form-footer">
+    <a href="{{ url_for('main.index') }}">{{ _('← Volver al inicio') }}</a>
+  </p>
+</div>
+{% endblock %}

@@ -59,6 +59,27 @@ class PerfilForm(FlaskForm):
     submit = SubmitField(_l("Guardar cambios"))
 
 
+class CuentaForm(FlaskForm):
+    nombre = StringField(
+        _l("Nombre completo"),
+        validators=[DataRequired(), Length(min=2, max=200)],
+    )
+    email = StringField(
+        _l("Correo electrónico"),
+        validators=[DataRequired(), Email()],
+    )
+    password_actual = PasswordField(_l("Contraseña actual"), validators=[Optional()])
+    password_nuevo = PasswordField(
+        _l("Nueva contraseña"),
+        validators=[Optional(), Length(min=8, message=_l("Mínimo 8 caracteres"))],
+    )
+    password_nuevo2 = PasswordField(
+        _l("Repite la nueva contraseña"),
+        validators=[Optional(), EqualTo("password_nuevo", message=_l("Las contraseñas no coinciden"))],
+    )
+    submit = SubmitField(_l("Guardar cambios"))
+
+
 class LoginForm(FlaskForm):
     email = StringField(
         _l("Correo electrónico"),
