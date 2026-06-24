@@ -65,7 +65,7 @@
         {% if mi_turno %}
         <div class="match-turno">
           <span class="match-turno-label">
-            {% if mi_part.turno_cedido %}{{ _('Tú quieres librar:') }}{% else %}{{ _('Trabajarías:') }}{% endif %}
+            {% if mi_part.turno_cedido %}{{ _('Tú libras:') }}{% else %}{{ _('Tú trabajas:') }}{% endif %}
           </span>
           {{ mi_turno.fecha.strftime('%d/%m/%Y') }} — {{ mi_turno.franja_horaria.nombre }}
         </div>
@@ -81,10 +81,11 @@
           {% endif %}
           {% endfor %}
         {% else %}
-          {% set otro_turno = otras_parts[0].turno_cedido or otras_parts[0].turno_aceptado %}
+          {% set otra_p = otras_parts[0] %}
+          {% set otro_turno = otra_p.turno_cedido or otra_p.turno_aceptado %}
           {% if otro_turno %}
           <div class="match-turno">
-            <span class="match-turno-label">{{ _('Librarías:') }}</span>
+            <span class="match-turno-label">{{ otra_p.publicacion.usuario.nombre }} {% if otra_p.turno_cedido %}{{ _('libra:') }}{% else %}{{ _('trabaja:') }}{% endif %}</span>
             {{ otro_turno.fecha.strftime('%d/%m/%Y') }} — {{ otro_turno.franja_horaria.nombre }}
           </div>
           {% endif %}
