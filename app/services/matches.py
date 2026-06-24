@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from app.extensions import db
 from app.models import Notificacion
 from app.push.sender import enviar_push_condicional
+from app.services.eventos import registrar_evento
 
 
 def _participacion_del_usuario(match, usuario_id):
@@ -41,6 +42,7 @@ def confirmar_participacion(match, usuario_id):
             ))
             if p.publicacion.usuario_id != usuario_id:
                 enviar_push_condicional(p.publicacion.usuario, "confirmado_total")
+            registrar_evento(p.publicacion.usuario_id, "match_confirmed", match.id)
     else:
         match.estado = "confirmado_parcial"
         for p in match.participaciones:

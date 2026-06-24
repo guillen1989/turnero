@@ -1,6 +1,7 @@
 from app.extensions import db
 from app.models import MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, SuscripcionPublicaciones, TurnoCedido, TurnoAceptado, Usuario
 from app.push.sender import enviar_push_condicional
+from app.services.eventos import registrar_evento
 
 
 
@@ -30,6 +31,8 @@ def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, 
             cualquier_franja=cualquier,
         ))
 
+    db.session.commit()
+    registrar_evento(usuario_id, "publication_created", pub.id)
     db.session.commit()
 
     publicador = db.session.get(Usuario, usuario_id)

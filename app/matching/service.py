@@ -19,6 +19,7 @@ from app.models import (
 )
 from app.matching.engine import detectar_cadena_3, detectar_match_directo, detectar_match_regalo
 from app.push.sender import enviar_push_condicional
+from app.services.eventos import registrar_evento
 from sqlalchemy.orm import selectinload
 
 
@@ -280,6 +281,10 @@ def crear_match_directo(pub_a, pub_b):
     else:
         enviar_push_condicional(pub_b.usuario, "match")
 
+    for pub in (pub_a, pub_b):
+        registrar_evento(pub.usuario_id, "match_found", match.id)
+    db.session.commit()
+
     return match
 
 
@@ -407,5 +412,9 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
 
     enviar_push_condicional(pub_b.usuario, "match")
     enviar_push_condicional(pub_c.usuario, "match")
+
+    for pub in (pub_a, pub_b, pub_c):
+        registrar_evento(pub.usuario_id, "match_found", match.id)
+    db.session.commit()
 
     return match

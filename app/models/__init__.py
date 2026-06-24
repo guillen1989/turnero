@@ -12,6 +12,7 @@ from app.models.match import MatchCambio, MatchParticipacion
 from app.models.notificacion import Notificacion
 from app.models.feedback import Feedback
 from app.models.suscripcion_publicaciones import SuscripcionPublicaciones
+from app.models.event import Event
 
 __all__ = [
     "Pais",
@@ -31,5 +32,6 @@ __all__ = [
     "Notificacion",
     "Feedback",
     "SuscripcionPublicaciones",
+    "Event",
     "insertar_categorias_semilla",
 ]
