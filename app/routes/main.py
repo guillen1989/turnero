@@ -4,7 +4,7 @@ from sqlalchemy import and_, exists, extract, or_
 from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
 from app.extensions import db
-from app.models import FranjaHoraria, MatchCambio, MatchParticipacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
+from app.models import FranjaHoraria, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
 from app.services.caducidad import caducar_publicaciones_expiradas
 
 bp = Blueprint("main", __name__)
@@ -160,6 +160,10 @@ def index():
         if estado_filtro == "compatible":
             publicaciones = []
             matches = _matches_para_tab(current_user.id, "propuesto")
+            Notificacion.query.filter_by(
+                usuario_id=current_user.id, tipo="nuevo_match", leida=False
+            ).update({"leida": True})
+            db.session.commit()
         elif estado_filtro == "pendiente":
             publicaciones = []
             matches = _matches_para_tab(current_user.id, "confirmado_parcial")

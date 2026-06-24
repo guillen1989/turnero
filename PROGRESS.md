@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Matching a 3 bandas implementado. Sin pasos pendientes definidos.
+Sin pasos pendientes definidos.
 
 ## Backlog (fuente: .backlog)
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
@@ -22,6 +22,10 @@ Matching a 3 bandas implementado. Sin pasos pendientes definidos.
 - [x] B11: Avisos por email con límite diario configurable ✓
 - [x] B12: Notificación por email al admin cuando se recibe un feedback ✓
 - [x] B13: Matching a 3 bandas (ciclo A→B→C→A) — motor puro + servicio + ruta + dashboard ✓
+- [x] B14: Aviso de coincidencia parcial (cambio ↔ regalo / cambio ↔ petición) ✓
+- [x] B15: Contraoferta — proponer términos personalizados sobre una publicación de tipo cambio ✓
+- [x] B16: Invitar a un compañero — enlace WhatsApp + URL pre-rellenada ✓
+- [x] B17: Fix push acumulativo — contador basado en Notificacion.leida, se resetea al visitar Compatibles ✓
 
 ## Pasos completados
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile

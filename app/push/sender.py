@@ -74,12 +74,10 @@ def _contar_pendientes(usuario, tipo):
 
     if tipo in ("match", "match_parcial"):
         return db.session.scalar(
-            sa_select(func.count(MatchParticipacion.id))
-            .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
-            .join(PublicacionCambio, MatchParticipacion.publicacion_id == PublicacionCambio.id)
-            .where(
-                PublicacionCambio.usuario_id == usuario.id,
-                MatchCambio.estado == "propuesto",
+            sa_select(func.count(Notificacion.id)).where(
+                Notificacion.usuario_id == usuario.id,
+                Notificacion.tipo == "nuevo_match",
+                Notificacion.leida.is_(False),
             )
         )
 

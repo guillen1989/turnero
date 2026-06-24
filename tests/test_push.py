@@ -185,37 +185,20 @@ def test_push_confirmado_total_incluye_url_y_tag(app, db):
 
 
 def test_push_condicional_mensaje_refleja_conteo(app, db):
-    """El cuerpo de la push dice 'Tienes N compatibles nuevos' según la BD."""
-    from datetime import date
-
-    from app.models import MatchCambio, MatchParticipacion, PublicacionCambio, TurnoCedido, insertar_categorias_semilla
+    """El cuerpo de la push dice 'Tienes N compatibles nuevos' según las notificaciones no leídas."""
+    from app.models import Notificacion, insertar_categorias_semilla
     from app.push.sender import enviar_push_condicional
 
     insertar_categorias_semilla()
-    from app.models import Categoria, FranjaHoraria
+    from app.models import Categoria
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
     u1 = registrar_usuario("Ana", "ana_cnt@test.es", "pass", "H1", "Urgencias", cat.id)
-    u2 = registrar_usuario("Pedro", "pedro_cnt@test.es", "pass", "H1", "Urgencias", cat.id)
     u1.push_subscription = json.dumps(SUBSCRIPTION)
     db.session.commit()
 
-    franja = FranjaHoraria.query.filter_by(grupo_intercambio_id=u1.unidad.grupo_intercambio_id).first()
-
-    # Crea 2 matches propuestos para u1
-    for i in range(2):
-        pub_a = PublicacionCambio(usuario_id=u1.id)
-        pub_b = PublicacionCambio(usuario_id=u2.id)
-        db.session.add_all([pub_a, pub_b])
-        db.session.flush()
-        tc_a = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 8, i + 1), franja_horaria_id=franja.id)
-        tc_b = TurnoCedido(publicacion_id=pub_b.id, fecha=date(2026, 9, i + 1), franja_horaria_id=franja.id)
-        db.session.add_all([tc_a, tc_b])
-        db.session.flush()
-        match = MatchCambio(tipo="directo_2", estado="propuesto")
-        db.session.add(match)
-        db.session.flush()
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc_a.id))
-        db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc_b.id))
+    # Crea 2 notificaciones nuevo_match no leídas para u1
+    for _ in range(2):
+        db.session.add(Notificacion(usuario_id=u1.id, tipo="nuevo_match", leida=False))
     db.session.commit()
 
     old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
