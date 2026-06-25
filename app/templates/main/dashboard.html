@@ -212,11 +212,19 @@
           {% set ta = pub.turnos_aceptados[0] %}
           {% set wa_texto = _('Busco cambio de turno en el día: tengo el ') + tc.franja_horaria.nombre + _(' del ') + tc.fecha.strftime('%d/%m/%Y') + _(' y busco el ') + ta.franja_horaria.nombre + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
         {% else %}
-          {% set ns = namespace(wa_turnos='') %}
+          {% set ns = namespace(wa_turnos='', wa_ofrecidos='') %}
           {% for t in pub.turnos_cedidos %}
             {% if loop.first %}{% set ns.wa_turnos = t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
           {% endfor %}
-          {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar: ') + ns.wa_turnos + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
+          {% for t in pub.turnos_aceptados %}
+            {% set franja = _('cualquier turno') if t.cualquier_franja else t.franja_horaria.nombre %}
+            {% if loop.first %}{% set ns.wa_ofrecidos = t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}{% else %}{% set ns.wa_ofrecidos = ns.wa_ofrecidos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}{% endif %}
+          {% endfor %}
+          {% if ns.wa_ofrecidos %}
+            {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar: ') + ns.wa_turnos + '. ' + _('Me ofrezco a trabajar: ') + ns.wa_ofrecidos + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
+          {% else %}
+            {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar: ') + ns.wa_turnos + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
+          {% endif %}
         {% endif %}
         <div class="pub-acciones">
           <a href="{{ url_for('publicaciones.editar', pub_id=pub.id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>
