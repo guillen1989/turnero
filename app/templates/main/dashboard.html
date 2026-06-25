@@ -187,43 +187,43 @@
         {% endif %}
         {% if pub.esta_activa() %}
         {% set pub_url = url_for('main.cambios', pub_id=pub.id, _external=True) %}
-        {% set wa_msg_extra = (' ' + pub.mensaje) if pub.mensaje else '' %}
+        {% set wa_msg_extra = ('\n' + pub.mensaje) if pub.mensaje else '' %}
         {% if pub.tipo == 'regalo' %}
           {% set ns = namespace(wa_turnos='') %}
           {% for t in pub.turnos_aceptados %}
             {% set franja = _('cualquier turno') if t.cualquier_franja else t.franja_horaria.nombre %}
-            {% if loop.first %}{% set ns.wa_turnos = t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}{% endif %}
+            {% set ns.wa_turnos = ns.wa_turnos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}
           {% endfor %}
-          {% set wa_texto = _('Me ofrezco a trabajar en sustitución: ') + ns.wa_turnos + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
+          {% set wa_texto = _('Me ofrezco a trabajar en sustitución:') + ns.wa_turnos + wa_msg_extra + '\n' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
         {% elif pub.tipo == 'peticion' %}
           {% set ns = namespace(wa_turnos='') %}
           {% for t in pub.turnos_cedidos %}
-            {% if loop.first %}{% set ns.wa_turnos = t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
+            {% set ns.wa_turnos = ns.wa_turnos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
           {% endfor %}
-          {% set wa_texto = _('Busco a alguien que me cubra un turno: ') + ns.wa_turnos + '.' + wa_msg_extra + ' ' + _('¿Puedes ayudarme? Únete en Turnero:') + ' ' + pub_url %}
+          {% set wa_texto = _('Busco a alguien que me cubra un turno:') + ns.wa_turnos + wa_msg_extra + '\n' + _('¿Puedes ayudarme? Únete en Turnero:') + ' ' + pub_url %}
         {% elif pub.tipo == 'junte' %}
           {% set ns = namespace(wa_turnos='') %}
           {% for t in pub.turnos_cedidos %}
-            {% if loop.first %}{% set ns.wa_turnos = t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
+            {% set ns.wa_turnos = ns.wa_turnos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
           {% endfor %}
-          {% set wa_texto = _('Busco compañero/a para un junte de noches: ') + ns.wa_turnos + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
+          {% set wa_texto = _('Busco compañero/a para un junte de noches:') + ns.wa_turnos + wa_msg_extra + '\n' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
         {% elif pub.tipo == 'cambio_dia' %}
           {% set tc = pub.turnos_cedidos[0] %}
           {% set ta = pub.turnos_aceptados[0] %}
-          {% set wa_texto = _('Busco cambio de turno en el día: tengo el ') + tc.franja_horaria.nombre + _(' del ') + tc.fecha.strftime('%d/%m/%Y') + _(' y busco el ') + ta.franja_horaria.nombre + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
+          {% set wa_texto = _('Busco cambio de turno en el día: tengo el ') + tc.franja_horaria.nombre + _(' del ') + tc.fecha.strftime('%d/%m/%Y') + _(' y busco el ') + ta.franja_horaria.nombre + '.' + wa_msg_extra + '\n' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
         {% else %}
           {% set ns = namespace(wa_turnos='', wa_ofrecidos='') %}
           {% for t in pub.turnos_cedidos %}
-            {% if loop.first %}{% set ns.wa_turnos = t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% else %}{% set ns.wa_turnos = ns.wa_turnos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}{% endif %}
+            {% set ns.wa_turnos = ns.wa_turnos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
           {% endfor %}
           {% for t in pub.turnos_aceptados %}
             {% set franja = _('cualquier turno') if t.cualquier_franja else t.franja_horaria.nombre %}
-            {% if loop.first %}{% set ns.wa_ofrecidos = t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}{% else %}{% set ns.wa_ofrecidos = ns.wa_ofrecidos + ', ' + t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}{% endif %}
+            {% set ns.wa_ofrecidos = ns.wa_ofrecidos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}
           {% endfor %}
           {% if ns.wa_ofrecidos %}
-            {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar: ') + ns.wa_turnos + '. ' + _('Me ofrezco a trabajar: ') + ns.wa_ofrecidos + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
+            {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar:') + ns.wa_turnos + '\n' + _('Me ofrezco a trabajar:') + ns.wa_ofrecidos + wa_msg_extra + '\n' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
           {% else %}
-            {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar: ') + ns.wa_turnos + '.' + wa_msg_extra + ' ' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
+            {% set wa_texto = _('Busco compañero/a para un cambio de turno. Quiero librar:') + ns.wa_turnos + wa_msg_extra + '\n' + _('¿Te interesa? Únete en Turnero:') + ' ' + pub_url %}
           {% endif %}
         {% endif %}
         <div class="pub-acciones">
