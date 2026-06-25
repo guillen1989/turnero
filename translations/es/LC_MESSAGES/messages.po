@@ -1698,17 +1698,8 @@ msgstr ""
 msgid "Me ofrezco a trabajar en sustitución:"
 msgstr ""
 
-#: app/templates/main/dashboard.html:199 app/templates/main/dashboard.html:211
-#: app/templates/main/dashboard.html:215 app/templates/main/dashboard.html:221
-msgid "¿Te interesa? Únete en Turnero:"
-msgstr ""
-
 #: app/templates/main/dashboard.html:205
 msgid "Busco a alguien que me cubra un turno:"
-msgstr ""
-
-#: app/templates/main/dashboard.html:205
-msgid "¿Puedes ayudarme? Únete en Turnero:"
 msgstr ""
 
 #: app/templates/main/dashboard.html:211
@@ -1727,9 +1718,6 @@ msgstr ""
 msgid " y busco el "
 msgstr ""
 
-#: app/templates/main/dashboard.html:221
-msgid "Busco compañero/a para un cambio de turno. Quiero librar:"
-msgstr ""
 
 #: app/templates/main/dashboard.html:235
 msgid "Compartir"
