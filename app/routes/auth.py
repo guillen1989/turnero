@@ -372,9 +372,9 @@ def perfil_cuenta():
     hospital_nombre = current_user.unidad.hospital.nombre
     unidad_nombre = current_user.unidad.nombre
     texto_wa = _(
-        "¡Únete a Turnero! Usamos esta app en %(hospital)s / %(unidad)s para "
-        "intercambiar turnos. Regístrate con este enlace y tus datos ya estarán "
-        "pre-rellenados: %(url)s",
+        "¡Únete a Turnero! En %(hospital)s / %(unidad)s usamos esta app para "
+        "gestionar los cambios de turno entre compañeros. ¡Es muy fácil! "
+        "Entra aquí: %(url)s",
         hospital=hospital_nombre,
         unidad=unidad_nombre,
         url=invite_url,
