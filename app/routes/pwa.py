@@ -12,15 +12,16 @@ def manifest():
         "short_name": "Turnero",
         "description": "Intercambio de turnos para personal sanitario",
         "start_url": "/",
+        "scope": "/",
         "display": "standalone",
         "background_color": "#ffffff",
         "theme_color": "#2563eb",
         "lang": "es",
+        "prefer_related_applications": False,
         "icons": [
-            {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-            {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
-            {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-            {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+            # "any maskable" en una sola entrada evita duplicados que rompen Chrome antiguo en Android 5/6/7
+            {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+            {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
         ],
     }
     resp = Response(json.dumps(data), content_type="application/manifest+json")
