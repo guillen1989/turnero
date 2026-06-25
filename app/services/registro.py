@@ -9,8 +9,8 @@ from app.models import (
 _OPCION_NUEVA = 0
 
 _FRANJAS_DEFAULT = [
-    ("Mañana", time(7, 0), time(15, 0)),
-    ("Tarde", time(15, 0), time(23, 0)),
+    ("Mañana", time(8, 0), time(15, 0)),
+    ("Tarde", time(15, 0), time(22, 0)),
     ("Noche", time(22, 0), time(8, 0)),
     ("Diurno 12h", time(8, 0), time(20, 0)),
     ("Nocturno 12h", time(20, 0), time(8, 0)),
