@@ -1,3 +1,5 @@
+from urllib.parse import quote as _urlquote
+
 from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 from sqlalchemy import and_, exists, extract, or_
@@ -8,6 +10,11 @@ from app.models import BusquedaGuardada, FranjaHoraria, MatchCambio, MatchPartic
 from app.services.caducidad import caducar_publicaciones_expiradas
 
 bp = Blueprint("main", __name__)
+
+
+@bp.app_template_filter("urlquote")
+def urlquote_filter(s):
+    return _urlquote(s, safe="")
 
 @bp.get("/health")
 def health():
