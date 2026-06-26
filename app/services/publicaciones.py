@@ -122,5 +122,6 @@ def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo
 def eliminar_publicacion(pub):
     """Borra completamente una publicación y todos sus datos asociados."""
     _eliminar_matches_de_publicacion(pub.id)
+    Notificacion.query.filter_by(publicacion_id=pub.id).delete()
     db.session.delete(pub)
     db.session.commit()

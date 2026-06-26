@@ -3,7 +3,7 @@ from datetime import date
 
 from app.extensions import db
 from app.models import (
-    Categoria, FranjaHoraria, MatchCambio, PublicacionCambio,
+    Categoria, FranjaHoraria, MatchCambio, Notificacion, PublicacionCambio,
     TurnoCedido, TurnoAceptado, insertar_categorias_semilla,
 )
 from app.services.registro import registrar_usuario
@@ -219,3 +219,28 @@ def test_eliminar_regalo_con_match_no_da_error(client, db):
     assert resp.status_code == 302
     assert db.session.get(PublicacionCambio, regalo.id) is None
     assert MatchCambio.query.count() == 0
+
+
+def test_eliminar_con_notificacion_publicacion_id_no_da_error(client, db):
+    """Eliminar una publicación que tiene notificaciones por publicacion_id no debe dar 500.
+
+    Regresión: notificacion.publicacion_id FK sin cascade bloqueaba el DELETE.
+    """
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    pub = _pub(u1)
+
+    notif = Notificacion(
+        usuario_id=u2.id,
+        publicacion_id=pub.id,
+        tipo="nueva_publicacion_seguido",
+    )
+    db.session.add(notif)
+    db.session.commit()
+    notif_id = notif.id
+
+    _login(client, u1.email)
+    resp = client.post(f"/publicaciones/{pub.id}/eliminar", follow_redirects=False)
+    assert resp.status_code == 302
+    assert db.session.get(PublicacionCambio, pub.id) is None
+    assert db.session.get(Notificacion, notif_id) is None
