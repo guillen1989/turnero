@@ -365,3 +365,139 @@ def test_dashboard_tabs_muestran_conteos(client, db):
     resp = client.get("/")
     assert b"(2)" in resp.data  # activas
     assert b"(1)" in resp.data  # confirmadas y caducadas comparten el (1)
+
+
+def test_dashboard_confirmada_muestra_match_de_pub_parcialmente_resuelta(client, db):
+    """La pestaña Confirmados muestra matches confirmado_total aunque la pub sea parcialmente_resuelta."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "H1", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    # pub_ana tiene 2 turnos cedidos: 1 resuelto y 1 abierto → parcialmente_resuelta
+    pub_ana = PublicacionCambio(usuario_id=ana.id, estado="parcialmente_resuelta")
+    db.session.add(pub_ana)
+    db.session.flush()
+    tc_ana_resuelto = TurnoCedido(
+        publicacion_id=pub_ana.id, fecha=date(2026, 9, 1),
+        franja_horaria_id=franja.id, estado="resuelto",
+    )
+    tc_ana_abierto = TurnoCedido(
+        publicacion_id=pub_ana.id, fecha=date(2026, 9, 2),
+        franja_horaria_id=franja.id,
+    )
+    ta_ana_resuelto = TurnoAceptado(
+        publicacion_id=pub_ana.id, fecha=date(2026, 9, 10),
+        franja_horaria_id=franja.id, estado="resuelto",
+    )
+    db.session.add_all([tc_ana_resuelto, tc_ana_abierto, ta_ana_resuelto])
+
+    pub_pedro = PublicacionCambio(usuario_id=pedro.id, estado="confirmada")
+    db.session.add(pub_pedro)
+    db.session.flush()
+    tc_pedro = TurnoCedido(
+        publicacion_id=pub_pedro.id, fecha=date(2026, 9, 10),
+        franja_horaria_id=franja.id, estado="resuelto",
+    )
+    db.session.add(tc_pedro)
+
+    match = MatchCambio(tipo="directo_2", estado="confirmado_total")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_ana.id,
+        turno_cedido_id=tc_ana_resuelto.id, turno_aceptado_id=ta_ana_resuelto.id,
+        confirmado=True,
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_pedro.id,
+        turno_cedido_id=tc_pedro.id, confirmado=True,
+    ))
+    db.session.commit()
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/?estado=confirmada")
+    html = resp.data.decode()
+
+    # La tarjeta del match confirmado debe aparecer con el nombre del partner
+    assert "Pedro" in html
+    # y la fecha del turno que Ana cedió en ese match
+    assert "01/09/2026" in html
+
+
+def test_dashboard_activos_oculta_turnos_resueltos(client, db):
+    """En el dashboard, una pub parcialmente_resuelta solo muestra los turnos aún abiertos."""
+    usuario = _usuario_y_login(client)
+    franja = _franja(usuario.unidad.grupo_intercambio_id)
+
+    pub = PublicacionCambio(usuario_id=usuario.id, estado="parcialmente_resuelta")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoCedido(
+        publicacion_id=pub.id, fecha=date(2026, 10, 1), franja_horaria_id=franja.id,
+    ))
+    db.session.add(TurnoCedido(
+        publicacion_id=pub.id, fecha=date(2026, 10, 2), franja_horaria_id=franja.id,
+        estado="resuelto",
+    ))
+    db.session.add(TurnoAceptado(
+        publicacion_id=pub.id, fecha=date(2026, 11, 1), franja_horaria_id=franja.id,
+    ))
+    db.session.add(TurnoAceptado(
+        publicacion_id=pub.id, fecha=date(2026, 11, 2), franja_horaria_id=franja.id,
+        estado="resuelto",
+    ))
+    db.session.commit()
+
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert "01/10/2026" in html   # cedido abierto → visible
+    assert "02/10/2026" not in html  # cedido resuelto → oculto
+    assert "01/11/2026" in html   # aceptado abierto → visible
+    assert "02/11/2026" not in html  # aceptado resuelto → oculto
+
+
+def test_confirmar_total_resuelve_turno_aceptado(client, db):
+    """Al confirmar totalmente un match cambio↔cambio, el turno_aceptado vinculado queda resuelto."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "H1", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = PublicacionCambio(usuario_id=ana.id)
+    pub_pedro = PublicacionCambio(usuario_id=pedro.id)
+    db.session.add_all([pub_ana, pub_pedro])
+    db.session.flush()
+
+    tc_ana = TurnoCedido(publicacion_id=pub_ana.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    tc_pedro = TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id)
+    ta_ana = TurnoAceptado(publicacion_id=pub_ana.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id)
+    ta_pedro = TurnoAceptado(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    db.session.add_all([tc_ana, tc_pedro, ta_ana, ta_pedro])
+    db.session.flush()
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_ana.id,
+        turno_cedido_id=tc_ana.id, turno_aceptado_id=ta_ana.id,
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_pedro.id,
+        turno_cedido_id=tc_pedro.id, turno_aceptado_id=ta_pedro.id,
+    ))
+    db.session.commit()
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    client.get("/auth/logout")
+    client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+
+    db.session.refresh(ta_ana)
+    db.session.refresh(ta_pedro)
+    assert ta_ana.estado == "resuelto"
+    assert ta_pedro.estado == "resuelto"

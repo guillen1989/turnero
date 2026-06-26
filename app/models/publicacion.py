@@ -84,9 +84,10 @@ class TurnoAceptado(db.Model):
         db.Integer, db.ForeignKey("franja_horaria.id"), nullable=True
     )
     cualquier_franja = db.Column(db.Boolean, nullable=False, default=False)
+    estado = db.Column(db.String(20), nullable=False, default="abierto")
 
     publicacion = db.relationship("PublicacionCambio", back_populates="turnos_aceptados")
     franja_horaria = db.relationship("FranjaHoraria")
 
     def __repr__(self):
-        return f"<TurnoAceptado {self.fecha} franja={self.franja_horaria_id}>"
+        return f"<TurnoAceptado {self.fecha} franja={self.franja_horaria_id} [{self.estado}]>"

@@ -41,7 +41,8 @@
     <div class="match-card match--{{ match.estado }}{% if match.tipo == 'cadena_3' %} match--cadena-3{% endif %}">
       <div class="match-header">
         <span class="match-badge match-badge--{{ match.estado }}{% if es_parcial and match.estado == 'propuesto' %} match-badge--parcial{% endif %}">
-          {% if match.tipo == 'cadena_3' %}
+          {% if match.estado == 'confirmado_total' %}{{ _('¡Confirmado!') }}
+          {% elif match.tipo == 'cadena_3' %}
             {% if match.estado == 'propuesto' %}{{ _('¡Cambio a 3 bandas!') }}
             {% elif mi_part.confirmado %}{{ _('Esperando a los demás') }}
             {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
@@ -98,7 +99,9 @@
       {% if match.tipo != 'cadena_3' and otras_parts[0].publicacion.mensaje %}
       <p class="match-mensaje">"{{ otras_parts[0].publicacion.mensaje }}"</p>
       {% endif %}
-      {% if not mi_part.confirmado %}
+      {% if match.estado == 'confirmado_total' %}
+      <p class="match-esperando">{{ _('Cambio confirmado por todas las partes.') }}</p>
+      {% elif not mi_part.confirmado %}
       <div class="match-acciones">
         <form method="post" action="{{ url_for('matches.confirmar', match_id=match.id) }}" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -130,7 +133,7 @@
         <span class="tipo-badge tipo-badge--regalo">{{ _('Regalo') }}</span>
         <div class="turnos-aceptados">
           <strong>{{ _('Me ofrezco a trabajar:') }}</strong>
-          {% for turno in pub.turnos_aceptados %}
+          {% for turno in pub.turnos_aceptados | selectattr("estado", "equalto", "abierto") %}
           <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {% if turno.cualquier_franja %}{{ _('Cualquier turno') }}{% else %}{{ turno.franja_horaria.nombre }}{% endif %}</span>
           {% endfor %}
         </div>
@@ -138,7 +141,7 @@
         <span class="tipo-badge tipo-badge--peticion">{{ _('Petición') }}</span>
         <div class="turnos-cedidos">
           <strong>{{ _('Quiero librar:') }}</strong>
-          {% for turno in pub.turnos_cedidos %}
+          {% for turno in pub.turnos_cedidos | selectattr("estado", "equalto", "abierto") %}
           <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</span>
           {% endfor %}
         </div>
@@ -146,13 +149,13 @@
         <span class="tipo-badge tipo-badge--junte">{{ _('Junte de noches') }}</span>
         <div class="turnos-cedidos">
           <strong>{{ _('Noches que cedo:') }}</strong>
-          {% for turno in pub.turnos_cedidos %}
+          {% for turno in pub.turnos_cedidos | selectattr("estado", "equalto", "abierto") %}
           <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</span>
           {% endfor %}
         </div>
         <div class="turnos-aceptados">
           <strong>{{ _('Noches que tomo:') }}</strong>
-          {% for turno in pub.turnos_aceptados %}
+          {% for turno in pub.turnos_aceptados | selectattr("estado", "equalto", "abierto") %}
           <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</span>
           {% endfor %}
         </div>
@@ -168,13 +171,13 @@
         <span class="tipo-badge tipo-badge--cambio">{{ _('Cambio') }}</span>
         <div class="turnos-cedidos">
           <strong>{{ _('Quiero librar:') }}</strong>
-          {% for turno in pub.turnos_cedidos %}
+          {% for turno in pub.turnos_cedidos | selectattr("estado", "equalto", "abierto") %}
           <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</span>
           {% endfor %}
         </div>
         <div class="turnos-aceptados">
           <strong>{{ _('Me ofrezco a trabajar:') }}</strong>
-          {% for turno in pub.turnos_aceptados %}
+          {% for turno in pub.turnos_aceptados | selectattr("estado", "equalto", "abierto") %}
           <span class="turno">{{ turno.fecha.strftime('%d/%m/%Y') }} — {% if turno.cualquier_franja %}{{ _('Cualquier turno') }}{% else %}{{ turno.franja_horaria.nombre }}{% endif %}</span>
           {% endfor %}
         </div>
@@ -190,20 +193,20 @@
         {% set wa_msg_extra = ('\n' + pub.mensaje) if pub.mensaje else '' %}
         {% if pub.tipo == 'regalo' %}
           {% set ns = namespace(wa_turnos='') %}
-          {% for t in pub.turnos_aceptados %}
+          {% for t in pub.turnos_aceptados | selectattr("estado", "equalto", "abierto") %}
             {% set franja = _('cualquier turno') if t.cualquier_franja else t.franja_horaria.nombre %}
             {% set ns.wa_turnos = ns.wa_turnos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}
           {% endfor %}
           {% set wa_texto = _('Me ofrezco a trabajar en sustitución:') + ns.wa_turnos + wa_msg_extra + '\n' + pub_url %}
         {% elif pub.tipo == 'peticion' %}
           {% set ns = namespace(wa_turnos='') %}
-          {% for t in pub.turnos_cedidos %}
+          {% for t in pub.turnos_cedidos | selectattr("estado", "equalto", "abierto") %}
             {% set ns.wa_turnos = ns.wa_turnos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
           {% endfor %}
           {% set wa_texto = _('Busco a alguien que me cubra un turno:') + ns.wa_turnos + wa_msg_extra + '\n' + pub_url %}
         {% elif pub.tipo == 'junte' %}
           {% set ns = namespace(wa_turnos='') %}
-          {% for t in pub.turnos_cedidos %}
+          {% for t in pub.turnos_cedidos | selectattr("estado", "equalto", "abierto") %}
             {% set ns.wa_turnos = ns.wa_turnos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
           {% endfor %}
           {% set wa_texto = _('Busco compañero/a para un junte de noches:') + ns.wa_turnos + wa_msg_extra + '\n' + pub_url %}
@@ -213,10 +216,10 @@
           {% set wa_texto = _('Busco cambio de turno en el día: tengo el ') + tc.franja_horaria.nombre + _(' del ') + tc.fecha.strftime('%d/%m/%Y') + _(' y busco el ') + ta.franja_horaria.nombre + '.' + wa_msg_extra + '\n' + pub_url %}
         {% else %}
           {% set ns = namespace(wa_turnos='', wa_ofrecidos='') %}
-          {% for t in pub.turnos_cedidos %}
+          {% for t in pub.turnos_cedidos | selectattr("estado", "equalto", "abierto") %}
             {% set ns.wa_turnos = ns.wa_turnos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
           {% endfor %}
-          {% for t in pub.turnos_aceptados %}
+          {% for t in pub.turnos_aceptados | selectattr("estado", "equalto", "abierto") %}
             {% set franja = _('cualquier turno') if t.cualquier_franja else t.franja_horaria.nombre %}
             {% set ns.wa_ofrecidos = ns.wa_ofrecidos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}
           {% endfor %}

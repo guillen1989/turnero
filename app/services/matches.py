@@ -34,6 +34,8 @@ def confirmar_participacion(match, usuario_id):
             else:
                 # Participante de tipo 'regalo': no tiene turno_cedido que resolver.
                 p.publicacion.estado = "confirmada"
+            if p.turno_aceptado_id is not None:
+                p.turno_aceptado.estado = "resuelto"
         for p in match.participaciones:
             db.session.add(Notificacion(
                 usuario_id=p.publicacion.usuario_id,

@@ -38,7 +38,7 @@ def _franjas_del_grupo(pub):
 
 
 def _aceptados(pub):
-    """Frozenset de (fecha, franja_id) de los turnos aceptados.
+    """Frozenset de (fecha, franja_id) de los turnos aceptados aún abiertos.
 
     Si un turno tiene cualquier_franja=True, se expande a todas las franjas
     del grupo para que haga match con cualquier turno cedido de esa fecha.
@@ -46,6 +46,8 @@ def _aceptados(pub):
     result = set()
     franjas_cache = None
     for t in pub.turnos_aceptados:
+        if t.estado != "abierto":
+            continue
         if t.cualquier_franja:
             if franjas_cache is None:
                 franjas_cache = _franjas_del_grupo(pub)
@@ -167,13 +169,15 @@ def buscar_matches_para(publicacion):
 
 
 def _primer_aceptado_que_cubre(pub, cedidos_contraparte):
-    """Primer TurnoAceptado de pub cuya clave (fecha, franja_id) está en cedidos_contraparte.
+    """Primer TurnoAceptado abierto de pub cuya clave (fecha, franja_id) está en cedidos_contraparte.
 
     Si el turno tiene cualquier_franja=True basta con que la fecha coincida con
     algún cedido de la contraparte, igual que hace _aceptados() al expandir.
     """
     fechas_contraparte = frozenset(fecha for fecha, _ in cedidos_contraparte)
     for t in pub.turnos_aceptados:
+        if t.estado != "abierto":
+            continue
         if t.cualquier_franja:
             if t.fecha in fechas_contraparte:
                 return t
@@ -184,9 +188,13 @@ def _primer_aceptado_que_cubre(pub, cedidos_contraparte):
 
 def _roles_cambio_simétrico(pub_a, pub_b):
     """cambio↔cambio o junte↔junte: ambos ceden un turno al otro."""
-    tc_a = _primer_cedido_que_acepta(pub_a, _aceptados(pub_b))
-    tc_b = _primer_cedido_que_acepta(pub_b, _aceptados(pub_a))
-    return tc_a, None, tc_b, None
+    aceptados_a = _aceptados(pub_a)
+    aceptados_b = _aceptados(pub_b)
+    tc_a = _primer_cedido_que_acepta(pub_a, aceptados_b)
+    tc_b = _primer_cedido_que_acepta(pub_b, aceptados_a)
+    ta_a = _primer_aceptado_que_cubre(pub_a, _cedidos_abiertos(pub_b))
+    ta_b = _primer_aceptado_que_cubre(pub_b, _cedidos_abiertos(pub_a))
+    return tc_a, ta_a, tc_b, ta_b
 
 
 def _roles_regalo_peticion(pub_a, pub_b):
@@ -258,12 +266,20 @@ def crear_match_directo(pub_a, pub_b):
 
     tc_a, ta_a, tc_b, ta_b = handler(pub_a, pub_b)
 
-    if (tc_a is None and ta_a is None) or (tc_b is None and ta_b is None):
+    kwargs_a = {}
+    if tc_a:
+        kwargs_a["turno_cedido_id"] = tc_a.id
+    if ta_a:
+        kwargs_a["turno_aceptado_id"] = ta_a.id
+    kwargs_b = {}
+    if tc_b:
+        kwargs_b["turno_cedido_id"] = tc_b.id
+    if ta_b:
+        kwargs_b["turno_aceptado_id"] = ta_b.id
+
+    if not kwargs_a or not kwargs_b:
         db.session.rollback()
         return None
-
-    kwargs_a = {"turno_cedido_id": tc_a.id} if tc_a else {"turno_aceptado_id": ta_a.id}
-    kwargs_b = {"turno_cedido_id": tc_b.id} if tc_b else {"turno_aceptado_id": ta_b.id}
 
     db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, **kwargs_a))
     db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, **kwargs_b))

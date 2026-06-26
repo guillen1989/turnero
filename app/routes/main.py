@@ -189,10 +189,25 @@ def _conteos_tabs(usuario_id):
     ).all()
     est_counts = {row.estado: row.n for row in est_rows}
 
+    # Matches confirmado_total cuya publicación sigue parcialmente_resuelta
+    # (no se contabilizan aún en est_counts["confirmada"])
+    matches_parciales_n = (
+        MatchCambio.query
+        .join(MatchParticipacion, MatchCambio.id == MatchParticipacion.match_id)
+        .join(PublicacionCambio, MatchParticipacion.publicacion_id == PublicacionCambio.id)
+        .filter(
+            PublicacionCambio.usuario_id == usuario_id,
+            MatchCambio.estado == "confirmado_total",
+            PublicacionCambio.estado == "parcialmente_resuelta",
+        )
+        .distinct()
+        .count()
+    )
+
     return {
         "activos": len(_matches_para_tab(usuario_id, "propuesto")) + abiertas,
         "pendiente": _query_pendientes(usuario_id).count(),
-        "confirmada": est_counts.get("confirmada", 0),
+        "confirmada": est_counts.get("confirmada", 0) + matches_parciales_n,
         "caducada": est_counts.get("caducada", 0),
     }
 
@@ -229,6 +244,20 @@ def index():
         elif estado_filtro == "pendiente":
             publicaciones = []
             matches = _matches_para_tab(current_user.id, "confirmado_parcial")
+        elif estado_filtro == "confirmada":
+            publicaciones = (
+                PublicacionCambio.query
+                .filter_by(usuario_id=current_user.id)
+                .filter(PublicacionCambio.estado == "confirmada")
+                .order_by(PublicacionCambio.fecha_creacion.desc())
+                .all()
+            )
+            # Matches confirmado_total cuya pub aún no está del todo resuelta
+            all_confirmados = _matches_para_tab(current_user.id, "confirmado_total")
+            matches = [
+                (m, mi, otras, t) for m, mi, otras, t in all_confirmados
+                if mi.publicacion.estado == "parcialmente_resuelta"
+            ]
         else:
             estados = _ESTADOS_DASHBOARD[estado_filtro]
             publicaciones = (
