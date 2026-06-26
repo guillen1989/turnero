@@ -8,7 +8,14 @@ from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default
-from app.matching.service import buscar_avisos_interes_para, buscar_cadenas_3_para, buscar_matches_para, crear_aviso_interes, crear_match_cadena_3, crear_match_directo
+from app.matching.service import (
+    buscar_avisos_interes_para,
+    buscar_sinteticas_que_coinciden_con,
+    buscar_matches_para,
+    crear_cadena_3_desde_sintetica,
+    crear_match_directo,
+    procesar_aviso_y_sintetica,
+)
 
 bp = Blueprint("publicaciones", __name__)
 
@@ -231,10 +238,10 @@ def nueva():
         pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
         for candidata in buscar_matches_para(pub):
             crear_match_directo(pub, candidata)
-        for pub_b, pub_c in buscar_cadenas_3_para(pub):
-            crear_match_cadena_3(pub, pub_b, pub_c)
+        for sint in buscar_sinteticas_que_coinciden_con(pub):
+            crear_cadena_3_desde_sintetica(pub, sint)
         for candidata in buscar_avisos_interes_para(pub):
-            crear_aviso_interes(pub, candidata)
+            procesar_aviso_y_sintetica(pub, candidata)
         flash(_("Publicación creada correctamente."), "success")
         return redirect(url_for("main.index"))
 
@@ -291,10 +298,10 @@ def editar(pub_id):
         editar_publicacion(pub, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
         for candidata in buscar_matches_para(pub):
             crear_match_directo(pub, candidata)
-        for pub_b, pub_c in buscar_cadenas_3_para(pub):
-            crear_match_cadena_3(pub, pub_b, pub_c)
+        for sint in buscar_sinteticas_que_coinciden_con(pub):
+            crear_cadena_3_desde_sintetica(pub, sint)
         for candidata in buscar_avisos_interes_para(pub):
-            crear_aviso_interes(pub, candidata)
+            procesar_aviso_y_sintetica(pub, candidata)
         flash(_("Publicación actualizada."), "success")
         return redirect(url_for("main.index"))
 
@@ -472,11 +479,11 @@ def contraoferta(pub_id):
         pub_nueva = publicar_cambio(current_user.id, cedidos, aceptados, tipo="cambio", mensaje=mensaje)
 
         for candidata in buscar_matches_para(pub_nueva):
-            if not crear_match_directo(pub_nueva, candidata):
-                for candidata2 in buscar_cadenas_3_para(pub_nueva):
-                    pass
+            crear_match_directo(pub_nueva, candidata)
+        for sint in buscar_sinteticas_que_coinciden_con(pub_nueva):
+            crear_cadena_3_desde_sintetica(pub_nueva, sint)
         for candidata in buscar_avisos_interes_para(pub_nueva):
-            crear_aviso_interes(pub_nueva, candidata)
+            procesar_aviso_y_sintetica(pub_nueva, candidata)
 
         notif = Notificacion(
             usuario_id=pub_original.usuario_id,

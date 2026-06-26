@@ -85,9 +85,34 @@ def caducar_publicaciones_expiradas(hoy=None):
 
     n1 = db.session.execute(stmt_cedidos).rowcount
     n2 = db.session.execute(stmt_regalos).rowcount
+
+    # Cancela sintéticas cuyo pub_a o pub_b ya no está activo.
+    padre_a = PublicacionCambio.__table__.alias("padre_a")
+    padre_b = PublicacionCambio.__table__.alias("padre_b")
+    stmt_sinteticas = (
+        sa_update(PublicacionCambio)
+        .where(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
+            exists(
+                sa_select(padre_a.c.id).where(
+                    padre_a.c.id == PublicacionCambio.sintetica_pub_a_id,
+                    padre_a.c.estado.not_in(("abierta", "parcialmente_resuelta")),
+                )
+            ) | exists(
+                sa_select(padre_b.c.id).where(
+                    padre_b.c.id == PublicacionCambio.sintetica_pub_b_id,
+                    padre_b.c.estado.not_in(("abierta", "parcialmente_resuelta")),
+                )
+            ),
+        )
+        .values(estado="cancelada")
+        .execution_options(synchronize_session=False)
+    )
+    db.session.execute(stmt_sinteticas)
+
     total = n1 + n2
-    if total:
-        db.session.commit()
+    db.session.commit()
 
     if hoy is None:
         _ultima_caducidad = hoy_real

@@ -276,6 +276,7 @@ def index():
                 PublicacionCambio.query
                 .filter_by(usuario_id=current_user.id)
                 .filter(PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]))
+                .filter(PublicacionCambio.es_sintetica.is_(False))
                 .filter(~PublicacionCambio.id.in_(sa_select(activos_subq)))
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
@@ -293,6 +294,7 @@ def index():
                 PublicacionCambio.query
                 .filter_by(usuario_id=current_user.id)
                 .filter(PublicacionCambio.estado == "confirmada")
+                .filter(PublicacionCambio.es_sintetica.is_(False))
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
             )
@@ -308,6 +310,7 @@ def index():
                 PublicacionCambio.query
                 .filter_by(usuario_id=current_user.id)
                 .filter(PublicacionCambio.estado.in_(estados))
+                .filter(PublicacionCambio.es_sintetica.is_(False))
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
             )

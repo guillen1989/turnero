@@ -193,6 +193,23 @@
           {{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ ta.franja_horaria.nombre }}
         </a>
       </div>
+      {% elif pub.es_sintetica %}
+      <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3') }}</span>
+      <p class="sintetica-nota">{{ _('Generada automáticamente. Si publicas un cambio con estas fechas, el sistema cerrará el intercambio a 3 personas.') }}</p>
+      <div class="turnos-cedidos">
+        <strong>{{ _('Librarías:') }}</strong>
+        {% for turno in pub.turnos_cedidos %}
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
+        {% endfor %}
+      </div>
+      <div class="turnos-aceptados">
+        <strong>{{ _('Trabajarías:') }}</strong>
+        {% for turno in pub.turnos_aceptados %}
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
+        {% endfor %}
+      </div>
       {% else %}
       <span class="tipo-badge tipo-badge--cambio">{{ _('Cambio') }}</span>
       <div class="turnos-cedidos">

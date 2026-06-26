@@ -81,6 +81,7 @@ def _candidatas_base(publicacion, propietario, grupo_id):
             PublicacionCambio.id != publicacion.id,
             PublicacionCambio.usuario_id != propietario.id,
             PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
+            PublicacionCambio.es_sintetica.is_(False),
             Usuario.categoria_id == propietario.categoria_id,
             Unidad.grupo_intercambio_id == grupo_id,
         )
@@ -492,3 +493,145 @@ def crear_aviso_interes(pub_a, pub_b):
 
     enviar_push_condicional(pub_a.usuario, "aviso_interes")
     enviar_push_condicional(pub_b.usuario, "aviso_interes")
+
+
+def procesar_aviso_y_sintetica(pub, candidata):
+    """
+    Crea el aviso de interés y la pub sintética para un par (pub, candidata)
+    con solapamiento unilateral. Determina automáticamente la dirección A→B.
+    """
+    crear_aviso_interes(pub, candidata)
+    cedidos_pub = _cedidos_abiertos(pub)
+    aceptados_candidata = _aceptados(candidata)
+    if bool(cedidos_pub & aceptados_candidata):
+        # candidata acepta el cedido de pub → pub=A, candidata=B
+        crear_pub_sintetica(pub, candidata)
+    else:
+        # pub acepta el cedido de candidata → candidata=A, pub=B
+        crear_pub_sintetica(candidata, pub)
+
+
+def crear_pub_sintetica(pub_a, pub_b):
+    """
+    Crea una PublicacionCambio sintética que cierra el triángulo entre pub_a y pub_b.
+
+    Regla de construcción:
+      cedido_sintética  = aceptados abiertos de pub_a  (A cubriría esos turnos para C)
+      acepta_sintética  = cedidos  abiertos de pub_b  (C cubriría esos turnos para B)
+
+    Propietario = usuario de pub_a.
+    Idempotente: si ya existe una sintética para este par, la devuelve sin crear otra.
+    """
+    from app.models import TurnoCedido as TC, TurnoAceptado as TA
+
+    existente = PublicacionCambio.query.filter_by(
+        sintetica_pub_a_id=pub_a.id,
+        sintetica_pub_b_id=pub_b.id,
+    ).first()
+    if existente:
+        return existente
+
+    sint = PublicacionCambio(
+        usuario_id=pub_a.usuario_id,
+        tipo="cambio",
+        es_sintetica=True,
+        sintetica_pub_a_id=pub_a.id,
+        sintetica_pub_b_id=pub_b.id,
+    )
+    db.session.add(sint)
+    db.session.flush()
+
+    for ta in pub_a.turnos_aceptados:
+        if ta.estado != "abierto":
+            continue
+        if ta.cualquier_franja:
+            for fid in _franjas_del_grupo(pub_a):
+                db.session.add(TC(
+                    publicacion_id=sint.id, fecha=ta.fecha, franja_horaria_id=fid
+                ))
+        else:
+            db.session.add(TC(
+                publicacion_id=sint.id,
+                fecha=ta.fecha,
+                franja_horaria_id=ta.franja_horaria_id,
+            ))
+
+    for tc in pub_b.turnos_cedidos:
+        if tc.estado != "abierto":
+            continue
+        db.session.add(TA(
+            publicacion_id=sint.id,
+            fecha=tc.fecha,
+            franja_horaria_id=tc.franja_horaria_id,
+        ))
+
+    db.session.commit()
+    return sint
+
+
+def buscar_sinteticas_que_coinciden_con(publicacion):
+    """
+    Devuelve publicaciones sintéticas activas con las que `publicacion` forma
+    un match directo (ambas direcciones cubiertas).
+
+    Cuando una pub sintética coincide con `publicacion`, la cadena a 3 está
+    completa y se puede crear el MatchCambio cadena_3.
+    """
+    if publicacion.tipo != "cambio":
+        return []
+
+    propietario = db.session.get(Usuario, publicacion.usuario_id)
+    grupo_id = propietario.unidad.grupo_intercambio_id
+
+    sinteticas = (
+        PublicacionCambio.query
+        .join(Usuario, PublicacionCambio.usuario_id == Usuario.id)
+        .join(Unidad, Usuario.unidad_id == Unidad.id)
+        .filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
+            PublicacionCambio.usuario_id != propietario.id,
+            Usuario.categoria_id == propietario.categoria_id,
+            Unidad.grupo_intercambio_id == grupo_id,
+        )
+        .options(
+            selectinload(PublicacionCambio.turnos_cedidos),
+            selectinload(PublicacionCambio.turnos_aceptados),
+        )
+        .all()
+    )
+
+    cedidos_pub = _cedidos_abiertos(publicacion)
+    aceptados_pub = _aceptados(publicacion)
+
+    # La sintética tiene:
+    #   cedido  = aceptados_A  (días que C libraría, cubiertos por A)
+    #   acepta  = cedido_B     (días que C trabajaría para B)
+    # C cierra el triángulo si:
+    #   • C quiere librar algún día que la sintética también "libra" (cedidos solapan)
+    #   • C está dispuesto a trabajar algún día que la sintética "acepta" (aceptados solapan)
+    return [
+        s for s in sinteticas
+        if bool(cedidos_pub & _cedidos_abiertos(s)) and bool(aceptados_pub & _aceptados(s))
+    ]
+
+
+def crear_cadena_3_desde_sintetica(pub_c, pub_sintetica):
+    """
+    Crea un MatchCambio cadena_3 entre pub_a, pub_b y pub_c usando la
+    pub_sintetica como puente para recuperar pub_a y pub_b.
+    Cancela la pub_sintetica al finalizar.
+    """
+    pub_a = db.session.get(PublicacionCambio, pub_sintetica.sintetica_pub_a_id)
+    pub_b = db.session.get(PublicacionCambio, pub_sintetica.sintetica_pub_b_id)
+
+    if not pub_a or not pub_b:
+        return None
+    if not pub_a.esta_activa() or not pub_b.esta_activa():
+        return None
+
+    match = crear_match_cadena_3(pub_a, pub_b, pub_c)
+    if match:
+        pub_sintetica.estado = "cancelada"
+        db.session.commit()
+    return match
