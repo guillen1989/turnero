@@ -35,6 +35,7 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL", "postgresql:///turnero"
     )
+    MAIL_SUPPRESS_SEND = True
 
 
 class TestingConfig(Config):
