@@ -74,6 +74,14 @@
                value="{{ dia if dia else '' }}">
       </div>
       <div class="form-group">
+        <label>{{ _('La fecha es…') }}</label>
+        <select name="tipo_fecha">
+          <option value="" {% if not tipo_fecha %}selected{% endif %}>{{ _('— Cedido o aceptado —') }}</option>
+          <option value="cedido"   {% if tipo_fecha == 'cedido'   %}selected{% endif %}>{{ _('Turno que quiere librar') }}</option>
+          <option value="aceptado" {% if tipo_fecha == 'aceptado' %}selected{% endif %}>{{ _('Turno que ofrece trabajar') }}</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>{{ _('Turno') }}</label>
         <select name="franja">
           <option value="">{{ _('— Todos los turnos —') }}</option>
@@ -102,7 +110,7 @@
     </div>
     <div class="cambios-filtro-actions">
       <button type="submit" class="btn btn-primary btn-sm">{{ _('Filtrar') }}</button>
-      {% if mes or dia or nombre or franja_id or tipo %}
+      {% if mes or dia or nombre or franja_id or tipo or tipo_fecha %}
       <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary btn-sm">{{ _('Limpiar') }}</a>
       <button type="submit" form="form-guardar-alerta" class="btn btn-secondary btn-sm">{{ _('Guardar búsqueda como alerta') }}</button>
       {% endif %}
@@ -111,7 +119,7 @@
 
   {# Form separado para guardar alerta — fuera del form de filtros para evitar anidamiento inválido.
      El botón lo referencia con form="form-guardar-alerta" (atributo HTML5). #}
-  {% if mes or dia or nombre or franja_id or tipo %}
+  {% if mes or dia or nombre or franja_id or tipo or tipo_fecha %}
   <form id="form-guardar-alerta" method="post" action="{{ url_for('busquedas.guardar') }}" style="display:none">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="mes" value="{{ mes or '' }}">
@@ -119,6 +127,7 @@
     <input type="hidden" name="franja" value="{{ franja_id or '' }}">
     <input type="hidden" name="tipo" value="{{ tipo }}">
     <input type="hidden" name="usuario" value="{{ nombre }}">
+    <input type="hidden" name="tipo_fecha" value="{{ tipo_fecha }}">
   </form>
   {% endif %}
 

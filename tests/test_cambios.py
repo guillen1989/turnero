@@ -360,3 +360,56 @@ def test_cambios_junte_muestra_resumen_noches_y_dias(client, db):
     assert "viernes" in html
     assert "sábado" in html
     assert "domingo" in html
+
+
+# ---------------------------------------------------------------------------
+# Filtro tipo_fecha (cedido / aceptado)
+# ---------------------------------------------------------------------------
+
+def _setup_dos_pubs(db):
+    """
+    u1 y u2 en el mismo grupo/categoría.
+    pub_a (de u2): cede el día 10, acepta el día 25 → aparece con tipo_fecha=cedido&dia=10
+    pub_b (de u2): cede el día 25, acepta el día 10 → aparece con tipo_fecha=aceptado&dia=10
+    Sin tipo_fecha: ambas aparecen (una tiene cedido=10, la otra aceptado=10).
+    La fecha del cedido exclusivo de pub_b (25/09) solo aparece en HTML si pub_b se muestra.
+    """
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _publicar(u2, date(2026, 9, 10), date(2026, 9, 25))  # pub_a
+    _publicar(u2, date(2026, 9, 25), date(2026, 9, 10))  # pub_b
+    return u1
+
+
+def test_tipo_fecha_cedido_excluye_pubs_sin_cedido_en_esa_fecha(client, db):
+    """tipo_fecha=cedido filtra pubs cuyo cedido NO está en la fecha — pub_b debe desaparecer."""
+    u1 = _setup_dos_pubs(db)
+    _login(client, u1.email)
+    resp = client.get("/cambios?dia=10&mes=9&tipo_fecha=cedido")
+    html = resp.data.decode()
+    # pub_a (cedido=10) debe aparecer; pub_b (cedido=25, aceptado=10) debe desaparecer.
+    # "25/09/2026" aparece máx 2 veces si solo pub_a está (card + JSON inline).
+    # Si pub_b también está habría 4 apariciones (2 de pub_a aceptado + 2 de pub_b cedido).
+    assert "10/09/2026" in html
+    assert html.count("25/09/2026") <= 2
+
+
+def test_tipo_fecha_aceptado_excluye_pubs_sin_aceptado_en_esa_fecha(client, db):
+    """tipo_fecha=aceptado filtra pubs cuyo aceptado NO está en la fecha — pub_a debe desaparecer."""
+    u1 = _setup_dos_pubs(db)
+    _login(client, u1.email)
+    resp = client.get("/cambios?dia=10&mes=9&tipo_fecha=aceptado")
+    html = resp.data.decode()
+    # pub_b (aceptado=10) debe aparecer; pub_a (cedido=10, aceptado=25) debe desaparecer.
+    assert "10/09/2026" in html
+    assert html.count("25/09/2026") <= 2
+
+
+def test_tipo_fecha_sin_valor_muestra_ambas_pubs(client, db):
+    """Sin tipo_fecha: comportamiento original — cedido OR aceptado (ambas aparecen)."""
+    u1 = _setup_dos_pubs(db)
+    _login(client, u1.email)
+    resp = client.get("/cambios?dia=10&mes=9")
+    html = resp.data.decode()
+    # Ambas aparecen → "25/09/2026" aparece al menos 4 veces (card+JSON × 2 pubs)
+    assert html.count("25/09/2026") >= 4
