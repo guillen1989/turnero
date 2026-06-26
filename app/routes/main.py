@@ -1,3 +1,4 @@
+from datetime import timedelta
 from urllib.parse import quote as _urlquote
 
 from flask import Blueprint, jsonify, render_template, request
@@ -28,7 +29,7 @@ def _lista_es(items):
 
 
 def _junte_info(pub):
-    """Para una publicación de tipo junte, devuelve número de noches y días."""
+    """Para una publicación de tipo junte, devuelve número de noches, días y semana."""
     cedidos_wd   = frozenset(tc.fecha.weekday() for tc in pub.turnos_cedidos)
     aceptados_wd = frozenset(ta.fecha.weekday() for ta in pub.turnos_aceptados)
 
@@ -39,8 +40,17 @@ def _junte_info(pub):
     trabaja = (cadencia - cedidos_wd) | aceptados_wd
     libra   = cedidos_wd | (partner - aceptados_wd)
 
+    # Lunes de la semana del junte (para el mensaje de WA)
+    primer_cedido = pub.turnos_cedidos[0].fecha if pub.turnos_cedidos else None
+    if primer_cedido:
+        lunes = primer_cedido - timedelta(days=primer_cedido.weekday())
+        semana_str = lunes.strftime('%d/%m/%Y')
+    else:
+        semana_str = ''
+
     return {
         'num_noches':  num_noches,
+        'semana_str':  semana_str,
         'trabaja_str': _lista_es([_DIAS_ES[d] for d in sorted(trabaja)]),
         'libra_str':   _lista_es([_DIAS_ES[d] for d in sorted(libra)]),
     }
@@ -305,6 +315,7 @@ def index():
 
         conteos = _conteos_tabs(current_user.id)
         partners = _partners_confirmados(current_user.id) if estado_filtro == "confirmada" else {}
+        junte_info = {pub.id: _junte_info(pub) for pub in publicaciones if pub.tipo == 'junte'}
         return render_template(
             "main/dashboard.html",
             publicaciones=publicaciones,
@@ -312,6 +323,7 @@ def index():
             estado_filtro=estado_filtro,
             conteos=conteos,
             partners=partners,
+            junte_info=junte_info,
         )
     return render_template("main/index.html")
 

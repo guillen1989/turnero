@@ -205,11 +205,8 @@
           {% endfor %}
           {% set wa_texto = _('Busco a alguien que me cubra un turno:') + ns.wa_turnos + wa_msg_extra + '\n' + pub_url %}
         {% elif pub.tipo == 'junte' %}
-          {% set ns = namespace(wa_turnos='') %}
-          {% for t in pub.turnos_cedidos | selectattr("estado", "equalto", "abierto") %}
-            {% set ns.wa_turnos = ns.wa_turnos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
-          {% endfor %}
-          {% set wa_texto = _('Busco compañero/a para un junte de noches:') + ns.wa_turnos + wa_msg_extra + '\n' + pub_url %}
+          {% set ji = junte_info.get(pub.id, {}) %}
+          {% set wa_texto = pub.usuario.nombre + '\n' + _('Junte de noches — semana del ') + ji.semana_str + '\n' + _('Tengo ') + ji.num_noches|string + ' ' + _('noches') + '.\n' + _('Busco trabajar ') + ji.trabaja_str + '.\n' + _('Busco librar ') + ji.libra_str + '.' + wa_msg_extra + '\n' + pub_url %}
         {% elif pub.tipo == 'cambio_dia' %}
           {% set tc = pub.turnos_cedidos[0] %}
           {% set ta = pub.turnos_aceptados[0] %}

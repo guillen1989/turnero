@@ -1,5 +1,5 @@
 """Tests para el dashboard del usuario autenticado (Fase 3, paso 1)."""
-from datetime import date, time
+from datetime import date, time, timedelta
 
 from app.models import (
     Categoria,
@@ -501,3 +501,38 @@ def test_confirmar_total_resuelve_turno_aceptado(client, db):
     db.session.refresh(ta_pedro)
     assert ta_ana.estado == "resuelto"
     assert ta_pedro.estado == "resuelto"
+
+
+def test_dashboard_junte_wa_mensaje_incluye_semana_y_dias(client, db):
+    """El enlace de WhatsApp de un junte activo incluye la semana, el nº de noches,
+    los días a trabajar y los días a librar."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "pass123", "H1", "Urgencias", cat.id)
+    db.session.commit()
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=ana.unidad.grupo_intercambio_id
+    ).first()
+
+    # 2026-08-03 es lunes. LMVD: cede Vie(+4) y Dom(+6), recibe Mar(+1) y Jue(+3)
+    lunes = date(2026, 8, 3)
+    pub = PublicacionCambio(usuario_id=ana.id, tipo="junte")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=lunes + timedelta(days=4), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=lunes + timedelta(days=6), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=lunes + timedelta(days=1), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=lunes + timedelta(days=3), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "pass123"})
+    resp = client.get("/")
+    html = resp.data.decode()
+
+    # El href del botón Compartir lleva el texto URL-encoded
+    # "4 noches" → "4%20noches", "Busco trabajar" → "Busco%20trabajar", etc.
+    assert "4%20noches" in html
+    assert "Busco%20trabajar" in html
+    assert "Busco%20librar" in html
+    # La semana del 03/08/2026 ("03%2F08%2F2026")
+    assert "03%2F08%2F2026" in html
