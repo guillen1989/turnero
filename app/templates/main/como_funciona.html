@@ -119,6 +119,47 @@
       </div>
     </div>
 
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📲</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('6. Instala Turnero en tu móvil') }}</h2>
+        <p>
+          {{ _('Puedes instalar Turnero como una app normal en tu móvil: sin pasar por la App Store ni Google Play, directamente desde el navegador.') }}
+          {{ _('Una vez instalada, abre como cualquier otra app, sin barras del navegador.') }}
+        </p>
+
+        <details style="margin-top:0.75rem">
+          <summary style="cursor:pointer;font-weight:600;color:#1d4ed8;list-style:none;display:flex;align-items:center;gap:0.4rem">
+            <span>🤖</span> {{ _('Instalar en Android') }}
+          </summary>
+          <ol style="margin:0.6rem 0 0 1.25rem;line-height:2;color:#374151">
+            <li>{{ _('Abre Turnero en') }} <strong>Chrome</strong>.</li>
+            <li>{{ _('Pulsa el icono de los tres puntos') }} <strong>(⋮)</strong> {{ _('arriba a la derecha.') }}</li>
+            <li>{{ _('Toca') }} <strong>{{ _('«Añadir a pantalla de inicio»') }}</strong>.</li>
+            <li>{{ _('Confirma pulsando') }} <strong>{{ _('«Instalar»') }}</strong>.</li>
+          </ol>
+          <p style="margin:0.4rem 0 0;font-size:0.85rem;color:#6b7280">
+            {{ _('En muchos móviles Android el banner de instalación aparece solo en la parte inferior de la pantalla.') }}
+          </p>
+        </details>
+
+        <details style="margin-top:0.5rem">
+          <summary style="cursor:pointer;font-weight:600;color:#1d4ed8;list-style:none;display:flex;align-items:center;gap:0.4rem">
+            <span>🍎</span> {{ _('Instalar en iPhone / iPad') }}
+          </summary>
+          <ol style="margin:0.6rem 0 0 1.25rem;line-height:2;color:#374151">
+            <li>{{ _('Abre Turnero en') }} <strong>Safari</strong>. {{ _('(En Chrome para iOS no funciona la instalación.)') }}</li>
+            <li>{{ _('Pulsa el botón de compartir') }} <strong>{{ _('(la flecha hacia arriba que hay en la barra inferior).') }}</strong></li>
+            <li>{{ _('Desplázate en el menú y toca') }} <strong>{{ _('«Añadir a pantalla de inicio»') }}</strong>.</li>
+            <li>{{ _('Pulsa') }} <strong>{{ _('«Añadir»') }}</strong> {{ _('en la esquina superior derecha.') }}</li>
+          </ol>
+          <p style="margin:0.4rem 0 0;font-size:0.85rem;color:#6b7280">
+            {{ _('La app quedará en tu pantalla de inicio igual que cualquier otra.') }}
+          </p>
+        </details>
+      </div>
+    </div>
+
   </div>
 
   <div style="text-align:center;margin-top:2.5rem">
