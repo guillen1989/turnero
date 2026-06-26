@@ -569,7 +569,31 @@ def crear_pub_sintetica(pub_a, pub_b):
         ))
 
     db.session.commit()
+    _notificar_aviso_sintetica(pub_a, pub_b)
     return sint
+
+
+def _notificar_aviso_sintetica(pub_a, pub_b):
+    """Notifica a los usuarios de pub_a y pub_b que se ha creado una pub sintética."""
+    for destinatario_id, pub_ref in (
+        (pub_a.usuario_id, pub_b),
+        (pub_b.usuario_id, pub_a),
+    ):
+        existe = Notificacion.query.filter_by(
+            usuario_id=destinatario_id,
+            publicacion_id=pub_ref.id,
+            tipo="aviso_sintetica",
+        ).first()
+        if not existe:
+            db.session.add(Notificacion(
+                usuario_id=destinatario_id,
+                publicacion_id=pub_ref.id,
+                tipo="aviso_sintetica",
+            ))
+    db.session.commit()
+
+    enviar_push_condicional(pub_a.usuario, "aviso_sintetica")
+    enviar_push_condicional(pub_b.usuario, "aviso_sintetica")
 
 
 def buscar_sinteticas_que_coinciden_con(publicacion):

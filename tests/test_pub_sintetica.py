@@ -304,3 +304,57 @@ def test_publicar_c_genera_cadena_3(client, db):
     assert pub_a.id in pub_ids
     assert pub_b.id in pub_ids
     assert pub_c.id in pub_ids
+
+
+# ---------------------------------------------------------------------------
+# Notificaciones aviso_sintetica
+# ---------------------------------------------------------------------------
+
+def test_crear_sintetica_notifica_a_ambos_usuarios(db):
+    """Al crear una pub sintética, ambos usuarios reciben aviso_sintetica."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id)
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+
+    crear_pub_sintetica(pub_a, pub_b)
+
+    notif_ana = Notificacion.query.filter_by(
+        usuario_id=ana.id, tipo="aviso_sintetica"
+    ).first()
+    notif_pedro = Notificacion.query.filter_by(
+        usuario_id=pedro.id, tipo="aviso_sintetica"
+    ).first()
+
+    assert notif_ana is not None
+    assert notif_pedro is not None
+    # Cada notificación apunta a la publicación del otro
+    assert notif_ana.publicacion_id == pub_b.id
+    assert notif_pedro.publicacion_id == pub_a.id
+
+
+def test_crear_sintetica_no_duplica_notificacion(db):
+    """Llamar crear_pub_sintetica dos veces no duplica los avisos."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id)
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+
+    crear_pub_sintetica(pub_a, pub_b)
+    crear_pub_sintetica(pub_a, pub_b)
+
+    count_ana = Notificacion.query.filter_by(
+        usuario_id=ana.id, tipo="aviso_sintetica"
+    ).count()
+    count_pedro = Notificacion.query.filter_by(
+        usuario_id=pedro.id, tipo="aviso_sintetica"
+    ).count()
+
+    assert count_ana == 1
+    assert count_pedro == 1
