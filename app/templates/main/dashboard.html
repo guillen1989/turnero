@@ -165,7 +165,7 @@
           <strong>{{ _('Quiero cambiar:') }}</strong>
           {% set tc = pub.turnos_cedidos[0] %}
           {% set ta = pub.turnos_aceptados[0] %}
-          <span class="turno">{{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ ta.franja_horaria.nombre }}</span>
+          <span class="turno">{{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ ta.franja_horaria.nombre if ta.franja_horaria else _('cualquier turno') }}</span>
         </div>
         {% else %}
         <span class="tipo-badge tipo-badge--cambio">{{ _('Cambio') }}</span>
@@ -210,7 +210,8 @@
         {% elif pub.tipo == 'cambio_dia' %}
           {% set tc = pub.turnos_cedidos[0] %}
           {% set ta = pub.turnos_aceptados[0] %}
-          {% set wa_texto = _('Busco cambio de turno en el día: tengo el ') + tc.franja_horaria.nombre + _(' del ') + tc.fecha.strftime('%d/%m/%Y') + _(' y busco el ') + ta.franja_horaria.nombre + '.' + wa_msg_extra + '\n' + pub_url %}
+          {% set ta_franja = ta.franja_horaria.nombre if ta.franja_horaria else _('cualquier turno') %}
+          {% set wa_texto = _('Busco cambio de turno en el día: tengo el ') + tc.franja_horaria.nombre + _(' del ') + tc.fecha.strftime('%d/%m/%Y') + _(' y busco el ') + ta_franja + '.' + wa_msg_extra + '\n' + pub_url %}
         {% else %}
           {% set ns = namespace(wa_turnos='', wa_ofrecidos='') %}
           {% for t in pub.turnos_cedidos | selectattr("estado", "equalto", "abierto") %}
