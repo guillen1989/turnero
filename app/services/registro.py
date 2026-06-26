@@ -4,6 +4,8 @@ from app.extensions import db
 from app.models import (
     Pais, Provincia, Ciudad,
     Hospital, GrupoIntercambio, Unidad, Categoria, Usuario, FranjaHoraria,
+    MatchCambio, MatchParticipacion, PublicacionCambio, BusquedaGuardada,
+    SuscripcionPublicaciones,
 )
 
 _OPCION_NUEVA = 0
@@ -195,6 +197,58 @@ def actualizar_perfil(
     db.session.commit()
     usuario._es_nueva_unidad = is_new
     return usuario
+
+
+def eliminar_cuenta(usuario):
+    """
+    Anonimiza la cuenta del usuario satisfaciendo el derecho al olvido:
+    - Rechaza matches activos (notifica a contrapartes)
+    - Cancela publicaciones activas
+    - Borra búsquedas guardadas y suscripciones
+    - Sobreescribe datos personales con marcadores anónimos
+    La fila del usuario permanece en DB para preservar integridad referencial
+    del historial de matches ya completados.
+    """
+    from app.services.matches import rechazar_match
+    from app.services.publicaciones import cancelar_publicacion
+
+    matches_activos = (
+        MatchCambio.query
+        .join(MatchParticipacion)
+        .join(PublicacionCambio)
+        .filter(
+            PublicacionCambio.usuario_id == usuario.id,
+            MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
+        )
+        .distinct()
+        .all()
+    )
+    for match in matches_activos:
+        rechazar_match(match, usuario.id)
+
+    pubs_activas = (
+        PublicacionCambio.query
+        .filter_by(usuario_id=usuario.id)
+        .filter(PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]))
+        .all()
+    )
+    for pub in pubs_activas:
+        cancelar_publicacion(pub)
+
+    BusquedaGuardada.query.filter_by(usuario_id=usuario.id).delete()
+    SuscripcionPublicaciones.query.filter(
+        db.or_(
+            SuscripcionPublicaciones.suscriptor_id == usuario.id,
+            SuscripcionPublicaciones.publicador_id == usuario.id,
+        )
+    ).delete()
+
+    usuario.nombre = "Usuario eliminado"
+    usuario.email = f"eliminado_{usuario.id}@eliminado.invalid"
+    usuario.password_hash = "CUENTA_ELIMINADA"
+    usuario.push_subscription = None
+    usuario.push_activo = False
+    db.session.commit()
 
 
 def registrar_usuario(

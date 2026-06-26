@@ -80,6 +80,14 @@ class CuentaForm(FlaskForm):
     submit = SubmitField(_l("Guardar cambios"))
 
 
+class EliminarCuentaForm(FlaskForm):
+    password = PasswordField(
+        _l("Contraseña"),
+        validators=[DataRequired()],
+    )
+    submit = SubmitField(_l("Eliminar mi cuenta definitivamente"))
+
+
 class LoginForm(FlaskForm):
     email = StringField(
         _l("Correo electrónico"),

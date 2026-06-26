@@ -85,6 +85,35 @@
   </div>
 </div>
 
+<div class="card" style="margin-top:1.5rem; border:1.5px solid #fca5a5">
+  <h2 style="color:#dc2626; margin-bottom:0.5rem">{{ _('Zona de peligro') }}</h2>
+  <p style="font-size:0.9rem; color:#555; margin-bottom:1rem">
+    {{ _('Al eliminar tu cuenta:') }}
+  </p>
+  <ul style="font-size:0.9rem; color:#555; margin:0 0 1.25rem 1.25rem">
+    <li>{{ _('Tus publicaciones activas se cancelarán y tus compañeros serán notificados.') }}</li>
+    <li>{{ _('Tus datos personales (nombre, correo) se anonimizarán de forma irreversible.') }}</li>
+    <li>{{ _('No podrás volver a acceder con esta cuenta.') }}</li>
+  </ul>
+
+  <form method="POST" action="{{ url_for('auth.eliminar_cuenta_route') }}" novalidate
+        onsubmit="return confirm('{{ _('¿Seguro? Esta acción es irreversible.') }}')">
+    {{ eliminar_form.hidden_tag() }}
+
+    <div class="form-group">
+      {{ eliminar_form.password.label }}
+      {{ eliminar_form.password(autocomplete="current-password", placeholder=_('Confirma tu contraseña')) }}
+      {% for error in eliminar_form.password.errors %}
+        <p class="field-error">{{ error }}</p>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      {{ eliminar_form.submit(class="btn btn-full", style="background:#dc2626; color:#fff; border:none") }}
+    </div>
+  </form>
+</div>
+
 <script>
 function copiarEnlace() {
   var inp = document.getElementById('invite-url');

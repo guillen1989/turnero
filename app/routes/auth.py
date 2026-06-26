@@ -7,10 +7,10 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import Pais, Provincia, Ciudad, Hospital, Unidad, Categoria
-from app.forms.auth import CuentaForm, LoginForm, PerfilForm, RegistroForm
+from app.forms.auth import CuentaForm, EliminarCuentaForm, LoginForm, PerfilForm, RegistroForm
 from app.models.usuario import Usuario
 from app.services.registro import (
-    actualizar_perfil, registrar_usuario,
+    actualizar_perfil, eliminar_cuenta, registrar_usuario,
     encontrar_o_crear_pais, encontrar_o_crear_provincia, encontrar_o_crear_ciudad,
     resolver_hospital, resolver_unidad,
 )
@@ -384,4 +384,33 @@ def perfil_cuenta():
         url=invite_url,
     )
     wa_url = "https://wa.me/?text=" + urlquote(texto_wa)
-    return render_template("auth/perfil_cuenta.html", form=form, invite_url=invite_url, wa_url=wa_url)
+    eliminar_form = EliminarCuentaForm()
+    return render_template(
+        "auth/perfil_cuenta.html",
+        form=form,
+        invite_url=invite_url,
+        wa_url=wa_url,
+        eliminar_form=eliminar_form,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Eliminar cuenta
+# ---------------------------------------------------------------------------
+
+@bp.post("/perfil/cuenta/eliminar")
+@login_required
+def eliminar_cuenta_route():
+    form = EliminarCuentaForm()
+    if not form.validate_on_submit():
+        flash(_("No se pudo procesar la solicitud."), "danger")
+        return redirect(url_for("auth.perfil_cuenta"))
+
+    if not current_user.check_password(form.password.data):
+        flash(_("Contraseña incorrecta. La cuenta no ha sido eliminada."), "danger")
+        return redirect(url_for("auth.perfil_cuenta"))
+
+    eliminar_cuenta(current_user)
+    logout_user()
+    flash(_("Tu cuenta ha sido eliminada. Hasta pronto."), "info")
+    return redirect(url_for("auth.login"))
