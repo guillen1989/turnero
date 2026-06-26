@@ -26,7 +26,7 @@ from app.models import (
     Categoria, Usuario,
     PublicacionCambio, TurnoCedido, TurnoAceptado,
     MatchCambio, MatchParticipacion,
-    FranjaHoraria,
+    FranjaHoraria, Notificacion,
 )
 from app.services.registro import (
     encontrar_o_crear_pais,
@@ -419,6 +419,56 @@ def sembrar():
     _part(m8, m8_pub_a, tc=m8_tc_a1, ta=m8_ta_a, confirmado=True, confirmed_at=conf_par - timedelta(hours=2))
     _part(m8, m8_pub_b, tc=m8_tc_b,  ta=m8_ta_b, confirmado=True, confirmed_at=conf_par)
 
+    # ── Cadena_3 completa propuesta: Ana → Carlos → Bruno → Ana ─────────
+    # Ana cede mañana 25-oct, quiere tarde 15-nov
+    # Carlos cede mañana 20-sep, quiere mañana 25-oct  (lo que ofrece Ana)
+    # Bruno cede tarde 15-nov,  quiere mañana 20-sep   (lo que ofrece Carlos)
+    pub_3b_ana   = _pub(ana,   "cambio", created_at=_dt(25))
+    tc_3b_ana    = _tc(pub_3b_ana,   date(2026, 10, 25), man)
+    _ta(pub_3b_ana,   date(2026, 11, 15), tar)
+
+    pub_3b_carlos = _pub(carlos, "cambio", created_at=_dt(25))
+    tc_3b_carlos  = _tc(pub_3b_carlos, date(2026, 9,  20), man)
+    _ta(pub_3b_carlos, date(2026, 10, 25), man)
+
+    pub_3b_bruno = _pub(bruno, "cambio", created_at=_dt(25))
+    tc_3b_bruno  = _tc(pub_3b_bruno, date(2026, 11, 15), tar)
+    _ta(pub_3b_bruno, date(2026, 9,  20), man)
+
+    db.session.flush()
+
+    m_3b = _match(tipo="cadena_3", estado="propuesto", created_at=_dt(26))
+    db.session.flush()
+    _part(m_3b, pub_3b_ana,    tc=tc_3b_ana)
+    _part(m_3b, pub_3b_carlos, tc=tc_3b_carlos)
+    _part(m_3b, pub_3b_bruno,  tc=tc_3b_bruno)
+
+    # ── Medio match + pub sintética: Ana(27-oct) ↔ Carlos, esperando C ──
+    # Ana cede mañana 27-oct, quiere tarde 20-nov (abierto)
+    # Carlos quiere mañana 27-oct, cede mañana 27-sep
+    # Sintética (de Ana): CEDE tarde 20-nov, ACEPTA mañana 27-sep
+    pub_mm_ana   = _pub(ana,   "cambio", created_at=_dt(27))
+    _tc(pub_mm_ana,   date(2026, 10, 27), man)
+    ta_mm_ana    = _ta(pub_mm_ana,   date(2026, 11, 20), tar)
+
+    pub_mm_carlos = _pub(carlos, "cambio", created_at=_dt(27))
+    tc_mm_carlos  = _tc(pub_mm_carlos, date(2026, 9,  27), man)
+    _ta(pub_mm_carlos, date(2026, 10, 27), man)
+
+    db.session.flush()
+
+    pub_sint = PublicacionCambio(
+        usuario=ana, tipo="cambio", es_sintetica=True,
+        sintetica_pub_a_id=pub_mm_ana.id,
+        sintetica_pub_b_id=pub_mm_carlos.id,
+    )
+    db.session.add(pub_sint)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion=pub_sint, fecha=ta_mm_ana.fecha, franja_horaria=tar))
+    db.session.add(TurnoAceptado(publicacion=pub_sint, fecha=tc_mm_carlos.fecha, franja_horaria=man, cualquier_franja=False))
+    db.session.add(Notificacion(usuario_id=ana.id,    publicacion_id=pub_mm_carlos.id, tipo="aviso_interes"))
+    db.session.add(Notificacion(usuario_id=carlos.id, publicacion_id=pub_mm_ana.id,   tipo="aviso_interes"))
+
     # ── Canceladas (3) ───────────────────────────────────────────────────
     pub_can1 = _pub(fran,   "cambio",    estado="cancelada", created_at=_dt(20))
     _tc(pub_can1, date(2026, 9, 12), _franja(g_urg, "Mañana"))
@@ -475,6 +525,8 @@ def _imprimir_resumen():
     print("    2 confirmado_parcial  (Elena↔Irene, Bruno↔Carlos)")
     print("    3 confirmado_total    (Ana↔Bruno, Carlos↔Diana, Elena↔Irene)")
     print("    1 parcialmente_resuelta (Ana: turno-1 resuelto, turno-2 abierto)")
+    print("    1 cadena_3 propuesta  Ana→Carlos→Bruno→Ana (oct-nov 2026)")
+    print("    1 medio match + sintética  Ana(27-oct)↔Carlos, esperando C (nov 2026)")
     print("    3 canceladas      (Fran, Gloria, Héctor)")
     print("    3 caducadas       (Ana, Bruno, Carlos — fechas sep-2 a sep-4)")
     print(f"\n{sep}\n")
