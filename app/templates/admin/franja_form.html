@@ -1,0 +1,25 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ titulo }} — {{ _('Admin') }}{% endblock %}
+
+{% block admin_content %}
+<h1>{{ titulo }}</h1>
+
+<form method="post" class="admin-form">
+  {{ form.hidden_tag() }}
+  <div class="form-row">
+    {{ form.nombre.label }} {{ form.nombre(class="form-control") }}
+  </div>
+  <div class="form-row">
+    {{ form.hora_inicio.label }} {{ form.hora_inicio(class="form-control") }}
+  </div>
+  <div class="form-row">
+    {{ form.hora_fin.label }} {{ form.hora_fin(class="form-control") }}
+  </div>
+  <div class="form-row">
+    {{ form.grupo_intercambio_id.label }} {{ form.grupo_intercambio_id(class="form-control") }}
+  </div>
+  {{ form.submit(class="btn btn-primary") }}
+  <a href="{{ url_for('admin.franjas') }}" class="btn btn-secondary">{{ _('Cancelar') }}</a>
+</form>
+{% endblock %}

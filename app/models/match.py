@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from app.extensions import db
 
 
@@ -14,6 +16,10 @@ class MatchCambio(db.Model):
     estado = db.Column(db.String(30), nullable=False, default="propuesto")
     # tipo:  directo_2 | cadena_3 | cadena_n
     # estado: propuesto | confirmado_parcial | confirmado_total | rechazado
+    fecha_creacion = db.Column(
+        db.DateTime, nullable=True, default=lambda: datetime.now(timezone.utc)
+    )
+    fecha_confirmacion_total = db.Column(db.DateTime, nullable=True)
 
     participaciones = db.relationship(
         "MatchParticipacion",

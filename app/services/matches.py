@@ -27,6 +27,7 @@ def confirmar_participacion(match, usuario_id):
 
     if match.todas_confirmadas():
         match.estado = "confirmado_total"
+        match.fecha_confirmacion_total = datetime.now(timezone.utc)
         for p in match.participaciones:
             if p.turno_cedido_id is not None:
                 p.turno_cedido.estado = "resuelto"

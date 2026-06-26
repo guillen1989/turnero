@@ -7,11 +7,12 @@ from flask_login import current_user, login_required
 from app.extensions import db
 from app.forms.admin import (
     AdminNombreForm, AdminUnidadForm, AdminUsuarioForm,
-    AdminProvinciaForm, AdminCiudadForm, AdminHospitalForm,
+    AdminProvinciaForm, AdminCiudadForm, AdminHospitalForm, AdminFranjaForm,
 )
 from app.models import (
     Pais, Provincia, Ciudad,
-    Categoria, Feedback, Hospital, MatchCambio, MatchParticipacion,
+    Categoria, Feedback, FranjaHoraria, GrupoIntercambio, Hospital,
+    MatchCambio, MatchParticipacion,
     Notificacion, PublicacionCambio, Unidad, Usuario,
     insertar_categorias_semilla,
 )
@@ -602,16 +603,80 @@ def categoria_eliminar(id):
 # Publicaciones
 # ---------------------------------------------------------------------------
 
+def _matches_info_por_pub(publicaciones):
+    """Devuelve un dict {pub_id: {partners, fecha_match, fecha_confirmacion}}."""
+    pub_ids = [p.id for p in publicaciones]
+    if not pub_ids:
+        return {}
+
+    participaciones = (
+        MatchParticipacion.query
+        .filter(MatchParticipacion.publicacion_id.in_(pub_ids))
+        .all()
+    )
+    match_ids = {p.match_id for p in participaciones}
+    if not match_ids:
+        return {}
+
+    matches = {m.id: m for m in MatchCambio.query.filter(MatchCambio.id.in_(match_ids)).all()}
+    todas_parts = (
+        MatchParticipacion.query
+        .filter(MatchParticipacion.match_id.in_(match_ids))
+        .all()
+    )
+
+    result = {}
+    for part in participaciones:
+        match = matches[part.match_id]
+        if match.estado in ("rechazado",):
+            continue
+        partners = [
+            p.publicacion.usuario.nombre
+            for p in todas_parts
+            if p.match_id == match.id and p.publicacion_id != part.publicacion_id
+        ]
+        existing = result.get(part.publicacion_id)
+        if existing is None or (match.fecha_creacion and (
+            existing["fecha_match"] is None or match.fecha_creacion < existing["fecha_match"]
+        )):
+            result[part.publicacion_id] = {
+                "partners": partners,
+                "fecha_match": match.fecha_creacion,
+                "fecha_confirmacion": match.fecha_confirmacion_total,
+            }
+    return result
+
+
+_SORT_COLUMNS = {
+    "usuario": Usuario.nombre,
+    "estado": PublicacionCambio.estado,
+    "fecha": PublicacionCambio.fecha_creacion,
+}
+
+
 @bp.route("/publicaciones")
 @admin_required
 def publicaciones():
+    sort = request.args.get("sort", "fecha")
+    order = request.args.get("order", "desc")
+
+    col = _SORT_COLUMNS.get(sort, PublicacionCambio.fecha_creacion)
+    col_sorted = col.asc() if order == "asc" else col.desc()
+
     todas = (
         PublicacionCambio.query
         .join(Usuario)
-        .order_by(PublicacionCambio.fecha_creacion.desc())
+        .order_by(col_sorted)
         .all()
     )
-    return render_template("admin/publicaciones.html", publicaciones=todas)
+    matches_info = _matches_info_por_pub(todas)
+    return render_template(
+        "admin/publicaciones.html",
+        publicaciones=todas,
+        matches_info=matches_info,
+        sort=sort,
+        order=order,
+    )
 
 
 @bp.route("/publicaciones/<int:id>/cancelar", methods=["POST"])
@@ -669,3 +734,95 @@ def feedback_marcar_leidos():
         Feedback.query.filter(Feedback.id.in_(ids)).update({"leido": True}, synchronize_session=False)
         db.session.commit()
     return redirect(url_for("admin.feedback", tab="sin_leer"))
+
+
+# ---------------------------------------------------------------------------
+# Franjas horarias (turnos)
+# ---------------------------------------------------------------------------
+
+def _choices_grupos():
+    grupos = GrupoIntercambio.query.all()
+    choices = []
+    for g in grupos:
+        unidades = g.unidades.all()
+        label = ", ".join(u.nombre for u in unidades[:3]) if unidades else f"Grupo {g.id}"
+        if len(unidades) > 3:
+            label += f" (+{len(unidades) - 3})"
+        choices.append((g.id, label))
+    return choices
+
+
+@bp.route("/franjas")
+@admin_required
+def franjas():
+    form = AdminFranjaForm(prefix="nuevo")
+    form.grupo_intercambio_id.choices = _choices_grupos()
+    grupos = GrupoIntercambio.query.all()
+    grupos_data = []
+    for g in grupos:
+        unidades = g.unidades.all()
+        label = ", ".join(u.nombre for u in unidades) if unidades else f"Grupo {g.id}"
+        franjas_g = g.franjas_horarias.order_by(FranjaHoraria.hora_inicio).all()
+        grupos_data.append({"grupo": g, "label": label, "franjas": franjas_g})
+    return render_template("admin/franjas.html", grupos_data=grupos_data, form=form)
+
+
+@bp.route("/franjas/nueva", methods=["POST"])
+@admin_required
+def franja_nueva():
+    form = AdminFranjaForm(prefix="nuevo")
+    form.grupo_intercambio_id.choices = _choices_grupos()
+    if form.validate_on_submit():
+        existe = FranjaHoraria.query.filter_by(
+            nombre=form.nombre.data.strip(),
+            grupo_intercambio_id=form.grupo_intercambio_id.data,
+        ).first()
+        if existe:
+            flash(_("Ya existe un turno con ese nombre en ese grupo."), "danger")
+        else:
+            db.session.add(FranjaHoraria(
+                nombre=form.nombre.data.strip(),
+                hora_inicio=form.hora_inicio.data,
+                hora_fin=form.hora_fin.data,
+                grupo_intercambio_id=form.grupo_intercambio_id.data,
+            ))
+            db.session.commit()
+            flash(_("Turno creado."), "success")
+    return redirect(url_for("admin.franjas"))
+
+
+@bp.route("/franjas/<int:id>/editar", methods=["GET", "POST"])
+@admin_required
+def franja_editar(id):
+    f = db.session.get(FranjaHoraria, id) or abort(404)
+    form = AdminFranjaForm(obj=f)
+    form.grupo_intercambio_id.choices = _choices_grupos()
+    if form.validate_on_submit():
+        existe = FranjaHoraria.query.filter(
+            FranjaHoraria.nombre == form.nombre.data.strip(),
+            FranjaHoraria.grupo_intercambio_id == form.grupo_intercambio_id.data,
+            FranjaHoraria.id != id,
+        ).first()
+        if existe:
+            flash(_("Ya existe un turno con ese nombre en ese grupo."), "danger")
+        else:
+            f.nombre = form.nombre.data.strip()
+            f.hora_inicio = form.hora_inicio.data
+            f.hora_fin = form.hora_fin.data
+            f.grupo_intercambio_id = form.grupo_intercambio_id.data
+            db.session.commit()
+            flash(_("Turno actualizado."), "success")
+            return redirect(url_for("admin.franjas"))
+    elif request.method == "GET":
+        form.grupo_intercambio_id.data = f.grupo_intercambio_id
+    return render_template("admin/franja_form.html", form=form, franja=f, titulo=_("Editar turno"))
+
+
+@bp.route("/franjas/<int:id>/eliminar", methods=["POST"])
+@admin_required
+def franja_eliminar(id):
+    f = db.session.get(FranjaHoraria, id) or abort(404)
+    db.session.delete(f)
+    db.session.commit()
+    flash(_("Turno eliminado."), "success")
+    return redirect(url_for("admin.franjas"))

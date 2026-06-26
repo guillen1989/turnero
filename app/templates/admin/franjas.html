@@ -1,0 +1,60 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ _('Turnos') }} — {{ _('Admin') }}{% endblock %}
+
+{% block admin_content %}
+<h1>{{ _('Turnos (franjas horarias)') }}</h1>
+
+{% for gd in grupos_data %}
+<h2 class="mt-lg">{{ _('Grupo') }}: {{ gd.label }}</h2>
+<table class="admin-table">
+  <thead>
+    <tr>
+      <th>{{ _('Nombre') }}</th>
+      <th>{{ _('Hora inicio') }}</th>
+      <th>{{ _('Hora fin') }}</th>
+      <th>{{ _('Acciones') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in gd.franjas %}
+    <tr>
+      <td>{{ f.nombre }}</td>
+      <td>{{ f.hora_inicio.strftime('%H:%M') }}</td>
+      <td>{{ f.hora_fin.strftime('%H:%M') }}</td>
+      <td class="admin-actions">
+        <a href="{{ url_for('admin.franja_editar', id=f.id) }}" class="btn btn-secondary btn-xs">{{ _('Editar') }}</a>
+        <form method="post" action="{{ url_for('admin.franja_eliminar', id=f.id) }}" style="display:inline"
+              onsubmit="return confirm('{{ _('¿Eliminar este turno?') }}')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger btn-xs">{{ _('Eliminar') }}</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="empty-cell">{{ _('Sin turnos en este grupo.') }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-cell">{{ _('No hay grupos de intercambio aún.') }}</p>
+{% endfor %}
+
+<h2 class="mt-lg">{{ _('Añadir turno') }}</h2>
+<form method="post" action="{{ url_for('admin.franja_nueva') }}" class="admin-form">
+  {{ form.hidden_tag() }}
+  <div class="form-row">
+    {{ form.nombre.label }} {{ form.nombre(class="form-control") }}
+  </div>
+  <div class="form-row">
+    {{ form.hora_inicio.label }} {{ form.hora_inicio(class="form-control") }}
+  </div>
+  <div class="form-row">
+    {{ form.hora_fin.label }} {{ form.hora_fin(class="form-control") }}
+  </div>
+  <div class="form-row">
+    {{ form.grupo_intercambio_id.label }} {{ form.grupo_intercambio_id(class="form-control") }}
+  </div>
+  {{ form.submit(class="btn btn-primary") }}
+</form>
+{% endblock %}

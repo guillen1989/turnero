@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, PasswordField, SelectField, StringField, SubmitField
+from wtforms import BooleanField, PasswordField, SelectField, StringField, SubmitField, TimeField
 from wtforms.validators import DataRequired, Email, Length, Optional
 from flask_babel import lazy_gettext as _l
 
@@ -47,4 +47,12 @@ class AdminUnidadForm(FlaskForm):
     nombre = StringField(_l("Nombre de la unidad"), validators=[DataRequired(), Length(max=200)])
     hospital_id = SelectField(_l("Hospital"), coerce=int, choices=[], validators=[DataRequired()])
     categoria_id = SelectField(_l("Categoría"), coerce=int, choices=[], validators=[Optional()])
+    submit = SubmitField(_l("Guardar"))
+
+
+class AdminFranjaForm(FlaskForm):
+    nombre = StringField(_l("Nombre del turno"), validators=[DataRequired(), Length(max=50)])
+    hora_inicio = TimeField(_l("Hora inicio"), validators=[DataRequired()])
+    hora_fin = TimeField(_l("Hora fin"), validators=[DataRequired()])
+    grupo_intercambio_id = SelectField(_l("Grupo de intercambio"), coerce=int, choices=[], validators=[DataRequired()])
     submit = SubmitField(_l("Guardar"))

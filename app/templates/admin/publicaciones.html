@@ -5,24 +5,55 @@
 {% block admin_content %}
 <h1>{{ _('Cambios de todos los usuarios') }}</h1>
 
+{% macro sort_link(col, label) %}
+  {% set next_order = 'asc' if (sort == col and order == 'desc') else 'desc' %}
+  {% set arrow = ' ▲' if (sort == col and order == 'asc') else (' ▼' if sort == col else '') %}
+  <a href="{{ url_for('admin.publicaciones', sort=col, order=next_order) }}" class="sort-link">{{ label }}{{ arrow }}</a>
+{% endmacro %}
+
 <table class="admin-table">
   <thead>
     <tr>
       <th>{{ _('ID') }}</th>
-      <th>{{ _('Usuario') }}</th>
-      <th>{{ _('Estado') }}</th>
-      <th>{{ _('Fecha') }}</th>
+      <th>{{ sort_link('usuario', _('Usuario')) }}</th>
+      <th>{{ sort_link('estado', _('Estado')) }}</th>
+      <th>{{ sort_link('fecha', _('Publicado')) }}</th>
+      <th>{{ _('Compañero/s') }}</th>
+      <th>{{ _('Fecha match') }}</th>
+      <th>{{ _('Fecha confirmación') }}</th>
       <th>{{ _('Turnos cede') }}</th>
       <th>{{ _('Acciones') }}</th>
     </tr>
   </thead>
   <tbody>
     {% for p in publicaciones %}
+    {% set info = matches_info.get(p.id) %}
     <tr>
       <td>{{ p.id }}</td>
       <td>{{ p.usuario.nombre }}</td>
       <td><span class="estado-badge estado--{{ p.estado }}">{{ p.estado }}</span></td>
-      <td>{{ p.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+      <td>{{ p.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+      <td>
+        {% if info and info.partners %}
+          {{ info.partners | join(', ') }}
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td>
+        {% if info and info.fecha_match %}
+          {{ info.fecha_match.strftime('%d/%m/%Y %H:%M') }}
+        {% else %}
+          —
+        {% endif %}
+      </td>
+      <td>
+        {% if info and info.fecha_confirmacion %}
+          {{ info.fecha_confirmacion.strftime('%d/%m/%Y %H:%M') }}
+        {% else %}
+          —
+        {% endif %}
+      </td>
       <td>
         {% for t in p.turnos_cedidos %}
           <span class="turno">{{ t.fecha }} ({{ t.franja_horaria.nombre }})</span>
@@ -42,8 +73,13 @@
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="6" class="empty-cell">{{ _('No hay cambios registrados.') }}</td></tr>
+    <tr><td colspan="9" class="empty-cell">{{ _('No hay cambios registrados.') }}</td></tr>
     {% endfor %}
   </tbody>
 </table>
+
+<style>
+.sort-link { color: inherit; text-decoration: none; white-space: nowrap; }
+.sort-link:hover { text-decoration: underline; }
+</style>
 {% endblock %}

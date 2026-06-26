@@ -12,6 +12,7 @@
     <a href="{{ url_for('admin.unidades') }}" class="admin-nav-link{% if 'unidad' in request.endpoint %} active{% endif %}">{{ _('Unidades') }}</a>
     <a href="{{ url_for('admin.categorias') }}" class="admin-nav-link{% if 'categoria' in request.endpoint %} active{% endif %}">{{ _('Categorías') }}</a>
     <a href="{{ url_for('admin.publicaciones') }}" class="admin-nav-link{% if 'publicacion' in request.endpoint %} active{% endif %}">{{ _('Cambios') }}</a>
+    <a href="{{ url_for('admin.franjas') }}" class="admin-nav-link{% if 'franja' in request.endpoint %} active{% endif %}">{{ _('Turnos') }}</a>
     <a href="{{ url_for('admin.feedback') }}" class="admin-nav-link{% if 'feedback' in request.endpoint %} active{% endif %}">{{ _('Feedback') }}</a>
   </nav>
   <div class="admin-content">
