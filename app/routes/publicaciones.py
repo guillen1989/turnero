@@ -8,7 +8,7 @@ from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default
-from app.matching.service import buscar_cadenas_3_para, buscar_matches_para, crear_match_cadena_3, crear_match_directo
+from app.matching.service import buscar_avisos_interes_para, buscar_cadenas_3_para, buscar_matches_para, crear_aviso_interes, crear_match_cadena_3, crear_match_directo
 
 bp = Blueprint("publicaciones", __name__)
 
@@ -233,6 +233,8 @@ def nueva():
             crear_match_directo(pub, candidata)
         for pub_b, pub_c in buscar_cadenas_3_para(pub):
             crear_match_cadena_3(pub, pub_b, pub_c)
+        for candidata in buscar_avisos_interes_para(pub):
+            crear_aviso_interes(pub, candidata)
         flash(_("Publicación creada correctamente."), "success")
         return redirect(url_for("main.index"))
 
@@ -291,6 +293,8 @@ def editar(pub_id):
             crear_match_directo(pub, candidata)
         for pub_b, pub_c in buscar_cadenas_3_para(pub):
             crear_match_cadena_3(pub, pub_b, pub_c)
+        for candidata in buscar_avisos_interes_para(pub):
+            crear_aviso_interes(pub, candidata)
         flash(_("Publicación actualizada."), "success")
         return redirect(url_for("main.index"))
 
@@ -471,6 +475,8 @@ def contraoferta(pub_id):
             if not crear_match_directo(pub_nueva, candidata):
                 for candidata2 in buscar_cadenas_3_para(pub_nueva):
                     pass
+        for candidata in buscar_avisos_interes_para(pub_nueva):
+            crear_aviso_interes(pub_nueva, candidata)
 
         notif = Notificacion(
             usuario_id=pub_original.usuario_id,

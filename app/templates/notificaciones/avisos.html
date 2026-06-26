@@ -23,6 +23,8 @@
           <span class="aviso-tipo tipo-badge tipo-badge--cambio">{{ _('Contraoferta') }}</span>
           {% elif aviso.tipo == 'alerta_busqueda_guardada' %}
           <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _('Alerta') }}</span>
+          {% elif aviso.tipo == 'aviso_interes' %}
+          <span class="aviso-tipo tipo-badge tipo-badge--interes">{{ _('Interés') }}</span>
           {% else %}
           <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _(aviso.publicacion.tipo) }}</span>
           {% endif %}
