@@ -19,6 +19,7 @@ def guardar():
     franja_id = request.form.get("franja", type=int)
     tipo = request.form.get("tipo", "").strip()
     nombre = request.form.get("usuario", "").strip()
+    tipo_fecha = request.form.get("tipo_fecha", "").strip()
 
     if tipo in _TIPOS_VALIDOS:
         filtros["tipo"] = tipo
@@ -33,6 +34,8 @@ def guardar():
             filtros["franja_nombre"] = franja.nombre
     if nombre:
         filtros["nombre"] = nombre
+    if tipo_fecha in {"cedido", "aceptado"}:
+        filtros["tipo_fecha"] = tipo_fecha
 
     guardar_busqueda(current_user.id, filtros)
     return redirect(url_for("main.cambios", tab="alertas"))

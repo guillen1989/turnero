@@ -4,8 +4,8 @@ from app.extensions import db
 from app.models import (
     Pais, Provincia, Ciudad,
     Hospital, GrupoIntercambio, Unidad, Categoria, Usuario, FranjaHoraria,
-    MatchCambio, MatchParticipacion, PublicacionCambio, BusquedaGuardada,
-    SuscripcionPublicaciones,
+    MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio,
+    BusquedaGuardada, SuscripcionPublicaciones,
 )
 
 _OPCION_NUEVA = 0
@@ -197,6 +197,55 @@ def actualizar_perfil(
     db.session.commit()
     usuario._es_nueva_unidad = is_new
     return usuario
+
+
+def eliminar_usuario_admin(usuario):
+    """
+    Hard-delete a user and all their data (admin action).
+    Order satisfies all FK constraints:
+      BusquedaGuardada → SuscripcionPublicaciones → match notifications →
+      matches → other-user notifications referencing user's pubs →
+      user notifications → publications → feedback nullification → user row.
+    """
+    pub_ids = [p.id for p in usuario.publicaciones]
+
+    BusquedaGuardada.query.filter_by(usuario_id=usuario.id).delete()
+    SuscripcionPublicaciones.query.filter(
+        db.or_(
+            SuscripcionPublicaciones.suscriptor_id == usuario.id,
+            SuscripcionPublicaciones.publicador_id == usuario.id,
+        )
+    ).delete()
+
+    if pub_ids:
+        matches = (
+            MatchCambio.query
+            .join(MatchParticipacion)
+            .filter(MatchParticipacion.publicacion_id.in_(pub_ids))
+            .all()
+        )
+        for match in matches:
+            Notificacion.query.filter_by(match_id=match.id).delete()
+            db.session.delete(match)
+        db.session.flush()
+
+        from app.models.notificacion import Notificacion as _N
+        _N.query.filter(_N.publicacion_id.in_(pub_ids)).delete(synchronize_session=False)
+
+    Notificacion.query.filter_by(usuario_id=usuario.id).delete()
+
+    for pub in list(usuario.publicaciones):
+        db.session.delete(pub)
+    db.session.flush()
+
+    # Feedback.usuario_id is nullable — nullify rather than delete
+    db.session.execute(
+        db.text("UPDATE feedback SET usuario_id = NULL WHERE usuario_id = :uid"),
+        {"uid": usuario.id},
+    )
+
+    db.session.delete(usuario)
+    db.session.commit()
 
 
 def eliminar_cuenta(usuario):

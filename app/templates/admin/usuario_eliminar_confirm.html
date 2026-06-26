@@ -1,0 +1,33 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ _('Confirmar eliminación') }} — {{ _('Admin') }}{% endblock %}
+
+{% block admin_content %}
+<h1>{{ _('Eliminar usuario') }}</h1>
+
+<div class="card" style="max-width:480px; border:1.5px solid #fca5a5">
+  <p style="margin-bottom:0.5rem">
+    {{ _('¿Eliminar permanentemente al usuario <strong>%(nombre)s</strong> (<em>%(email)s</em>)?', nombre=usuario.nombre, email=usuario.email) }}
+  </p>
+  {% if num_pubs > 0 %}
+  <p style="font-size:0.9rem; color:#dc2626; margin-bottom:1rem">
+    {{ _('Se eliminarán también %(n)s publicacion(es) activas y su historial completo.', n=num_pubs) }}
+  </p>
+  {% else %}
+  <p style="font-size:0.9rem; color:#555; margin-bottom:1rem">
+    {{ _('Este usuario no tiene publicaciones.') }}
+  </p>
+  {% endif %}
+  <p style="font-size:0.85rem; color:#888; margin-bottom:1.5rem">
+    {{ _('Esta acción es irreversible.') }}
+  </p>
+
+  <div style="display:flex; gap:0.75rem">
+    <a href="{{ url_for('admin.usuarios') }}" class="btn btn-secondary">{{ _('Cancelar') }}</a>
+    <form method="post" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger">{{ _('Eliminar definitivamente') }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

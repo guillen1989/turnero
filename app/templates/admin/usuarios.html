@@ -32,10 +32,7 @@
       <td class="admin-actions">
         <a href="{{ url_for('admin.usuario_editar', id=u.id) }}" class="btn btn-secondary btn-xs">{{ _('Editar') }}</a>
         {% if u.id != current_user.id %}
-        <form method="post" action="{{ url_for('admin.usuario_eliminar', id=u.id) }}" style="display:inline" onsubmit="return confirm('{{ _('¿Eliminar este usuario?') }}')">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit" class="btn btn-danger btn-xs">{{ _('Eliminar') }}</button>
-        </form>
+        <a href="{{ url_for('admin.usuario_eliminar', id=u.id) }}" class="btn btn-danger btn-xs">{{ _('Eliminar') }}</a>
         {% endif %}
       </td>
     </tr>

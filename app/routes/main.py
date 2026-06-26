@@ -336,9 +336,12 @@ def cambios():
     nombre = request.args.get("usuario", "").strip()
     franja_id = request.args.get("franja", type=int)
     tipo = request.args.get("tipo", "").strip()
+    tipo_fecha = request.args.get("tipo_fecha", "").strip()
     _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte", "cambio_dia"}
     if tipo not in _TIPOS_VALIDOS:
         tipo = ""
+    if tipo_fecha not in {"cedido", "aceptado"}:
+        tipo_fecha = ""
 
     grupo_id = current_user.unidad.grupo_intercambio_id
     franjas = (
@@ -380,10 +383,15 @@ def cambios():
         if dia:
             cedido_parts.append(extract("day", TurnoCedido.fecha) == dia)
             aceptado_parts.append(extract("day", TurnoAceptado.fecha) == dia)
-        q = q.filter(or_(
-            exists().where(and_(*cedido_parts)),
-            exists().where(and_(*aceptado_parts)),
-        ))
+        if tipo_fecha == "cedido":
+            q = q.filter(exists().where(and_(*cedido_parts)))
+        elif tipo_fecha == "aceptado":
+            q = q.filter(exists().where(and_(*aceptado_parts)))
+        else:
+            q = q.filter(or_(
+                exists().where(and_(*cedido_parts)),
+                exists().where(and_(*aceptado_parts)),
+            ))
     if nombre:
         q = q.filter(Usuario.nombre.ilike(f"%{nombre}%"))
     if franja_id:
@@ -414,7 +422,8 @@ def cambios():
     )
 
     return render_template("main/cambios.html", publicaciones=publicaciones,
-                           mes=mes, dia=dia, nombre=nombre, franja_id=franja_id, tipo=tipo,
+                           mes=mes, dia=dia, nombre=nombre, franja_id=franja_id,
+                           tipo=tipo, tipo_fecha=tipo_fecha,
                            franjas=franjas, pub_js_data=pub_js_data, franjas_js=franjas_js,
                            tab=tab, busquedas=busquedas, junte_info=junte_info)
 

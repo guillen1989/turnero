@@ -26,6 +26,7 @@ class BusquedaGuardada(db.Model):
             ("franja_id", "franja"),
             ("tipo", "tipo"),
             ("nombre", "usuario"),
+            ("tipo_fecha", "tipo_fecha"),
         ]:
             v = self.filtros.get(filtro_key)
             if v:

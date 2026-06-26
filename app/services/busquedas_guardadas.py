@@ -28,11 +28,17 @@ def publicacion_cumple_filtros(pub, filtros):
 
     mes = filtros.get("mes")
     dia = filtros.get("dia")
+    tipo_fecha = filtros.get("tipo_fecha", "")
     if mes or dia:
-        fechas = (
-            [tc.fecha for tc in pub.turnos_cedidos]
-            + [ta.fecha for ta in pub.turnos_aceptados]
-        )
+        if tipo_fecha == "cedido":
+            fechas = [tc.fecha for tc in pub.turnos_cedidos]
+        elif tipo_fecha == "aceptado":
+            fechas = [ta.fecha for ta in pub.turnos_aceptados]
+        else:
+            fechas = (
+                [tc.fecha for tc in pub.turnos_cedidos]
+                + [ta.fecha for ta in pub.turnos_aceptados]
+            )
 
         def _fecha_ok(fecha):
             return (not mes or fecha.month == mes) and (not dia or fecha.day == dia)
