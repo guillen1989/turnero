@@ -372,3 +372,39 @@ def test_admin_elimina_publicacion_y_borra_sus_notificaciones(client, db):
         follow_redirects=True,
     )
     assert Notificacion.query.filter_by(match_id=match_id).count() == 0
+
+
+def test_admin_elimina_publicacion_con_notificacion_publicacion_id(client, db):
+    """Regresión: admin eliminar pub con notificacion.publicacion_id FK falla sin borrar antes."""
+    from app.extensions import db as _db
+    from app.models import Notificacion
+    from app.services.registro import registrar_usuario as reg
+    insertar_categorias_semilla()
+    cat_id = _cat_id(db)
+
+    _login_admin(client, db)
+
+    u1 = reg("Own3", "own3@test.es", "pass", "H1", "Urgencias", cat_id)
+    u2 = reg("Sub3", "sub3@test.es", "pass", "H1", "Urgencias", cat_id)
+
+    pub = PublicacionCambio(usuario_id=u1.id)
+    _db.session.add(pub)
+    _db.session.flush()
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u1.unidad.grupo_intercambio_id
+    ).first()
+    _db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 10, 1), franja_horaria_id=franja.id))
+    notif = Notificacion(usuario_id=u2.id, publicacion_id=pub.id, tipo="nueva_publicacion_seguido")
+    _db.session.add(notif)
+    _db.session.commit()
+    pub_id = pub.id
+    notif_id = notif.id
+
+    resp = client.post(
+        f"/admin/publicaciones/{pub_id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert _db.session.get(PublicacionCambio, pub_id) is None
+    assert _db.session.get(Notificacion, notif_id) is None

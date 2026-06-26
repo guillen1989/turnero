@@ -643,6 +643,7 @@ def publicacion_eliminar(id):
         if match:
             db.session.delete(match)  # cascade a MatchParticipacion
 
+    Notificacion.query.filter_by(publicacion_id=p.id).delete()
     db.session.delete(p)  # cascade a TurnoCedido + TurnoAceptado
     db.session.commit()
     flash(_("Publicación eliminada."), "success")
