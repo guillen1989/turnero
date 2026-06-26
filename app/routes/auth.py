@@ -343,14 +343,14 @@ def perfil_cuenta():
         if cambio_email or cambio_password:
             if not form.password_actual.data or not current_user.check_password(form.password_actual.data):
                 flash(_("Debes introducir tu contraseña actual para cambiar el correo o la contraseña."), "danger")
-                return render_template("auth/perfil_cuenta.html", form=form)
+                return redirect(url_for("auth.perfil_cuenta"))
 
         if cambio_email:
             if Usuario.query.filter(
                 Usuario.email == nuevo_email, Usuario.id != current_user.id
             ).first():
                 flash(_("Ese correo ya está registrado por otro usuario."), "danger")
-                return render_template("auth/perfil_cuenta.html", form=form)
+                return redirect(url_for("auth.perfil_cuenta"))
             current_user.email = nuevo_email
 
         current_user.nombre = form.nombre.data.strip()
