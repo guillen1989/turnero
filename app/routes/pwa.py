@@ -1,4 +1,5 @@
 import json
+import os
 
 from flask import Blueprint, Response, current_app
 
@@ -7,9 +8,12 @@ bp = Blueprint("pwa", __name__)
 
 @bp.get("/manifest.json")
 def manifest():
+    is_staging = os.environ.get("RAILWAY_ENVIRONMENT_NAME") == "staging"
+    name       = "Turnero (staging)" if is_staging else "Turnero"
+    short_name = "Turnero ST"        if is_staging else "Turnero"
     data = {
-        "name": "Turnero",
-        "short_name": "Turnero",
+        "name": name,
+        "short_name": short_name,
         "description": "Intercambio de turnos para personal sanitario",
         "start_url": "/",
         "scope": "/",
