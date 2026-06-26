@@ -392,8 +392,11 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
     Crea un MatchCambio a 3 bandas para el ciclo pub_a→pub_b→pub_c→pub_a.
 
     Cada participación registra el turno que ese usuario cede al siguiente
-    en el ciclo.
+    en el ciclo. Idempotente: si el trío ya tiene un match activo, devuelve None.
     """
+    if frozenset({pub_a.id, pub_b.id, pub_c.id}) in _cadenas_3_existentes(pub_a.id):
+        return None
+
     aceptados_a = _aceptados(pub_a)
     aceptados_b = _aceptados(pub_b)
     aceptados_c = _aceptados(pub_c)

@@ -201,7 +201,11 @@ def test_contraoferta_acepta_solapamiento_con_aceptado_original(client, db):
         },
         follow_redirects=True,
     )
-    assert PublicacionCambio.query.filter_by(usuario_id=pedro.id).count() == 1
+    # El medio match con Ana genera una pub sintética adicional; excluimos sintéticas
+    assert PublicacionCambio.query.filter(
+        PublicacionCambio.usuario_id == pedro.id,
+        PublicacionCambio.es_sintetica.is_(False),
+    ).count() == 1
 
 
 def test_contraoferta_acepta_solapamiento_con_cedido_original(client, db):
