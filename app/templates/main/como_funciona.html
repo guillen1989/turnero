@@ -19,11 +19,25 @@
           {{ _('Dile a tus compañeros qué turno quieres ceder y cuál te interesa a cambio.') }}
           {{ _('Puedes pedir una fecha y franja concreta, o dejar abierta cualquier franja.') }}
         </p>
-        <p>
-          {{ _('También puedes publicar un') }} <strong>{{ _('regalo') }}</strong>
-          {{ _('(libras un turno sin pedir nada) o una') }} <strong>{{ _('petición') }}</strong>
-          {{ _('(quieres que alguien te trabaje un día sin dar nada a cambio).') }}
-        </p>
+        <p>{{ _('Hay cuatro tipos de publicación:') }}</p>
+        <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.8">
+          <li>
+            <strong>{{ _('Cambio') }}</strong> —
+            {{ _('cedes un turno y pides otro a cambio. Es el tipo más habitual.') }}
+          </li>
+          <li>
+            <strong>{{ _('Regalo') }}</strong> —
+            {{ _('liberas un turno sin pedir nada a cambio. Ideal si ya no lo necesitas.') }}
+          </li>
+          <li>
+            <strong>{{ _('Petición') }}</strong> —
+            {{ _('quieres que alguien te cubra un día sin darte ningún turno a cambio.') }}
+          </li>
+          <li>
+            <strong>{{ _('Cambio múltiple') }}</strong> —
+            {{ _('cedes o pides varios turnos a la vez en una sola publicación.') }}
+          </li>
+        </ul>
         <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">
           {{ _('Publicar cambio') }}
         </a>
@@ -42,6 +56,13 @@
           <strong>{{ _('confírmalo o recházalo') }}</strong>.
           {{ _('El cambio solo se cierra cuando todos los implicados lo confirman.') }}
         </p>
+        <p>
+          {{ _('El detector va más allá del cruce directo entre dos personas:') }}
+          {{ _('también encuentra') }} <strong>{{ _('cambios a tres bandas') }}</strong>
+          {{ _('(A da a B, B da a C, C da a A) y') }}
+          <strong>{{ _('matches parciales') }}</strong>
+          {{ _('(se resuelve parte de un cambio múltiple aunque el resto quede pendiente).') }}
+        </p>
       </div>
     </div>
 
@@ -52,6 +73,10 @@
         <p>
           {{ _('En "Buscar cambios" ves todas las publicaciones abiertas de tu categoría y grupo.') }}
           {{ _('Puedes filtrar por mes, día o franja horaria.') }}
+        </p>
+        <p>
+          {{ _('Guarda tus filtros favoritos como') }} <strong>{{ _('búsquedas guardadas') }}</strong>
+          {{ _('y activa las notificaciones: te avisaremos cada vez que aparezca una publicación que encaje con esa búsqueda.') }}
         </p>
         <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary btn-sm">
           {{ _('Buscar cambios') }}
@@ -68,6 +93,20 @@
         </p>
         <p>
           {{ _('Entra en "Buscar cambios", localiza una publicación suya y pulsa el icono de la campana junto a su nombre.') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📲</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('5. Comparte tu cambio por WhatsApp') }}</h2>
+        <p>
+          {{ _('¿Conoces a alguien que puede encajarte pero aún no usa Turnero? Desde cualquier publicación tuya puedes') }}
+          <strong>{{ _('compartir el enlace directo por WhatsApp') }}</strong>.
+        </p>
+        <p>
+          {{ _('La persona que lo recibe ve los detalles del cambio y puede registrarse en el momento para responderlo.') }}
         </p>
       </div>
     </div>

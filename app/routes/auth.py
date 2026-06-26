@@ -126,7 +126,7 @@ def registro():
                 if getattr(usuario, "_es_nueva_unidad", False):
                     flash(_("Tu unidad es nueva. Configura los turnos disponibles en tu servicio."), "info")
                     return redirect(url_for("unidad.turnos"))
-                return redirect(url_for("main.index"))
+                return redirect(url_for("main.como_funciona"))
             except IntegrityError:
                 db.session.rollback()
                 flash(_("Ese correo ya está registrado."), "danger")
