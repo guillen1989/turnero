@@ -11,6 +11,40 @@ from app.services.caducidad import caducar_publicaciones_expiradas
 
 bp = Blueprint("main", __name__)
 
+# ---------------------------------------------------------------------------
+# Helpers para junte de noches
+# ---------------------------------------------------------------------------
+_DIAS_ES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
+_LMVD = frozenset([0, 2, 4, 6])
+_MJS  = frozenset([1, 3, 5])
+
+
+def _lista_es(items):
+    if not items:
+        return ''
+    if len(items) == 1:
+        return items[0]
+    return ', '.join(items[:-1]) + ' y ' + items[-1]
+
+
+def _junte_info(pub):
+    """Para una publicación de tipo junte, devuelve número de noches y días."""
+    cedidos_wd   = frozenset(tc.fecha.weekday() for tc in pub.turnos_cedidos)
+    aceptados_wd = frozenset(ta.fecha.weekday() for ta in pub.turnos_aceptados)
+
+    cadencia   = _LMVD if (cedidos_wd & _LMVD) else _MJS
+    num_noches = len(cadencia)
+    partner    = frozenset(range(7)) - cadencia
+
+    trabaja = (cadencia - cedidos_wd) | aceptados_wd
+    libra   = cedidos_wd | (partner - aceptados_wd)
+
+    return {
+        'num_noches':  num_noches,
+        'trabaja_str': _lista_es([_DIAS_ES[d] for d in sorted(trabaja)]),
+        'libra_str':   _lista_es([_DIAS_ES[d] for d in sorted(libra)]),
+    }
+
 
 @bp.app_template_filter("urlquote")
 def urlquote_filter(s):
@@ -357,6 +391,7 @@ def cambios():
 
     pub_js_data = {pub.id: _pub_js_data(pub) for pub in publicaciones}
     franjas_js = [{"id": f.id, "nombre": f.nombre} for f in franjas]
+    junte_info = {pub.id: _junte_info(pub) for pub in publicaciones if pub.tipo == 'junte'}
 
     tab = request.args.get("tab", "resultados")
     busquedas = (
@@ -369,7 +404,7 @@ def cambios():
     return render_template("main/cambios.html", publicaciones=publicaciones,
                            mes=mes, dia=dia, nombre=nombre, franja_id=franja_id, tipo=tipo,
                            franjas=franjas, pub_js_data=pub_js_data, franjas_js=franjas_js,
-                           tab=tab, busquedas=busquedas)
+                           tab=tab, busquedas=busquedas, junte_info=junte_info)
 
 
 def _pub_js_data(pub):

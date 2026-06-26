@@ -1,5 +1,5 @@
 """Tests de integración para el visor de cambios publicados (/cambios)."""
-from datetime import date
+from datetime import date, timedelta
 
 from app.extensions import db
 from app.models import (
@@ -314,3 +314,49 @@ def test_cambios_filtro_franja(client, db):
         franja_c = franjas[2]
         resp_c = client.get(f"/cambios?franja={franja_c.id}")
         assert b"01/09/2026" not in resp_c.data
+
+
+def test_cambios_junte_muestra_resumen_noches_y_dias(client, db):
+    """En /cambios, un junte de noches muestra el número de noches del autor
+    y los días de la semana que busca trabajar y librar tras el junte."""
+    # Javier publica el junte
+    javier = _usuario(email="javier@test.es")
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=javier.unidad.grupo_intercambio_id
+    ).first()
+    # 2026-08-03 es lunes (comprobado: 2026 empieza jueves, +213 días = lunes)
+    lunes = date(2026, 8, 3)
+    pub = PublicacionCambio(usuario_id=javier.id, tipo="junte")
+    db.session.add(pub)
+    db.session.flush()
+    # LMVD: cede Viernes(+4) y Domingo(+6)
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=lunes + timedelta(days=4), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=lunes + timedelta(days=6), franja_horaria_id=franja.id))
+    # Recibe Martes(+1) y Jueves(+3)
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=lunes + timedelta(days=1), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=lunes + timedelta(days=3), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    # Ana (mismo grupo y categoría) ve la publicación en /cambios
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "pass123", "H1", "Urgencias", cat.id)
+    db.session.commit()
+    _login(client, "ana@test.es")
+
+    resp = client.get("/cambios")
+    html = resp.data.decode()
+
+    # Número de noches (LMVD = 4)
+    assert "4 noches" in html
+    # Busca trabajar: lunes y miércoles (LMVD que guarda) + martes y jueves (MJS que recibe)
+    assert "Busca trabajar" in html
+    assert "lunes" in html
+    assert "martes" in html
+    assert "miércoles" in html
+    assert "jueves" in html
+    # Busca librar: viernes y domingo (LMVD cedidos) + sábado (MJS no recibido)
+    assert "Busca librar" in html
+    assert "viernes" in html
+    assert "sábado" in html
+    assert "domingo" in html

@@ -151,6 +151,14 @@
       </div>
       {% elif pub.tipo == 'junte' %}
       <span class="tipo-badge tipo-badge--junte">{{ _('Junte de noches') }}</span>
+      {% set ji = junte_info.get(pub.id) %}
+      {% if ji %}
+      <p class="junte-resumen">
+        {{ _('Tiene') }} {{ ji.num_noches }} {{ _('noches') }}.
+        {{ _('Busca trabajar') }} {{ ji.trabaja_str }}.
+        {{ _('Busca librar') }} {{ ji.libra_str }}.
+      </p>
+      {% endif %}
       <div class="turnos-cedidos">
         <strong>{{ _('Cede las noches:') }}</strong>
         {% for turno in pub.turnos_cedidos %}
