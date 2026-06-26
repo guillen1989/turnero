@@ -434,3 +434,61 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
     db.session.commit()
 
     return match
+
+
+def buscar_avisos_interes_para(publicacion):
+    """
+    Devuelve publicaciones cambio con solapamiento unilateral respecto a `publicacion`.
+
+    Una sola dirección cuadra (A puede dar a B lo que B quiere, o viceversa) pero
+    no la otra, por lo que no puede formarse un match directo. Se notifica a ambas
+    partes para que puedan ampliar sus aceptados o explorar cadenas.
+    Solo opera sobre publicaciones de tipo 'cambio'.
+    """
+    if publicacion.tipo != "cambio":
+        return []
+
+    propietario = db.session.get(Usuario, publicacion.usuario_id)
+    grupo_id = propietario.unidad.grupo_intercambio_id
+    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+
+    cedidos_pub = _cedidos_abiertos(publicacion)
+    aceptados_pub = _aceptados(publicacion)
+
+    resultado = []
+    for c in candidatas:
+        if c.tipo != "cambio":
+            continue
+        cedidos_c = _cedidos_abiertos(c)
+        aceptados_c = _aceptados(c)
+        a_da_a_b = bool(cedidos_pub & aceptados_c)
+        b_da_a_a = bool(cedidos_c & aceptados_pub)
+        if a_da_a_b ^ b_da_a_a:
+            resultado.append(c)
+    return resultado
+
+
+def crear_aviso_interes(pub_a, pub_b):
+    """
+    Crea una Notificacion de tipo 'aviso_interes' para cada usuario implicado.
+    Idempotente: no duplica si ya existe para el mismo par.
+    """
+    for destinatario_id, pub_ref in (
+        (pub_a.usuario_id, pub_b),
+        (pub_b.usuario_id, pub_a),
+    ):
+        existe = Notificacion.query.filter_by(
+            usuario_id=destinatario_id,
+            publicacion_id=pub_ref.id,
+            tipo="aviso_interes",
+        ).first()
+        if not existe:
+            db.session.add(Notificacion(
+                usuario_id=destinatario_id,
+                publicacion_id=pub_ref.id,
+                tipo="aviso_interes",
+            ))
+    db.session.commit()
+
+    enviar_push_condicional(pub_a.usuario, "aviso_interes")
+    enviar_push_condicional(pub_b.usuario, "aviso_interes")
