@@ -514,6 +514,8 @@ body {
 .tipo-badge--junte      { background: #ede9fe; color: #5b21b6; }
 .tipo-badge--cambio-dia { background: #ccfbf1; color: #0f766e; }
 .tipo-badge--interes    { background: #ffedd5; color: #c2410c; }
+.tipo-badge--sintetica  { background: #e0e7ff; color: #3730a3; }
+.sintetica-nota         { font-size: 0.8rem; color: #6b7280; margin: 0.25rem 0 0.5rem; font-style: italic; }
 
 .estado-badge {
   display: inline-block;

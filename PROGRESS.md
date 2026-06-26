@@ -31,6 +31,8 @@ Sin pasos pendientes definidos.
 - [x] feat(cuenta): eliminar cuenta · servicio eliminar_cuenta (rechaza matches, cancela publicaciones, anonimiza datos) · ruta POST /auth/perfil/cuenta/eliminar · zona de peligro en perfil_cuenta.html · 13 tests · 449 tests passing
 - [x] feat(admin): eliminar usuario con página de confirmación · servicio eliminar_usuario_admin maneja todos los FK (BusquedaGuardada, Suscripciones, notif. ajenas) · GET /admin/usuarios/<id>/eliminar muestra pub count · 5 tests nuevos · 454 tests passing
 - [x] feat(cambios): filtro tipo_fecha (cedido / aceptado) en /cambios · distingue «quiere librar esa fecha» de «ofrece trabajar esa fecha» · actualiza busquedas_guardadas y publicacion_cumple_filtros · 3 tests nuevos · 457 tests passing
+- [x] feat(matching): aviso de interés (cambio↔cambio solapamiento unilateral) · notificación aviso_interes para ambas partes · badge naranja en avisos · push notification · 9 tests · 466 tests passing
+- [x] feat(matching): generador de cambios a 3 bandas · PublicacionCambio sintética (es_sintetica+FKs) · migración e8e3d3c815bd · crear_pub_sintetica / buscar_sinteticas_que_coinciden_con / crear_cadena_3_desde_sintetica · ciclo de vida: cancelar pub fuente cancela sintética (cancelar + editar + caducidad) · badge «Oportunidad a 3» en búsqueda · excluye sintéticas del dashboard propio · 11 tests · 87 tests passing en suite relacionada
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
 - [x] Fase 0, paso 2: Flask-Babel configurado · catálogo `es` · test de locale passing
 - [x] Fase 1, paso 1: modelos Hospital, GrupoIntercambio y Unidad · conftest con PostgreSQL · 8 tests passing

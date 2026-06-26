@@ -17,6 +17,13 @@ class PublicacionCambio(db.Model):
     estado = db.Column(db.String(30), nullable=False, default="abierta")
     tipo = db.Column(db.String(20), nullable=False, default="cambio")
     mensaje = db.Column(db.String(200), nullable=True)
+    es_sintetica = db.Column(db.Boolean, nullable=False, default=False)
+    sintetica_pub_a_id = db.Column(
+        db.Integer, db.ForeignKey("publicacion_cambio.id"), nullable=True
+    )
+    sintetica_pub_b_id = db.Column(
+        db.Integer, db.ForeignKey("publicacion_cambio.id"), nullable=True
+    )
 
     usuario = db.relationship("Usuario", back_populates="publicaciones")
     turnos_cedidos = db.relationship(

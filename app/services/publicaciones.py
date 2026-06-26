@@ -65,11 +65,28 @@ def _notificar_suscriptores(publicador, pub):
 
 
 def cancelar_publicacion(pub):
-    """Marca la publicación como cancelada. Requiere que esté activa."""
+    """Marca la publicación como cancelada y propaga la cancelación a las sintéticas
+    que la referencian como pub_a o pub_b."""
     pub.estado = "cancelada"
+    _cancelar_sinteticas_de(pub.id)
     db.session.commit()
     registrar_evento(pub.usuario_id, "publication_cancelled", pub.id)
     db.session.commit()
+
+
+def _cancelar_sinteticas_de(pub_id):
+    """Cancela todas las pubs sintéticas que dependen de pub_id."""
+    from sqlalchemy import or_
+    dependientes = PublicacionCambio.query.filter(
+        PublicacionCambio.es_sintetica.is_(True),
+        PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
+        or_(
+            PublicacionCambio.sintetica_pub_a_id == pub_id,
+            PublicacionCambio.sintetica_pub_b_id == pub_id,
+        ),
+    ).all()
+    for sint in dependientes:
+        sint.estado = "cancelada"
 
 
 def _eliminar_matches_de_publicacion(pub_id):
@@ -93,6 +110,7 @@ def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo
     Reemplaza los turnos de una publicación activa y recalcula matches.
     turnos_cedidos/aceptados: listas de (fecha: date, franja_horaria_id: int)
     """
+    _cancelar_sinteticas_de(pub.id)
     _eliminar_matches_de_publicacion(pub.id)
 
     for tc in list(pub.turnos_cedidos):
@@ -121,6 +139,7 @@ def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo
 
 def eliminar_publicacion(pub):
     """Borra completamente una publicación y todos sus datos asociados."""
+    _cancelar_sinteticas_de(pub.id)
     _eliminar_matches_de_publicacion(pub.id)
     Notificacion.query.filter_by(publicacion_id=pub.id).delete()
     db.session.delete(pub)
