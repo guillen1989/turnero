@@ -150,7 +150,11 @@ def login():
         if usuario and usuario.check_password(form.password.data):
             login_user(usuario)
             siguiente = request.args.get("next")
-            return redirect(siguiente or url_for("main.index"))
+            if siguiente:
+                return redirect(siguiente)
+            if not usuario.onboarding_visto:
+                return redirect(url_for("main.como_funciona"))
+            return redirect(url_for("main.index"))
         flash(_("Correo o contraseña incorrectos."), "danger")
 
     return render_template("auth/login.html", form=form)

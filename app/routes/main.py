@@ -21,6 +21,15 @@ def health():
     return jsonify({"status": "ok"})
 
 
+@bp.get("/como-funciona")
+@login_required
+def como_funciona():
+    if not current_user.onboarding_visto:
+        current_user.onboarding_visto = True
+        db.session.commit()
+    return render_template("main/como_funciona.html")
+
+
 def _mi_participacion(match, usuario_id):
     return next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
 

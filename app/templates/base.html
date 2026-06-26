@@ -30,6 +30,7 @@
         <a href="{{ url_for('main.cambios') }}">{{ _('Buscar cambios') }}</a>
         <a href="{{ url_for('notificaciones.panel') }}">{{ _('Notificaciones') }}</a>
         <a href="{{ url_for('auth.perfil') }}">{{ _('Mi perfil') }}</a>
+        <a href="{{ url_for('main.como_funciona') }}">{{ _('Cómo funciona') }}</a>
         {% if current_user.es_admin %}
           <a href="{{ url_for('admin.index') }}">{{ _('Administración') }}</a>
           <a href="{{ url_for('admin.feedback') }}">{{ _('Feedback') }}</a>

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Cómo funciona') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('Cómo funciona Turnero') }}</h1>
+  <p style="color:#6b7280;margin-bottom:2rem">
+    {{ _('Todo lo que necesitas saber para empezar a intercambiar turnos con tus compañeros.') }}
+  </p>
+
+  <div class="onboarding-steps">
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📢</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('1. Publica tu cambio') }}</h2>
+        <p>
+          {{ _('Dile a tus compañeros qué turno quieres ceder y cuál te interesa a cambio.') }}
+          {{ _('Puedes pedir una fecha y franja concreta, o dejar abierta cualquier franja.') }}
+        </p>
+        <p>
+          {{ _('También puedes publicar un') }} <strong>{{ _('regalo') }}</strong>
+          {{ _('(libras un turno sin pedir nada) o una') }} <strong>{{ _('petición') }}</strong>
+          {{ _('(quieres que alguien te trabaje un día sin dar nada a cambio).') }}
+        </p>
+        <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">
+          {{ _('Publicar cambio') }}
+        </a>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">🤝</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('2. Si hay match, te avisamos') }}</h2>
+        <p>
+          {{ _('Cuando otra persona de tu misma categoría y grupo publique algo compatible con lo tuyo, recibirás una notificación.') }}
+        </p>
+        <p>
+          {{ _('Revisa el match en tu panel de "Mis cambios" y') }}
+          <strong>{{ _('confírmalo o recházalo') }}</strong>.
+          {{ _('El cambio solo se cierra cuando todos los implicados lo confirman.') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">🔍</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('3. Consulta lo que publican tus compañeros') }}</h2>
+        <p>
+          {{ _('En "Buscar cambios" ves todas las publicaciones abiertas de tu categoría y grupo.') }}
+          {{ _('Puedes filtrar por mes, día o franja horaria.') }}
+        </p>
+        <a href="{{ url_for('main.cambios') }}" class="btn btn-secondary btn-sm">
+          {{ _('Buscar cambios') }}
+        </a>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">🔔</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('4. Suscríbete a un compañero') }}</h2>
+        <p>
+          {{ _('¿Hay alguien con quien te resulte fácil cambiar? Suscríbete a sus publicaciones y te avisaremos cada vez que publique algo nuevo.') }}
+        </p>
+        <p>
+          {{ _('Entra en "Buscar cambios", localiza una publicación suya y pulsa el icono de la campana junto a su nombre.') }}
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="text-align:center;margin-top:2.5rem">
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+      {{ _('Ir a mis cambios') }}
+    </a>
+    <p style="margin-top:0.75rem;font-size:0.875rem;color:#6b7280">
+      {{ _('Puedes volver a esta página cuando quieras desde el menú.') }}
+    </p>
+  </div>
+</div>
+{% endblock %}

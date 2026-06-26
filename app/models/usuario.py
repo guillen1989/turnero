@@ -22,6 +22,7 @@ class Usuario(UserMixin, db.Model):
     notif_publicacion = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     notif_busqueda_guardada = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     es_admin = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
+    onboarding_visto = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     fecha_registro = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )

@@ -784,3 +784,11 @@ body {
 .modal-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.75rem; color: #1a1a1a; }
 .modal-body { color: #374151; margin-bottom: 1.25rem; line-height: 1.5; }
 .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+/* Onboarding / como-funciona */
+.onboarding-steps { display: flex; flex-direction: column; gap: 1.75rem; }
+.onboarding-step { display: flex; gap: 1rem; align-items: flex-start; }
+.onboarding-step-icon { font-size: 2rem; line-height: 1; flex-shrink: 0; width: 2.5rem; text-align: center; margin-top: 0.1rem; }
+.onboarding-step-body h2 { font-size: 1.05rem; margin: 0 0 0.5rem; }
+.onboarding-step-body p { margin: 0 0 0.5rem; color: #374151; line-height: 1.55; }
+.onboarding-step-body .btn { margin-top: 0.35rem; }
