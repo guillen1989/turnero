@@ -15,6 +15,7 @@ from app.models import (
     Notificacion, PublicacionCambio, Unidad, Usuario,
     insertar_categorias_semilla,
 )
+from app.services.publicaciones import eliminar_publicacion
 from app.services.registro import (
     encontrar_o_crear_categoria,
     encontrar_o_crear_hospital,
@@ -627,25 +628,7 @@ def publicacion_cancelar(id):
 @admin_required
 def publicacion_eliminar(id):
     p = db.session.get(PublicacionCambio, id) or abort(404)
-
-    # Borrar los matches que incluyen esta publicación antes de eliminarla,
-    # porque MatchParticipacion.publicacion_id no tiene ON DELETE CASCADE.
-    match_ids = [
-        row[0] for row in
-        db.session.execute(
-            db.select(MatchParticipacion.match_id)
-            .where(MatchParticipacion.publicacion_id == p.id)
-        ).all()
-    ]
-    for match_id in match_ids:
-        Notificacion.query.filter_by(match_id=match_id).delete()
-        match = db.session.get(MatchCambio, match_id)
-        if match:
-            db.session.delete(match)  # cascade a MatchParticipacion
-
-    Notificacion.query.filter_by(publicacion_id=p.id).delete()
-    db.session.delete(p)  # cascade a TurnoCedido + TurnoAceptado
-    db.session.commit()
+    eliminar_publicacion(p)
     flash(_("Publicación eliminada."), "success")
     return redirect(url_for("admin.publicaciones"))
 
