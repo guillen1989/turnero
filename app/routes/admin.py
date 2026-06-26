@@ -24,6 +24,7 @@ from app.services.registro import (
     encontrar_o_crear_pais,
     encontrar_o_crear_provincia,
     encontrar_o_crear_ciudad,
+    eliminar_usuario_admin,
     resolver_geo, resolver_hospital, resolver_unidad,
 )
 
@@ -263,7 +264,7 @@ def usuario_editar(id):
     )
 
 
-@bp.route("/usuarios/<int:id>/eliminar", methods=["POST"])
+@bp.route("/usuarios/<int:id>/eliminar", methods=["GET", "POST"])
 @admin_required
 def usuario_eliminar(id):
     u = db.session.get(Usuario, id) or abort(404)
@@ -271,31 +272,11 @@ def usuario_eliminar(id):
         flash(_("No puedes eliminarte a ti mismo."), "danger")
         return redirect(url_for("admin.usuarios"))
 
-    # Delete in the correct order to satisfy FK constraints.
-    # Step 1: delete matches that involve this user's publications.
-    # (MatchParticipacion.publicacion_id and .turno_cedido_id block deletion otherwise.)
-    pub_ids = [p.id for p in u.publicaciones]
-    if pub_ids:
-        matches = (
-            MatchCambio.query
-            .join(MatchParticipacion)
-            .filter(MatchParticipacion.publicacion_id.in_(pub_ids))
-            .all()
-        )
-        for match in matches:
-            # MatchCambio.notificaciones has no cascade, so delete manually.
-            Notificacion.query.filter_by(match_id=match.id).delete()
-            db.session.delete(match)  # cascades to MatchParticipacion
+    if request.method == "GET":
+        num_pubs = u.publicaciones.count()
+        return render_template("admin/usuario_eliminar_confirm.html", usuario=u, num_pubs=num_pubs)
 
-    # Step 2: delete user's own notifications.
-    Notificacion.query.filter_by(usuario_id=u.id).delete()
-
-    # Step 3: delete user's publications (cascades to TurnoCedido + TurnoAceptado).
-    for pub in u.publicaciones:
-        db.session.delete(pub)
-
-    db.session.delete(u)
-    db.session.commit()
+    eliminar_usuario_admin(u)
     flash(_("Usuario eliminado."), "success")
     return redirect(url_for("admin.usuarios"))
 

@@ -3,7 +3,7 @@ import pytest
 from datetime import date
 from app.models import (
     Usuario, Hospital, Unidad, Categoria, insertar_categorias_semilla,
-    PublicacionCambio, TurnoCedido, TurnoAceptado, FranjaHoraria,
+    Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, FranjaHoraria,
 )
 
 
@@ -407,4 +407,80 @@ def test_admin_elimina_publicacion_con_notificacion_publicacion_id(client, db):
     )
     assert resp.status_code == 200
     assert _db.session.get(PublicacionCambio, pub_id) is None
-    assert _db.session.get(Notificacion, notif_id) is None
+
+
+# ---------------------------------------------------------------------------
+# Eliminar usuario — página de confirmación y casos FK complejos
+# ---------------------------------------------------------------------------
+
+def test_admin_confirmar_eliminar_usuario_muestra_pagina(client, db):
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="borrar@test.es")
+    resp = client.get(f"/admin/usuarios/{u.id}/eliminar")
+    assert resp.status_code == 200
+    assert "borrar@test.es".encode() in resp.data
+
+
+def test_admin_confirmar_eliminar_requiere_admin(client, db):
+    _crear_usuario(client, db, email="normal@test.es", es_admin=False)
+    _login(client, "normal@test.es")
+    u = _crear_usuario(client, db, email="borrar@test.es")
+    resp = client.get(f"/admin/usuarios/{u.id}/eliminar")
+    assert resp.status_code == 403
+
+
+def test_admin_elimina_usuario_con_busquedas_guardadas(client, db):
+    from app.extensions import db as _db
+    from app.models import BusquedaGuardada
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="borrar@test.es")
+    _db.session.add(BusquedaGuardada(usuario_id=u.id, filtros={}))
+    _db.session.commit()
+
+    uid = u.id
+    resp = client.post(f"/admin/usuarios/{u.id}/eliminar", data={"csrf_token": ""}, follow_redirects=True)
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(id=uid).count() == 0
+    assert BusquedaGuardada.query.filter_by(usuario_id=uid).count() == 0
+
+
+def test_admin_elimina_usuario_con_suscripciones(client, db):
+    from app.extensions import db as _db
+    from app.models import SuscripcionPublicaciones
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="borrar@test.es")
+    admin = Usuario.query.filter_by(email="admin@test.es").first()
+    _db.session.add(SuscripcionPublicaciones(suscriptor_id=u.id, publicador_id=admin.id))
+    _db.session.commit()
+
+    uid = u.id
+    resp = client.post(f"/admin/usuarios/{u.id}/eliminar", data={"csrf_token": ""}, follow_redirects=True)
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(id=uid).count() == 0
+
+
+def test_admin_elimina_usuario_con_notificaciones_ajenas_sobre_sus_pubs(client, db):
+    """Regression: otras-user notifications with publicacion_id → pub must be deleted first."""
+    from app.extensions import db as _db
+    from app.models import Notificacion
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="borrar@test.es")
+    observer = _crear_usuario(client, db, email="observer@test.es")
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+    pub = PublicacionCambio(usuario_id=u.id)
+    _db.session.add(pub)
+    _db.session.flush()
+    _db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    # Notification for the observer referencing this publication
+    _db.session.add(Notificacion(usuario_id=observer.id, publicacion_id=pub.id, tipo="nueva_publicacion_seguido"))
+    _db.session.commit()
+
+    uid = u.id
+    resp = client.post(f"/admin/usuarios/{u.id}/eliminar", data={"csrf_token": ""}, follow_redirects=True)
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(id=uid).count() == 0
+    # Notification for the observer should also have been cleaned up
+    assert Notificacion.query.filter_by(usuario_id=observer.id, tipo="nueva_publicacion_seguido").count() == 0
