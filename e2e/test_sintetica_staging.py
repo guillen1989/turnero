@@ -175,7 +175,9 @@ def test_golden_path_staging(page):
     page.wait_for_timeout(3000)
 
     # ── 7. Carlos · «Me interesa» → modal (2 s) → acepta ──────────────────
-    page.locator('button:has-text("Me interesa")').first.click()
+    # En staging hay otras pubs del seed en el mismo grupo. Usamos el selector
+    # específico de la tarjeta sintética para no confundirnos con otra pub.
+    page.locator('.publicacion-card:has(.tipo-badge--sintetica) button:has-text("Me interesa")').first.click()
     page.wait_for_selector('#modal-me-interesa:not(.modal-hidden)')
     page.wait_for_timeout(2000)
     # El form post redirige a / en caso de éxito o a /cambios si falla.
