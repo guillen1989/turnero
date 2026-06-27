@@ -10,9 +10,11 @@ from app.services.publicaciones import cancelar_publicacion, editar_publicacion,
 from app.services.registro import crear_franjas_default
 from app.matching.service import (
     buscar_avisos_interes_para,
+    buscar_cadenas_3_para,
     buscar_sinteticas_que_coinciden_con,
     buscar_matches_para,
     crear_cadena_3_desde_sintetica,
+    crear_match_cadena_3,
     crear_match_directo,
     procesar_aviso_y_sintetica,
 )
@@ -238,6 +240,8 @@ def nueva():
         pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
         for candidata in buscar_matches_para(pub):
             crear_match_directo(pub, candidata)
+        for pub_b, pub_c in buscar_cadenas_3_para(pub):
+            crear_match_cadena_3(pub, pub_b, pub_c)
         for sint in buscar_sinteticas_que_coinciden_con(pub):
             crear_cadena_3_desde_sintetica(pub, sint)
         for candidata in buscar_avisos_interes_para(pub):
@@ -298,6 +302,8 @@ def editar(pub_id):
         editar_publicacion(pub, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
         for candidata in buscar_matches_para(pub):
             crear_match_directo(pub, candidata)
+        for pub_b, pub_c in buscar_cadenas_3_para(pub):
+            crear_match_cadena_3(pub, pub_b, pub_c)
         for sint in buscar_sinteticas_que_coinciden_con(pub):
             crear_cadena_3_desde_sintetica(pub, sint)
         for candidata in buscar_avisos_interes_para(pub):
@@ -337,6 +343,29 @@ def me_interesa(pub_id):
             autor.unidad.grupo_intercambio_id != current_user.unidad.grupo_intercambio_id):
         abort(403)
 
+    if pub_a.es_sintetica:
+        # La pub sintética ya tiene los cedidos/aceptados desde la perspectiva del
+        # tercer usuario: copiarlos directamente (sin invertir) y cerrar la cadena_3.
+        cedidos_c = [
+            (tc.fecha, tc.franja_horaria_id)
+            for tc in pub_a.turnos_cedidos if tc.estado == "abierto"
+        ]
+        aceptados_c = [
+            (ta.fecha, ta.franja_horaria_id)
+            for ta in pub_a.turnos_aceptados
+        ]
+        if not cedidos_c or not aceptados_c:
+            flash(_("Esta oportunidad ya no está disponible."), "warning")
+            return redirect(url_for("main.cambios"))
+        pub_c = publicar_cambio(current_user.id, cedidos_c, aceptados_c)
+        match = crear_cadena_3_desde_sintetica(pub_c, pub_a)
+        if match is None:
+            eliminar_publicacion(pub_c)
+            flash(_("No fue posible cerrar el cambio a 3 bandas. Los turnos pueden haber cambiado."), "warning")
+            return redirect(url_for("main.cambios"))
+        flash(_("¡Cambio a 3 bandas iniciado! Ve a «Mis cambios» para confirmar."), "success")
+        return redirect(url_for("main.index"))
+
     try:
         pub_b = _crear_publicacion_espejo(pub_a)
     except ValueError as exc:
@@ -348,7 +377,6 @@ def me_interesa(pub_id):
         eliminar_publicacion(pub_b)
         flash(_("No fue posible crear el match. Los turnos pueden haber cambiado."), "warning")
         return redirect(url_for("main.cambios"))
-
     flash(_("¡Match creado! Ve a «Mis cambios» para confirmar."), "success")
     return redirect(url_for("main.index"))
 
@@ -480,6 +508,8 @@ def contraoferta(pub_id):
 
         for candidata in buscar_matches_para(pub_nueva):
             crear_match_directo(pub_nueva, candidata)
+        for pub_b, pub_c in buscar_cadenas_3_para(pub_nueva):
+            crear_match_cadena_3(pub_nueva, pub_b, pub_c)
         for sint in buscar_sinteticas_que_coinciden_con(pub_nueva):
             crear_cadena_3_desde_sintetica(pub_nueva, sint)
         for candidata in buscar_avisos_interes_para(pub_nueva):

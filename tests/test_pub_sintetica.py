@@ -304,3 +304,124 @@ def test_publicar_c_genera_cadena_3(client, db):
     assert pub_a.id in pub_ids
     assert pub_b.id in pub_ids
     assert pub_c.id in pub_ids
+
+
+# ---------------------------------------------------------------------------
+# Notificaciones aviso_sintetica
+# ---------------------------------------------------------------------------
+
+def test_crear_sintetica_notifica_a_ambos_usuarios(db):
+    """Al crear una pub sintética, ambos usuarios reciben aviso_sintetica."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id)
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+
+    crear_pub_sintetica(pub_a, pub_b)
+
+    notif_ana = Notificacion.query.filter_by(
+        usuario_id=ana.id, tipo="aviso_sintetica"
+    ).first()
+    notif_pedro = Notificacion.query.filter_by(
+        usuario_id=pedro.id, tipo="aviso_sintetica"
+    ).first()
+
+    assert notif_ana is not None
+    assert notif_pedro is not None
+    # Cada notificación apunta a la publicación del otro
+    assert notif_ana.publicacion_id == pub_b.id
+    assert notif_pedro.publicacion_id == pub_a.id
+
+
+def test_crear_sintetica_no_duplica_notificacion(db):
+    """Llamar crear_pub_sintetica dos veces no duplica los avisos."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id)
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+
+    crear_pub_sintetica(pub_a, pub_b)
+    crear_pub_sintetica(pub_a, pub_b)
+
+    count_ana = Notificacion.query.filter_by(
+        usuario_id=ana.id, tipo="aviso_sintetica"
+    ).count()
+    count_pedro = Notificacion.query.filter_by(
+        usuario_id=pedro.id, tipo="aviso_sintetica"
+    ).count()
+
+    assert count_ana == 1
+    assert count_pedro == 1
+
+
+# ---------------------------------------------------------------------------
+# me_interesa sobre pub sintética → cadena_3
+# ---------------------------------------------------------------------------
+
+def test_me_interesa_sintetica_crea_cadena_3(client, db):
+    """
+    Cuando Carlos hace «Me interesa» sobre una pub sintética, el backend crea
+    un MatchCambio cadena_3 (no un match directo 2 bandas).
+    """
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    carlos = _usuario("Carlos", "carlos@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id, "Mañana")
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+    sint = crear_pub_sintetica(pub_a, pub_b)
+
+    # Carlos hace «Me interesa» en la sintética
+    client.post("/auth/login", data={"email": "carlos@test.es", "password": "password123"})
+
+    tc = sint.turnos_cedidos[0]
+    ta = sint.turnos_aceptados[0]
+    resp = client.post(f"/cambios/{sint.id}/me-interesa", data={
+        "turno_cedido_id": tc.id,
+        "turno_aceptado_id": ta.id,
+    })
+
+    assert resp.status_code in (200, 302)
+
+    match = MatchCambio.query.filter_by(tipo="cadena_3").first()
+    assert match is not None, "Debe haberse creado un match cadena_3"
+
+    pub_ids = {p.publicacion_id for p in match.participaciones}
+    assert pub_a.id in pub_ids
+    assert pub_b.id in pub_ids
+
+    # La sintética queda cancelada tras crear la cadena
+    from app.extensions import db as _db
+    _db.session.refresh(sint)
+    assert sint.estado == "cancelada"
+
+
+def test_me_interesa_sintetica_no_crea_match_directo(client, db):
+    """El match creado es cadena_3, nunca directo_2."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    carlos = _usuario("Carlos", "carlos@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id, "Mañana")
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+    sint = crear_pub_sintetica(pub_a, pub_b)
+
+    client.post("/auth/login", data={"email": "carlos@test.es", "password": "password123"})
+    tc = sint.turnos_cedidos[0]
+    ta = sint.turnos_aceptados[0]
+    client.post(f"/cambios/{sint.id}/me-interesa", data={
+        "turno_cedido_id": tc.id,
+        "turno_aceptado_id": ta.id,
+    })
+
+    assert MatchCambio.query.filter_by(tipo="directo_2").count() == 0

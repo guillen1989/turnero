@@ -25,6 +25,8 @@
           <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _('Alerta') }}</span>
           {% elif aviso.tipo == 'aviso_interes' %}
           <span class="aviso-tipo tipo-badge tipo-badge--interes">{{ _('Interés') }}</span>
+          {% elif aviso.tipo == 'aviso_sintetica' %}
+          <span class="aviso-tipo tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3') }}</span>
           {% else %}
           <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _(aviso.publicacion.tipo) }}</span>
           {% endif %}
@@ -33,8 +35,16 @@
         {% if aviso.tipo == 'contraoferta' and aviso.publicacion.mensaje %}
         <p class="aviso-mensaje">"{{ aviso.publicacion.mensaje }}"</p>
         {% endif %}
+        {% if aviso.tipo == 'aviso_interes' %}
+        <p class="aviso-mensaje">{{ _('%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran completamente. El sistema ha generado una publicación puente: cualquier compañero que la acepte cerrará el cambio a 3 con un clic.', nombre=aviso.publicacion.usuario.nombre) }}</p>
+        {% endif %}
+        {% if aviso.tipo == 'aviso_sintetica' %}
+        <p class="aviso-mensaje">{{ _('El sistema ha generado una publicación puente con tu turno. Si alguien la acepta, el cambio a 3 personas se cierra automáticamente.') }}</p>
+        {% endif %}
         <div class="aviso-actions">
-          {% if aviso.publicacion.esta_activa() %}
+          {% if aviso.tipo == 'aviso_sintetica' %}
+            <a href="{{ url_for('main.cambios') }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Buscar cambios') }}</a>
+          {% elif aviso.publicacion.esta_activa() %}
             {% if aviso.tipo == 'alerta_busqueda_guardada' and aviso.busqueda_guardada %}
             <a href="{{ url_for('main.cambios', **aviso.busqueda_guardada.url_params) }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver resultados') }}</a>
             {% else %}

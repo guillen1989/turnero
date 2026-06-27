@@ -6,7 +6,7 @@ Uso:
     python scripts/seed_test_data.py           # añade datos si no existen
     python scripts/seed_test_data.py --reset   # trunca TODO y recrea desde cero
 
-Usuarios creados (contraseña: test123):
+Usuarios creados (contraseña: test1234):
   admin@test.com  — Admin (es_admin=True)
   ana@test.com    — Enfermería, UCO, La Paz      ← mismo grupo que Bruno y Carlos
   bruno@test.com  — Enfermería, UCO, La Paz      ← mismo grupo que Ana y Carlos
@@ -23,6 +23,8 @@ Publicaciones:
   1 parcialmente_resuelta    (Ana: 2 turnos, 1 ya resuelto)
   1 cancelada  (Carmen)
   1 caducada   (Eva)
+  1 cadena_3 propuesto   (Ana→Carlos→Bruno→Ana, oct-nov 2026)
+  1 medio match + sintética  (Ana↔Carlos 27-oct, esperando C)
 """
 import os
 import sys
@@ -38,7 +40,7 @@ from app.models import (
     Categoria, Usuario,
     PublicacionCambio, TurnoCedido, TurnoAceptado,
     MatchCambio, MatchParticipacion,
-    FranjaHoraria,
+    FranjaHoraria, Notificacion,
 )
 from app.services.registro import (
     encontrar_o_crear_pais,
@@ -49,7 +51,7 @@ from app.services.registro import (
 )
 
 _SEED_MARKER = "admin@test.com"
-_PASSWORD = "test123"
+_PASSWORD = "test1234"
 
 _TODAS_LAS_TABLAS = (
     "event, busqueda_guardada, suscripcion_publicaciones, feedback, "
@@ -296,6 +298,58 @@ def sembrar():
     _tc(pub_caducada, date(2026, 1, 15), _franja(g_cardio, "Mañana"))
     _ta(pub_caducada, date(2026, 1, 20), _franja(g_cardio, "Tarde"))
 
+    # 13. Cadena 3 bandas completa (match propuesto): Ana → Carlos → Bruno → Ana
+    #   Ana cede mañana 25-oct, quiere tarde 15-nov
+    #   Carlos cede mañana 20-sep, quiere mañana 25-oct  (← lo que ofrece Ana)
+    #   Bruno cede tarde 15-nov,  quiere mañana 20-sep   (← lo que ofrece Carlos)
+    pub_3b_ana   = _pub(ana,   "cambio")
+    tc_3b_ana    = _tc(pub_3b_ana,   date(2026, 10, 25), manana)
+    _ta(pub_3b_ana,   date(2026, 11, 15), tarde)
+
+    pub_3b_carlos = _pub(carlos, "cambio")
+    tc_3b_carlos  = _tc(pub_3b_carlos, date(2026, 9,  20), manana)
+    _ta(pub_3b_carlos, date(2026, 10, 25), manana)
+
+    pub_3b_bruno = _pub(bruno, "cambio")
+    tc_3b_bruno  = _tc(pub_3b_bruno, date(2026, 11, 15), tarde)
+    _ta(pub_3b_bruno, date(2026, 9,  20), manana)
+
+    db.session.flush()
+
+    m_3b = _match(tipo="cadena_3", estado="propuesto")
+    db.session.flush()
+    _part(m_3b, pub_3b_ana,   tc=tc_3b_ana)
+    _part(m_3b, pub_3b_carlos, tc=tc_3b_carlos)
+    _part(m_3b, pub_3b_bruno,  tc=tc_3b_bruno)
+
+    # 14. Medio match con pub sintética (esperando un C que cierre el triángulo)
+    #   Ana cede mañana 27-oct, quiere tarde 20-nov
+    #   Carlos quiere mañana 27-oct (← lo que ofrece Ana), cede mañana 23-sep
+    #   Sintética (de Ana): cede tarde 20-nov, acepta mañana 23-sep
+    pub_mm_ana   = _pub(ana,   "cambio")
+    _tc(pub_mm_ana,   date(2026, 10, 27), manana)
+    ta_mm_ana    = _ta(pub_mm_ana,   date(2026, 11, 20), tarde)
+
+    pub_mm_carlos = _pub(carlos, "cambio")
+    tc_mm_carlos  = _tc(pub_mm_carlos, date(2026, 9,  23), manana)
+    _ta(pub_mm_carlos, date(2026, 10, 27), manana)
+
+    db.session.flush()
+
+    pub_sint = PublicacionCambio(
+        usuario=ana,
+        tipo="cambio",
+        es_sintetica=True,
+        sintetica_pub_a_id=pub_mm_ana.id,
+        sintetica_pub_b_id=pub_mm_carlos.id,
+    )
+    db.session.add(pub_sint)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion=pub_sint, fecha=ta_mm_ana.fecha, franja_horaria=tarde))
+    db.session.add(TurnoAceptado(publicacion=pub_sint, fecha=tc_mm_carlos.fecha, franja_horaria=manana, cualquier_franja=False))
+    db.session.add(Notificacion(usuario_id=ana.id,   publicacion_id=pub_mm_carlos.id, tipo="aviso_interes"))
+    db.session.add(Notificacion(usuario_id=carlos.id, publicacion_id=pub_mm_ana.id,   tipo="aviso_interes"))
+
     db.session.commit()
 
     _imprimir_resumen()
@@ -328,6 +382,8 @@ def _imprimir_resumen():
     print("    1 parcialm_resuelta Ana: turno 1-jul resuelto, turno 8-jul abierto")
     print("    1 cancelada         Carmen")
     print("    1 caducada          Eva")
+    print("    1 cadena_3 propuesto  Ana→Carlos→Bruno→Ana (oct-nov 2026)")
+    print("    1 medio match + sintética  Ana(27-oct)↔Carlos, esperando C (nov 2026)")
     print(f"\n{sep}\n")
 
 

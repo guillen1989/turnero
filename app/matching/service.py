@@ -392,8 +392,11 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
     Crea un MatchCambio a 3 bandas para el ciclo pub_a→pub_b→pub_c→pub_a.
 
     Cada participación registra el turno que ese usuario cede al siguiente
-    en el ciclo.
+    en el ciclo. Idempotente: si el trío ya tiene un match activo, devuelve None.
     """
+    if frozenset({pub_a.id, pub_b.id, pub_c.id}) in _cadenas_3_existentes(pub_a.id):
+        return None
+
     aceptados_a = _aceptados(pub_a)
     aceptados_b = _aceptados(pub_b)
     aceptados_c = _aceptados(pub_c)
@@ -566,7 +569,31 @@ def crear_pub_sintetica(pub_a, pub_b):
         ))
 
     db.session.commit()
+    _notificar_aviso_sintetica(pub_a, pub_b)
     return sint
+
+
+def _notificar_aviso_sintetica(pub_a, pub_b):
+    """Notifica a los usuarios de pub_a y pub_b que se ha creado una pub sintética."""
+    for destinatario_id, pub_ref in (
+        (pub_a.usuario_id, pub_b),
+        (pub_b.usuario_id, pub_a),
+    ):
+        existe = Notificacion.query.filter_by(
+            usuario_id=destinatario_id,
+            publicacion_id=pub_ref.id,
+            tipo="aviso_sintetica",
+        ).first()
+        if not existe:
+            db.session.add(Notificacion(
+                usuario_id=destinatario_id,
+                publicacion_id=pub_ref.id,
+                tipo="aviso_sintetica",
+            ))
+    db.session.commit()
+
+    enviar_push_condicional(pub_a.usuario, "aviso_sintetica")
+    enviar_push_condicional(pub_b.usuario, "aviso_sintetica")
 
 
 def buscar_sinteticas_que_coinciden_con(publicacion):
