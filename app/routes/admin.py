@@ -839,7 +839,7 @@ def analytics_data():
     unidad_id = request.args.get("unidad_id", type=int)
 
     def to_dict(rows):
-        return {str(row.periodo.date()): row.total for row in rows}
+        return {str(row.periodo.date()): row.total for row in rows if row.periodo is not None}
 
     q_u = db.session.query(
         func.date_trunc(granularity, Usuario.fecha_registro).label("periodo"),
