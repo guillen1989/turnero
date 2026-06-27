@@ -799,6 +799,7 @@ body {
 .oportunidad-3-card { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; }
 .oportunidad-3-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .oportunidad-3-desc { font-size: 0.875rem; color: #4338ca; margin: 0 0 0.75rem; }
+.oportunidad-3-acciones { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
 .aviso-interes-card { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; }
 .aviso-interes-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .aviso-interes-desc { font-size: 0.875rem; color: #92400e; margin: 0 0 0.75rem; }

@@ -54,7 +54,21 @@
         <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
         {% endfor %}
       </div>
-      <a href="{{ url_for('main.cambios') }}" class="btn btn-sm btn-primary">{{ _('Ver en Buscar cambios') }}</a>
+      {% set sint_url = url_for('main.cambios', pub_id=sint.id, _external=True) %}
+      {% set ns3 = namespace(libra='', trabaja='') %}
+      {% for t in sint.turnos_cedidos %}
+        {% set ns3.libra = ns3.libra + '\n  ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
+      {% endfor %}
+      {% for t in sint.turnos_aceptados %}
+        {% set ns3.trabaja = ns3.trabaja + '\n  ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
+      {% endfor %}
+      {% set wa_sint = _('¿Puedes completar este cambio a 3 personas?') + '\n' + _('Librarías:') + ns3.libra + '\n' + _('Trabajarías:') + ns3.trabaja + '\n' + sint_url %}
+      <div class="oportunidad-3-acciones">
+        <a href="{{ url_for('main.cambios', pub_id=sint.id) }}" class="btn btn-sm btn-primary">{{ _('Ver en Buscar cambios') }}</a>
+        <a href="https://wa.me/?text={{ wa_sint | urlquote }}"
+           class="btn btn-whatsapp btn-sm"
+           target="_blank" rel="noopener">{{ _('Compartir') }}</a>
+      </div>
     </div>
     {% endfor %}
   </section>
