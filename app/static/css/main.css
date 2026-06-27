@@ -803,3 +803,12 @@ body {
 .aviso-interes-card { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; }
 .aviso-interes-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .aviso-interes-desc { font-size: 0.875rem; color: #92400e; margin: 0 0 0.75rem; }
+
+/* Analytics */
+.analytics-controls { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin: 1.5rem 0 1rem; }
+.analytics-granularity { display: flex; gap: 0.5rem; }
+.analytics-unit-filter { display: flex; align-items: center; gap: 0.5rem; }
+.analytics-unit-filter label { font-size: 0.9rem; color: #555; white-space: nowrap; }
+.analytics-select { padding: 0.35rem 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; background: #fff; }
+.analytics-chart-wrapper { background: #fff; border-radius: 8px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+

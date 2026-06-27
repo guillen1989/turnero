@@ -1,0 +1,183 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}{{ _('Analytics') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block admin_content %}
+<h1>{{ _('Analytics') }}</h1>
+
+<div class="admin-stats">
+  <div class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.usuarios }}</span>
+    <span class="admin-stat-label">{{ _('Usuarios') }}</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.hospitales }}</span>
+    <span class="admin-stat-label">{{ _('Hospitales') }}</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.unidades }}</span>
+    <span class="admin-stat-label">{{ _('Unidades') }}</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.categorias }}</span>
+    <span class="admin-stat-label">{{ _('Categorías') }}</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.publicaciones }}</span>
+    <span class="admin-stat-label">{{ _('Cambios publicados') }}</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.matches }}</span>
+    <span class="admin-stat-label">{{ _('Matches') }}</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num">{{ stats.confirmados }}</span>
+    <span class="admin-stat-label">{{ _('Confirmados') }}</span>
+  </div>
+</div>
+
+<div class="analytics-controls">
+  <div class="analytics-granularity" role="group" aria-label="{{ _('Granularidad') }}">
+    <button class="btn btn-sm granularity-btn active" data-value="day">{{ _('Días') }}</button>
+    <button class="btn btn-sm granularity-btn" data-value="week">{{ _('Semanas') }}</button>
+    <button class="btn btn-sm granularity-btn" data-value="month">{{ _('Meses') }}</button>
+  </div>
+  <div class="analytics-unit-filter">
+    <label for="unidad-select">{{ _('Unidad') }}</label>
+    <select id="unidad-select" class="analytics-select">
+      <option value="">{{ _('Todas') }}</option>
+      {% for u in unidades %}
+        <option value="{{ u.id }}">{{ u.hospital.nombre }} — {{ u.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<div class="analytics-chart-wrapper">
+  <canvas id="analyticsChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const dataUrl = "{{ url_for('admin.analytics_data') }}";
+
+  let chart = null;
+  let currentGranularity = "day";
+  let currentUnidad = "";
+
+  function formatLabel(isoDate, granularity) {
+    const d = new Date(isoDate + "T00:00:00");
+    if (granularity === "month") {
+      return d.toLocaleDateString("es-ES", { month: "short", year: "numeric" });
+    }
+    if (granularity === "week") {
+      return d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" });
+    }
+    return d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  }
+
+  async function loadChart() {
+    const params = new URLSearchParams({ granularity: currentGranularity });
+    if (currentUnidad) params.set("unidad_id", currentUnidad);
+
+    const resp = await fetch(dataUrl + "?" + params.toString());
+    const json = await resp.json();
+
+    const labels = json.labels.map(l => formatLabel(l, currentGranularity));
+    const ds = json.datasets;
+
+    if (chart) {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = ds.usuarios;
+      chart.data.datasets[1].data = ds.publicaciones;
+      chart.data.datasets[2].data = ds.matches;
+      chart.data.datasets[3].data = ds.confirmados;
+      chart.update();
+      return;
+    }
+
+    const ctx = document.getElementById("analyticsChart").getContext("2d");
+    chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "{{ _('Nuevos usuarios') }}",
+            data: ds.usuarios,
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37,99,235,0.08)",
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: "{{ _('Cambios publicados') }}",
+            data: ds.publicaciones,
+            borderColor: "#16a34a",
+            backgroundColor: "rgba(22,163,74,0.08)",
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: "{{ _('Matches') }}",
+            data: ds.matches,
+            borderColor: "#d97706",
+            backgroundColor: "rgba(217,119,6,0.08)",
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: "{{ _('Confirmados') }}",
+            data: ds.confirmados,
+            borderColor: "#7c3aed",
+            backgroundColor: "rgba(124,58,237,0.08)",
+            tension: 0.3,
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { position: "top" },
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } },
+        },
+      },
+    });
+  }
+
+  document.querySelectorAll(".granularity-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".granularity-btn").forEach(b => {
+        b.classList.remove("active", "btn-primary");
+        b.classList.add("btn-secondary");
+      });
+      btn.classList.add("active", "btn-primary");
+      btn.classList.remove("btn-secondary");
+      currentGranularity = btn.dataset.value;
+      loadChart();
+    });
+  });
+
+  document.getElementById("unidad-select").addEventListener("change", e => {
+    currentUnidad = e.target.value;
+    loadChart();
+  });
+
+  // Inicializar estilos de los botones
+  document.querySelectorAll(".granularity-btn").forEach(btn => {
+    if (btn.classList.contains("active")) {
+      btn.classList.add("btn-primary");
+    } else {
+      btn.classList.add("btn-secondary");
+    }
+  });
+
+  loadChart();
+})();
+</script>
+{% endblock %}
