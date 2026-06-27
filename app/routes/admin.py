@@ -1,8 +1,9 @@
 from functools import wraps
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
+from sqlalchemy import distinct, func
 
 from app.extensions import db
 from app.forms.admin import (
@@ -807,3 +808,101 @@ def franja_eliminar(id):
     db.session.commit()
     flash(_("Turno eliminado."), "success")
     return redirect(url_for("admin.franjas"))
+
+
+# ---------------------------------------------------------------------------
+# Analytics
+# ---------------------------------------------------------------------------
+
+@bp.route("/analytics")
+@admin_required
+def analytics():
+    stats = {
+        "usuarios": Usuario.query.count(),
+        "hospitales": Hospital.query.count(),
+        "unidades": Unidad.query.count(),
+        "categorias": Categoria.query.count(),
+        "publicaciones": PublicacionCambio.query.filter_by(es_sintetica=False).count(),
+        "matches": MatchCambio.query.count(),
+        "confirmados": MatchCambio.query.filter_by(estado="confirmado_total").count(),
+    }
+    unidades = Unidad.query.join(Hospital).order_by(Hospital.nombre, Unidad.nombre).all()
+    return render_template("admin/analytics.html", stats=stats, unidades=unidades)
+
+
+@bp.route("/analytics/data")
+@admin_required
+def analytics_data():
+    granularity = request.args.get("granularity", "day")
+    if granularity not in ("day", "week", "month"):
+        granularity = "day"
+    unidad_id = request.args.get("unidad_id", type=int)
+
+    def to_dict(rows):
+        return {str(row.periodo.date()): row.total for row in rows}
+
+    q_u = db.session.query(
+        func.date_trunc(granularity, Usuario.fecha_registro).label("periodo"),
+        func.count(Usuario.id).label("total"),
+    )
+    if unidad_id:
+        q_u = q_u.filter(Usuario.unidad_id == unidad_id)
+    rows_u = q_u.group_by("periodo").order_by("periodo").all()
+
+    q_p = db.session.query(
+        func.date_trunc(granularity, PublicacionCambio.fecha_creacion).label("periodo"),
+        func.count(PublicacionCambio.id).label("total"),
+    ).filter(PublicacionCambio.es_sintetica.is_(False))
+    if unidad_id:
+        q_p = q_p.join(Usuario, Usuario.id == PublicacionCambio.usuario_id).filter(
+            Usuario.unidad_id == unidad_id
+        )
+    rows_p = q_p.group_by("periodo").order_by("periodo").all()
+
+    q_m = db.session.query(
+        func.date_trunc(granularity, MatchCambio.fecha_creacion).label("periodo"),
+        func.count(distinct(MatchCambio.id)).label("total"),
+    )
+    if unidad_id:
+        q_m = (
+            q_m
+            .join(MatchParticipacion, MatchParticipacion.match_id == MatchCambio.id)
+            .join(PublicacionCambio, PublicacionCambio.id == MatchParticipacion.publicacion_id)
+            .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
+            .filter(Usuario.unidad_id == unidad_id)
+        )
+    rows_m = q_m.group_by("periodo").order_by("periodo").all()
+
+    q_c = db.session.query(
+        func.date_trunc(granularity, MatchCambio.fecha_confirmacion_total).label("periodo"),
+        func.count(distinct(MatchCambio.id)).label("total"),
+    ).filter(
+        MatchCambio.estado == "confirmado_total",
+        MatchCambio.fecha_confirmacion_total.isnot(None),
+    )
+    if unidad_id:
+        q_c = (
+            q_c
+            .join(MatchParticipacion, MatchParticipacion.match_id == MatchCambio.id)
+            .join(PublicacionCambio, PublicacionCambio.id == MatchParticipacion.publicacion_id)
+            .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
+            .filter(Usuario.unidad_id == unidad_id)
+        )
+    rows_c = q_c.group_by("periodo").order_by("periodo").all()
+
+    d_u = to_dict(rows_u)
+    d_p = to_dict(rows_p)
+    d_m = to_dict(rows_m)
+    d_c = to_dict(rows_c)
+
+    all_dates = sorted(set(d_u) | set(d_p) | set(d_m) | set(d_c))
+
+    return jsonify({
+        "labels": all_dates,
+        "datasets": {
+            "usuarios": [d_u.get(d, 0) for d in all_dates],
+            "publicaciones": [d_p.get(d, 0) for d in all_dates],
+            "matches": [d_m.get(d, 0) for d in all_dates],
+            "confirmados": [d_c.get(d, 0) for d in all_dates],
+        },
+    })
