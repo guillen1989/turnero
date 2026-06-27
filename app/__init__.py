@@ -84,7 +84,12 @@ def create_app(config_name=None):
                 from app.models import Notificacion
                 count = Notificacion.query.filter(
                     Notificacion.usuario_id == current_user.id,
-                    Notificacion.tipo.in_(["nueva_publicacion_seguido", "alerta_busqueda_guardada"]),
+                    Notificacion.tipo.in_([
+                        "nueva_publicacion_seguido",
+                        "alerta_busqueda_guardada",
+                        "aviso_interes",
+                        "aviso_sintetica",
+                    ]),
                     Notificacion.leida.is_(False),
                 ).count()
                 return {"avisos_no_leidos": count}
