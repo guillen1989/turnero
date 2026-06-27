@@ -50,7 +50,7 @@
       </div>
       {% if pub_a_user and pub_b_user %}
         {% if viewer_is_a %}
-      <p class="oportunidad-3-desc">{{ _('Si un tercero acepta, tú le trabajarías %(cedidos)s y %(b)s te libraría tus turnos.', cedidos=_('los turnos indicados'), b=pub_b_user.nombre) }}</p>
+      <p class="oportunidad-3-desc">{{ _('Si alguien acepta esta publicación puente, tú trabajarías los turnos indicados y esa persona te libraría tus turnos deseados.') }}</p>
         {% else %}
       <p class="oportunidad-3-desc">{{ _('Si un tercero acepta, te libraría %(trabajas)s y %(a)s le trabajaría al tercero sus turnos.', trabajas=_('los turnos indicados'), a=pub_a_user.nombre) }}</p>
         {% endif %}
@@ -65,7 +65,7 @@
         {% endfor %}
       </div>
       <div class="turnos-aceptados">
-        <strong>{% if pub_b_user %}{{ _('%(nombre)s te libraría:', nombre=pub_b_user.nombre) }}{% else %}{{ _('El tercero trabajaría:') }}{% endif %}</strong>
+        <strong>{{ _('Quien acepte este cambio te libraría:') }}</strong>
         {% for t in sint.turnos_aceptados %}
         <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
         {% endfor %}
@@ -94,7 +94,6 @@
       {% endfor %}
       {% set wa_sint = _('¿Puedes completar este cambio a 3 personas?') + '\n' + _('Librarías:') + ns3.libra + '\n' + _('Trabajarías:') + ns3.trabaja + '\n' + sint_url %}
       <div class="oportunidad-3-acciones">
-        <a href="{{ url_for('main.cambios', pub_id=sint.id) }}" class="btn btn-sm btn-primary">{{ _('Ver en Buscar cambios') }}</a>
         <a href="https://wa.me/?text={{ wa_sint | urlquote }}"
            class="btn btn-whatsapp btn-sm"
            target="_blank" rel="noopener">{{ _('Compartir') }}</a>
