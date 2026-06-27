@@ -65,7 +65,7 @@
         {% endfor %}
       </div>
       <div class="turnos-aceptados">
-        <strong>{{ _('Quien acepte este cambio te libraría:') }}</strong>
+        <strong>{{ _('Quien acepte este cambio libraría:') }}</strong>
         {% for t in sint.turnos_aceptados %}
         <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
         {% endfor %}
