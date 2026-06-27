@@ -35,6 +35,9 @@
         {% if aviso.tipo == 'contraoferta' and aviso.publicacion.mensaje %}
         <p class="aviso-mensaje">"{{ aviso.publicacion.mensaje }}"</p>
         {% endif %}
+        {% if aviso.tipo == 'aviso_interes' %}
+        <p class="aviso-mensaje">{{ _('%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran completamente. El sistema ha generado una publicación puente: cualquier compañero que la acepte cerrará el cambio a 3 con un clic.', nombre=aviso.publicacion.usuario.nombre) }}</p>
+        {% endif %}
         {% if aviso.tipo == 'aviso_sintetica' %}
         <p class="aviso-mensaje">{{ _('El sistema ha generado una publicación puente con tu turno. Si alguien la acepta, el cambio a 3 personas se cierra automáticamente.') }}</p>
         {% endif %}

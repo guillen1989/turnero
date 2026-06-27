@@ -265,6 +265,9 @@ def index():
         if estado_filtro not in _ESTADOS_DASHBOARD:
             estado_filtro = "activos"
 
+        oportunidades_3 = []
+        avisos_interes = []
+
         if estado_filtro == "activos":
             from sqlalchemy import select as sa_select
             activos_subq = (
@@ -286,6 +289,40 @@ def index():
                 usuario_id=current_user.id, tipo="nuevo_match", leida=False
             ).update({"leida": True})
             db.session.commit()
+
+            mis_pubs_ids = [
+                row[0] for row in db.session.execute(
+                    sa_select(PublicacionCambio.id).where(
+                        PublicacionCambio.usuario_id == current_user.id,
+                        PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
+                        PublicacionCambio.es_sintetica.is_(False),
+                    )
+                ).all()
+            ]
+            if mis_pubs_ids:
+                oportunidades_3 = (
+                    PublicacionCambio.query
+                    .filter(
+                        PublicacionCambio.es_sintetica.is_(True),
+                        PublicacionCambio.estado == "abierta",
+                        or_(
+                            PublicacionCambio.sintetica_pub_a_id.in_(mis_pubs_ids),
+                            PublicacionCambio.sintetica_pub_b_id.in_(mis_pubs_ids),
+                        )
+                    )
+                    .options(
+                        selectinload(PublicacionCambio.turnos_cedidos).joinedload(TurnoCedido.franja_horaria),
+                        selectinload(PublicacionCambio.turnos_aceptados).joinedload(TurnoAceptado.franja_horaria),
+                    )
+                    .all()
+                )
+            avisos_interes = (
+                Notificacion.query
+                .filter_by(usuario_id=current_user.id, tipo="aviso_interes")
+                .options(db.joinedload(Notificacion.publicacion).joinedload(PublicacionCambio.usuario))
+                .order_by(Notificacion.fecha.desc())
+                .all()
+            )
         elif estado_filtro == "pendiente":
             publicaciones = []
             matches = _matches_para_tab(current_user.id, "confirmado_parcial")
@@ -327,6 +364,8 @@ def index():
             conteos=conteos,
             partners=partners,
             junte_info=junte_info,
+            oportunidades_3=oportunidades_3,
+            avisos_interes=avisos_interes,
         )
     return render_template("main/index.html")
 

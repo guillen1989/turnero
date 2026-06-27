@@ -34,6 +34,49 @@
     </nav>
   </div>
 
+  {% if oportunidades_3 %}
+  <section class="alertas-activos-section">
+    {% for sint in oportunidades_3 %}
+    <div class="oportunidad-3-card">
+      <div class="oportunidad-3-header">
+        <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3 bandas') }}</span>
+      </div>
+      <p class="oportunidad-3-desc">{{ _('El sistema ha generado una publicación puente con tu turno. Cualquier compañero que la acepte cerrará el cambio a 3 con un solo clic en «Me interesa».') }}</p>
+      <div class="turnos-cedidos">
+        <strong>{{ _('El puente libra:') }}</strong>
+        {% for t in sint.turnos_cedidos %}
+        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
+        {% endfor %}
+      </div>
+      <div class="turnos-aceptados">
+        <strong>{{ _('El puente trabaja:') }}</strong>
+        {% for t in sint.turnos_aceptados %}
+        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
+        {% endfor %}
+      </div>
+      <a href="{{ url_for('main.cambios') }}" class="btn btn-sm btn-primary">{{ _('Ver en Buscar cambios') }}</a>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if avisos_interes %}
+  <section class="alertas-activos-section">
+    {% for aviso in avisos_interes %}
+    {% if aviso.publicacion %}
+    <div class="aviso-interes-card">
+      <div class="aviso-interes-header">
+        <span class="tipo-badge tipo-badge--interes">{{ _('Interés parcial') }}</span>
+        <strong class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</strong>
+      </div>
+      <p class="aviso-interes-desc">{{ _('%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran completamente en ambas direcciones. Puede ser la base para un cambio a 3 bandas.', nombre=aviso.publicacion.usuario.nombre) }}</p>
+      <a href="{{ url_for('main.cambios', usuario=aviso.publicacion.usuario.nombre) }}" class="btn btn-sm btn-secondary">{{ _('Ver publicación') }}</a>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </section>
+  {% endif %}
+
   {% if matches %}
   <section class="matches-section">
     {% for match, mi_part, otras_parts, trabajas in matches %}
