@@ -356,6 +356,7 @@ def index():
         conteos = _conteos_tabs(current_user.id)
         partners = _partners_confirmados(current_user.id) if estado_filtro == "confirmada" else {}
         junte_info = {pub.id: _junte_info(pub) for pub in publicaciones if pub.tipo == 'junte'}
+        sint_info = _cargar_sint_info(oportunidades_3)
         return render_template(
             "main/dashboard.html",
             publicaciones=publicaciones,
@@ -366,6 +367,7 @@ def index():
             junte_info=junte_info,
             oportunidades_3=oportunidades_3,
             avisos_interes=avisos_interes,
+            sint_info=sint_info,
         )
     return render_template("main/index.html")
 
@@ -379,7 +381,7 @@ def cambios():
     franja_id = request.args.get("franja", type=int)
     tipo = request.args.get("tipo", "").strip()
     tipo_fecha = request.args.get("tipo_fecha", "").strip()
-    _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte", "cambio_dia"}
+    _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte", "cambio_dia", "sintetica"}
     if tipo not in _TIPOS_VALIDOS:
         tipo = ""
     if tipo_fecha not in {"cedido", "aceptado"}:
@@ -446,14 +448,18 @@ def cambios():
                  TurnoAceptado.franja_horaria_id == franja_id)
         )
         q = q.filter(or_(cedido_franja, aceptado_franja))
-    if tipo:
-        q = q.filter(PublicacionCambio.tipo == tipo)
+    if tipo == "sintetica":
+        q = q.filter(PublicacionCambio.es_sintetica.is_(True))
+    elif tipo:
+        q = q.filter(PublicacionCambio.tipo == tipo, PublicacionCambio.es_sintetica.is_(False))
 
     publicaciones = q.distinct().order_by(PublicacionCambio.fecha_creacion.desc()).all()
 
     pub_js_data = {pub.id: _pub_js_data(pub) for pub in publicaciones}
     franjas_js = [{"id": f.id, "nombre": f.nombre} for f in franjas]
     junte_info = {pub.id: _junte_info(pub) for pub in publicaciones if pub.tipo == 'junte'}
+
+    sint_info = _cargar_sint_info([p for p in publicaciones if p.es_sintetica])
 
     tab = request.args.get("tab", "resultados")
     busquedas = (
@@ -467,7 +473,34 @@ def cambios():
                            mes=mes, dia=dia, nombre=nombre, franja_id=franja_id,
                            tipo=tipo, tipo_fecha=tipo_fecha,
                            franjas=franjas, pub_js_data=pub_js_data, franjas_js=franjas_js,
-                           tab=tab, busquedas=busquedas, junte_info=junte_info)
+                           tab=tab, busquedas=busquedas, junte_info=junte_info,
+                           sint_info=sint_info)
+
+
+def _cargar_sint_info(sinteticas):
+    """Devuelve {sint_id: {'pub_a': pub_a_obj, 'pub_b': pub_b_obj}} para la lista dada."""
+    if not sinteticas:
+        return {}
+    pub_ids = set()
+    for s in sinteticas:
+        if s.sintetica_pub_a_id:
+            pub_ids.add(s.sintetica_pub_a_id)
+        if s.sintetica_pub_b_id:
+            pub_ids.add(s.sintetica_pub_b_id)
+    pubs_by_id = {
+        p.id: p
+        for p in PublicacionCambio.query
+        .filter(PublicacionCambio.id.in_(pub_ids))
+        .options(joinedload(PublicacionCambio.usuario))
+        .all()
+    }
+    return {
+        s.id: {
+            "pub_a": pubs_by_id.get(s.sintetica_pub_a_id),
+            "pub_b": pubs_by_id.get(s.sintetica_pub_b_id),
+        }
+        for s in sinteticas
+    }
 
 
 def _pub_js_data(pub):

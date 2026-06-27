@@ -413,3 +413,27 @@ def test_tipo_fecha_sin_valor_muestra_ambas_pubs(client, db):
     html = resp.data.decode()
     # Ambas aparecen → "25/09/2026" aparece al menos 4 veces (card+JSON × 2 pubs)
     assert html.count("25/09/2026") >= 4
+
+
+def test_cambios_filtro_tipo_sintetica(client, db):
+    """tipo=sintetica muestra solo publicaciones sintéticas y excluye las normales."""
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+
+    pub_normal = _publicar(u2, date(2026, 9, 1), date(2026, 9, 2))
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u2.unidad.grupo_intercambio_id
+    ).first()
+    pub_sint = PublicacionCambio(usuario_id=u2.id, es_sintetica=True, sintetica_pub_a_id=pub_normal.id)
+    db.session.add(pub_sint)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub_sint.id, fecha=date(2026, 9, 10), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_sint.id, fecha=date(2026, 9, 20), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    resp = client.get("/cambios?tipo=sintetica")
+    html = resp.data.decode()
+    assert "10/09/2026" in html
+    assert "01/09/2026" not in html
