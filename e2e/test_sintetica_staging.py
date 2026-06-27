@@ -178,9 +178,19 @@ def test_golden_path_staging(page):
     page.locator('button:has-text("Me interesa")').first.click()
     page.wait_for_selector('#modal-me-interesa:not(.modal-hidden)')
     page.wait_for_timeout(2000)
-    page.locator('#mmi-form button[type="submit"]').click()
+    # El form post redirige a / en caso de éxito o a /cambios si falla.
+    # Usamos expect_navigation para asegurar que Playwright espera la redirección completa.
+    with page.expect_navigation(timeout=20000):
+        page.locator('#mmi-form button[type="submit"]').click()
 
     # ── 8. Dashboard Carlos: cadena_3 (5 s) ───────────────────────────────
-    page.wait_for_load_state("networkidle")
-    assert "3 bandas" in page.content(), "No aparece el match cadena_3 en el dashboard de Carlos"
+    content = page.content()
+    assert "3 bandas" in content, (
+        f"No aparece el match cadena_3 en el dashboard de Carlos. "
+        f"URL actual: {page.url}. "
+        f"¿Flash de éxito?: {'Cambio a 3 bandas iniciado' in content}. "
+        f"¿Sección matches?: {'matches-section' in content}. "
+        f"¿Flash de error?: {'No fue posible' in content or 'ya no está' in content}. "
+        f"Fragmento (2000-3000): {content[2000:3000]!r}"
+    )
     page.wait_for_timeout(5000)
