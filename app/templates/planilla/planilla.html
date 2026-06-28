@@ -40,6 +40,41 @@
   </p>
   {% endif %}
 
+  {# ── Relleno rápido por rango ── #}
+  <div class="planilla-relleno-rapido">
+    <form method="post" action="{{ url_for('planilla.rango_aplicar') }}" class="relleno-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="anyo" value="{{ anyo }}">
+      <input type="hidden" name="mes"  value="{{ mes }}">
+      <span class="relleno-label">{{ _('Rellenar del día') }}</span>
+      <select name="dia_inicio" class="planilla-select-sm" aria-label="{{ _('Día inicio') }}">
+        {% for dia in dias %}<option value="{{ dia.day }}">{{ dia.day }}</option>{% endfor %}
+      </select>
+      <span class="relleno-label">{{ _('al') }}</span>
+      <select name="dia_fin" class="planilla-select-sm" aria-label="{{ _('Día fin') }}">
+        {% for dia in dias %}<option value="{{ dia.day }}" {% if loop.last %}selected{% endif %}>{{ dia.day }}</option>{% endfor %}
+      </select>
+      <span class="relleno-label">{{ _('con') }}</span>
+      <select name="seleccion" class="planilla-select" required aria-label="{{ _('Qué aplicar') }}">
+        <option value="">{{ _('— elige —') }}</option>
+        <optgroup label="{{ _('Estado del día') }}">
+          <option value="libre">{{ _('Libre') }}</option>
+          <option value="vacaciones">{{ _('Vacaciones') }}</option>
+          <option value="no_disponible">{{ _('No disponible') }}</option>
+        </optgroup>
+        {% if franjas %}
+        <optgroup label="{{ _('Turno') }}">
+          {% for franja in franjas %}<option value="{{ franja.id }}">{{ franja.nombre }}</option>{% endfor %}
+        </optgroup>
+        {% endif %}
+      </select>
+      <button type="submit" class="btn btn-secondary btn-sm">{{ _('Aplicar') }}</button>
+    </form>
+    <span class="relleno-sep">·</span>
+    <button type="button" class="btn-link-sm" onclick="mbTodos()">{{ _('Marcar todos') }}</button>
+    <button type="button" class="btn-link-sm" onclick="mbLimpiar()">{{ _('Ninguno') }}</button>
+  </div>
+
   <div class="planilla-dias">
     {% for dia in dias %}
       {% set es_hoy = (dia == hoy) %}
@@ -48,6 +83,10 @@
       {% set es_finde = (dia.weekday() >= 5) %}
 
       <div class="planilla-dia{% if es_hoy %} planilla-dia--hoy{% endif %}{% if es_finde %} planilla-dia--finde{% endif %}">
+
+        <label class="dia-check-wrap" title="{{ _('Seleccionar') }}">
+          <input type="checkbox" class="dia-check" data-fecha="{{ dia.isoformat() }}">
+        </label>
 
         <div class="planilla-dia-label">
           <span class="planilla-dia-num">{{ dia.day }}</span>
@@ -121,4 +160,79 @@
   </div>
 
 </div>
+
+{# ── Barra flotante de selección múltiple ── #}
+<div id="mb-bar" class="multiples-bar" style="display:none" role="toolbar" aria-label="{{ _('Acción sobre días seleccionados') }}">
+  <span id="mb-count" class="mb-count"></span>
+  <select id="mb-accion" class="mb-select" aria-label="{{ _('Qué aplicar a los días marcados') }}">
+    <option value="">{{ _('— qué aplicar —') }}</option>
+    <optgroup label="{{ _('Estado del día') }}">
+      <option value="libre">{{ _('Libre') }}</option>
+      <option value="vacaciones">{{ _('Vacaciones') }}</option>
+      <option value="no_disponible">{{ _('No disponible') }}</option>
+    </optgroup>
+    {% if franjas %}
+    <optgroup label="{{ _('Turno') }}">
+      {% for franja in franjas %}<option value="{{ franja.id }}">{{ franja.nombre }}</option>{% endfor %}
+    </optgroup>
+    {% endif %}
+  </select>
+  <button type="button" class="btn btn-primary btn-sm" onclick="mbAplicar()">{{ _('Aplicar a seleccionados') }}</button>
+  <button type="button" class="btn btn-secondary btn-sm mb-cancel" onclick="mbLimpiar()">{{ _('Cancelar') }}</button>
+  {# Formulario oculto que se rellena y envía por JS #}
+  <form id="mb-form" method="post" action="{{ url_for('planilla.multiples_aplicar') }}" style="display:none">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="anyo" value="{{ anyo }}">
+    <input type="hidden" name="mes"  value="{{ mes }}">
+    <input type="hidden" name="seleccion" id="mb-sel-hidden">
+    <div id="mb-fechas"></div>
+  </form>
+</div>
+
+<script>
+(function () {
+  var bar    = document.getElementById('mb-bar');
+  var countEl = document.getElementById('mb-count');
+  var checks  = document.querySelectorAll('.dia-check');
+
+  function refresh() {
+    var sel = Array.prototype.filter.call(checks, function(c){ return c.checked; });
+    if (sel.length) {
+      bar.style.display = 'flex';
+      countEl.textContent = sel.length + ' día' + (sel.length > 1 ? 's' : '') + ' seleccionado' + (sel.length > 1 ? 's' : '');
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+
+  checks.forEach(function(c){ c.addEventListener('change', refresh); });
+
+  window.mbAplicar = function () {
+    var accion = document.getElementById('mb-accion').value;
+    if (!accion) { alert('{{ _("Elige qué aplicar primero.") }}'); return; }
+    var checked = Array.prototype.filter.call(checks, function(c){ return c.checked; });
+    if (!checked.length) return;
+
+    document.getElementById('mb-sel-hidden').value = accion;
+    var cont = document.getElementById('mb-fechas');
+    cont.innerHTML = '';
+    checked.forEach(function(c) {
+      var inp = document.createElement('input');
+      inp.type = 'hidden'; inp.name = 'fecha[]'; inp.value = c.dataset.fecha;
+      cont.appendChild(inp);
+    });
+    document.getElementById('mb-form').submit();
+  };
+
+  window.mbLimpiar = function () {
+    checks.forEach(function(c){ c.checked = false; });
+    refresh();
+  };
+
+  window.mbTodos = function () {
+    checks.forEach(function(c){ c.checked = true; });
+    refresh();
+  };
+})();
+</script>
 {% endblock %}

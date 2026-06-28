@@ -16,6 +16,22 @@ from app.services.planilla import (
 )
 from app.services.compat_planilla_persistente import actualizar_compat_tras_publicar_planilla
 
+
+def _resolver_seleccion(seleccion):
+    """Dado el valor del campo 'seleccion', devuelve (tipo_estado, franja_id) o (None, None) si inválido.
+    tipo_estado es str si es un estado del día; franja_id es int si es un turno de trabajo.
+    """
+    if seleccion in TIPOS_ESTADO_DIA:
+        return seleccion, None
+    try:
+        franja_id = int(seleccion)
+        franja = db.session.get(FranjaHoraria, franja_id)
+        if franja and franja.grupo_intercambio_id == current_user.grupo_intercambio.id:
+            return None, franja_id
+    except (ValueError, TypeError):
+        pass
+    return None, None
+
 bp = Blueprint("planilla", __name__, url_prefix="/planilla")
 
 ETIQUETAS_ESTADO = {
@@ -168,6 +184,80 @@ def mes_publicar(anyo, mes):
 def mes_despublicar(anyo, mes):
     despublicar_mes(current_user, anyo, mes)
     flash("Planilla retirada. Tus compañeros ya no verán tu disponibilidad este mes.", "info")
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+
+@bp.route("/rango/aplicar", methods=["POST"])
+@login_required
+def rango_aplicar():
+    """Rellena un rango de días consecutivos del mes con un mismo turno o estado."""
+    dia_inicio = request.form.get("dia_inicio", type=int)
+    dia_fin    = request.form.get("dia_fin",    type=int)
+    seleccion  = request.form.get("seleccion",  "").strip()
+    anyo = request.form.get("anyo", type=int)
+    mes  = request.form.get("mes",  type=int)
+
+    _, num_dias = calendar.monthrange(anyo, mes)
+
+    if not dia_inicio or not dia_fin or not seleccion:
+        flash("Completa todos los campos del relleno rápido.", "error")
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+    if dia_fin < dia_inicio:
+        dia_inicio, dia_fin = dia_fin, dia_inicio
+
+    dia_inicio = max(1, dia_inicio)
+    dia_fin    = min(num_dias, dia_fin)
+
+    tipo_estado, franja_id = _resolver_seleccion(seleccion)
+    if tipo_estado is None and franja_id is None:
+        flash("Selección no válida.", "error")
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+    for d in range(dia_inicio, dia_fin + 1):
+        fecha = date(anyo, mes, d)
+        if tipo_estado:
+            establecer_estado_dia(current_user, fecha, tipo_estado)
+        else:
+            añadir_turno(current_user, fecha, franja_id)
+
+    n = dia_fin - dia_inicio + 1
+    flash(f"{n} día(s) actualizados.", "success")
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+
+@bp.route("/multiples/aplicar", methods=["POST"])
+@login_required
+def multiples_aplicar():
+    """Aplica un turno o estado a una lista de días concretos enviados desde el selector múltiple."""
+    fechas_strs = request.form.getlist("fecha[]")
+    seleccion   = request.form.get("seleccion",  "").strip()
+    anyo = request.form.get("anyo", type=int)
+    mes  = request.form.get("mes",  type=int)
+
+    if not seleccion or not fechas_strs:
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+    tipo_estado, franja_id = _resolver_seleccion(seleccion)
+    if tipo_estado is None and franja_id is None:
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+    count = 0
+    for fecha_str in fechas_strs:
+        try:
+            fecha = date.fromisoformat(fecha_str)
+            if fecha.year != anyo or fecha.month != mes:
+                continue  # sólo fechas del mes visible
+            if tipo_estado:
+                establecer_estado_dia(current_user, fecha, tipo_estado)
+            else:
+                añadir_turno(current_user, fecha, franja_id)
+            count += 1
+        except ValueError:
+            pass
+
+    if count:
+        flash(f"{count} día(s) actualizados.", "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
 
