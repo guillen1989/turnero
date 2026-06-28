@@ -219,3 +219,84 @@ def test_companero_no_disponible_no_aparece(db):
     resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(15))
     assert companero not in resultado.libres
     assert companero not in resultado.compatibles
+
+
+# ── Tests de Saliente en compatibilidad ──────────────────────────────────────
+
+def _setup_base_saliente(db, suffix):
+    hospital = Hospital(nombre=f"H-sal-{suffix}")
+    grupo = GrupoIntercambio()
+    db.session.add_all([hospital, grupo])
+    db.session.commit()
+    unidad = Unidad(nombre="UCI", hospital=hospital, grupo_intercambio=grupo)
+    categoria = Categoria(nombre=f"Enf-sal-{suffix}")
+    franja_m  = FranjaHoraria(nombre="Mañana",  hora_inicio=time(8),  hora_fin=time(15), grupo_intercambio=grupo)
+    franja_d  = FranjaHoraria(nombre="Diurno",  hora_inicio=time(8),  hora_fin=time(20), grupo_intercambio=grupo)
+    franja_t  = FranjaHoraria(nombre="Tarde",   hora_inicio=time(15), hora_fin=time(22), grupo_intercambio=grupo)
+    db.session.add_all([unidad, categoria, franja_m, franja_d, franja_t])
+    db.session.commit()
+    def crear(email):
+        u = Usuario(nombre=email.split("@")[0], email=email, unidad=unidad, categoria=categoria)
+        u.set_password("pass")
+        db.session.add(u)
+        db.session.commit()
+        return u
+    return unidad, categoria, franja_m, franja_d, franja_t, crear
+
+
+def test_saliente_excluido_para_manyana(db):
+    from app.services.planilla import marcar_saliente
+    _, _, franja_m, _, _, crear = _setup_base_saliente(db, "sm")
+    solicitante = crear("sol_sm@t.es")
+    companero   = crear("comp_sm@t.es")
+    publicar_mes(solicitante, 2026, 7)
+    publicar_mes(companero, 2026, 7)
+    marcar_saliente(companero, date(2026, 7, 1))
+
+    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(15))
+    assert companero not in resultado.libres
+    assert companero not in resultado.compatibles
+
+
+def test_saliente_excluido_para_diurno(db):
+    from app.services.planilla import marcar_saliente
+    _, _, _, franja_d, _, crear = _setup_base_saliente(db, "sd")
+    solicitante = crear("sol_sd@t.es")
+    companero   = crear("comp_sd@t.es")
+    publicar_mes(solicitante, 2026, 7)
+    publicar_mes(companero, 2026, 7)
+    marcar_saliente(companero, date(2026, 7, 1))
+
+    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(20))
+    assert companero not in resultado.libres
+    assert companero not in resultado.compatibles
+
+
+def test_saliente_libre_aparece_para_tarde(db):
+    from app.services.planilla import marcar_saliente
+    _, _, _, _, franja_t, crear = _setup_base_saliente(db, "st")
+    solicitante = crear("sol_st@t.es")
+    companero   = crear("comp_st@t.es")
+    publicar_mes(solicitante, 2026, 7)
+    publicar_mes(companero, 2026, 7)
+    marcar_saliente(companero, date(2026, 7, 1))
+    # compañero saliente sin turno asignado → libre para tarde
+
+    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(15), time(22))
+    assert companero in resultado.libres
+
+
+def test_saliente_con_turno_tarde_compatible_para_otra_tarde(db):
+    from app.services.planilla import marcar_saliente, añadir_turno
+    _, _, _, _, franja_t, crear = _setup_base_saliente(db, "stt")
+    solicitante = crear("sol_stt@t.es")
+    companero   = crear("comp_stt@t.es")
+    publicar_mes(solicitante, 2026, 7)
+    publicar_mes(companero, 2026, 7)
+    añadir_turno(companero, date(2026, 7, 1), franja_t.id)
+    marcar_saliente(companero, date(2026, 7, 1))
+    # compañero saliente + tarde ya asignada → no puede doblarse con otra tarde (solapan)
+
+    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(15), time(22))
+    assert companero not in resultado.compatibles
+    assert companero not in resultado.libres

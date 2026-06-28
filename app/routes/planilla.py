@@ -14,6 +14,7 @@ from app.services.planilla import (
     get_turnos_mes, get_estados_mes,
     dias_sin_cumplimentar,
     get_notas_mes, guardar_nota_dia,
+    marcar_saliente, quitar_saliente, get_salientes_mes,
 )
 from app.services.compat_planilla_persistente import actualizar_compat_tras_publicar_planilla
 from app.services.volcar_cambios import get_matches_pendientes_volcar, volcar_matches_a_planilla
@@ -58,8 +59,9 @@ def index():
     for turno in turnos:
         turnos_por_dia.setdefault(turno.fecha, []).append(turno)
 
-    estados_por_dia = get_estados_mes(current_user, anyo, mes)
-    notas_por_dia = get_notas_mes(current_user, anyo, mes)
+    estados_por_dia  = get_estados_mes(current_user, anyo, mes)
+    salientes_por_dia = get_salientes_mes(current_user, anyo, mes)
+    notas_por_dia    = get_notas_mes(current_user, anyo, mes)
     matches_pendientes = get_matches_pendientes_volcar(current_user)
 
     planilla_mes_obj = PlanillaMes.query.filter_by(
@@ -83,6 +85,7 @@ def index():
         anyo=anyo, mes=mes, dias=dias,
         turnos_por_dia=turnos_por_dia,
         estados_por_dia=estados_por_dia,
+        salientes_por_dia=salientes_por_dia,
         notas_por_dia=notas_por_dia,
         matches_pendientes=matches_pendientes,
         planilla_mes=planilla_mes_obj,
@@ -112,7 +115,9 @@ def dia_añadir():
     if not seleccion:
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    if seleccion in TIPOS_ESTADO_DIA:
+    if seleccion == "saliente":
+        marcar_saliente(current_user, fecha)
+    elif seleccion in TIPOS_ESTADO_DIA:
         establecer_estado_dia(current_user, fecha, seleccion)
     else:
         try:
@@ -145,6 +150,22 @@ def turno_eliminar():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     eliminar_turno(current_user, fecha, franja_id)
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
+
+
+@bp.route("/saliente/quitar", methods=["POST"])
+@login_required
+def saliente_quitar():
+    fecha_str = request.form.get("fecha", "")
+    anyo = request.form.get("anyo", type=int)
+    mes  = request.form.get("mes",  type=int)
+
+    try:
+        fecha = date.fromisoformat(fecha_str)
+    except ValueError:
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+    quitar_saliente(current_user, fecha)
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
 
 

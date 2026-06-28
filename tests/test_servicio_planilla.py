@@ -168,3 +168,68 @@ def test_estado_invalido_lanza_error(db):
     usuario, _, _ = _setup(db, "inv@test.es")
     with pytest.raises(ValueError):
         establecer_estado_dia(usuario, date(2026, 7, 5), "tipo_inventado")
+
+
+# ── Tests de SalienteDia ──────────────────────────────────────────────────────
+
+def test_marcar_saliente_crea_registro(db):
+    from app.services.planilla import marcar_saliente
+    from app.models import SalienteDia
+    usuario, _, _ = _setup(db, "sal1@test.es")
+    marcar_saliente(usuario, date(2026, 7, 3))
+    assert SalienteDia.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 3)).first() is not None
+
+
+def test_marcar_saliente_es_idempotente(db):
+    from app.services.planilla import marcar_saliente
+    from app.models import SalienteDia
+    usuario, _, _ = _setup(db, "sal2@test.es")
+    marcar_saliente(usuario, date(2026, 7, 3))
+    marcar_saliente(usuario, date(2026, 7, 3))
+    assert SalienteDia.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 3)).count() == 1
+
+
+def test_quitar_saliente_elimina_registro(db):
+    from app.services.planilla import marcar_saliente, quitar_saliente
+    from app.models import SalienteDia
+    usuario, _, _ = _setup(db, "sal3@test.es")
+    marcar_saliente(usuario, date(2026, 7, 3))
+    resultado = quitar_saliente(usuario, date(2026, 7, 3))
+    assert resultado is True
+    assert SalienteDia.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 3)).first() is None
+
+
+def test_quitar_saliente_inexistente_devuelve_false(db):
+    from app.services.planilla import quitar_saliente
+    usuario, _, _ = _setup(db, "sal4@test.es")
+    assert quitar_saliente(usuario, date(2026, 7, 3)) is False
+
+
+def test_saliente_coexiste_con_turno(db):
+    from app.services.planilla import marcar_saliente, añadir_turno
+    from app.models import SalienteDia, TurnoPlanilla
+    usuario, _, franja_t = _setup(db, "sal5@test.es")
+    añadir_turno(usuario, date(2026, 7, 3), franja_t.id)
+    marcar_saliente(usuario, date(2026, 7, 3))
+    assert TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 3)).count() == 1
+    assert SalienteDia.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 3)).first() is not None
+
+
+def test_limpiar_dia_elimina_saliente(db):
+    from app.services.planilla import marcar_saliente, limpiar_dia
+    from app.models import SalienteDia
+    usuario, _, _ = _setup(db, "sal6@test.es")
+    marcar_saliente(usuario, date(2026, 7, 3))
+    limpiar_dia(usuario, date(2026, 7, 3))
+    assert SalienteDia.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 3)).first() is None
+
+
+def test_get_salientes_mes(db):
+    from app.services.planilla import marcar_saliente, get_salientes_mes
+    usuario, _, _ = _setup(db, "sal7@test.es")
+    marcar_saliente(usuario, date(2026, 7, 3))
+    marcar_saliente(usuario, date(2026, 7, 15))
+    salientes = get_salientes_mes(usuario, 2026, 7)
+    assert date(2026, 7, 3) in salientes
+    assert date(2026, 7, 15) in salientes
+    assert date(2026, 7, 1) not in salientes

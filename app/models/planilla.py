@@ -97,6 +97,27 @@ class PlanillaMes(db.Model):
         return f"<PlanillaMes {self.anyo}-{self.mes:02d} [{estado}]>"
 
 
+class SalienteDia(db.Model):
+    """Marca que el usuario es saliente en esa fecha (día posterior a un turno de noche).
+    Independiente de EstadoDiaPlanilla y TurnoPlanilla: puede coexistir con turnos (doblaje).
+    Los salientes no hacen match con ofertas de mañana o Diurno (hora_inicio < 12:00).
+    """
+    __tablename__ = "saliente_dia"
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    fecha = db.Column(db.Date, nullable=False)
+
+    usuario = db.relationship("Usuario", back_populates="salientes_dia")
+
+    __table_args__ = (
+        db.UniqueConstraint("usuario_id", "fecha", name="uq_saliente_dia_usuario_fecha"),
+    )
+
+    def __repr__(self):
+        return f"<SalienteDia {self.fecha}>"
+
+
 class NotaDia(db.Model):
     """Nota libre del usuario para un día concreto de su planilla."""
     __tablename__ = "nota_dia"

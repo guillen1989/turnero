@@ -119,6 +119,7 @@
       {% set td = turnos_por_dia.get(dia, []) %}
       {% set ed = estados_por_dia.get(dia) %}
       {% set nd = notas_por_dia.get(dia) %}
+      {% set es_saliente = salientes_por_dia.get(dia, False) %}
       {% if ed %}
         {% set ns.mod = 'cal-celda--' + ed.tipo %}
         {% if ed.tipo == 'libre' %}{% set ns.lab = 'L' %}
@@ -126,11 +127,20 @@
         {% else %}{% set ns.lab = 'ND' %}{% endif %}
       {% elif td %}
         {% set ns.mod = 'cal-celda--turno' %}
-        {% if td|length > 1 %}
+        {% if es_saliente %}
+          {% if td|length > 0 %}
+            {% set ns.lab = 'S+' + td[0].franja_horaria.nombre[:1] %}
+          {% else %}
+            {% set ns.lab = 'S' %}
+          {% endif %}
+        {% elif td|length > 1 %}
           {% set ns.lab = td[0].franja_horaria.nombre[:1] + '+' + td[1].franja_horaria.nombre[:1] %}
         {% else %}
           {% set ns.lab = td[0].franja_horaria.nombre[:1] %}
         {% endif %}
+      {% elif es_saliente %}
+        {% set ns.mod = 'cal-celda--turno' %}
+        {% set ns.lab = 'S' %}
       {% endif %}
       {% set tooltip = dia.day|string %}
       {% if ed %}{% set tooltip = tooltip + ' — ' + etiquetas_estado[ed.tipo] %}
@@ -203,6 +213,7 @@
       {% set es_hoy = (dia == hoy) %}
       {% set turnos_dia = turnos_por_dia.get(dia, []) %}
       {% set estado_dia = estados_por_dia.get(dia) %}
+      {% set dia_saliente = salientes_por_dia.get(dia, False) %}
       {% set es_finde = (dia.weekday() >= 5) %}
 
       <div id="dia-{{ dia.isoformat() }}" class="planilla-dia{% if es_hoy %} planilla-dia--hoy{% endif %}{% if es_finde %} planilla-dia--finde{% endif %}">
@@ -232,7 +243,20 @@
             </span>
 
           {% else %}
-            {# Día sin estado: mostrar turnos de trabajo y selector #}
+            {# Día sin estado: mostrar chip Saliente (si procede), turnos y selector #}
+            {% if dia_saliente %}
+              <span class="planilla-turno-chip planilla-turno-chip--saliente">
+                {{ _('Saliente') }}
+                <form method="post" action="{{ url_for('planilla.saliente_quitar') }}" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="fecha" value="{{ dia.isoformat() }}">
+                  <input type="hidden" name="anyo" value="{{ anyo }}">
+                  <input type="hidden" name="mes" value="{{ mes }}">
+                  <button type="submit" class="planilla-chip-remove" title="{{ _('Quitar') }}" aria-label="{{ _('Quitar saliente') }}">&#x2715;</button>
+                </form>
+              </span>
+            {% endif %}
+
             {% set ids_asignados = turnos_dia | map(attribute='franja_horaria_id') | list %}
 
             {% for turno in turnos_dia %}
@@ -263,6 +287,11 @@
                     <option value="libre">{{ _('Libre') }}</option>
                     <option value="vacaciones">{{ _('Vacaciones') }}</option>
                     <option value="no_disponible">{{ _('No disponible para cambios') }}</option>
+                  </optgroup>
+                {% endif %}
+                {% if not dia_saliente %}
+                  <optgroup label="{{ _('Marcador') }}">
+                    <option value="saliente">{{ _('Saliente (post-guardia)') }}</option>
                   </optgroup>
                 {% endif %}
                 {% if franjas %}

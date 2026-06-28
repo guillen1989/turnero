@@ -1,7 +1,7 @@
 import calendar as _calendar
 from datetime import date
 from app.extensions import db
-from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, NotaDia, TIPOS_ESTADO_DIA
+from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, NotaDia, SalienteDia, TIPOS_ESTADO_DIA
 
 
 def _get_o_crear_planilla_mes(usuario, anyo, mes):
@@ -82,9 +82,10 @@ def establecer_estado_dia(usuario, fecha: date, tipo: str) -> EstadoDiaPlanilla:
 
 
 def limpiar_dia(usuario, fecha: date):
-    """Elimina toda la información del día (turnos y estado especial)."""
+    """Elimina toda la información del día (turnos, estado especial y saliente)."""
     _limpiar_turnos_dia_sin_commit(usuario, fecha)
     _limpiar_estado_dia_sin_commit(usuario, fecha)
+    SalienteDia.query.filter_by(usuario_id=usuario.id, fecha=fecha).delete()
     db.session.commit()
 
 
@@ -192,6 +193,42 @@ def get_notas_mes(usuario, anyo: int, mes: int) -> dict[date, NotaDia]:
         .all()
     )
     return {n.fecha: n for n in notas}
+
+
+def marcar_saliente(usuario, fecha: date) -> SalienteDia:
+    """Marca el día como saliente (post-guardia). Idempotente. No afecta a turnos ni EstadoDia."""
+    existente = SalienteDia.query.filter_by(usuario_id=usuario.id, fecha=fecha).first()
+    if existente:
+        return existente
+    _get_o_crear_planilla_mes(usuario, fecha.year, fecha.month)
+    saliente = SalienteDia(usuario=usuario, fecha=fecha)
+    db.session.add(saliente)
+    db.session.commit()
+    return saliente
+
+
+def quitar_saliente(usuario, fecha: date) -> bool:
+    """Elimina la marca de saliente del día. Devuelve True si existía."""
+    saliente = SalienteDia.query.filter_by(usuario_id=usuario.id, fecha=fecha).first()
+    if saliente is None:
+        return False
+    db.session.delete(saliente)
+    db.session.commit()
+    return True
+
+
+def get_salientes_mes(usuario, anyo: int, mes: int) -> dict[date, bool]:
+    """Devuelve un dict {fecha: True} para los días salientes del mes."""
+    salientes = (
+        SalienteDia.query
+        .filter_by(usuario_id=usuario.id)
+        .filter(
+            db.func.extract("year", SalienteDia.fecha) == anyo,
+            db.func.extract("month", SalienteDia.fecha) == mes,
+        )
+        .all()
+    )
+    return {s.fecha: True for s in salientes}
 
 
 def guardar_nota_dia(usuario, fecha: date, texto: str) -> NotaDia | None:

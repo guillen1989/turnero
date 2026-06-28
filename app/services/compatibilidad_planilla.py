@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from app.extensions import db
 from app.models.usuario import Usuario
-from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla
+from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, SalienteDia
 from app.services.planilla import tiene_mes_publicado
 
 
@@ -67,7 +67,17 @@ def compatibilidad_para_cedido(
     libres = []
     compatibles = []
 
+    # hora_inicio < 12:00 → turno de mañana/Diurno; salientes no pueden cubrirlo
+    oferta_es_manyana = hora_inicio < time(12, 0)
+
     for compañero in compañeros_mismo_grupo:
+        es_saliente = SalienteDia.query.filter_by(
+            usuario_id=compañero.id, fecha=fecha
+        ).first() is not None
+
+        if es_saliente and oferta_es_manyana:
+            continue  # saliente no puede cubrir mañana ni Diurno
+
         estado = EstadoDiaPlanilla.query.filter_by(
             usuario_id=compañero.id, fecha=fecha
         ).first()
