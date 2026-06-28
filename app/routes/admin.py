@@ -5,7 +5,7 @@ from flask_babel import _
 from flask_login import current_user, login_required
 from sqlalchemy import distinct, func
 
-from app.extensions import db
+from app.extensions import csrf, db
 from app.forms.admin import (
     AdminNombreForm, AdminUnidadForm, AdminUsuarioForm,
     AdminProvinciaForm, AdminCiudadForm, AdminHospitalForm, AdminFranjaForm,
@@ -762,6 +762,7 @@ def demo_reset():
 
 
 @bp.route("/demo/reset-cron", methods=["POST"])
+@csrf.exempt
 def demo_reset_cron():
     """Endpoint para cron externo (cron-job.org). Requiere token en Authorization header."""
     import os
