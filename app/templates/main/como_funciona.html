@@ -60,7 +60,7 @@
           {{ _('La planilla es tu cuadrante del mes: qué días trabajas (y en qué turno) y qué días libras o tienes vacaciones.') }}
           {{ _('Al publicarla, tus compañeros pueden saber si están disponibles para hacerte el cambio, y tú puedes ver quién libra o tiene turno compatible el día que quieres ceder.') }}
         </p>
-        <p>{{ _('Rellenar el mes es rápido gracias a dos herramientas:') }}</p>
+        <p>{{ _('Rellenar el mes es rápido gracias a tres herramientas:') }}</p>
         <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.9">
           <li>
             <strong>{{ _('Relleno por rango') }}</strong> —
@@ -70,7 +70,16 @@
             <strong>{{ _('Selección múltiple') }}</strong> —
             {{ _('marca los días que quieras con los checkbox de cada fila; aparece una barra en la parte inferior para aplicar el mismo turno o estado a todos a la vez. Perfecto para las mañanas o noches sueltas repartidas por el mes.') }}
           </li>
+          <li>
+            <strong>{{ _('Rellenar días vacíos') }}</strong> —
+            {{ _('cuando ya has añadido todos tus turnos, aparece una barra verde que te permite asignar de un solo clic el mismo estado (normalmente Libre) a todos los días que aún no tienen nada. El flujo habitual es: añadir los turnos que trabajas y luego pulsar "Rellenar vacíos con Libre".') }}
+          </li>
         </ul>
+        <p>
+          {{ _('Además, puedes marcar cualquier día como') }} <strong>{{ _('Saliente') }}</strong>
+          {{ _('si el día anterior terminaste un turno de noche.') }}
+          {{ _('Un día saliente puede trabajarse (por ejemplo, añadiendo una tarde como doblaje), pero no puede cubrir una mañana ni un turno Diurno: en la búsqueda de compañeros disponibles, los días salientes no aparecen como opción para ese tipo de turno.') }}
+        </p>
         <p>
           {{ _('Cuando publicas un cambio, en tu panel "Activos" aparece una tarjeta verde con los compañeros que tienen ese día disponible según su planilla publicada.') }}
           {{ _('No son matches confirmados —todavía no han publicado un cambio—, pero puedes contactarlos directamente por WhatsApp.') }}
