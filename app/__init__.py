@@ -163,6 +163,29 @@ def _registrar_comandos(app):
         db.session.commit()
         click.echo("Usuario administrador creado: guillen@delbarrioblanco.net")
 
+    @app.cli.command("seed-demo")
+    def seed_demo():
+        """Siembra la unidad demo si DEMO_ENABLED=true y no está ya completa."""
+        import os
+        if os.environ.get("DEMO_ENABLED", "").lower() != "true":
+            click.echo("DEMO_ENABLED no está activo — omitiendo seed demo.")
+            return
+        from app.services.demo import reset_demo, DEMO_ACCOUNTS
+        from app.models import Usuario, PlanillaMes
+        demo_user = Usuario.query.filter_by(email=DEMO_ACCOUNTS[0][1]).first()
+        if demo_user:
+            tiene_planillas = PlanillaMes.query.filter_by(
+                usuario_id=demo_user.id
+            ).first() is not None
+            if tiene_planillas:
+                click.echo("La unidad demo ya existe y tiene planillas — nada que hacer.")
+                return
+            click.echo("Demo incompleta (sin planillas) — regenerando desde cero…")
+        else:
+            click.echo("Sembrando unidad demo…")
+        reset_demo()
+        click.echo("Unidad demo creada/regenerada correctamente.")
+
 
 def _get_locale():
     from flask_login import current_user
