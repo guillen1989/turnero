@@ -162,7 +162,7 @@
       {% elif td %}
         {% set ns.mod = 'cal-celda--turno' %}
         {% if td|length > 1 %}
-          {% set ns.lab = td[0].franja_horaria.nombre[:1] + '+' %}
+          {% set ns.lab = td[0].franja_horaria.nombre[:1] + '+' + td[1].franja_horaria.nombre[:1] %}
         {% else %}
           {% set ns.lab = td[0].franja_horaria.nombre[:1] %}
         {% endif %}
