@@ -128,7 +128,7 @@ def dia_añadir():
 
         añadir_turno(current_user, fecha, franja_id)
 
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
 
 
 @bp.route("/turno/eliminar", methods=["POST"])
@@ -145,7 +145,7 @@ def turno_eliminar():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     eliminar_turno(current_user, fecha, franja_id)
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
 
 
 @bp.route("/dia/limpiar", methods=["POST"])
@@ -162,7 +162,7 @@ def dia_limpiar():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     limpiar_dia(current_user, fecha)
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
 
 
 @bp.route("/<int:anyo>/<int:mes>/publicar", methods=["POST"])
@@ -282,7 +282,7 @@ def dia_nota():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     guardar_nota_dia(current_user, fecha, texto)
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
 
 
 @bp.route("/volcar-cambios", methods=["POST"])

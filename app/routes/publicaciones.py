@@ -7,7 +7,7 @@ from flask_login import current_user, login_required
 from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
-from app.services.registro import crear_franjas_default
+from app.services.registro import crear_franjas_default, asignar_color_franja
 from app.services.compat_planilla_persistente import calcular_y_guardar_compatibilidad
 from app.matching.service import (
     buscar_avisos_interes_para,
@@ -196,6 +196,7 @@ def nueva():
                 db.session.add(FranjaHoraria(
                     nombre=nombre_f, hora_inicio=inicio, hora_fin=fin,
                     grupo_intercambio_id=grupo_id,
+                    color=asignar_color_franja(nombre_f, grupo_id),
                 ))
                 db.session.commit()
                 flash(_("Tipo de turno «%(n)s» creado.", n=nombre_f), "success")

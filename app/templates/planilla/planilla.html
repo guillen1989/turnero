@@ -137,8 +137,22 @@
       {% elif td %}{% set tooltip = tooltip + ' — ' + (td | map(attribute='franja_horaria') | map(attribute='nombre') | join(', ')) %}
       {% else %}{% set tooltip = tooltip + ' — Sin rellenar' %}{% endif %}
       {% if nd %}{% set tooltip = tooltip + ' · Tiene nota' %}{% endif %}
+      {# Estilo inline de color: diagonal si doblaje, sólido si turno único, clase CSS si estado #}
+      {% if td %}
+        {% if td|length > 1 %}
+          {% set c1 = td[0].franja_horaria.color or '#3B82F6' %}
+          {% set c2 = td[1].franja_horaria.color or '#F97316' %}
+          {% set ns.estilo = 'background: linear-gradient(135deg, ' + c1 + ' 50%, ' + c2 + ' 50%); color: #ffffff;' %}
+        {% else %}
+          {% set fc = td[0].franja_horaria.color or '#3B82F6' %}
+          {% set ns.estilo = 'background:' + fc + '; color:' + td[0].franja_horaria.color_texto + ';' %}
+        {% endif %}
+      {% else %}
+        {% set ns.estilo = '' %}
+      {% endif %}
       <button type="button"
               class="cal-celda {{ ns.mod }}{% if dia == hoy %} cal-celda--hoy{% endif %}"
+              {% if ns.estilo %}style="{{ ns.estilo }}"{% endif %}
               onclick="calNavegar('{{ dia.isoformat() }}')"
               title="{{ tooltip }}"
               aria-label="{{ tooltip }}">
@@ -222,7 +236,9 @@
             {% set ids_asignados = turnos_dia | map(attribute='franja_horaria_id') | list %}
 
             {% for turno in turnos_dia %}
-              <span class="planilla-turno-chip">
+              {% set fc = turno.franja_horaria.color or '#3B82F6' %}
+              <span class="planilla-turno-chip"
+                    style="background:{{ fc }}; color:{{ turno.franja_horaria.color_texto }};">
                 {{ turno.franja_horaria.nombre }}
                 <form method="post" action="{{ url_for('planilla.turno_eliminar') }}" style="display:inline">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

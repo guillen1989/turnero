@@ -11,12 +11,46 @@ from app.models import (
 _OPCION_NUEVA = 0
 
 _FRANJAS_DEFAULT = [
-    ("Mañana", time(8, 0), time(15, 0)),
-    ("Tarde", time(15, 0), time(22, 0)),
-    ("Noche", time(22, 0), time(8, 0)),
-    ("Diurno 12h", time(8, 0), time(20, 0)),
-    ("Nocturno 12h", time(20, 0), time(8, 0)),
+    ("Mañana",      time(8, 0),  time(15, 0)),
+    ("Tarde",       time(15, 0), time(22, 0)),
+    ("Noche",       time(22, 0), time(8, 0)),
+    ("Diurno 12h",  time(8, 0),  time(20, 0)),
+    ("Nocturno 12h",time(20, 0), time(8, 0)),
 ]
+
+# Paleta general (se cicla cuando se crean franjas personalizadas)
+_PALETA_COLORES = [
+    "#3B82F6",  # blue-500     → Mañana
+    "#F97316",  # orange-500   → Tarde
+    "#14B8A6",  # teal-500     → Diurno 12h
+    "#8B5CF6",  # violet-500
+    "#EC4899",  # pink-500
+    "#22C55E",  # green-500
+    "#EAB308",  # yellow-500
+    "#6366F1",  # indigo-500
+    "#F43F5E",  # rose-500
+    "#06B6D4",  # cyan-500
+]
+# Paleta oscura para "noche" / "nocturno"
+_PALETA_NOCHE = ["#1E3A8A", "#1E40AF", "#1D4ED8"]
+
+
+def asignar_color_franja(nombre: str, grupo_intercambio_id: int) -> str:
+    """Devuelve el color hex a asignar a una franja nueva."""
+    nombre_lower = nombre.lower()
+    es_nocturna = "noche" in nombre_lower or "nocturno" in nombre_lower
+    paleta = _PALETA_NOCHE if es_nocturna else _PALETA_COLORES
+    usados = {
+        f.color for f in
+        FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_intercambio_id).all()
+        if f.color
+    }
+    for color in paleta:
+        if color not in usados:
+            return color
+    # Todos usados: ciclar desde el principio
+    n_usados = len(usados)
+    return paleta[n_usados % len(paleta)]
 
 
 def crear_franjas_default(grupo):
@@ -30,6 +64,7 @@ def crear_franjas_default(grupo):
                 hora_inicio=inicio,
                 hora_fin=fin,
                 grupo_intercambio=grupo,
+                color=asignar_color_franja(nombre, grupo.id),
             ))
 
 

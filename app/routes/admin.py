@@ -18,6 +18,7 @@ from app.models import (
     Notificacion, PublicacionCambio, Unidad, Usuario,
     insertar_categorias_semilla,
 )
+from app.services.registro import asignar_color_franja
 from app.services.publicaciones import eliminar_publicacion
 from app.services.registro import (
     encontrar_o_crear_categoria,
@@ -763,11 +764,14 @@ def franja_nueva():
         if existe:
             flash(_("Ya existe un turno con ese nombre en ese grupo."), "danger")
         else:
+            nombre_f = form.nombre.data.strip()
+            grupo_id_f = form.grupo_intercambio_id.data
             db.session.add(FranjaHoraria(
-                nombre=form.nombre.data.strip(),
+                nombre=nombre_f,
                 hora_inicio=form.hora_inicio.data,
                 hora_fin=form.hora_fin.data,
-                grupo_intercambio_id=form.grupo_intercambio_id.data,
+                grupo_intercambio_id=grupo_id_f,
+                color=asignar_color_franja(nombre_f, grupo_id_f),
             ))
             db.session.commit()
             flash(_("Turno creado."), "success")

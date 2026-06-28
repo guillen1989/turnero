@@ -869,7 +869,7 @@ body {
 .planilla-dia-semana { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; }
 .planilla-dia--finde .planilla-dia-semana { color: #9ca3af; }
 .planilla-dia-turnos { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; flex: 1; }
-.planilla-turno-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: #dbeafe; color: #1e40af; border-radius: 999px; padding: 0.15rem 0.5rem 0.15rem 0.65rem; font-size: 0.82rem; font-weight: 500; }
+.planilla-turno-chip { display: inline-flex; align-items: center; gap: 0.3rem; border-radius: 999px; padding: 0.15rem 0.5rem 0.15rem 0.65rem; font-size: 0.82rem; font-weight: 500; }
 .planilla-chip-remove { background: none; border: none; cursor: pointer; color: #1e40af; font-size: 0.75rem; padding: 0; line-height: 1; opacity: 0.6; }
 .planilla-chip-remove:hover { opacity: 1; }
 .planilla-add-form { display: flex; align-items: center; gap: 0.3rem; }
