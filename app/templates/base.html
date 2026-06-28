@@ -234,7 +234,7 @@
         if (HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules')) {
           var spec = document.createElement('script');
           spec.type = 'speculationrules';
-          spec.textContent = JSON.stringify({ prefetch: [{ urls: toFetch, eagerness: 'immediate' }] });
+          spec.textContent = JSON.stringify({ prerender: [{ urls: toFetch, eagerness: 'immediate' }] });
           document.head.appendChild(spec);
         } else {
           toFetch.forEach(function(url) {
