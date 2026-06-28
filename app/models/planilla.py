@@ -1,5 +1,28 @@
 from app.extensions import db
 
+TIPOS_ESTADO_DIA = ("libre", "vacaciones", "no_disponible")
+
+
+class EstadoDiaPlanilla(db.Model):
+    """Marca un día como Libre / Vacaciones / No Disponible para Cambios.
+    Mutuamente exclusivo con TurnoPlanilla: un día tiene estado O turnos, nunca ambos.
+    """
+    __tablename__ = "estado_dia_planilla"
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    fecha = db.Column(db.Date, nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)  # libre | vacaciones | no_disponible
+
+    usuario = db.relationship("Usuario", back_populates="estados_dia_planilla")
+
+    __table_args__ = (
+        db.UniqueConstraint("usuario_id", "fecha", name="uq_estado_dia_usuario_fecha"),
+    )
+
+    def __repr__(self):
+        return f"<EstadoDiaPlanilla {self.fecha} [{self.tipo}]>"
+
 
 class TurnoPlanilla(db.Model):
     __tablename__ = "turno_planilla"

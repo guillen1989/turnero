@@ -9,13 +9,13 @@ from dataclasses import dataclass
 
 from app.extensions import db
 from app.models.usuario import Usuario
-from app.models.planilla import TurnoPlanilla, PlanillaMes
+from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla
 from app.services.planilla import tiene_mes_publicado
 
 
 @dataclass
 class ResultadoCompatibilidad:
-    libres: list          # usuarios libres ese día (sin turnos en planilla)
+    libres: list          # usuarios libres ese día y disponibles para cambios
     compatibles: list     # usuarios con turno no solapante (posible doblaje)
     mostrar_nombres: bool  # False si el solicitante no tiene el mes publicado
 
@@ -33,10 +33,15 @@ def compatibilidad_para_cedido(
 ) -> ResultadoCompatibilidad:
     """
     Para un turno cedido (fecha + horario), devuelve qué compañeros del mismo
-    grupo e categoría están libres o tienen turno compatible (no solapante).
+    grupo y categoría están libres o tienen turno compatible (no solapante).
 
-    Solo se consideran compañeros que hayan publicado su planilla para ese mes.
-    Si el solicitante no tiene el mes publicado, los nombres se ocultan.
+    Reglas:
+    - Solo se consideran compañeros que hayan publicado su planilla para ese mes.
+    - EstadoDiaPlanilla.tipo == 'libre' → libre y disponible (aparece en libres).
+    - EstadoDiaPlanilla.tipo in ('vacaciones', 'no_disponible') → excluido.
+    - Sin estado ni turnos → libre implícito (aparece en libres).
+    - Con turnos → se comprueba solapamiento.
+    - Si el solicitante no tiene el mes publicado, los nombres se ocultan.
     """
     mostrar_nombres = tiene_mes_publicado(usuario_solicitante, fecha)
 
@@ -46,13 +51,6 @@ def compatibilidad_para_cedido(
         .filter(
             Usuario.id != usuario_solicitante.id,
             Usuario.categoria_id == usuario_solicitante.categoria_id,
-            Usuario.unidad_id.in_(
-                db.session.query(Usuario.unidad_id)
-                .join(Usuario.unidad)
-                .filter(
-                    Usuario.id == usuario_solicitante.id
-                )
-            ),
             PlanillaMes.anyo == fecha.year,
             PlanillaMes.mes == fecha.month,
             PlanillaMes.publicada == True,
@@ -60,7 +58,6 @@ def compatibilidad_para_cedido(
         .all()
     )
 
-    # Para filtrar por grupo de intercambio necesitamos acceder via unidad
     grupo_solicitante = usuario_solicitante.grupo_intercambio
     compañeros_mismo_grupo = [
         u for u in compañeros_con_planilla
@@ -71,12 +68,22 @@ def compatibilidad_para_cedido(
     compatibles = []
 
     for compañero in compañeros_mismo_grupo:
+        estado = EstadoDiaPlanilla.query.filter_by(
+            usuario_id=compañero.id, fecha=fecha
+        ).first()
+
+        if estado is not None:
+            # Estado explícito: solo 'libre' cuenta; vacaciones y no_disponible se excluyen
+            if estado.tipo == "libre":
+                libres.append(compañero)
+            continue  # vacaciones / no_disponible → ignorar
+
         turnos_dia = TurnoPlanilla.query.filter_by(
             usuario_id=compañero.id, fecha=fecha
         ).all()
 
         if not turnos_dia:
-            libres.append(compañero)
+            libres.append(compañero)  # libre implícito
         else:
             tiene_solapamiento = any(
                 turnos_solapan(

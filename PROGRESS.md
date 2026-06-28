@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Feature planilla completa. Siguiente: probar en staging y decidir si hay refinamientos de UX.
+Feature planilla completa con estados de día. Siguiente: probar en staging.
 
 ## Backlog (fuente: .backlog)
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓

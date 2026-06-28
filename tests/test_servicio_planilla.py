@@ -5,7 +5,7 @@ from app.models import (
 )
 from app.services.planilla import (
     añadir_turno, eliminar_turno, publicar_mes, despublicar_mes,
-    tiene_mes_publicado, get_turnos_mes,
+    tiene_mes_publicado, get_turnos_mes, establecer_estado_dia, limpiar_dia,
 )
 
 
@@ -126,3 +126,45 @@ def test_get_turnos_mes(db):
     assert len(turnos) == 2
     assert turnos[0].fecha == date(2026, 7, 1)
     assert turnos[1].fecha == date(2026, 7, 3)
+
+
+# ── Tests de estados de día ───────────────────────────────────────────────────
+
+def test_establecer_estado_libre(db):
+    usuario, franja_m, _ = _setup(db, "libre@test.es")
+    estado = establecer_estado_dia(usuario, date(2026, 7, 5), "libre")
+    assert estado.tipo == "libre"
+
+
+def test_establecer_estado_elimina_turnos_previos(db):
+    from app.services.planilla import establecer_estado_dia
+    usuario, franja_m, _ = _setup(db, "elim@test.es")
+    añadir_turno(usuario, date(2026, 7, 5), franja_m.id)
+    establecer_estado_dia(usuario, date(2026, 7, 5), "vacaciones")
+    assert TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 5)).count() == 0
+
+
+def test_añadir_turno_elimina_estado_previo(db):
+    from app.services.planilla import establecer_estado_dia
+    from app.models import EstadoDiaPlanilla
+    usuario, franja_m, _ = _setup(db, "turnoest@test.es")
+    establecer_estado_dia(usuario, date(2026, 7, 5), "vacaciones")
+    añadir_turno(usuario, date(2026, 7, 5), franja_m.id)
+    assert EstadoDiaPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 5)).first() is None
+
+
+def test_limpiar_dia_elimina_todo(db):
+    from app.services.planilla import establecer_estado_dia, limpiar_dia
+    from app.models import EstadoDiaPlanilla
+    usuario, franja_m, _ = _setup(db, "limpia@test.es")
+    establecer_estado_dia(usuario, date(2026, 7, 5), "libre")
+    limpiar_dia(usuario, date(2026, 7, 5))
+    assert EstadoDiaPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 5)).first() is None
+
+
+def test_estado_invalido_lanza_error(db):
+    import pytest
+    from app.services.planilla import establecer_estado_dia
+    usuario, _, _ = _setup(db, "inv@test.es")
+    with pytest.raises(ValueError):
+        establecer_estado_dia(usuario, date(2026, 7, 5), "tipo_inventado")

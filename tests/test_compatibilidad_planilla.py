@@ -157,3 +157,65 @@ def test_doblaje_solapante_excluye_compañero(db):
 
     assert compañero not in resultado.compatibles
     assert compañero not in resultado.libres
+
+
+# ── Tests de estados especiales en compatibilidad ────────────────────────────
+
+def _setup_base_2(db, suffix="2"):
+    hospital = Hospital(nombre=f"H-{suffix}")
+    grupo = GrupoIntercambio()
+    db.session.add_all([hospital, grupo])
+    db.session.commit()
+    unidad = Unidad(nombre="UCI", hospital=hospital, grupo_intercambio=grupo)
+    categoria = Categoria(nombre=f"Enf-{suffix}")
+    franja_m = FranjaHoraria(nombre="Mañana", hora_inicio=time(8), hora_fin=time(15), grupo_intercambio=grupo)
+    db.session.add_all([unidad, categoria, franja_m])
+    db.session.commit()
+    def crear(email):
+        u = Usuario(nombre=email.split("@")[0], email=email, unidad=unidad, categoria=categoria)
+        u.set_password("pass")
+        db.session.add(u)
+        db.session.commit()
+        return u
+    return unidad, categoria, franja_m, crear
+
+
+def test_companero_libre_explicito_aparece_en_libres(db):
+    from app.services.planilla import establecer_estado_dia
+    unidad, cat, franja_m, crear = _setup_base_2(db, "expl")
+    solicitante = crear("sol_expl@t.es")
+    companero   = crear("comp_expl@t.es")
+    publicar_mes(solicitante, 2026, 7)
+    publicar_mes(companero, 2026, 7)
+    establecer_estado_dia(companero, date(2026, 7, 1), "libre")
+
+    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(15))
+    assert companero in resultado.libres
+
+
+def test_companero_vacaciones_no_aparece(db):
+    from app.services.planilla import establecer_estado_dia
+    unidad, cat, franja_m, crear = _setup_base_2(db, "vac")
+    solicitante = crear("sol_vac@t.es")
+    companero   = crear("comp_vac@t.es")
+    publicar_mes(solicitante, 2026, 7)
+    publicar_mes(companero, 2026, 7)
+    establecer_estado_dia(companero, date(2026, 7, 1), "vacaciones")
+
+    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(15))
+    assert companero not in resultado.libres
+    assert companero not in resultado.compatibles
+
+
+def test_companero_no_disponible_no_aparece(db):
+    from app.services.planilla import establecer_estado_dia
+    unidad, cat, franja_m, crear = _setup_base_2(db, "nod")
+    solicitante = crear("sol_nod@t.es")
+    companero   = crear("comp_nod@t.es")
+    publicar_mes(solicitante, 2026, 7)
+    publicar_mes(companero, 2026, 7)
+    establecer_estado_dia(companero, date(2026, 7, 1), "no_disponible")
+
+    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(15))
+    assert companero not in resultado.libres
+    assert companero not in resultado.compatibles

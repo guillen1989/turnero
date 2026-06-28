@@ -52,6 +52,9 @@ class Usuario(UserMixin, db.Model):
     planillas_mes = db.relationship(
         "PlanillaMes", back_populates="usuario", lazy="dynamic"
     )
+    estados_dia_planilla = db.relationship(
+        "EstadoDiaPlanilla", back_populates="usuario", lazy="dynamic"
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

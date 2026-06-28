@@ -15,7 +15,7 @@ from app.models.suscripcion_publicaciones import SuscripcionPublicaciones
 from app.models.event import Event
 from app.models.busqueda_guardada import BusquedaGuardada
 from app.models.audit import AuditEliminacion
-from app.models.planilla import TurnoPlanilla, PlanillaMes
+from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, TIPOS_ESTADO_DIA
 
 __all__ = [
     "Pais",
@@ -40,5 +40,7 @@ __all__ = [
     "AuditEliminacion",
     "TurnoPlanilla",
     "PlanillaMes",
+    "EstadoDiaPlanilla",
+    "TIPOS_ESTADO_DIA",
     "insertar_categorias_semilla",
 ]

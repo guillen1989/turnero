@@ -44,7 +44,9 @@
     {% for dia in dias %}
       {% set es_hoy = (dia == hoy) %}
       {% set turnos_dia = turnos_por_dia.get(dia, []) %}
+      {% set estado_dia = estados_por_dia.get(dia) %}
       {% set es_finde = (dia.weekday() >= 5) %}
+
       <div class="planilla-dia{% if es_hoy %} planilla-dia--hoy{% endif %}{% if es_finde %} planilla-dia--finde{% endif %}">
 
         <div class="planilla-dia-label">
@@ -53,40 +55,67 @@
         </div>
 
         <div class="planilla-dia-turnos">
-          {% for turno in turnos_dia %}
-            <span class="planilla-turno-chip">
-              {{ turno.franja_horaria.nombre }}
-              <form method="post" action="{{ url_for('planilla.turno_eliminar') }}" style="display:inline">
+
+          {% if estado_dia %}
+            {# Día con estado especial: mostrar chip con botón de limpiar #}
+            <span class="planilla-turno-chip planilla-turno-chip--{{ estado_dia.tipo }}">
+              {{ etiquetas_estado[estado_dia.tipo] }}
+              <form method="post" action="{{ url_for('planilla.dia_limpiar') }}" style="display:inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="fecha" value="{{ dia.isoformat() }}">
-                <input type="hidden" name="franja_id" value="{{ turno.franja_horaria_id }}">
                 <input type="hidden" name="anyo" value="{{ anyo }}">
                 <input type="hidden" name="mes" value="{{ mes }}">
-                <button type="submit" class="planilla-chip-remove" title="{{ _('Quitar') }}" aria-label="{{ _('Quitar turno') }}">&#x2715;</button>
+                <button type="submit" class="planilla-chip-remove" title="{{ _('Quitar') }}" aria-label="{{ _('Quitar estado') }}">&#x2715;</button>
               </form>
             </span>
-          {% endfor %}
 
-          {% if franjas %}
+          {% else %}
+            {# Día sin estado: mostrar turnos de trabajo y selector #}
             {% set ids_asignados = turnos_dia | map(attribute='franja_horaria_id') | list %}
-            <form method="post" action="{{ url_for('planilla.turno_añadir') }}" class="planilla-add-form">
+
+            {% for turno in turnos_dia %}
+              <span class="planilla-turno-chip">
+                {{ turno.franja_horaria.nombre }}
+                <form method="post" action="{{ url_for('planilla.turno_eliminar') }}" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="fecha" value="{{ dia.isoformat() }}">
+                  <input type="hidden" name="franja_id" value="{{ turno.franja_horaria_id }}">
+                  <input type="hidden" name="anyo" value="{{ anyo }}">
+                  <input type="hidden" name="mes" value="{{ mes }}">
+                  <button type="submit" class="planilla-chip-remove" title="{{ _('Quitar') }}" aria-label="{{ _('Quitar turno') }}">&#x2715;</button>
+                </form>
+              </span>
+            {% endfor %}
+
+            <form method="post" action="{{ url_for('planilla.dia_añadir') }}" class="planilla-add-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="fecha" value="{{ dia.isoformat() }}">
               <input type="hidden" name="anyo" value="{{ anyo }}">
               <input type="hidden" name="mes" value="{{ mes }}">
-              <select name="franja_id" class="planilla-select" aria-label="{{ _('Seleccionar turno') }}">
-                <option value="">{{ _('+ Turno') }}</option>
-                {% for franja in franjas %}
-                  {% if franja.id not in ids_asignados %}
-                    <option value="{{ franja.id }}">{{ franja.nombre }}</option>
-                  {% endif %}
-                {% endfor %}
+              <select name="seleccion" class="planilla-select" aria-label="{{ _('Añadir al día') }}">
+                <option value="">+ Añadir</option>
+                {% if not turnos_dia %}
+                  <optgroup label="{{ _('Estado del día') }}">
+                    <option value="libre">{{ _('Libre') }}</option>
+                    <option value="vacaciones">{{ _('Vacaciones') }}</option>
+                    <option value="no_disponible">{{ _('No disponible para cambios') }}</option>
+                  </optgroup>
+                {% endif %}
+                {% if franjas %}
+                  <optgroup label="{{ _('Turno') }}">
+                    {% for franja in franjas %}
+                      {% if franja.id not in ids_asignados %}
+                        <option value="{{ franja.id }}">{{ franja.nombre }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </optgroup>
+                {% endif %}
               </select>
               <button type="submit" class="btn btn-secondary btn-xs planilla-add-btn">{{ _('Añadir') }}</button>
             </form>
           {% endif %}
-        </div>
 
+        </div>
       </div>
     {% endfor %}
   </div>
