@@ -41,6 +41,10 @@
     <span class="admin-stat-label">{{ _('Cambios publicados') }}</span>
   </div>
   <div class="admin-stat-card">
+    <span class="admin-stat-num" id="stat-activas">{{ stats.activas }}</span>
+    <span class="admin-stat-label">{{ _('Cambios activos') }}</span>
+  </div>
+  <div class="admin-stat-card">
     <span class="admin-stat-num" id="stat-matches">{{ stats.matches }}</span>
     <span class="admin-stat-label">{{ _('Matches') }}</span>
   </div>
@@ -90,6 +94,7 @@
     categorias: "stat-categorias",
     publicaciones: "stat-publicaciones",
     sinteticas: "stat-sinteticas",
+    activas: "stat-activas",
     matches: "stat-matches",
     confirmados: "stat-confirmados",
     eliminadas: "stat-eliminadas",

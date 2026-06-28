@@ -887,6 +887,10 @@ def analytics():
         "categorias": Categoria.query.count(),
         "publicaciones": PublicacionCambio.query.filter_by(es_sintetica=False).count(),
         "sinteticas": PublicacionCambio.query.filter_by(es_sintetica=True).count(),
+        "activas": PublicacionCambio.query.filter(
+            PublicacionCambio.es_sintetica.is_(False),
+            PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
+        ).count(),
         "matches": MatchCambio.query.count(),
         "confirmados": MatchCambio.query.filter_by(estado="confirmado_total").count(),
         "eliminadas": AuditEliminacion.query.count(),
@@ -992,6 +996,15 @@ def analytics_data():
             .filter(Usuario.unidad_id == unidad_id)
             .count()
         )
+        t_activas = (
+            PublicacionCambio.query.filter(
+                PublicacionCambio.es_sintetica.is_(False),
+                PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
+            )
+            .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
+            .filter(Usuario.unidad_id == unidad_id)
+            .count()
+        )
         t_matches = (
             db.session.query(func.count(distinct(MatchCambio.id)))
             .join(MatchParticipacion, MatchParticipacion.match_id == MatchCambio.id)
@@ -1023,6 +1036,10 @@ def analytics_data():
         t_categorias = Categoria.query.count()
         t_publicaciones = PublicacionCambio.query.filter_by(es_sintetica=False).count()
         t_sinteticas = PublicacionCambio.query.filter_by(es_sintetica=True).count()
+        t_activas = PublicacionCambio.query.filter(
+            PublicacionCambio.es_sintetica.is_(False),
+            PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
+        ).count()
         t_matches = MatchCambio.query.count()
         t_confirmados = MatchCambio.query.filter_by(estado="confirmado_total").count()
         t_eliminadas = AuditEliminacion.query.count()
@@ -1047,6 +1064,7 @@ def analytics_data():
             "categorias": t_categorias,
             "publicaciones": t_publicaciones,
             "sinteticas": t_sinteticas,
+            "activas": t_activas,
             "matches": t_matches,
             "confirmados": t_confirmados,
             "eliminadas": t_eliminadas,
