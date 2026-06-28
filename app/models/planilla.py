@@ -24,6 +24,34 @@ class EstadoDiaPlanilla(db.Model):
         return f"<EstadoDiaPlanilla {self.fecha} [{self.tipo}]>"
 
 
+class CompatibilidadPlanilla(db.Model):
+    """Resultado persistido de cruzar una publicación con las planillas de compañeros.
+    Una fila por (publicacion, usuario_compatible). Se recalcula cuando cambia la planilla
+    del usuario o cuando el usuario publica un nuevo cambio.
+    """
+    __tablename__ = "compatibilidad_planilla"
+
+    id = db.Column(db.Integer, primary_key=True)
+    publicacion_id = db.Column(
+        db.Integer, db.ForeignKey("publicacion_cambio.id", ondelete="CASCADE"), nullable=False
+    )
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    # 'libre' tiene prioridad sobre 'compatible' si el usuario aparece en varias fechas
+    tipo = db.Column(db.String(20), nullable=False)
+
+    usuario = db.relationship("Usuario")
+    publicacion = db.relationship("PublicacionCambio")
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "publicacion_id", "usuario_id", name="uq_compat_planilla_pub_usuario"
+        ),
+    )
+
+    def __repr__(self):
+        return f"<CompatibilidadPlanilla pub={self.publicacion_id} u={self.usuario_id} [{self.tipo}]>"
+
+
 class TurnoPlanilla(db.Model):
     __tablename__ = "turno_planilla"
 

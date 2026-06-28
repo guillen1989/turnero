@@ -1,6 +1,6 @@
 """
-Verifica que, al publicar un cambio, el sistema muestra en el flash
-información de compatibilidad derivada de las planillas publicadas.
+Verifica que, al publicar un cambio, el sistema persiste la compatibilidad de planilla
+y la muestra como tarjeta en el dashboard (pestaña Activos).
 """
 from datetime import date, time, timedelta
 from app.models import (
@@ -40,52 +40,47 @@ def _fecha_futura():
     return date.today() + timedelta(days=30)
 
 
-def test_flash_compatibilidad_sin_planillas(client, db):
-    """Sin planillas publicadas no debe haber flash de compatibilidad."""
-    _, _, franja_m, franja_t, crear = _setup(db)
-    solicitante = crear("sol@t.es")
-    _login(client, "sol@t.es")
-
-    fecha = _fecha_futura()
-    resp = client.post("/publicar", data={
+def _publicar_cambio(client, franja_m, franja_t, fecha):
+    return client.post("/publicar", data={
         "tipo": "cambio",
         "fecha_cedida_0": fecha.isoformat(),
         "franja_cedida_0": franja_m.id,
         "fecha_aceptada_0": fecha.isoformat(),
         "franja_aceptada_0": franja_t.id,
     }, follow_redirects=True)
+
+
+def test_sin_planillas_no_aparece_compat(client, db):
+    """Sin planillas publicadas la tarjeta de compatibilidad no aparece."""
+    _, _, franja_m, franja_t, crear = _setup(db)
+    crear("sol@t.es")
+    _login(client, "sol@t.es")
+
+    resp = _publicar_cambio(client, franja_m, franja_t, _fecha_futura())
     assert resp.status_code == 200
-    # Sin planillas de compañeros no debe aparecer info de compatibilidad
     assert b"libran ese" not in resp.data
     assert b"turno compatible" not in resp.data
 
 
-def test_flash_compatibilidad_con_companero_libre(client, db):
-    """Con un compañero libre ese día debe aparecer el flash."""
+def test_companero_libre_aparece_en_tarjeta(client, db):
+    """Con un compañero libre ese día la tarjeta muestra que libra."""
     _, _, franja_m, franja_t, crear = _setup(db)
     solicitante = crear("sol2@t.es")
     companero  = crear("comp2@t.es")
 
-    # compañero publica su planilla de ese mes (sin turno ese día → libre)
     fecha = _fecha_futura()
     publicar_mes(companero, fecha.year, fecha.month)
-    # solicitante también publica para ver nombres
     publicar_mes(solicitante, fecha.year, fecha.month)
 
     _login(client, "sol2@t.es")
-    resp = client.post("/publicar", data={
-        "tipo": "cambio",
-        "fecha_cedida_0": fecha.isoformat(),
-        "franja_cedida_0": franja_m.id,
-        "fecha_aceptada_0": fecha.isoformat(),
-        "franja_aceptada_0": franja_t.id,
-    }, follow_redirects=True)
+    resp = _publicar_cambio(client, franja_m, franja_t, fecha)
     assert resp.status_code == 200
+    # La tarjeta en Activos debe mostrar que el compañero libra ese día
     assert b"libran ese" in resp.data
 
 
-def test_flash_nudge_si_solicitante_no_tiene_planilla(client, db):
-    """Si hay compañeros con planilla pero el solicitante no la publicó, aparece el nudge."""
+def test_nudge_si_solicitante_sin_planilla(client, db):
+    """Si el solicitante no ha publicado su planilla aparece el nudge de publicar."""
     _, _, franja_m, franja_t, crear = _setup(db)
     solicitante = crear("sol3@t.es")
     companero   = crear("comp3@t.es")
@@ -95,19 +90,13 @@ def test_flash_nudge_si_solicitante_no_tiene_planilla(client, db):
     # solicitante NO publica
 
     _login(client, "sol3@t.es")
-    resp = client.post("/publicar", data={
-        "tipo": "cambio",
-        "fecha_cedida_0": fecha.isoformat(),
-        "franja_cedida_0": franja_m.id,
-        "fecha_aceptada_0": fecha.isoformat(),
-        "franja_aceptada_0": franja_t.id,
-    }, follow_redirects=True)
+    resp = _publicar_cambio(client, franja_m, franja_t, fecha)
     assert resp.status_code == 200
     assert b"Publica tu planilla" in resp.data
 
 
-def test_flash_compatible_excluye_turno_solapante(client, db):
-    """Un compañero con turno solapante no aparece como compatible."""
+def test_turno_solapante_no_aparece_en_tarjeta(client, db):
+    """Un compañero con turno solapante no aparece en la tarjeta."""
     _, _, franja_m, franja_t, crear = _setup(db)
     solicitante = crear("sol4@t.es")
     companero   = crear("comp4@t.es")
@@ -118,14 +107,7 @@ def test_flash_compatible_excluye_turno_solapante(client, db):
     añadir_turno(companero, fecha, franja_m.id)  # mismo turno → solapa
 
     _login(client, "sol4@t.es")
-    resp = client.post("/publicar", data={
-        "tipo": "cambio",
-        "fecha_cedida_0": fecha.isoformat(),
-        "franja_cedida_0": franja_m.id,
-        "fecha_aceptada_0": fecha.isoformat(),
-        "franja_aceptada_0": franja_t.id,
-    }, follow_redirects=True)
+    resp = _publicar_cambio(client, franja_m, franja_t, fecha)
     assert resp.status_code == 200
-    # El compañero está trabajando el mismo turno → ni libre ni compatible
     assert b"libran ese" not in resp.data
     assert b"turno compatible" not in resp.data

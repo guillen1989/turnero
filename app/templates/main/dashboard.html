@@ -187,6 +187,39 @@
         {% if estado_filtro == 'confirmada' and partners.get(pub.id) %}
         <div class="pub-partner">{{ _('Con:') }} <strong>{{ partners[pub.id] }}</strong></div>
         {% endif %}
+        {% set compat = compat_por_pub.get(pub.id) %}
+        {% if compat %}
+        {% set mostrar = mostrar_nombres_por_pub.get(pub.id, false) %}
+        {% set libres = compat.libres %}
+        {% set compatibles = compat.compatibles %}
+        <div class="compat-planilla-info">
+          <span class="tipo-badge tipo-badge--planilla">{{ _('Disponibilidad en planilla') }}</span>
+          {% if mostrar %}
+            {% if libres %}
+            <p class="compat-planilla-linea">
+              {{ libres|length }} {{ _('compañero(s) libran ese día:') }}
+              <strong>{{ libres | map(attribute='nombre') | list | join(', ') }}</strong>
+            </p>
+            {% endif %}
+            {% if compatibles %}
+            <p class="compat-planilla-linea">
+              {{ compatibles|length }} {{ _('tienen turno compatible:') }}
+              <strong>{{ compatibles | map(attribute='nombre') | list | join(', ') }}</strong>
+            </p>
+            {% endif %}
+          {% else %}
+            <p class="compat-planilla-linea">
+              {{ (libres|length + compatibles|length) }} {{ _('compañero(s) con disponibilidad.') }}
+            </p>
+            <p class="compat-planilla-nudge">
+              {{ _('Publica tu planilla del mes para ver sus nombres.') }}
+            </p>
+          {% endif %}
+          <p class="compat-planilla-nota">
+            {{ _('Estos compañeros no han publicado un cambio — sólo tienen ese día disponible en su planilla. Si te interesa, háblales por WhatsApp.') }}
+          </p>
+        </div>
+        {% endif %}
         {% if pub.esta_activa() %}
         {% set pub_url = url_for('main.cambios', pub_id=pub.id, _external=True) %}
         {% set wa_msg_extra = ('\n' + pub.mensaje) if pub.mensaje else '' %}
@@ -330,7 +363,7 @@
   </section>
   {% endif %}
 
-  {% if not publicaciones and not matches and not avisos_interes and not oportunidades_3 %}
+  {% if not publicaciones and not matches and not avisos_interes and not oportunidades_3 and not compat_por_pub %}
     <p class="empty-state">
       {% if estado_filtro == 'activos' %}{{ _('No tienes publicaciones activas.') }}
       {% elif estado_filtro == 'pendiente' %}{{ _('No tienes cambios pendientes de confirmar.') }}

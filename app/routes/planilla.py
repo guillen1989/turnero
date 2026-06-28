@@ -12,7 +12,9 @@ from app.services.planilla import (
     establecer_estado_dia, limpiar_dia,
     publicar_mes, despublicar_mes,
     get_turnos_mes, get_estados_mes,
+    dias_sin_cumplimentar,
 )
+from app.services.compat_planilla_persistente import actualizar_compat_tras_publicar_planilla
 
 bp = Blueprint("planilla", __name__, url_prefix="/planilla")
 
@@ -144,7 +146,19 @@ def dia_limpiar():
 @bp.route("/<int:anyo>/<int:mes>/publicar", methods=["POST"])
 @login_required
 def mes_publicar(anyo, mes):
+    vacios = dias_sin_cumplimentar(current_user, anyo, mes)
+    if vacios:
+        n = len(vacios)
+        primero = vacios[0].strftime("%-d/%m")
+        flash(
+            f"La planilla está incompleta: {n} día(s) sin cumplimentar "
+            f"(el primero: {primero}). Añade un turno o marca cada día antes de publicar.",
+            "error",
+        )
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
     publicar_mes(current_user, anyo, mes)
+    actualizar_compat_tras_publicar_planilla(current_user, anyo, mes)
     flash("Planilla del mes publicada. Tus compañeros ya pueden ver tu disponibilidad.", "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 

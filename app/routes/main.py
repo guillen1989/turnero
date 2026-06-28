@@ -7,7 +7,7 @@ from sqlalchemy import and_, exists, extract, or_
 from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
 from app.extensions import db
-from app.models import BusquedaGuardada, FranjaHoraria, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
+from app.models import BusquedaGuardada, CompatibilidadPlanilla, FranjaHoraria, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
 from app.services.caducidad import caducar_publicaciones_expiradas
 
 bp = Blueprint("main", __name__)
@@ -267,6 +267,8 @@ def index():
 
         oportunidades_3 = []
         avisos_interes = []
+        compat_por_pub: dict = {}
+        mostrar_nombres_por_pub: dict = {}
 
         if estado_filtro == "activos":
             from sqlalchemy import select as sa_select
@@ -323,6 +325,33 @@ def index():
                 .order_by(Notificacion.fecha.desc())
                 .all()
             )
+
+            if publicaciones:
+                pub_ids = [p.id for p in publicaciones]
+                entries = (
+                    CompatibilidadPlanilla.query
+                    .filter(CompatibilidadPlanilla.publicacion_id.in_(pub_ids))
+                    .options(joinedload(CompatibilidadPlanilla.usuario))
+                    .all()
+                )
+                for entry in entries:
+                    grp = compat_por_pub.setdefault(
+                        entry.publicacion_id, {"libres": [], "compatibles": []}
+                    )
+                    key = "libres" if entry.tipo == "libre" else "compatibles"
+                    grp[key].append(entry.usuario)
+
+                meses_publicados = {
+                    (pm.anyo, pm.mes)
+                    for pm in current_user.planillas_mes.all()
+                    if pm.publicada
+                }
+                for pub in publicaciones:
+                    cedidos_meses = {
+                        (tc.fecha.year, tc.fecha.month) for tc in pub.turnos_cedidos
+                    }
+                    mostrar_nombres_por_pub[pub.id] = bool(cedidos_meses & meses_publicados)
+
         elif estado_filtro == "pendiente":
             publicaciones = []
             matches = _matches_para_tab(current_user.id, "confirmado_parcial")
@@ -368,6 +397,8 @@ def index():
             oportunidades_3=oportunidades_3,
             avisos_interes=avisos_interes,
             sint_info=sint_info,
+            compat_por_pub=compat_por_pub,
+            mostrar_nombres_por_pub=mostrar_nombres_por_pub,
         )
     return render_template("main/index.html")
 

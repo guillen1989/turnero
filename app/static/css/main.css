@@ -515,6 +515,7 @@ body {
 .tipo-badge--cambio-dia { background: #ccfbf1; color: #0f766e; }
 .tipo-badge--interes    { background: #ffedd5; color: #c2410c; }
 .tipo-badge--sintetica  { background: #e0e7ff; color: #3730a3; }
+.tipo-badge--planilla   { background: #d1fae5; color: #065f46; }
 .sintetica-nota         { font-size: 0.8rem; color: #6b7280; margin: 0.25rem 0 0.5rem; font-style: italic; }
 
 .estado-badge {
@@ -803,6 +804,11 @@ body {
 .aviso-interes-card { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; }
 .aviso-interes-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .aviso-interes-desc { font-size: 0.875rem; color: #92400e; margin: 0 0 0.75rem; }
+
+.compat-planilla-info { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.75rem 0 0; }
+.compat-planilla-linea { font-size: 0.875rem; color: #14532d; margin: 0.25rem 0; }
+.compat-planilla-nudge { font-size: 0.875rem; color: #166534; font-style: italic; margin: 0.25rem 0; }
+.compat-planilla-nota  { font-size: 0.8rem; color: #6b7280; margin: 0.5rem 0 0; }
 
 /* Analytics */
 .analytics-controls { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin: 1.5rem 0 1rem; }

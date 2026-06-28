@@ -8,8 +8,7 @@ from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default
-from app.services.compatibilidad_planilla import compatibilidad_para_cedido
-from app.services.planilla import tiene_mes_publicado
+from app.services.compat_planilla_persistente import calcular_y_guardar_compatibilidad
 from app.matching.service import (
     buscar_avisos_interes_para,
     buscar_cadenas_3_para,
@@ -168,55 +167,6 @@ def _asegurar_franjas(grupo_intercambio_id):
     db.session.commit()
 
 
-def _flashes_compatibilidad(pub):
-    """Devuelve lista de (categoría, mensaje) con info de disponibilidad de compañeros."""
-    mensajes = []
-    nudge_enviado = False
-
-    for tc in pub.turnos_cedidos:
-        if tc.franja_horaria_id is None:
-            continue
-        fh = tc.franja_horaria
-        resultado = compatibilidad_para_cedido(
-            current_user, tc.fecha, fh.hora_inicio, fh.hora_fin
-        )
-        n_libres = len(resultado.libres)
-        n_compat = len(resultado.compatibles)
-        if n_libres == 0 and n_compat == 0:
-            continue
-
-        fecha_str = tc.fecha.strftime("%-d %b")
-        partes = []
-        if n_libres:
-            if resultado.mostrar_nombres:
-                nombres = ", ".join(u.nombre for u in resultado.libres[:3])
-                if n_libres > 3:
-                    nombres += f" y {n_libres - 3} más"
-                partes.append(f"{n_libres} libran ese día ({nombres})")
-            else:
-                partes.append(f"{n_libres} libran ese día")
-        if n_compat:
-            if resultado.mostrar_nombres:
-                nombres = ", ".join(u.nombre for u in resultado.compatibles[:3])
-                if n_compat > 3:
-                    nombres += f" y {n_compat - 3} más"
-                partes.append(f"{n_compat} tienen turno compatible")
-            else:
-                partes.append(f"{n_compat} tienen turno compatible")
-
-        mensajes.append(("info", f"Día {fecha_str} ({fh.nombre}): {' · '.join(partes)}."))
-
-        if not resultado.mostrar_nombres and not nudge_enviado:
-            nudge_enviado = True
-
-    if nudge_enviado:
-        mensajes.append((
-            "warning",
-            "Publica tu planilla del mes para ver los nombres de tus compañeros disponibles.",
-        ))
-
-    return mensajes
-
 
 @bp.route("/publicar", methods=["GET", "POST"])
 @login_required
@@ -299,8 +249,7 @@ def nueva():
         for candidata in buscar_avisos_interes_para(pub):
             procesar_aviso_y_sintetica(pub, candidata)
         flash(_("Publicación creada correctamente."), "success")
-        for categoria, mensaje in _flashes_compatibilidad(pub):
-            flash(mensaje, categoria)
+        calcular_y_guardar_compatibilidad(pub)
         return redirect(url_for("main.index"))
 
     return render_template("publicaciones/publicar.html", franjas=franjas, today=date.today().isoformat())

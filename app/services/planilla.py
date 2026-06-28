@@ -1,3 +1,4 @@
+import calendar as _calendar
 from datetime import date
 from app.extensions import db
 from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, TIPOS_ESTADO_DIA
@@ -126,6 +127,43 @@ def get_turnos_mes(usuario, anyo: int, mes: int) -> list[TurnoPlanilla]:
         .order_by(TurnoPlanilla.fecha)
         .all()
     )
+
+
+def dias_sin_cumplimentar(usuario, anyo: int, mes: int) -> list[date]:
+    """Devuelve los días del mes que no tienen ningún TurnoPlanilla ni EstadoDiaPlanilla."""
+    _, num_dias = _calendar.monthrange(anyo, mes)
+
+    fechas_con_turno = {
+        r.fecha for r in (
+            TurnoPlanilla.query
+            .filter_by(usuario_id=usuario.id)
+            .filter(
+                db.func.extract("year",  TurnoPlanilla.fecha) == anyo,
+                db.func.extract("month", TurnoPlanilla.fecha) == mes,
+            )
+            .with_entities(TurnoPlanilla.fecha)
+            .distinct()
+            .all()
+        )
+    }
+    fechas_con_estado = {
+        r.fecha for r in (
+            EstadoDiaPlanilla.query
+            .filter_by(usuario_id=usuario.id)
+            .filter(
+                db.func.extract("year",  EstadoDiaPlanilla.fecha) == anyo,
+                db.func.extract("month", EstadoDiaPlanilla.fecha) == mes,
+            )
+            .with_entities(EstadoDiaPlanilla.fecha)
+            .all()
+        )
+    }
+    dias_ok = fechas_con_turno | fechas_con_estado
+    return [
+        date(anyo, mes, d)
+        for d in range(1, num_dias + 1)
+        if date(anyo, mes, d) not in dias_ok
+    ]
 
 
 def get_estados_mes(usuario, anyo: int, mes: int) -> dict[date, EstadoDiaPlanilla]:
