@@ -13,8 +13,10 @@ from app.services.planilla import (
     publicar_mes, despublicar_mes,
     get_turnos_mes, get_estados_mes,
     dias_sin_cumplimentar,
+    get_notas_mes, guardar_nota_dia,
 )
 from app.services.compat_planilla_persistente import actualizar_compat_tras_publicar_planilla
+from app.services.volcar_cambios import get_matches_pendientes_volcar, volcar_matches_a_planilla
 
 
 def _resolver_seleccion(seleccion):
@@ -57,6 +59,8 @@ def index():
         turnos_por_dia.setdefault(turno.fecha, []).append(turno)
 
     estados_por_dia = get_estados_mes(current_user, anyo, mes)
+    notas_por_dia = get_notas_mes(current_user, anyo, mes)
+    matches_pendientes = get_matches_pendientes_volcar(current_user)
 
     planilla_mes_obj = PlanillaMes.query.filter_by(
         usuario_id=current_user.id, anyo=anyo, mes=mes
@@ -79,6 +83,8 @@ def index():
         anyo=anyo, mes=mes, dias=dias,
         turnos_por_dia=turnos_por_dia,
         estados_por_dia=estados_por_dia,
+        notas_por_dia=notas_por_dia,
+        matches_pendientes=matches_pendientes,
         planilla_mes=planilla_mes_obj,
         franjas=franjas,
         etiquetas_estado=ETIQUETAS_ESTADO,
@@ -258,6 +264,50 @@ def multiples_aplicar():
 
     if count:
         flash(f"{count} día(s) actualizados.", "success")
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+
+@bp.route("/dia/nota", methods=["POST"])
+@login_required
+def dia_nota():
+    """Guarda o actualiza la nota del día. Si el texto está vacío, la elimina."""
+    fecha_str = request.form.get("fecha", "")
+    texto = request.form.get("texto", "")
+    anyo = request.form.get("anyo", type=int)
+    mes  = request.form.get("mes",  type=int)
+
+    try:
+        fecha = date.fromisoformat(fecha_str)
+    except ValueError:
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+    guardar_nota_dia(current_user, fecha, texto)
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+
+@bp.route("/volcar-cambios", methods=["POST"])
+@login_required
+def volcar_cambios():
+    """Aplica los cambios confirmados seleccionados a la planilla del usuario."""
+    anyo = request.form.get("anyo", type=int)
+    mes  = request.form.get("mes",  type=int)
+    ids_str = request.form.getlist("participacion_id[]")
+
+    ids = []
+    for s in ids_str:
+        try:
+            ids.append(int(s))
+        except ValueError:
+            pass
+
+    if ids:
+        n = volcar_matches_a_planilla(current_user, ids)
+        if n:
+            flash(
+                f"{n} cambio(s) volcado(s) a tu planilla. Las notas de los días afectados han sido actualizadas.",
+                "success",
+            )
+
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
 

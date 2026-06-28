@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Feature planilla completa. Siguiente: probar en staging y colectar feedback.
+Notas de día + volcado de cambios confirmados a planilla. Siguiente: probar en staging y colectar feedback.
 
 ## Backlog (fuente: .backlog)
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
@@ -41,6 +41,7 @@ Feature planilla completa. Siguiente: probar en staging y colectar feedback.
 - [x] feat(planilla): validación 100% estricta al publicar mes (días sin cumplimentar bloquean) · compatibilidad persistente en BD (CompatibilidadPlanilla) · tarjeta "Disponibilidad en planilla" en Activos · trigger de recálculo al publicar planilla · 558 tests
 - [x] feat(planilla): relleno masivo · relleno por rango (del día N al día M con un turno/estado, 1 clic) · selección múltiple con checkboxes por día + barra flotante · "Marcar todos/Ninguno" · 9 tests · 567 tests
 - [x] feat(ui): botón de compartir por WhatsApp en tarjetas «Oportunidad a 3 bandas» · texto con fechas y enlace directo a la pub sintética
+- [x] feat(planilla): notas por día + volcado de cambios confirmados · modelo NotaDia · campo volcado_planilla en MatchParticipacion · migración 58a556f9da30 · servicios guardar_nota_dia/get_notas_mes/get_matches_pendientes_volcar/volcar_matches_a_planilla · rutas /planilla/dia/nota y /planilla/volcar-cambios · banner en planilla con cambios pendientes · <details> editables por día · 23 tests · 590 tests passing
 - [x] test(e2e): golden path local con tres usuarios (Ana/Pedro/Carlos) · headed · Playwright · pausa 5 s en pantallas clave · Carlos cierra el triángulo con «Me interesa»
 - [x] test(e2e): golden path contra staging en Railway · registro de usuarios via UI (cascade hospital) · selector específico para el botón de la tarjeta sintética · diagnóstico en aserciones
 - [x] merge(staging→main): todo el bloque de cambio a 3 bandas fusionado en producción · conflictos resueltos a favor de staging · 481 tests passing · deploy en Railway

@@ -1,7 +1,7 @@
 import calendar as _calendar
 from datetime import date
 from app.extensions import db
-from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, TIPOS_ESTADO_DIA
+from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, NotaDia, TIPOS_ESTADO_DIA
 
 
 def _get_o_crear_planilla_mes(usuario, anyo, mes):
@@ -178,3 +178,35 @@ def get_estados_mes(usuario, anyo: int, mes: int) -> dict[date, EstadoDiaPlanill
         .all()
     )
     return {e.fecha: e for e in estados}
+
+
+def get_notas_mes(usuario, anyo: int, mes: int) -> dict[date, NotaDia]:
+    """Devuelve un dict {fecha: NotaDia} con las notas del mes."""
+    notas = (
+        NotaDia.query
+        .filter_by(usuario_id=usuario.id)
+        .filter(
+            db.func.extract("year", NotaDia.fecha) == anyo,
+            db.func.extract("month", NotaDia.fecha) == mes,
+        )
+        .all()
+    )
+    return {n.fecha: n for n in notas}
+
+
+def guardar_nota_dia(usuario, fecha: date, texto: str) -> NotaDia | None:
+    """Upsert de la nota del día. Si el texto queda vacío, elimina la nota."""
+    texto = texto.strip()
+    nota = NotaDia.query.filter_by(usuario_id=usuario.id, fecha=fecha).first()
+    if not texto:
+        if nota:
+            db.session.delete(nota)
+            db.session.commit()
+        return None
+    if nota is None:
+        nota = NotaDia(usuario=usuario, fecha=fecha, texto=texto)
+        db.session.add(nota)
+    else:
+        nota.texto = texto
+    db.session.commit()
+    return nota

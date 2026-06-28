@@ -107,6 +107,40 @@
     <button type="button" class="btn-link-sm" onclick="mbLimpiar()">{{ _('Ninguno') }}</button>
   </div>
 
+  {# ── Banner: cambios confirmados pendientes de volcar ── #}
+  {% if matches_pendientes %}
+  <div class="planilla-volcar-banner">
+    <p class="planilla-volcar-titulo">
+      &#10003; {{ _('Tienes') }} <strong>{{ matches_pendientes|length }}</strong>
+      {{ _('cambio(s) confirmado(s) sin aplicar a la planilla.') }}
+    </p>
+    <form method="post" action="{{ url_for('planilla.volcar_cambios') }}" class="volcar-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="anyo" value="{{ anyo }}">
+      <input type="hidden" name="mes"  value="{{ mes }}">
+      {% for item in matches_pendientes %}
+        {% set companero_nombres = item.companeros | map(attribute='nombre') | join(', ') %}
+        <label class="volcar-item">
+          <input type="checkbox" name="participacion_id[]" value="{{ item.participacion_id }}" checked>
+          <span class="volcar-descripcion">
+            {{ _('Con') }} <strong>{{ companero_nombres }}</strong>:
+            {% if item.cedido %}
+              {{ _('cedes') }} {{ item.cedido.fecha.strftime('%-d/%m') }}
+              ({{ item.cedido.franja_horaria.nombre }})
+            {% endif %}
+            {% if item.cedido and item.recibido %} &rarr; {% endif %}
+            {% if item.recibido %}
+              {{ _('recibes') }} {{ item.recibido.fecha.strftime('%-d/%m') }}
+              ({{ item.recibido.franja_horaria.nombre }})
+            {% endif %}
+          </span>
+        </label>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary btn-sm">{{ _('Aplicar seleccionados a la planilla') }}</button>
+    </form>
+  </div>
+  {% endif %}
+
   <div class="planilla-dias">
     {% for dia in dias %}
       {% set es_hoy = (dia == hoy) %}
@@ -187,6 +221,33 @@
           {% endif %}
 
         </div>
+
+        {# ── Nota del día ── #}
+        {% set nota_dia = notas_por_dia.get(dia) %}
+        <details class="dia-nota">
+          <summary class="dia-nota-toggle">
+            {% if nota_dia %}
+              <span class="dia-nota-preview">{{ nota_dia.texto[:50] }}{% if nota_dia.texto|length > 50 %}…{% endif %}</span>
+            {% else %}
+              <span class="dia-nota-vacia">+ {{ _('nota') }}</span>
+            {% endif %}
+          </summary>
+          <form method="post" action="{{ url_for('planilla.dia_nota') }}" class="dia-nota-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="fecha" value="{{ dia.isoformat() }}">
+            <input type="hidden" name="anyo" value="{{ anyo }}">
+            <input type="hidden" name="mes"  value="{{ mes }}">
+            <textarea name="texto" class="dia-nota-textarea" rows="2"
+              placeholder="{{ _('Escribe una nota para este día…') }}">{% if nota_dia %}{{ nota_dia.texto }}{% endif %}</textarea>
+            <div class="dia-nota-actions">
+              <button type="submit" class="btn btn-secondary btn-xs">{{ _('Guardar') }}</button>
+              {% if nota_dia %}
+                <button type="submit" name="texto" value="" class="btn-link-sm">{{ _('Borrar') }}</button>
+              {% endif %}
+            </div>
+          </form>
+        </details>
+
       </div>
     {% endfor %}
   </div>

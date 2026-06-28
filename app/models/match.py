@@ -61,6 +61,7 @@ class MatchParticipacion(db.Model):
     )
     confirmado = db.Column(db.Boolean, nullable=False, default=False)
     fecha_confirmacion = db.Column(db.DateTime, nullable=True)
+    volcado_planilla = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
 
     match = db.relationship("MatchCambio", back_populates="participaciones")
     publicacion = db.relationship("PublicacionCambio")

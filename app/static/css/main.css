@@ -861,7 +861,7 @@ body {
 .mb-cancel:hover { background: rgba(255,255,255,.25) !important; }
 
 .planilla-dias { display: flex; flex-direction: column; gap: 0.4rem; }
-.planilla-dia { display: flex; align-items: center; gap: 0.75rem; padding: 0.45rem 0.6rem; border-radius: 6px; background: #f9fafb; border: 1px solid #e5e7eb; }
+.planilla-dia { display: flex; align-items: center; gap: 0.75rem; padding: 0.45rem 0.6rem; border-radius: 6px; background: #f9fafb; border: 1px solid #e5e7eb; flex-wrap: wrap; }
 .planilla-dia--hoy { border-color: #2563eb; background: #eff6ff; }
 .planilla-dia--finde { background: #fafafa; }
 .planilla-dia-label { display: flex; flex-direction: column; align-items: center; min-width: 36px; }
@@ -878,3 +878,23 @@ body {
 .planilla-turno-chip--libre { background: #dcfce7; color: #166534; }
 .planilla-turno-chip--vacaciones { background: #fef9c3; color: #854d0e; }
 .planilla-turno-chip--no_disponible { background: #fee2e2; color: #991b1b; }
+
+/* ── Nota del día ─────────────────────────────────────────────────────── */
+.dia-nota { flex-basis: 100%; border: none; padding: 0; margin-top: 0.1rem; font-size: 0.8rem; }
+.dia-nota-toggle { cursor: pointer; list-style: none; padding: 0.1rem 0.2rem; border-radius: 4px; color: #6b7280; user-select: none; }
+.dia-nota-toggle::-webkit-details-marker { display: none; }
+.dia-nota-toggle:hover { color: #374151; background: #f3f4f6; }
+.dia-nota-preview { color: #374151; font-style: italic; }
+.dia-nota-vacia { color: #9ca3af; }
+.dia-nota-form { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.4rem 0.2rem 0.2rem; }
+.dia-nota-textarea { width: 100%; font-size: 0.82rem; border: 1px solid #d1d5db; border-radius: 5px; padding: 0.3rem 0.4rem; resize: vertical; font-family: inherit; color: #374151; background: #fff; }
+.dia-nota-textarea:focus { outline: none; border-color: #2563eb; }
+.dia-nota-actions { display: flex; align-items: center; gap: 0.6rem; }
+
+/* ── Banner volcar cambios ─────────────────────────────────────────────── */
+.planilla-volcar-banner { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1rem; }
+.planilla-volcar-titulo { font-size: 0.9rem; color: #166534; margin: 0 0 0.6rem; }
+.volcar-form { display: flex; flex-direction: column; gap: 0.4rem; }
+.volcar-item { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.87rem; color: #374151; cursor: pointer; padding: 0.2rem 0; }
+.volcar-item input[type="checkbox"] { margin-top: 0.15rem; flex-shrink: 0; }
+.volcar-descripcion { line-height: 1.5; }

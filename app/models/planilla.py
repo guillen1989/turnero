@@ -95,3 +95,22 @@ class PlanillaMes(db.Model):
     def __repr__(self):
         estado = "publicada" if self.publicada else "borrador"
         return f"<PlanillaMes {self.anyo}-{self.mes:02d} [{estado}]>"
+
+
+class NotaDia(db.Model):
+    """Nota libre del usuario para un día concreto de su planilla."""
+    __tablename__ = "nota_dia"
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    fecha = db.Column(db.Date, nullable=False)
+    texto = db.Column(db.Text, nullable=False, default="")
+
+    usuario = db.relationship("Usuario", back_populates="notas_dia")
+
+    __table_args__ = (
+        db.UniqueConstraint("usuario_id", "fecha", name="uq_nota_dia_usuario_fecha"),
+    )
+
+    def __repr__(self):
+        return f"<NotaDia {self.fecha}>"
