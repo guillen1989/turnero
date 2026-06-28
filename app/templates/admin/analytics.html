@@ -56,6 +56,10 @@
     <span class="admin-stat-num" id="stat-eliminadas">{{ stats.eliminadas }}</span>
     <span class="admin-stat-label">{{ _('Cambios eliminados') }}</span>
   </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num" id="stat-planillas-publicadas">{{ stats.planillas_publicadas }}</span>
+    <span class="admin-stat-label">{{ _('Usuarios con planilla publicada') }}</span>
+  </div>
 </div>
 
 <div class="analytics-controls">
@@ -89,6 +93,7 @@
     matches: "stat-matches",
     confirmados: "stat-confirmados",
     eliminadas: "stat-eliminadas",
+    planillas_publicadas: "stat-planillas-publicadas",
   };
 
   function formatLabel(isoDate, granularity) {

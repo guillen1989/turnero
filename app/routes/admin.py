@@ -16,6 +16,7 @@ from app.models import (
     Categoria, Feedback, FranjaHoraria, GrupoIntercambio, Hospital,
     MatchCambio, MatchParticipacion,
     Notificacion, PublicacionCambio, Unidad, Usuario,
+    PlanillaMes,
     insertar_categorias_semilla,
 )
 from app.services.registro import asignar_color_franja
@@ -832,6 +833,11 @@ def analytics():
         "matches": MatchCambio.query.count(),
         "confirmados": MatchCambio.query.filter_by(estado="confirmado_total").count(),
         "eliminadas": AuditEliminacion.query.count(),
+        "planillas_publicadas": (
+            db.session.query(func.count(distinct(PlanillaMes.usuario_id)))
+            .filter(PlanillaMes.publicada.is_(True))
+            .scalar() or 0
+        ),
     }
     unidades = (
         Unidad.query
@@ -947,6 +953,12 @@ def analytics_data():
             .scalar() or 0
         )
         t_eliminadas = AuditEliminacion.query.filter_by(unidad_id=unidad_id).count()
+        t_planillas_publicadas = (
+            db.session.query(func.count(distinct(PlanillaMes.usuario_id)))
+            .join(Usuario, Usuario.id == PlanillaMes.usuario_id)
+            .filter(PlanillaMes.publicada.is_(True), Usuario.unidad_id == unidad_id)
+            .scalar() or 0
+        )
     else:
         t_usuarios = Usuario.query.count()
         t_hospitales = Hospital.query.count()
@@ -957,6 +969,11 @@ def analytics_data():
         t_matches = MatchCambio.query.count()
         t_confirmados = MatchCambio.query.filter_by(estado="confirmado_total").count()
         t_eliminadas = AuditEliminacion.query.count()
+        t_planillas_publicadas = (
+            db.session.query(func.count(distinct(PlanillaMes.usuario_id)))
+            .filter(PlanillaMes.publicada.is_(True))
+            .scalar() or 0
+        )
 
     return jsonify({
         "labels": all_dates,
@@ -976,5 +993,6 @@ def analytics_data():
             "matches": t_matches,
             "confirmados": t_confirmados,
             "eliminadas": t_eliminadas,
+            "planillas_publicadas": t_planillas_publicadas,
         },
     })
