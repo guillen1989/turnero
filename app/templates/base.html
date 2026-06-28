@@ -196,6 +196,53 @@
     if (Notification.permission === 'granted') {
       _suscribirPush().catch(function () {});
     }
+
+    // ── Swipe navigation ─────────────────────────────────────────────────
+    (function() {
+      var SECTIONS = ['/', '/cambios', '/planilla', '/avisos', '/notificaciones', '/auth/perfil', '/como-funciona'];
+
+      function getIdx() {
+        var norm = window.location.pathname.replace(/\/$/, '') || '/';
+        var best = -1, bestLen = 0;
+        for (var i = 0; i < SECTIONS.length; i++) {
+          var s = SECTIONS[i].replace(/\/$/, '') || '/';
+          var ok = s === '/' ? norm === '/' : (norm === s || norm.startsWith(s + '/'));
+          if (ok && s.length > bestLen) { bestLen = s.length; best = i; }
+        }
+        return best;
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        var dir = sessionStorage.getItem('_swipe');
+        if (!dir) return;
+        sessionStorage.removeItem('_swipe');
+        var main = document.querySelector('main');
+        if (!main) return;
+        main.classList.add('swipe-' + dir);
+        main.addEventListener('animationend', function() { main.classList.remove('swipe-' + dir); }, { once: true });
+      });
+
+      var tsx = null, tsy = null;
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length !== 1) { tsx = null; return; }
+        tsx = e.touches[0].clientX;
+        tsy = e.touches[0].clientY;
+      }, { passive: true });
+
+      document.addEventListener('touchend', function(e) {
+        if (tsx === null) return;
+        var dx = e.changedTouches[0].clientX - tsx;
+        var dy = e.changedTouches[0].clientY - tsy;
+        tsx = null; tsy = null;
+        if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+        var idx = getIdx();
+        if (idx < 0) return;
+        var next = dx < 0 ? idx + 1 : idx - 1;
+        if (next < 0 || next >= SECTIONS.length) return;
+        sessionStorage.setItem('_swipe', dx < 0 ? 'from-right' : 'from-left');
+        window.location.href = SECTIONS[next];
+      }, { passive: true });
+    })();
     {% endif %}
 
     function toggleNavMenu() {

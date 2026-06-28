@@ -916,3 +916,9 @@ body {
 .volcar-item { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.87rem; color: #374151; cursor: pointer; padding: 0.2rem 0; }
 .volcar-item input[type="checkbox"] { margin-top: 0.15rem; flex-shrink: 0; }
 .volcar-descripcion { line-height: 1.5; }
+
+/* ── Swipe navigation ────────────────────────────────────────────────── */
+@keyframes swipe-from-right { from { transform: translateX(40px); opacity: 0; } }
+@keyframes swipe-from-left  { from { transform: translateX(-40px); opacity: 0; } }
+.swipe-from-right { animation: swipe-from-right 230ms ease-out; }
+.swipe-from-left  { animation: swipe-from-left  230ms ease-out; }
