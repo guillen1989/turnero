@@ -26,4 +26,18 @@
     <span class="admin-stat-label">{{ _('Cambios') }}</span>
   </a>
 </div>
+
+<hr style="margin: 2rem 0; border-color: #e5e7eb;">
+
+<section class="demo-reset-section">
+  <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">{{ _('Unidad de demostración') }}</h2>
+  <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+    {{ _('Regenera los usuarios demo y sus publicaciones con fechas actualizadas. Úsalo mensualmente o cuando la unidad demo se quede sin contenido relevante.') }}
+  </p>
+  <form method="post" action="{{ url_for('admin.demo_reset') }}"
+        onsubmit="return confirm('{{ _('¿Regenerar la unidad de demostración? Se borrarán todos sus datos actuales.') }}')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-warning">{{ _('Regenerar unidad demo') }}</button>
+  </form>
+</section>
 {% endblock %}

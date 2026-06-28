@@ -745,6 +745,35 @@ def feedback_restablecer_contrasena(id):
 
 
 # ---------------------------------------------------------------------------
+# Unidad demo
+# ---------------------------------------------------------------------------
+
+@bp.route("/demo/reset", methods=["POST"])
+@admin_required
+def demo_reset():
+    from app.services.demo import reset_demo
+    reset_demo()
+    flash(_("Unidad de demostración regenerada correctamente."), "success")
+    return redirect(url_for("admin.index"))
+
+
+@bp.route("/demo/reset-cron", methods=["POST"])
+def demo_reset_cron():
+    """Endpoint para cron externo (cron-job.org). Requiere token en Authorization header."""
+    import os
+    token = os.environ.get("DEMO_RESET_TOKEN", "")
+    if not token:
+        abort(404)
+    auth = request.headers.get("Authorization", "")
+    if auth != f"Bearer {token}":
+        abort(403)
+    from app.services.demo import reset_demo
+    reset_demo()
+    return jsonify({"ok": True, "mensaje": "Demo regenerada."})
+
+
+
+# ---------------------------------------------------------------------------
 # Franjas horarias (turnos)
 # ---------------------------------------------------------------------------
 
