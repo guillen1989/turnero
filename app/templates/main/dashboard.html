@@ -34,92 +34,6 @@
     </nav>
   </div>
 
-  {% if oportunidades_3 %}
-  <section class="alertas-activos-section">
-    {% for sint in oportunidades_3 %}
-    {% set si = sint_info.get(sint.id, {}) %}
-    {% set pub_a_user = si.pub_a.usuario if si.pub_a else none %}
-    {% set pub_b_user = si.pub_b.usuario if si.pub_b else none %}
-    {% set viewer_is_a = si.pub_a and si.pub_a.usuario_id == current_user.id %}
-    <div class="oportunidad-3-card">
-      <div class="oportunidad-3-header">
-        <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3 bandas') }}</span>
-        {% if pub_a_user and pub_b_user %}
-        <strong class="oportunidad-3-users">{{ _('con %(a)s y %(b)s', a=pub_a_user.nombre, b=pub_b_user.nombre) }}</strong>
-        {% endif %}
-      </div>
-      {% if pub_a_user and pub_b_user %}
-        {% if viewer_is_a %}
-      <p class="oportunidad-3-desc">{{ _('Si alguien acepta esta publicación puente, tú trabajarías los turnos indicados y esa persona te libraría tus turnos deseados.') }}</p>
-        {% else %}
-      <p class="oportunidad-3-desc">{{ _('Si un tercero acepta, te libraría %(trabajas)s y %(a)s le trabajaría al tercero sus turnos.', trabajas=_('los turnos indicados'), a=pub_a_user.nombre) }}</p>
-        {% endif %}
-      {% else %}
-      <p class="oportunidad-3-desc">{{ _('El sistema ha generado una publicación puente con tu turno. Cualquier compañero que la acepte cerrará el cambio a 3 con un solo clic en «Me interesa».') }}</p>
-      {% endif %}
-      {% if viewer_is_a %}
-      <div class="turnos-cedidos">
-        <strong>{{ _('Trabajarías:') }}</strong>
-        {% for t in sint.turnos_cedidos %}
-        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
-        {% endfor %}
-      </div>
-      <div class="turnos-aceptados">
-        <strong>{{ _('Quien acepte este cambio libraría:') }}</strong>
-        {% for t in sint.turnos_aceptados %}
-        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="turnos-aceptados">
-        <strong>{{ _('Un tercero te libraría:') }}</strong>
-        {% for t in sint.turnos_aceptados %}
-        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
-        {% endfor %}
-      </div>
-      <div class="turnos-cedidos">
-        <strong>{% if pub_a_user %}{{ _('%(nombre)s trabajaría para el tercero:', nombre=pub_a_user.nombre) }}{% else %}{{ _('El tercero trabajaría:') }}{% endif %}</strong>
-        {% for t in sint.turnos_cedidos %}
-        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% set sint_url = url_for('main.cambios', pub_id=sint.id, _external=True) %}
-      {% set ns3 = namespace(libra='', trabaja='') %}
-      {% for t in sint.turnos_cedidos %}
-        {% set ns3.libra = ns3.libra + '\n  ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
-      {% endfor %}
-      {% for t in sint.turnos_aceptados %}
-        {% set ns3.trabaja = ns3.trabaja + '\n  ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
-      {% endfor %}
-      {% set wa_sint = _('¿Puedes completar este cambio a 3 personas?') + '\n' + _('Librarías:') + ns3.libra + '\n' + _('Trabajarías:') + ns3.trabaja + '\n' + sint_url %}
-      <div class="oportunidad-3-acciones">
-        <a href="https://wa.me/?text={{ wa_sint | urlquote }}"
-           class="btn btn-whatsapp btn-sm"
-           target="_blank" rel="noopener">{{ _('Compartir') }}</a>
-      </div>
-    </div>
-    {% endfor %}
-  </section>
-  {% endif %}
-
-  {% if avisos_interes %}
-  <section class="alertas-activos-section">
-    {% for aviso in avisos_interes %}
-    {% if aviso.publicacion %}
-    <div class="aviso-interes-card">
-      <div class="aviso-interes-header">
-        <span class="tipo-badge tipo-badge--interes">{{ _('Interés parcial') }}</span>
-        <strong class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</strong>
-      </div>
-      <p class="aviso-interes-desc">{{ _('%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran completamente en ambas direcciones. Puede ser la base para un cambio a 3 bandas.', nombre=aviso.publicacion.usuario.nombre) }}</p>
-      <a href="{{ url_for('main.cambios', usuario=aviso.publicacion.usuario.nombre) }}" class="btn btn-sm btn-secondary">{{ _('Ver publicación') }}</a>
-    </div>
-    {% endif %}
-    {% endfor %}
-  </section>
-  {% endif %}
-
   {% if matches %}
   <section class="matches-section">
     {% for match, mi_part, otras_parts, trabajas in matches %}
@@ -207,7 +121,6 @@
     </div>
     {% endfor %}
   </section>
-
   {% endif %}
 
   {% if publicaciones %}
@@ -329,8 +242,95 @@
       </li>
       {% endfor %}
     </ul>
+  {% endif %}
 
-  {% elif not matches %}
+  {% if avisos_interes %}
+  <section class="alertas-activos-section">
+    {% for aviso in avisos_interes %}
+    {% if aviso.publicacion %}
+    <div class="aviso-interes-card">
+      <div class="aviso-interes-header">
+        <span class="tipo-badge tipo-badge--interes">{{ _('Interés parcial') }}</span>
+        <strong class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</strong>
+      </div>
+      <p class="aviso-interes-desc">{{ _('%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran completamente en ambas direcciones. Puede ser la base para un cambio a 3 bandas.', nombre=aviso.publicacion.usuario.nombre) }}</p>
+      <a href="{{ url_for('main.cambios', usuario=aviso.publicacion.usuario.nombre) }}" class="btn btn-sm btn-secondary">{{ _('Ver publicación') }}</a>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if oportunidades_3 %}
+  <section class="alertas-activos-section">
+    {% for sint in oportunidades_3 %}
+    {% set si = sint_info.get(sint.id, {}) %}
+    {% set pub_a_user = si.pub_a.usuario if si.pub_a else none %}
+    {% set pub_b_user = si.pub_b.usuario if si.pub_b else none %}
+    {% set viewer_is_a = si.pub_a and si.pub_a.usuario_id == current_user.id %}
+    <div class="oportunidad-3-card">
+      <div class="oportunidad-3-header">
+        <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3 bandas') }}</span>
+        {% if pub_a_user and pub_b_user %}
+        <strong class="oportunidad-3-users">{{ _('con %(a)s y %(b)s', a=pub_a_user.nombre, b=pub_b_user.nombre) }}</strong>
+        {% endif %}
+      </div>
+      {% if pub_a_user and pub_b_user %}
+        {% if viewer_is_a %}
+      <p class="oportunidad-3-desc">{{ _('Si alguien acepta esta publicación puente, tú trabajarías los turnos indicados y esa persona te libraría tus turnos deseados.') }}</p>
+        {% else %}
+      <p class="oportunidad-3-desc">{{ _('Si un tercero acepta, te libraría %(trabajas)s y %(a)s le trabajaría al tercero sus turnos.', trabajas=_('los turnos indicados'), a=pub_a_user.nombre) }}</p>
+        {% endif %}
+      {% else %}
+      <p class="oportunidad-3-desc">{{ _('El sistema ha generado una publicación puente con tu turno. Cualquier compañero que la acepte cerrará el cambio a 3 con un solo clic en «Me interesa».') }}</p>
+      {% endif %}
+      {% if viewer_is_a %}
+      <div class="turnos-cedidos">
+        <strong>{{ _('Trabajarías:') }}</strong>
+        {% for t in sint.turnos_cedidos %}
+        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
+        {% endfor %}
+      </div>
+      <div class="turnos-aceptados">
+        <strong>{{ _('Quien acepte este cambio libraría:') }}</strong>
+        {% for t in sint.turnos_aceptados %}
+        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="turnos-aceptados">
+        <strong>{{ _('Un tercero te libraría:') }}</strong>
+        {% for t in sint.turnos_aceptados %}
+        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
+        {% endfor %}
+      </div>
+      <div class="turnos-cedidos">
+        <strong>{% if pub_a_user %}{{ _('%(nombre)s trabajaría para el tercero:', nombre=pub_a_user.nombre) }}{% else %}{{ _('El tercero trabajaría:') }}{% endif %}</strong>
+        {% for t in sint.turnos_cedidos %}
+        <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} — {{ t.franja_horaria.nombre }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% set sint_url = url_for('main.cambios', pub_id=sint.id, _external=True) %}
+      {% set ns3 = namespace(libra='', trabaja='') %}
+      {% for t in sint.turnos_cedidos %}
+        {% set ns3.libra = ns3.libra + '\n  ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
+      {% endfor %}
+      {% for t in sint.turnos_aceptados %}
+        {% set ns3.trabaja = ns3.trabaja + '\n  ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
+      {% endfor %}
+      {% set wa_sint = _('¿Puedes completar este cambio a 3 personas?') + '\n' + _('Librarías:') + ns3.libra + '\n' + _('Trabajarías:') + ns3.trabaja + '\n' + sint_url %}
+      <div class="oportunidad-3-acciones">
+        <a href="https://wa.me/?text={{ wa_sint | urlquote }}"
+           class="btn btn-whatsapp btn-sm"
+           target="_blank" rel="noopener">{{ _('Compartir') }}</a>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if not publicaciones and not matches and not avisos_interes and not oportunidades_3 %}
     <p class="empty-state">
       {% if estado_filtro == 'activos' %}{{ _('No tienes publicaciones activas.') }}
       {% elif estado_filtro == 'pendiente' %}{{ _('No tienes cambios pendientes de confirmar.') }}
