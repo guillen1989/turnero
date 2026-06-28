@@ -368,11 +368,14 @@ def _sembrar_planillas(usuarios, franjas, grupo):
                 fecha = date(anyo, mes, dia)
                 wd = fecha.weekday()
                 if wd not in dias_semana:
-                    continue
-                franja = franja_b if (franja_b and wd == max(dias_semana)) else franja_a
-                db.session.add(TurnoPlanilla(
-                    usuario=usuario, fecha=fecha, franja_horaria=franja,
-                ))
+                    db.session.add(EstadoDiaPlanilla(
+                        usuario=usuario, fecha=fecha, tipo="libre",
+                    ))
+                else:
+                    franja = franja_b if (franja_b and wd == max(dias_semana)) else franja_a
+                    db.session.add(TurnoPlanilla(
+                        usuario=usuario, fecha=fecha, franja_horaria=franja,
+                    ))
 
 
 # ─── punto de entrada público ─────────────────────────────────────────────────
