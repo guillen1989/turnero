@@ -752,8 +752,12 @@ def feedback_restablecer_contrasena(id):
 @admin_required
 def demo_reset():
     from app.services.demo import reset_demo
-    reset_demo()
-    flash(_("Unidad de demostración regenerada correctamente."), "success")
+    try:
+        reset_demo()
+        flash(_("Unidad de demostración regenerada correctamente."), "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(_("Error al regenerar la demo: %(error)s", error=str(e)), "danger")
     return redirect(url_for("admin.index"))
 
 

@@ -26,47 +26,41 @@ def _login_admin(client):
 
 # ─── servicio ────────────────────────────────────────────────────────────────
 
-def test_reset_demo_crea_usuarios_demo(app, db):
-    with app.app_context():
-        reset_demo()
-        for _, email in DEMO_ACCOUNTS:
-            assert Usuario.query.filter_by(email=email).first() is not None
+def test_reset_demo_crea_usuarios_demo(db):
+    reset_demo()
+    for _, email in DEMO_ACCOUNTS:
+        assert Usuario.query.filter_by(email=email).first() is not None
 
 
-def test_reset_demo_password_correcta(app, db):
-    with app.app_context():
-        reset_demo()
-        _, email = DEMO_ACCOUNTS[0]
-        u = Usuario.query.filter_by(email=email).first()
-        assert u.check_password(DEMO_PASSWORD)
+def test_reset_demo_password_correcta(db):
+    reset_demo()
+    _, email = DEMO_ACCOUNTS[0]
+    u = Usuario.query.filter_by(email=email).first()
+    assert u.check_password(DEMO_PASSWORD)
 
 
-def test_reset_demo_crea_publicaciones(app, db):
-    with app.app_context():
-        reset_demo()
-        assert PublicacionCambio.query.count() > 0
+def test_reset_demo_crea_publicaciones(db):
+    reset_demo()
+    assert PublicacionCambio.query.count() > 0
 
 
-def test_ya_sembrado_false_antes_de_seed(app, db):
-    with app.app_context():
-        assert ya_sembrado() is False
+def test_ya_sembrado_false_antes_de_seed(db):
+    assert ya_sembrado() is False
 
 
-def test_ya_sembrado_true_despues_de_seed(app, db):
-    with app.app_context():
-        reset_demo()
-        assert ya_sembrado() is True
+def test_ya_sembrado_true_despues_de_seed(db):
+    reset_demo()
+    assert ya_sembrado() is True
 
 
-def test_reset_idempotente(app, db):
-    with app.app_context():
-        reset_demo()
-        usuarios_1 = Usuario.query.count()
-        pubs_1 = PublicacionCambio.query.count()
+def test_reset_idempotente(db):
+    reset_demo()
+    usuarios_1 = Usuario.query.count()
+    pubs_1 = PublicacionCambio.query.count()
 
-        reset_demo()
-        assert Usuario.query.count() == usuarios_1
-        assert PublicacionCambio.query.count() == pubs_1
+    reset_demo()
+    assert Usuario.query.count() == usuarios_1
+    assert PublicacionCambio.query.count() == pubs_1
 
 
 # ─── endpoint admin ───────────────────────────────────────────────────────────

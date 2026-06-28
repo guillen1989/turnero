@@ -135,7 +135,14 @@ def _franja(grupo, nombre):
 # ─── reset ───────────────────────────────────────────────────────────────────
 
 def _borrar_demo():
-    """Elimina toda la estructura de demo sin tocar datos reales."""
+    """Elimina toda la estructura de demo sin tocar datos reales.
+
+    Usa exclusivamente text() para evitar conflictos entre bulk-delete y el
+    mapa de identidad del ORM (synchronize_session=False deja objetos obsoletos
+    en sesión, lo que puede romper el commit si luego se mezclan ORM deletes).
+    """
+    from sqlalchemy import text
+
     pais = Pais.query.filter_by(nombre=DEMO_PAIS).first()
     if not pais:
         return
@@ -144,62 +151,56 @@ def _borrar_demo():
     ciudad    = Ciudad.query.filter_by(nombre=DEMO_CIUDAD, provincia_id=provincia.id).first() if provincia else None
     hospital  = Hospital.query.filter_by(nombre=DEMO_HOSPITAL, ciudad_id=ciudad.id).first() if ciudad else None
 
-    unidades = Unidad.query.filter_by(hospital_id=hospital.id).all() if hospital else []
-    unidad_ids = [u.id for u in unidades]
+    hosp_id = hospital.id if hospital else None
+    ciu_id  = ciudad.id   if ciudad   else None
+    prov_id = provincia.id if provincia else None
+    pais_id = pais.id
 
-    usuarios = Usuario.query.filter(Usuario.unidad_id.in_(unidad_ids)).all() if unidad_ids else []
-    user_ids = [u.id for u in usuarios]
+    # Colectar IDs antes de borrar nada
+    unidad_ids = [u.id for u in Unidad.query.filter_by(hospital_id=hosp_id).all()] if hosp_id else []
+    gi_ids     = [u.grupo_intercambio_id for u in Unidad.query.filter(Unidad.id.in_(unidad_ids)).all()] if unidad_ids else []
+    user_ids   = [u.id for u in Usuario.query.filter(Usuario.unidad_id.in_(unidad_ids)).all()] if unidad_ids else []
+    pub_ids    = [p.id for p in PublicacionCambio.query.filter(PublicacionCambio.usuario_id.in_(user_ids)).all()] if user_ids else []
+    match_ids  = list({mp.match_id for mp in MatchParticipacion.query.filter(MatchParticipacion.publicacion_id.in_(pub_ids)).all()}) if pub_ids else []
 
+    def _del(tabla, condicion, params):
+        db.session.execute(text(f"DELETE FROM {tabla} WHERE {condicion}"), params)
+
+    def _del_in(tabla, columna, ids):
+        if ids:
+            db.session.execute(text(f"DELETE FROM {tabla} WHERE {columna} = ANY(:ids)"), {"ids": ids})
+
+    # Borrar en orden respetando FK (hijos antes que padres)
+    _del_in("match_participacion", "match_id",       match_ids)
+    _del_in("match_cambio",        "id",              match_ids)
+    _del_in("turno_cedido",        "publicacion_id",  pub_ids)
+    _del_in("turno_aceptado",      "publicacion_id",  pub_ids)
+    _del_in("publicacion_cambio",  "id",              pub_ids)
+    _del_in("notificacion",        "usuario_id",      user_ids)
+    _del_in("busqueda_guardada",   "usuario_id",      user_ids)
     if user_ids:
-        pub_ids = [p.id for p in PublicacionCambio.query.filter(
-            PublicacionCambio.usuario_id.in_(user_ids)
-        ).all()]
+        db.session.execute(text(
+            "DELETE FROM suscripcion_publicaciones "
+            "WHERE suscriptor_id = ANY(:ids) OR publicador_id = ANY(:ids)"
+        ), {"ids": user_ids})
+    _del_in("estado_dia_planilla", "usuario_id",  user_ids)
+    _del_in("turno_planilla",      "usuario_id",  user_ids)
+    _del_in("nota_dia",            "usuario_id",  user_ids)
+    _del_in("saliente_dia",        "usuario_id",  user_ids)
+    _del_in("planilla_mes",        "usuario_id",  user_ids)
+    _del_in("usuario",             "id",          user_ids)
+    _del_in("audit_eliminacion",   "unidad_id",   unidad_ids)
+    _del_in("unidad",              "id",          unidad_ids)
+    _del_in("franja_horaria",      "grupo_intercambio_id", gi_ids)
+    _del_in("grupo_intercambio",   "id",          gi_ids)
+    if hosp_id:
+        _del("hospital",  "id = :id", {"id": hosp_id})
+    if ciu_id:
+        _del("ciudad",    "id = :id", {"id": ciu_id})
+    if prov_id:
+        _del("provincia", "id = :id", {"id": prov_id})
+    _del("pais", "id = :id", {"id": pais_id})
 
-        if pub_ids:
-            match_ids = list({mp.match_id for mp in MatchParticipacion.query.filter(
-                MatchParticipacion.publicacion_id.in_(pub_ids)
-            ).all()})
-
-            if match_ids:
-                MatchParticipacion.query.filter(
-                    MatchParticipacion.match_id.in_(match_ids)
-                ).delete(synchronize_session=False)
-                MatchCambio.query.filter(
-                    MatchCambio.id.in_(match_ids)
-                ).delete(synchronize_session=False)
-
-            TurnoCedido.query.filter(TurnoCedido.publicacion_id.in_(pub_ids)).delete(synchronize_session=False)
-            TurnoAceptado.query.filter(TurnoAceptado.publicacion_id.in_(pub_ids)).delete(synchronize_session=False)
-            PublicacionCambio.query.filter(PublicacionCambio.id.in_(pub_ids)).delete(synchronize_session=False)
-
-        Notificacion.query.filter(Notificacion.usuario_id.in_(user_ids)).delete(synchronize_session=False)
-        BusquedaGuardada.query.filter(BusquedaGuardada.usuario_id.in_(user_ids)).delete(synchronize_session=False)
-        SuscripcionPublicaciones.query.filter(
-            (SuscripcionPublicaciones.suscriptor_id.in_(user_ids)) |
-            (SuscripcionPublicaciones.publicador_id.in_(user_ids))
-        ).delete(synchronize_session=False)
-        EstadoDiaPlanilla.query.filter(EstadoDiaPlanilla.usuario_id.in_(user_ids)).delete(synchronize_session=False)
-        TurnoPlanilla.query.filter(TurnoPlanilla.usuario_id.in_(user_ids)).delete(synchronize_session=False)
-        NotaDia.query.filter(NotaDia.usuario_id.in_(user_ids)).delete(synchronize_session=False)
-        SalienteDia.query.filter(SalienteDia.usuario_id.in_(user_ids)).delete(synchronize_session=False)
-        PlanillaMes.query.filter(PlanillaMes.usuario_id.in_(user_ids)).delete(synchronize_session=False)
-        Usuario.query.filter(Usuario.id.in_(user_ids)).delete(synchronize_session=False)
-
-    if unidad_ids:
-        gi_ids = [u.grupo_intercambio_id for u in unidades if u.grupo_intercambio_id]
-        AuditEliminacion.query.filter(AuditEliminacion.unidad_id.in_(unidad_ids)).delete(synchronize_session=False)
-        Unidad.query.filter(Unidad.id.in_(unidad_ids)).delete(synchronize_session=False)
-        if gi_ids:
-            FranjaHoraria.query.filter(FranjaHoraria.grupo_intercambio_id.in_(gi_ids)).delete(synchronize_session=False)
-            GrupoIntercambio.query.filter(GrupoIntercambio.id.in_(gi_ids)).delete(synchronize_session=False)
-
-    if hospital:
-        db.session.delete(hospital)
-    if ciudad:
-        db.session.delete(ciudad)
-    if provincia:
-        db.session.delete(provincia)
-    db.session.delete(pais)
     db.session.commit()
 
 
