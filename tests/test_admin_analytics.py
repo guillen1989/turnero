@@ -116,3 +116,58 @@ def test_analytics_data_no_cuenta_sinteticas(client, db):
     resp = client.get("/admin/analytics/data?granularity=month")
     data = json.loads(resp.data)
     assert sum(data["datasets"]["publicaciones"]) == 1
+
+
+def test_analytics_data_incluye_totals(client, db):
+    _setup_admin(client)
+    resp = client.get("/admin/analytics/data?granularity=day")
+    data = json.loads(resp.data)
+    assert "totals" in data
+    for key in ("usuarios", "hospitales", "unidades", "categorias",
+                "publicaciones", "sinteticas", "matches", "confirmados", "eliminadas"):
+        assert key in data["totals"]
+
+
+def test_analytics_data_totals_cuenta_sinteticas(client, db):
+    from app.models import PublicacionCambio
+    admin = _setup_admin(client)
+    _db.session.add(PublicacionCambio(usuario_id=admin.id, tipo="cambio", es_sintetica=True))
+    _db.session.add(PublicacionCambio(usuario_id=admin.id, tipo="cambio", es_sintetica=True))
+    _db.session.commit()
+
+    resp = client.get("/admin/analytics/data?granularity=month")
+    data = json.loads(resp.data)
+    assert data["totals"]["sinteticas"] == 2
+
+
+def test_analytics_data_totals_cuenta_eliminadas(client, db):
+    from app.models import PublicacionCambio
+    from app.services.publicaciones import eliminar_publicacion
+    admin = _setup_admin(client)
+    pub = PublicacionCambio(usuario_id=admin.id, tipo="cambio")
+    _db.session.add(pub)
+    _db.session.commit()
+    eliminar_publicacion(pub)
+
+    resp = client.get("/admin/analytics/data?granularity=month")
+    data = json.loads(resp.data)
+    assert data["totals"]["eliminadas"] == 1
+
+
+def test_analytics_data_totals_filtrados_por_unidad(client, db):
+    from app.services.registro import registrar_usuario
+    insertar_categorias_semilla()
+    cat_id = Categoria.query.filter_by(nombre="Enfermería").first().id
+
+    admin = registrar_usuario("Admin", "admin2@an.es", "pass", "H1", "UCI", cat_id)
+    admin.es_admin = True
+    otro = registrar_usuario("Otro", "otro2@an.es", "pass", "H2", "Planta", cat_id)
+    _db.session.commit()
+
+    client.post("/auth/login", data={"email": "admin2@an.es", "password": "pass"})
+
+    resp = client.get(f"/admin/analytics/data?granularity=month&unidad_id={admin.unidad_id}")
+    data = json.loads(resp.data)
+    assert data["totals"]["usuarios"] == 1
+    assert data["totals"]["unidades"] == 1
+    assert data["totals"]["hospitales"] == 1

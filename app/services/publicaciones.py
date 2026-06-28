@@ -1,5 +1,5 @@
 from app.extensions import db
-from app.models import MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, SuscripcionPublicaciones, TurnoCedido, TurnoAceptado, Usuario
+from app.models import AuditEliminacion, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, SuscripcionPublicaciones, TurnoCedido, TurnoAceptado, Usuario
 from app.push.sender import enviar_push_condicional
 from app.services.eventos import registrar_evento
 from app.services.busquedas_guardadas import notificar_busquedas_guardadas
@@ -139,8 +139,10 @@ def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo
 
 def eliminar_publicacion(pub):
     """Borra completamente una publicación y todos sus datos asociados."""
+    unidad_id = pub.usuario.unidad_id if pub.usuario else None
     _cancelar_sinteticas_de(pub.id)
     _eliminar_matches_de_publicacion(pub.id)
     Notificacion.query.filter_by(publicacion_id=pub.id).delete()
     db.session.delete(pub)
+    db.session.add(AuditEliminacion(unidad_id=unidad_id))
     db.session.commit()

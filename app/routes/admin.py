@@ -11,6 +11,7 @@ from app.forms.admin import (
     AdminProvinciaForm, AdminCiudadForm, AdminHospitalForm, AdminFranjaForm,
 )
 from app.models import (
+    AuditEliminacion,
     Pais, Provincia, Ciudad,
     Categoria, Feedback, FranjaHoraria, GrupoIntercambio, Hospital,
     MatchCambio, MatchParticipacion,
@@ -823,10 +824,18 @@ def analytics():
         "unidades": Unidad.query.count(),
         "categorias": Categoria.query.count(),
         "publicaciones": PublicacionCambio.query.filter_by(es_sintetica=False).count(),
+        "sinteticas": PublicacionCambio.query.filter_by(es_sintetica=True).count(),
         "matches": MatchCambio.query.count(),
         "confirmados": MatchCambio.query.filter_by(estado="confirmado_total").count(),
+        "eliminadas": AuditEliminacion.query.count(),
     }
-    unidades = Unidad.query.join(Hospital).order_by(Hospital.nombre, Unidad.nombre).all()
+    unidades = (
+        Unidad.query
+        .join(Hospital)
+        .outerjoin(Categoria, Unidad.categoria_id == Categoria.id)
+        .order_by(Hospital.nombre, Categoria.nombre, Unidad.nombre)
+        .all()
+    )
     return render_template("admin/analytics.html", stats=stats, unidades=unidades)
 
 
@@ -897,6 +906,54 @@ def analytics_data():
 
     all_dates = sorted(set(d_u) | set(d_p) | set(d_m) | set(d_c))
 
+    # Totales para los contadores (filtrados por unidad si procede)
+    if unidad_id:
+        unidad_obj = db.session.get(Unidad, unidad_id)
+        t_usuarios = Usuario.query.filter_by(unidad_id=unidad_id).count()
+        t_hospitales = 1 if unidad_obj else 0
+        t_unidades = 1 if unidad_obj else 0
+        t_categorias = 1 if (unidad_obj and unidad_obj.categoria_id) else 0
+        t_publicaciones = (
+            PublicacionCambio.query.filter_by(es_sintetica=False)
+            .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
+            .filter(Usuario.unidad_id == unidad_id)
+            .count()
+        )
+        t_sinteticas = (
+            PublicacionCambio.query.filter_by(es_sintetica=True)
+            .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
+            .filter(Usuario.unidad_id == unidad_id)
+            .count()
+        )
+        t_matches = (
+            db.session.query(func.count(distinct(MatchCambio.id)))
+            .join(MatchParticipacion, MatchParticipacion.match_id == MatchCambio.id)
+            .join(PublicacionCambio, PublicacionCambio.id == MatchParticipacion.publicacion_id)
+            .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
+            .filter(Usuario.unidad_id == unidad_id)
+            .scalar() or 0
+        )
+        t_confirmados = (
+            db.session.query(func.count(distinct(MatchCambio.id)))
+            .filter(MatchCambio.estado == "confirmado_total")
+            .join(MatchParticipacion, MatchParticipacion.match_id == MatchCambio.id)
+            .join(PublicacionCambio, PublicacionCambio.id == MatchParticipacion.publicacion_id)
+            .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
+            .filter(Usuario.unidad_id == unidad_id)
+            .scalar() or 0
+        )
+        t_eliminadas = AuditEliminacion.query.filter_by(unidad_id=unidad_id).count()
+    else:
+        t_usuarios = Usuario.query.count()
+        t_hospitales = Hospital.query.count()
+        t_unidades = Unidad.query.count()
+        t_categorias = Categoria.query.count()
+        t_publicaciones = PublicacionCambio.query.filter_by(es_sintetica=False).count()
+        t_sinteticas = PublicacionCambio.query.filter_by(es_sintetica=True).count()
+        t_matches = MatchCambio.query.count()
+        t_confirmados = MatchCambio.query.filter_by(estado="confirmado_total").count()
+        t_eliminadas = AuditEliminacion.query.count()
+
     return jsonify({
         "labels": all_dates,
         "datasets": {
@@ -904,5 +961,16 @@ def analytics_data():
             "publicaciones": [d_p.get(d, 0) for d in all_dates],
             "matches": [d_m.get(d, 0) for d in all_dates],
             "confirmados": [d_c.get(d, 0) for d in all_dates],
+        },
+        "totals": {
+            "usuarios": t_usuarios,
+            "hospitales": t_hospitales,
+            "unidades": t_unidades,
+            "categorias": t_categorias,
+            "publicaciones": t_publicaciones,
+            "sinteticas": t_sinteticas,
+            "matches": t_matches,
+            "confirmados": t_confirmados,
+            "eliminadas": t_eliminadas,
         },
     })

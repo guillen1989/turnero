@@ -5,34 +5,56 @@
 {% block admin_content %}
 <h1>{{ _('Analytics') }}</h1>
 
+<div class="analytics-controls analytics-controls--top">
+  <div class="analytics-unit-filter">
+    <label for="unidad-select">{{ _('Unidad') }}</label>
+    <select id="unidad-select" class="analytics-select">
+      <option value="">{{ _('Todas las unidades') }}</option>
+      {% for u in unidades %}
+        <option value="{{ u.id }}">
+          {{- u.hospital.nombre }} — {% if u.categoria %}{{ u.categoria.nombre }} — {% endif %}{{ u.nombre -}}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
 <div class="admin-stats">
   <div class="admin-stat-card">
-    <span class="admin-stat-num">{{ stats.usuarios }}</span>
+    <span class="admin-stat-num" id="stat-usuarios">{{ stats.usuarios }}</span>
     <span class="admin-stat-label">{{ _('Usuarios') }}</span>
   </div>
   <div class="admin-stat-card">
-    <span class="admin-stat-num">{{ stats.hospitales }}</span>
+    <span class="admin-stat-num" id="stat-hospitales">{{ stats.hospitales }}</span>
     <span class="admin-stat-label">{{ _('Hospitales') }}</span>
   </div>
   <div class="admin-stat-card">
-    <span class="admin-stat-num">{{ stats.unidades }}</span>
+    <span class="admin-stat-num" id="stat-unidades">{{ stats.unidades }}</span>
     <span class="admin-stat-label">{{ _('Unidades') }}</span>
   </div>
   <div class="admin-stat-card">
-    <span class="admin-stat-num">{{ stats.categorias }}</span>
+    <span class="admin-stat-num" id="stat-categorias">{{ stats.categorias }}</span>
     <span class="admin-stat-label">{{ _('Categorías') }}</span>
   </div>
   <div class="admin-stat-card">
-    <span class="admin-stat-num">{{ stats.publicaciones }}</span>
+    <span class="admin-stat-num" id="stat-publicaciones">{{ stats.publicaciones }}</span>
     <span class="admin-stat-label">{{ _('Cambios publicados') }}</span>
   </div>
   <div class="admin-stat-card">
-    <span class="admin-stat-num">{{ stats.matches }}</span>
+    <span class="admin-stat-num" id="stat-matches">{{ stats.matches }}</span>
     <span class="admin-stat-label">{{ _('Matches') }}</span>
   </div>
   <div class="admin-stat-card">
-    <span class="admin-stat-num">{{ stats.confirmados }}</span>
+    <span class="admin-stat-num" id="stat-confirmados">{{ stats.confirmados }}</span>
     <span class="admin-stat-label">{{ _('Confirmados') }}</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num" id="stat-sinteticas">{{ stats.sinteticas }}</span>
+    <span class="admin-stat-label">{{ _('Cambios sintéticos') }}</span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num" id="stat-eliminadas">{{ stats.eliminadas }}</span>
+    <span class="admin-stat-label">{{ _('Cambios eliminados') }}</span>
   </div>
 </div>
 
@@ -41,15 +63,6 @@
     <button class="btn btn-sm granularity-btn active" data-value="day">{{ _('Días') }}</button>
     <button class="btn btn-sm granularity-btn" data-value="week">{{ _('Semanas') }}</button>
     <button class="btn btn-sm granularity-btn" data-value="month">{{ _('Meses') }}</button>
-  </div>
-  <div class="analytics-unit-filter">
-    <label for="unidad-select">{{ _('Unidad') }}</label>
-    <select id="unidad-select" class="analytics-select">
-      <option value="">{{ _('Todas') }}</option>
-      {% for u in unidades %}
-        <option value="{{ u.id }}">{{ u.hospital.nombre }} — {{ u.nombre }}</option>
-      {% endfor %}
-    </select>
   </div>
 </div>
 
@@ -66,6 +79,18 @@
   let currentGranularity = "day";
   let currentUnidad = "";
 
+  const statIds = {
+    usuarios: "stat-usuarios",
+    hospitales: "stat-hospitales",
+    unidades: "stat-unidades",
+    categorias: "stat-categorias",
+    publicaciones: "stat-publicaciones",
+    sinteticas: "stat-sinteticas",
+    matches: "stat-matches",
+    confirmados: "stat-confirmados",
+    eliminadas: "stat-eliminadas",
+  };
+
   function formatLabel(isoDate, granularity) {
     const d = new Date(isoDate + "T00:00:00");
     if (granularity === "month") {
@@ -77,12 +102,23 @@
     return d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "2-digit" });
   }
 
+  function updateCounters(totals) {
+    for (const [key, elId] of Object.entries(statIds)) {
+      const el = document.getElementById(elId);
+      if (el && totals[key] !== undefined) {
+        el.textContent = totals[key];
+      }
+    }
+  }
+
   async function loadChart() {
     const params = new URLSearchParams({ granularity: currentGranularity });
     if (currentUnidad) params.set("unidad_id", currentUnidad);
 
     const resp = await fetch(dataUrl + "?" + params.toString());
     const json = await resp.json();
+
+    if (json.totals) updateCounters(json.totals);
 
     const labels = json.labels.map(l => formatLabel(l, currentGranularity));
     const ds = json.datasets;
