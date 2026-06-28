@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Mi planilla') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+{% set MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+{% set DIAS_SEMANA = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] %}
+
+<div class="form-container">
+
+  <div class="planilla-header">
+    <h1>{{ _('Mi planilla') }}</h1>
+
+    <div class="planilla-mes-nav">
+      <a href="{{ url_for('planilla.index', anyo=prev_anyo, mes=prev_mes) }}" class="btn btn-secondary btn-sm">&#8249;</a>
+      <span class="planilla-mes-titulo">{{ MESES[mes - 1] }} {{ anyo }}</span>
+      <a href="{{ url_for('planilla.index', anyo=next_anyo, mes=next_mes) }}" class="btn btn-secondary btn-sm">&#8250;</a>
+    </div>
+
+    <div class="planilla-estado">
+      {% if planilla_mes and planilla_mes.publicada %}
+        <span class="badge badge-success">{{ _('Publicada') }}</span>
+        <form method="post" action="{{ url_for('planilla.mes_despublicar', anyo=anyo, mes=mes) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-secondary btn-sm">{{ _('Retirar') }}</button>
+        </form>
+      {% else %}
+        <span class="badge badge-draft">{{ _('Borrador') }}</span>
+        <form method="post" action="{{ url_for('planilla.mes_publicar', anyo=anyo, mes=mes) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-primary btn-sm">{{ _('Publicar mes') }}</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if not (planilla_mes and planilla_mes.publicada) %}
+  <p class="form-hint planilla-hint">
+    {{ _('Añade los turnos que trabajas este mes. Al publicar, tus compañeros verán tu disponibilidad cuando publiquen cambios.') }}
+  </p>
+  {% endif %}
+
+  <div class="planilla-dias">
+    {% for dia in dias %}
+      {% set es_hoy = (dia == hoy) %}
+      {% set turnos_dia = turnos_por_dia.get(dia, []) %}
+      {% set es_finde = (dia.weekday() >= 5) %}
+      <div class="planilla-dia{% if es_hoy %} planilla-dia--hoy{% endif %}{% if es_finde %} planilla-dia--finde{% endif %}">
+
+        <div class="planilla-dia-label">
+          <span class="planilla-dia-num">{{ dia.day }}</span>
+          <span class="planilla-dia-semana">{{ DIAS_SEMANA[dia.weekday()] }}</span>
+        </div>
+
+        <div class="planilla-dia-turnos">
+          {% for turno in turnos_dia %}
+            <span class="planilla-turno-chip">
+              {{ turno.franja_horaria.nombre }}
+              <form method="post" action="{{ url_for('planilla.turno_eliminar') }}" style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="fecha" value="{{ dia.isoformat() }}">
+                <input type="hidden" name="franja_id" value="{{ turno.franja_horaria_id }}">
+                <input type="hidden" name="anyo" value="{{ anyo }}">
+                <input type="hidden" name="mes" value="{{ mes }}">
+                <button type="submit" class="planilla-chip-remove" title="{{ _('Quitar') }}" aria-label="{{ _('Quitar turno') }}">&#x2715;</button>
+              </form>
+            </span>
+          {% endfor %}
+
+          {% if franjas %}
+            {% set ids_asignados = turnos_dia | map(attribute='franja_horaria_id') | list %}
+            <form method="post" action="{{ url_for('planilla.turno_añadir') }}" class="planilla-add-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="fecha" value="{{ dia.isoformat() }}">
+              <input type="hidden" name="anyo" value="{{ anyo }}">
+              <input type="hidden" name="mes" value="{{ mes }}">
+              <select name="franja_id" class="planilla-select" aria-label="{{ _('Seleccionar turno') }}">
+                <option value="">{{ _('+ Turno') }}</option>
+                {% for franja in franjas %}
+                  {% if franja.id not in ids_asignados %}
+                    <option value="{{ franja.id }}">{{ franja.nombre }}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-secondary btn-xs planilla-add-btn">{{ _('Añadir') }}</button>
+            </form>
+          {% endif %}
+        </div>
+
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

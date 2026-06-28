@@ -73,6 +73,9 @@ def create_app(config_name=None):
     from app.routes.busquedas import bp as busquedas_bp
     app.register_blueprint(busquedas_bp)
 
+    from app.routes.planilla import bp as planilla_bp
+    app.register_blueprint(planilla_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 

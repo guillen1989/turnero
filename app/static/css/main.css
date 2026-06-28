@@ -812,3 +812,27 @@ body {
 .analytics-select { padding: 0.35rem 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; background: #fff; }
 .analytics-chart-wrapper { background: #fff; border-radius: 8px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 
+
+/* Planilla de turnos */
+.planilla-header { margin-bottom: 1rem; }
+.planilla-mes-nav { display: flex; align-items: center; gap: 0.75rem; margin: 0.75rem 0; }
+.planilla-mes-titulo { font-size: 1.1rem; font-weight: 600; min-width: 160px; text-align: center; }
+.planilla-estado { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+.badge-success { background: #dcfce7; color: #166534; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 600; }
+.badge-draft { background: #f3f4f6; color: #6b7280; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 600; }
+.planilla-hint { margin-bottom: 1.25rem; }
+.planilla-dias { display: flex; flex-direction: column; gap: 0.4rem; }
+.planilla-dia { display: flex; align-items: center; gap: 0.75rem; padding: 0.45rem 0.6rem; border-radius: 6px; background: #f9fafb; border: 1px solid #e5e7eb; }
+.planilla-dia--hoy { border-color: #2563eb; background: #eff6ff; }
+.planilla-dia--finde { background: #fafafa; }
+.planilla-dia-label { display: flex; flex-direction: column; align-items: center; min-width: 36px; }
+.planilla-dia-num { font-size: 1rem; font-weight: 700; line-height: 1; }
+.planilla-dia-semana { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; }
+.planilla-dia--finde .planilla-dia-semana { color: #9ca3af; }
+.planilla-dia-turnos { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; flex: 1; }
+.planilla-turno-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: #dbeafe; color: #1e40af; border-radius: 999px; padding: 0.15rem 0.5rem 0.15rem 0.65rem; font-size: 0.82rem; font-weight: 500; }
+.planilla-chip-remove { background: none; border: none; cursor: pointer; color: #1e40af; font-size: 0.75rem; padding: 0; line-height: 1; opacity: 0.6; }
+.planilla-chip-remove:hover { opacity: 1; }
+.planilla-add-form { display: flex; align-items: center; gap: 0.3rem; }
+.planilla-select { font-size: 0.82rem; padding: 0.15rem 0.4rem; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; max-width: 130px; }
+.planilla-add-btn { padding: 0.15rem 0.5rem; font-size: 0.78rem; }

@@ -46,6 +46,12 @@ class Usuario(UserMixin, db.Model):
     busquedas_guardadas = db.relationship(
         "BusquedaGuardada", back_populates="usuario", lazy="dynamic"
     )
+    turnos_planilla = db.relationship(
+        "TurnoPlanilla", back_populates="usuario", lazy="dynamic"
+    )
+    planillas_mes = db.relationship(
+        "PlanillaMes", back_populates="usuario", lazy="dynamic"
+    )
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

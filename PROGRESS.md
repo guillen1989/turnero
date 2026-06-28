@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Sin pasos pendientes definidos.
+Feature planilla completa. Siguiente: probar en staging y decidir si hay refinamientos de UX.
 
 ## Backlog (fuente: .backlog)
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
@@ -37,6 +37,7 @@ Sin pasos pendientes definidos.
 - [x] fix(avisos): aviso_interes y aviso_sintetica aparecen en /avisos y cuentan en el badge · el filtro de la ruta solo incluía 3 tipos y excluía los dos nuevos
 - [x] feat(matching): flujo «Me interesa» sobre pub sintética cierra cadena_3 directamente · sin necesidad de que el tercer usuario publique su propio cambio · copia cedidos/aceptados de la sintética sin invertir · llama crear_cadena_3_desde_sintetica · 2 tests nuevos · 15 tests en suite sintetica · 481 tests passing
 - [x] feat(ui): dashboard Activos muestra tarjeta «Oportunidad a 3 bandas» (azul) y «Interés parcial» (naranja) para los dos usuarios implicados en la sintética
+- [x] feat(planilla): planilla de turnos mensual · modelos TurnoPlanilla+PlanillaMes · servicio CRUD (añadir/eliminar/publicar/despublicar) · motor compatibilidad puro (turnos_solapan, libres/compatibles por día, con/sin nombres según planilla publicada) · UI /planilla con navegación mensual y doblajes · enlace en nav · flash de compatibilidad al publicar cambio · 45 tests
 - [x] feat(ui): botón de compartir por WhatsApp en tarjetas «Oportunidad a 3 bandas» · texto con fechas y enlace directo a la pub sintética
 - [x] test(e2e): golden path local con tres usuarios (Ana/Pedro/Carlos) · headed · Playwright · pausa 5 s en pantallas clave · Carlos cierra el triángulo con «Me interesa»
 - [x] test(e2e): golden path contra staging en Railway · registro de usuarios via UI (cascade hospital) · selector específico para el botón de la tarjeta sintética · diagnóstico en aserciones
