@@ -96,6 +96,7 @@ def index():
         prev_anyo=prev_anyo, prev_mes=prev_mes,
         next_anyo=next_anyo, next_mes=next_mes,
         hoy=hoy,
+        es_demo=current_user.es_demo,
     )
 
 

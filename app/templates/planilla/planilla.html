@@ -415,13 +415,14 @@ function calNavegar(fecha) {
 (function () {
   var KEY    = 'planilla_onboarding_visto';
   var banner = document.getElementById('planilla-onboarding');
+  var esDemo = {{ 'true' if es_demo else 'false' }};
 
-  if (!localStorage.getItem(KEY)) {
+  if (esDemo || !localStorage.getItem(KEY)) {
     banner.style.display = 'block';
   }
 
   window.planillaOnboardingCerrar = function () {
-    localStorage.setItem(KEY, '1');
+    if (!esDemo) { localStorage.setItem(KEY, '1'); }
     banner.style.display = 'none';
   };
 

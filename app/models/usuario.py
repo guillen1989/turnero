@@ -72,6 +72,13 @@ class Usuario(UserMixin, db.Model):
     def grupo_intercambio(self):
         return self.unidad.grupo_intercambio
 
+    @property
+    def es_demo(self):
+        return (
+            self.email.endswith("@demo.turnero.com")
+            or self.email in ("demo1@turnero.com", "demo2@turnero.com", "demo3@turnero.com")
+        )
+
     def __repr__(self):
         return f"<Usuario {self.email}>"
 

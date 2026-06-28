@@ -105,3 +105,58 @@ def test_cron_reset_token_correcto_regenera(client, db):
         assert Usuario.query.filter_by(email=DEMO_ACCOUNTS[0][1]).first() is not None
     finally:
         os.environ.pop("DEMO_RESET_TOKEN", None)
+
+
+# ─── planillas demo ───────────────────────────────────────────────────────────
+
+def test_reset_demo_crea_planillas_mes(db):
+    from app.models import PlanillaMes
+    reset_demo()
+    count = PlanillaMes.query.count()
+    assert count >= 16  # 8 usuarios × 2 meses
+
+
+def test_reset_demo_planillas_publicadas(db):
+    from app.models import PlanillaMes
+    reset_demo()
+    sin_publicar = PlanillaMes.query.filter_by(publicada=False).count()
+    assert sin_publicar == 0
+
+
+def test_reset_demo_crea_turnos_planilla(db):
+    from app.models import TurnoPlanilla
+    reset_demo()
+    assert TurnoPlanilla.query.count() > 0
+
+
+# ─── onboarding demo ──────────────────────────────────────────────────────────
+
+def test_demo_usuario_onboarding_visto_false(db):
+    reset_demo()
+    _, email = DEMO_ACCOUNTS[0]
+    u = Usuario.query.filter_by(email=email).first()
+    assert u.onboarding_visto is False
+
+
+def test_es_demo_property_demo_accounts(db):
+    reset_demo()
+    for _, email in DEMO_ACCOUNTS:
+        u = Usuario.query.filter_by(email=email).first()
+        assert u.es_demo is True
+
+
+def test_es_demo_property_bot_accounts(db):
+    reset_demo()
+    u = Usuario.query.filter_by(email="bot.maria@demo.turnero.com").first()
+    assert u.es_demo is True
+
+
+def test_como_funciona_no_marca_onboarding_demo(client, db):
+    """Visitar Cómo funciona con cuenta demo no pone onboarding_visto=True."""
+    reset_demo()
+    _, email = DEMO_ACCOUNTS[0]
+    client.post("/auth/login", data={"email": email, "password": DEMO_PASSWORD},
+                follow_redirects=True)
+    client.get("/como-funciona")
+    u = Usuario.query.filter_by(email=email).first()
+    assert u.onboarding_visto is False

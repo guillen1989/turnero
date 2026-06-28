@@ -5,6 +5,7 @@ estados para que cualquier persona pueda explorar la app sin datos reales.
 Las fechas de turno son siempre relativas a hoy, por lo que el contenido
 es válido indefinidamente mientras se resetee periódicamente.
 """
+import calendar
 import os
 from datetime import date, datetime, timezone, timedelta
 
@@ -77,7 +78,7 @@ def _ahora(offset_days=0):
 
 def _usuario(nombre, email, unidad, categoria):
     u = Usuario(nombre=nombre, email=email, unidad=unidad,
-                categoria=categoria, onboarding_visto=True)
+                categoria=categoria, onboarding_visto=False)
     u.set_password(DEMO_PASSWORD)
     db.session.add(u)
     return u
@@ -324,7 +325,54 @@ def _sembrar_demo():
     _part(m3, pub_ped_c, tc=tc_ped, ta=ta_ped,
           confirmado=True, confirmed_at=conf_dt)
 
+    _sembrar_planillas(
+        usuarios=[ana, carlos, elena, maria, javier, sofia, pedro, laura],
+        franjas={"man": man, "tar": tar, "noch": noch, "d12": d12, "n12": n12},
+        grupo=g,
+    )
+
     db.session.commit()
+
+
+def _sembrar_planillas(usuarios, franjas, grupo):
+    """Crea planillas publicadas para el mes actual y el siguiente."""
+    man, tar, noch, d12, n12 = (
+        franjas["man"], franjas["tar"], franjas["noch"], franjas["d12"], franjas["n12"],
+    )
+    hoy = date.today()
+
+    # Patrones de turno por usuario (franja, días-de-semana con turno en ese mes)
+    # weekday(): 0=lun, 1=mar, 2=mie, 3=jue, 4=vie, 5=sab, 6=dom
+    patrones = [
+        # (usuario, franja_principal, franja_alternativa, días de semana con turno)
+        (usuarios[0], man,  None, {0, 2, 4}),        # Ana:    lun/mie/vie → mañana
+        (usuarios[1], tar,  None, {1, 3, 5}),        # Carlos: mar/jue/sab → tarde
+        (usuarios[2], d12,  n12,  {0, 4}),           # Elena:  lun→diurno 12h, vie→nocturno 12h
+        (usuarios[3], man,  tar,  {0, 1, 2}),        # María:  lun/mar→mañana, mie→tarde
+        (usuarios[4], tar,  noch, {2, 3, 4}),        # Javier: mie/jue→tarde, vie→noche
+        (usuarios[5], man,  None, {1, 3}),           # Sofía:  mar/jue → mañana
+        (usuarios[6], noch, n12,  {5, 6}),           # Pedro:  sab→noche, dom→nocturno 12h
+        (usuarios[7], tar,  man,  {0, 2, 5}),        # Laura:  lun/mie→tarde, sab→mañana
+    ]
+
+    for delta_mes in (0, 1):
+        anyo = hoy.year + (hoy.month + delta_mes - 1) // 12
+        mes  = (hoy.month + delta_mes - 1) % 12 + 1
+        _, n_dias = calendar.monthrange(anyo, mes)
+
+        for usuario, franja_a, franja_b, dias_semana in patrones:
+            db.session.add(PlanillaMes(
+                usuario=usuario, anyo=anyo, mes=mes, publicada=True,
+            ))
+            for dia in range(1, n_dias + 1):
+                fecha = date(anyo, mes, dia)
+                wd = fecha.weekday()
+                if wd not in dias_semana:
+                    continue
+                franja = franja_b if (franja_b and wd == max(dias_semana)) else franja_a
+                db.session.add(TurnoPlanilla(
+                    usuario=usuario, fecha=fecha, franja_horaria=franja,
+                ))
 
 
 # ─── punto de entrada público ─────────────────────────────────────────────────

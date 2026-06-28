@@ -68,7 +68,7 @@ def health():
 @bp.get("/como-funciona")
 @login_required
 def como_funciona():
-    if not current_user.onboarding_visto:
+    if not current_user.onboarding_visto and not current_user.es_demo:
         current_user.onboarding_visto = True
         db.session.commit()
     return render_template("main/como_funciona.html")
