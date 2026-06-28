@@ -721,6 +721,29 @@ def feedback_marcar_leidos():
     return redirect(url_for("admin.feedback", tab="sin_leer"))
 
 
+@bp.route("/feedback/<int:id>/restablecer-contrasena", methods=["POST"])
+@admin_required
+def feedback_restablecer_contrasena(id):
+    import secrets
+    fb = db.session.get(Feedback, id) or abort(404)
+    usuario = Usuario.query.filter_by(email=fb.email_contacto).first()
+    if not usuario:
+        flash(_("No se encontró ningún usuario con el email %(email)s.", email=fb.email_contacto), "danger")
+        return redirect(url_for("admin.feedback"))
+
+    contrasena_temporal = secrets.token_urlsafe(8)
+    usuario.set_password(contrasena_temporal)
+    fb.leido = True
+    db.session.commit()
+
+    flash(
+        _("Contraseña temporal para %(email)s: %(pwd)s — Comunícasela por email o mensaje.",
+          email=fb.email_contacto, pwd=contrasena_temporal),
+        "success",
+    )
+    return redirect(url_for("admin.feedback"))
+
+
 # ---------------------------------------------------------------------------
 # Franjas horarias (turnos)
 # ---------------------------------------------------------------------------

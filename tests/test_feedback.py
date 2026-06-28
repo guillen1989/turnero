@@ -199,3 +199,67 @@ def test_admin_marcar_leidos_bulk_sin_ids_no_da_error(client, db):
     _login(client, email="admin@test.es", es_admin=True)
     resp = client.post("/admin/feedback/marcar-leidos", data={}, follow_redirects=False)
     assert resp.status_code == 302
+
+
+# --- Recuperación de contraseña ---
+
+def test_get_recuperar_contrasena_devuelve_200(client, db):
+    resp = client.get("/recuperar-contrasena")
+    assert resp.status_code == 200
+
+
+def test_post_recuperar_contrasena_crea_feedback(client, db):
+    resp = client.post("/recuperar-contrasena", data={"email": "alguien@test.es"}, follow_redirects=False)
+    assert resp.status_code == 302
+    fb = Feedback.query.filter_by(tipo="recuperacion").first()
+    assert fb is not None
+    assert fb.email_contacto == "alguien@test.es"
+
+
+def test_post_recuperar_contrasena_sin_email_no_crea_feedback(client, db):
+    client.post("/recuperar-contrasena", data={"email": ""})
+    assert Feedback.query.filter_by(tipo="recuperacion").count() == 0
+
+
+def test_post_recuperar_contrasena_redirige_al_login(client, db):
+    resp = client.post("/recuperar-contrasena", data={"email": "alguien@test.es"}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/auth/login" in resp.headers["Location"] or "login" in resp.headers["Location"]
+
+
+def test_admin_restablecer_contrasena_cambia_password(client, db):
+    u = _login(client, email="admin@test.es", es_admin=True)
+    usuario_target = registrar_usuario("Víctima", "victima@test.es", "pass_original", "H", "U",
+                                       Categoria.query.filter_by(nombre="Enfermería").first().id)
+    fb = Feedback(tipo="recuperacion", descripcion="Solicitud.", email_contacto="victima@test.es")
+    _db.session.add(fb)
+    _db.session.commit()
+
+    resp = client.post(f"/admin/feedback/{fb.id}/restablecer-contrasena", follow_redirects=False)
+    assert resp.status_code == 302
+
+    _db.session.refresh(usuario_target)
+    assert not usuario_target.check_password("pass_original")
+
+
+def test_admin_restablecer_contrasena_email_inexistente_muestra_error(client, db):
+    _login(client, email="admin@test.es", es_admin=True)
+    fb = Feedback(tipo="recuperacion", descripcion="Solicitud.", email_contacto="noexiste@test.es")
+    _db.session.add(fb)
+    _db.session.commit()
+
+    resp = client.post(f"/admin/feedback/{fb.id}/restablecer-contrasena", follow_redirects=True)
+    assert "noexiste@test.es" in resp.data.decode()
+
+
+def test_admin_restablecer_contrasena_marca_feedback_leido(client, db):
+    _login(client, email="admin@test.es", es_admin=True)
+    registrar_usuario("Víctima", "victima2@test.es", "pass", "H", "U",
+                      Categoria.query.filter_by(nombre="Enfermería").first().id)
+    fb = Feedback(tipo="recuperacion", descripcion="Solicitud.", email_contacto="victima2@test.es")
+    _db.session.add(fb)
+    _db.session.commit()
+
+    client.post(f"/admin/feedback/{fb.id}/restablecer-contrasena")
+    _db.session.refresh(fb)
+    assert fb.leido is True

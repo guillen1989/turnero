@@ -56,6 +56,14 @@
         <span class="fb-meta-item">—</span>
         {% endif %}
       </div>
+      {% if fb.tipo == 'recuperacion' and fb.email_contacto %}
+      <form method="post" action="{{ url_for('admin.feedback_restablecer_contrasena', id=fb.id) }}"
+            class="fb-reset-form"
+            onsubmit="return confirm('{{ _('¿Generar una contraseña temporal para %(email)s?', email=fb.email_contacto) }}')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-warning btn-sm">{{ _('Generar contraseña temporal') }}</button>
+      </form>
+      {% endif %}
     </li>
     {% endfor %}
   </ul>

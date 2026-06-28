@@ -1,3 +1,5 @@
+import secrets
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
@@ -7,7 +9,11 @@ from app.models import Feedback
 
 bp = Blueprint("feedback", __name__)
 
-TIPOS = {"error": _("Error en la app"), "sugerencia": _("Sugerencia de mejora")}
+TIPOS = {
+    "error": _("Error en la app"),
+    "sugerencia": _("Sugerencia de mejora"),
+    "recuperacion": _("Recuperación de contraseña"),
+}
 
 
 @bp.route("/feedback", methods=["GET", "POST"])
@@ -41,3 +47,25 @@ def nuevo():
         return redirect(url_for("main.index"))
 
     return render_template("feedback/nuevo.html", email_prefill=email_prefill)
+
+
+@bp.route("/recuperar-contrasena", methods=["GET", "POST"])
+def recuperar_contrasena():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        if not email:
+            flash(_("Introduce tu dirección de email."), "danger")
+            return render_template("feedback/recuperar.html")
+
+        fb = Feedback(
+            tipo="recuperacion",
+            descripcion=_("Solicitud de recuperación de contraseña."),
+            email_contacto=email,
+            usuario_id=None,
+        )
+        db.session.add(fb)
+        db.session.commit()
+        flash(_("Hemos recibido tu solicitud. El administrador te contactará en breve."), "success")
+        return redirect(url_for("auth.login"))
+
+    return render_template("feedback/recuperar.html")

@@ -655,6 +655,10 @@ body {
 .fb-tipo-badge { font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; white-space: nowrap; }
 .fb-tipo--error { background: #fee2e2; color: #991b1b; }
 .fb-tipo--sugerencia { background: #dbeafe; color: #1e40af; }
+.fb-tipo--recuperacion { background: #fef3c7; color: #92400e; }
+.fb-reset-form { margin-top: 0.5rem; }
+.btn-warning { background: #f59e0b; color: #fff; border: none; }
+.btn-warning:hover { background: #d97706; }
 .fb-fecha { font-size: 0.8rem; color: #888; margin-left: auto; white-space: nowrap; }
 .fb-descripcion { font-size: 0.92rem; color: #1a1a1a; line-height: 1.5; margin: 0 0 0.5rem; white-space: pre-wrap; word-break: break-word; }
 .fb-meta { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.82rem; color: #666; border-top: 1px solid #f0f0f0; padding-top: 0.4rem; }
