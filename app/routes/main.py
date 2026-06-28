@@ -449,7 +449,7 @@ def cambios():
     if pub_id:
         q = q.filter(PublicacionCambio.id == pub_id)
 
-    if mes or dia:
+    if mes or dia or franja_id:
         cedido_parts = [TurnoCedido.publicacion_id == PublicacionCambio.id]
         aceptado_parts = [TurnoAceptado.publicacion_id == PublicacionCambio.id]
         if mes:
@@ -458,6 +458,9 @@ def cambios():
         if dia:
             cedido_parts.append(extract("day", TurnoCedido.fecha) == dia)
             aceptado_parts.append(extract("day", TurnoAceptado.fecha) == dia)
+        if franja_id:
+            cedido_parts.append(TurnoCedido.franja_horaria_id == franja_id)
+            aceptado_parts.append(TurnoAceptado.franja_horaria_id == franja_id)
         if tipo_fecha == "cedido":
             q = q.filter(exists().where(and_(*cedido_parts)))
         elif tipo_fecha == "aceptado":
@@ -469,16 +472,6 @@ def cambios():
             ))
     if nombre:
         q = q.filter(Usuario.nombre.ilike(f"%{nombre}%"))
-    if franja_id:
-        cedido_franja = exists().where(
-            and_(TurnoCedido.publicacion_id == PublicacionCambio.id,
-                 TurnoCedido.franja_horaria_id == franja_id)
-        )
-        aceptado_franja = exists().where(
-            and_(TurnoAceptado.publicacion_id == PublicacionCambio.id,
-                 TurnoAceptado.franja_horaria_id == franja_id)
-        )
-        q = q.filter(or_(cedido_franja, aceptado_franja))
     if tipo == "sintetica":
         q = q.filter(PublicacionCambio.es_sintetica.is_(True))
     elif tipo:

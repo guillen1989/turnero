@@ -5,9 +5,6 @@
 {% block content %}
 <div class="card">
   <h1>{{ _('Cómo funciona Turnero') }}</h1>
-  <p style="color:#6b7280;margin-bottom:2rem">
-    {{ _('Todo lo que necesitas saber para empezar a intercambiar turnos con tus compañeros.') }}
-  </p>
 
   <div class="onboarding-steps">
 
@@ -17,13 +14,13 @@
         <h2>{{ _('1. Publica tu cambio') }}</h2>
         <p>
           {{ _('Dile a tus compañeros qué turno quieres ceder y cuál te interesa a cambio.') }}
-          {{ _('Puedes pedir una fecha y franja concreta, o dejar abierta cualquier franja.') }}
+          {{ _('Puedes pedir una fecha y turno concreto, o dejar abierto cualquier turno.') }}
         </p>
         <p>{{ _('Hay cuatro tipos de publicación:') }}</p>
         <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.8">
           <li>
             <strong>{{ _('Cambio') }}</strong> —
-            {{ _('cedes un turno y pides otro a cambio. Es el tipo más habitual.') }}
+            {{ _('cedes un turno (o varios) y pides otro (u otros) a cambio.') }}
           </li>
           <li>
             <strong>{{ _('Regalo') }}</strong> —
@@ -31,19 +28,15 @@
           </li>
           <li>
             <strong>{{ _('Petición') }}</strong> —
-            {{ _('quieres que alguien te cubra un día sin darte ningún turno a cambio.') }}
+            {{ _('quieres que alguien te cubra un día sin darte ningún turno a cambio, o hacer la devolución a convenir.') }}
           </li>
           <li>
             <strong>{{ _('Junte de noches') }}</strong> —
             {{ _('intercambias noches sueltas de una semana para juntarlas y librar días consecutivos.') }}
           </li>
           <li>
-            <strong>{{ _('Cambio de día') }}</strong> —
-            {{ _('cedes un día libre concreto a cambio de que alguien te dé otro.') }}
-          </li>
-          <li>
-            <strong>{{ _('Cambio múltiple') }}</strong> —
-            {{ _('cedes o pides varios turnos a la vez en una sola publicación.') }}
+            <strong>{{ _('Cambio de turno en el día') }}</strong> —
+            {{ _('por ejemplo, cambiar tu turno de mañana por el de tarde el día 16.') }}
           </li>
         </ul>
         <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">
@@ -57,14 +50,14 @@
       <div class="onboarding-step-body">
         <h2>{{ _('2. Publica tu planilla mensual') }}</h2>
         <p>
-          {{ _('La planilla es tu cuadrante del mes: qué días trabajas (y en qué turno) y qué días libras o tienes vacaciones.') }}
-          {{ _('Al publicarla, tus compañeros pueden saber si están disponibles para hacerte el cambio, y tú puedes ver quién libra o tiene turno compatible el día que quieres ceder.') }}
+          {{ _('Publica tu cuadrante del mes, con tus turnos y libranzas.') }}
+          {{ _('Al publicarla, tus compañeros pueden saber si estás disponible para hacerles el cambio que buscan, y tú puedes ver quién libra o tiene turno compatible el día que quieres ceder.') }}
         </p>
         <p>{{ _('Rellenar el mes es rápido gracias a tres herramientas:') }}</p>
         <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.9">
           <li>
             <strong>{{ _('Relleno por rango') }}</strong> —
-            {{ _('elige "del día N al día M" y el turno o estado, y se rellenan todos los días de ese bloque de un solo clic. Ideal para semanas de vacaciones o bloques de mañanas consecutivos.') }}
+            {{ _('elige "del día X al día Y" y el turno o estado, y se rellenan todos los días de ese bloque de un solo clic. Ideal para semanas de vacaciones o bloques de mañanas consecutivos.') }}
           </li>
           <li>
             <strong>{{ _('Selección múltiple') }}</strong> —
@@ -72,18 +65,9 @@
           </li>
           <li>
             <strong>{{ _('Rellenar días vacíos') }}</strong> —
-            {{ _('cuando ya has añadido todos tus turnos, aparece una barra verde que te permite asignar de un solo clic el mismo estado (normalmente Libre) a todos los días que aún no tienen nada. El flujo habitual es: añadir los turnos que trabajas y luego pulsar "Rellenar vacíos con Libre".') }}
+            {{ _('te permite asignar de un solo clic el mismo estado (por ejemplo, Libre) a todos los días que aún no tienen nada.') }}
           </li>
         </ul>
-        <p>
-          {{ _('Además, puedes marcar cualquier día como') }} <strong>{{ _('Saliente') }}</strong>
-          {{ _('si el día anterior terminaste un turno de noche.') }}
-          {{ _('Un día saliente puede trabajarse (por ejemplo, añadiendo una tarde como doblaje), pero no puede cubrir una mañana ni un turno Diurno: en la búsqueda de compañeros disponibles, los días salientes no aparecen como opción para ese tipo de turno.') }}
-        </p>
-        <p>
-          {{ _('Cuando publicas un cambio, en tu panel "Activos" aparece una tarjeta verde con los compañeros que tienen ese día disponible según su planilla publicada.') }}
-          {{ _('No son matches confirmados —todavía no han publicado un cambio—, pero puedes contactarlos directamente por WhatsApp.') }}
-        </p>
         <a href="{{ url_for('planilla.index') }}" class="btn btn-secondary btn-sm">
           {{ _('Mi planilla') }}
         </a>
@@ -95,18 +79,18 @@
       <div class="onboarding-step-body">
         <h2>{{ _('3. Si hay match, te avisamos') }}</h2>
         <p>
-          {{ _('Cuando otra persona de tu misma categoría y grupo publique algo compatible con lo tuyo, recibirás una notificación.') }}
+          {{ _('Cuando otra persona de tu unidad publique un cambio compatible con el tuyo, recibirás una notificación.') }}
         </p>
         <p>
           {{ _('Revisa el match en tu panel de "Mis cambios" y') }}
           <strong>{{ _('confírmalo o recházalo') }}</strong>.
-          {{ _('El cambio solo se cierra cuando todos los implicados lo confirman.') }}
+          {{ _('El cambio sólo se cierra cuando todos los implicados lo confirman.') }}
         </p>
         <p>
           {{ _('El detector va más allá del cruce directo entre dos personas:') }}
           {{ _('también encuentra') }} <strong>{{ _('cambios a tres bandas') }}</strong>
           {{ _('(A da a B, B da a C, C da a A) y') }}
-          <strong>{{ _('matches parciales') }}</strong>
+          <strong>{{ _('match parciales') }}</strong>
           {{ _('(se resuelve parte de un cambio múltiple aunque el resto quede pendiente).') }}
         </p>
       </div>
@@ -117,8 +101,8 @@
       <div class="onboarding-step-body">
         <h2>{{ _('4. Consulta lo que publican tus compañeros') }}</h2>
         <p>
-          {{ _('En "Buscar cambios" ves todas las publicaciones abiertas de tu categoría y grupo.') }}
-          {{ _('Puedes filtrar por mes, día o franja horaria.') }}
+          {{ _('En "Buscar cambios" ves todas las publicaciones abiertas de tu unidad.') }}
+          {{ _('Puedes filtrar por mes, día o turno.') }}
         </p>
         <p>
           {{ _('Guarda tus filtros favoritos como') }} <strong>{{ _('búsquedas guardadas') }}</strong>
@@ -138,7 +122,7 @@
           {{ _('¿Hay alguien con quien te resulte fácil cambiar? Suscríbete a sus publicaciones y te avisaremos cada vez que publique algo nuevo.') }}
         </p>
         <p>
-          {{ _('Entra en "Buscar cambios", localiza una publicación suya y pulsa el icono de la campana junto a su nombre.') }}
+        {{ _('Entra en "Notificaciones", baja hasta "Seguir compañeros", busca a tu compañero y toca en "Seguir".') }}
         </p>
       </div>
     </div>
