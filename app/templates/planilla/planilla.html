@@ -72,41 +72,6 @@
   </p>
   {% endif %}
 
-  {# ── Relleno rápido por rango ── #}
-  <div class="planilla-relleno-rapido">
-    <form method="post" action="{{ url_for('planilla.rango_aplicar') }}" class="relleno-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="anyo" value="{{ anyo }}">
-      <input type="hidden" name="mes"  value="{{ mes }}">
-      <span class="relleno-label">{{ _('Rellenar del día') }}</span>
-      <select name="dia_inicio" class="planilla-select-sm" aria-label="{{ _('Día inicio') }}">
-        {% for dia in dias %}<option value="{{ dia.day }}">{{ dia.day }}</option>{% endfor %}
-      </select>
-      <span class="relleno-label">{{ _('al') }}</span>
-      <select name="dia_fin" class="planilla-select-sm" aria-label="{{ _('Día fin') }}">
-        {% for dia in dias %}<option value="{{ dia.day }}" {% if loop.last %}selected{% endif %}>{{ dia.day }}</option>{% endfor %}
-      </select>
-      <span class="relleno-label">{{ _('con') }}</span>
-      <select name="seleccion" class="planilla-select" required aria-label="{{ _('Qué aplicar') }}">
-        <option value="">{{ _('— elige —') }}</option>
-        <optgroup label="{{ _('Estado del día') }}">
-          <option value="libre">{{ _('Libre') }}</option>
-          <option value="vacaciones">{{ _('Vacaciones') }}</option>
-          <option value="no_disponible">{{ _('No disponible') }}</option>
-        </optgroup>
-        {% if franjas %}
-        <optgroup label="{{ _('Turno') }}">
-          {% for franja in franjas %}<option value="{{ franja.id }}">{{ franja.nombre }}</option>{% endfor %}
-        </optgroup>
-        {% endif %}
-      </select>
-      <button type="submit" class="btn btn-secondary btn-sm">{{ _('Aplicar') }}</button>
-    </form>
-    <span class="relleno-sep">·</span>
-    <button type="button" class="btn-link-sm" onclick="mbTodos()">{{ _('Marcar todos') }}</button>
-    <button type="button" class="btn-link-sm" onclick="mbLimpiar()">{{ _('Ninguno') }}</button>
-  </div>
-
   {# ── Banner: cambios confirmados pendientes de volcar ── #}
   {% if matches_pendientes %}
   <div class="planilla-volcar-banner">
@@ -182,6 +147,41 @@
         {% if nd %}<span class="cal-dot"></span>{% endif %}
       </button>
     {% endfor %}
+  </div>
+
+  {# ── Relleno rápido por rango ── #}
+  <div class="planilla-relleno-rapido">
+    <form method="post" action="{{ url_for('planilla.rango_aplicar') }}" class="relleno-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="anyo" value="{{ anyo }}">
+      <input type="hidden" name="mes"  value="{{ mes }}">
+      <span class="relleno-label">{{ _('Rellenar del día') }}</span>
+      <select name="dia_inicio" class="planilla-select-sm" aria-label="{{ _('Día inicio') }}">
+        {% for dia in dias %}<option value="{{ dia.day }}">{{ dia.day }}</option>{% endfor %}
+      </select>
+      <span class="relleno-label">{{ _('al') }}</span>
+      <select name="dia_fin" class="planilla-select-sm" aria-label="{{ _('Día fin') }}">
+        {% for dia in dias %}<option value="{{ dia.day }}" {% if loop.last %}selected{% endif %}>{{ dia.day }}</option>{% endfor %}
+      </select>
+      <span class="relleno-label">{{ _('con') }}</span>
+      <select name="seleccion" class="planilla-select" required aria-label="{{ _('Qué aplicar') }}">
+        <option value="">{{ _('— elige —') }}</option>
+        <optgroup label="{{ _('Estado del día') }}">
+          <option value="libre">{{ _('Libre') }}</option>
+          <option value="vacaciones">{{ _('Vacaciones') }}</option>
+          <option value="no_disponible">{{ _('No disponible') }}</option>
+        </optgroup>
+        {% if franjas %}
+        <optgroup label="{{ _('Turno') }}">
+          {% for franja in franjas %}<option value="{{ franja.id }}">{{ franja.nombre }}</option>{% endfor %}
+        </optgroup>
+        {% endif %}
+      </select>
+      <button type="submit" class="btn btn-secondary btn-sm">{{ _('Aplicar') }}</button>
+    </form>
+    <span class="relleno-sep">·</span>
+    <button type="button" class="btn-link-sm" onclick="mbTodos()">{{ _('Marcar todos') }}</button>
+    <button type="button" class="btn-link-sm" onclick="mbLimpiar()">{{ _('Ninguno') }}</button>
   </div>
 
   <div class="planilla-dias">
