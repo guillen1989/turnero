@@ -213,13 +213,37 @@
       }
 
       document.addEventListener('DOMContentLoaded', function() {
+        // Animación de entrada tras swipe
         var dir = sessionStorage.getItem('_swipe');
-        if (!dir) return;
-        sessionStorage.removeItem('_swipe');
-        var main = document.querySelector('main');
-        if (!main) return;
-        main.classList.add('swipe-' + dir);
-        main.addEventListener('animationend', function() { main.classList.remove('swipe-' + dir); }, { once: true });
+        if (dir) {
+          sessionStorage.removeItem('_swipe');
+          var main = document.querySelector('main');
+          if (main) {
+            main.classList.add('swipe-' + dir);
+            main.addEventListener('animationend', function() { main.classList.remove('swipe-' + dir); }, { once: true });
+          }
+        }
+
+        // Prefetch de secciones adyacentes para swipe instantáneo
+        var idx = getIdx();
+        if (idx < 0) return;
+        var toFetch = [];
+        if (idx > 0) toFetch.push(SECTIONS[idx - 1]);
+        if (idx < SECTIONS.length - 1) toFetch.push(SECTIONS[idx + 1]);
+        if (!toFetch.length) return;
+        if (HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules')) {
+          var spec = document.createElement('script');
+          spec.type = 'speculationrules';
+          spec.textContent = JSON.stringify({ prefetch: [{ urls: toFetch, eagerness: 'immediate' }] });
+          document.head.appendChild(spec);
+        } else {
+          toFetch.forEach(function(url) {
+            var lnk = document.createElement('link');
+            lnk.rel = 'prefetch';
+            lnk.href = url;
+            document.head.appendChild(lnk);
+          });
+        }
       });
 
       var tsx = null, tsy = null;
