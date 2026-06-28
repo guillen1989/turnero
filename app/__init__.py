@@ -163,6 +163,21 @@ def _registrar_comandos(app):
         db.session.commit()
         click.echo("Usuario administrador creado: guillen@delbarrioblanco.net")
 
+    @app.cli.command("seed-demo")
+    def seed_demo():
+        """Siembra la unidad demo si DEMO_ENABLED=true y no está ya sembrada."""
+        import os
+        if os.environ.get("DEMO_ENABLED", "").lower() != "true":
+            click.echo("DEMO_ENABLED no está activo — omitiendo seed demo.")
+            return
+        from app.services.demo import ya_sembrado, reset_demo
+        if ya_sembrado():
+            click.echo("La unidad demo ya existe — nada que hacer.")
+            return
+        click.echo("Sembrando unidad demo…")
+        reset_demo()
+        click.echo("Unidad demo creada correctamente.")
+
 
 def _get_locale():
     from flask_login import current_user
