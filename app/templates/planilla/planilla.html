@@ -141,6 +141,49 @@
   </div>
   {% endif %}
 
+  {# ── Calendario compacto ── #}
+  <div class="planilla-cal" role="grid" aria-label="{{ _('Vista de calendario') }}">
+    {% for inicial in ['L','M','X','J','V','S','D'] %}
+      <div class="cal-header" role="columnheader">{{ inicial }}</div>
+    {% endfor %}
+    {% for _ in range(dias[0].weekday()) %}
+      <div class="cal-celda cal-celda--fuera" aria-hidden="true"></div>
+    {% endfor %}
+    {% for dia in dias %}
+      {% set ns = namespace(mod='cal-celda--vacio', lab='') %}
+      {% set td = turnos_por_dia.get(dia, []) %}
+      {% set ed = estados_por_dia.get(dia) %}
+      {% set nd = notas_por_dia.get(dia) %}
+      {% if ed %}
+        {% set ns.mod = 'cal-celda--' + ed.tipo %}
+        {% if ed.tipo == 'libre' %}{% set ns.lab = 'L' %}
+        {% elif ed.tipo == 'vacaciones' %}{% set ns.lab = 'V' %}
+        {% else %}{% set ns.lab = 'ND' %}{% endif %}
+      {% elif td %}
+        {% set ns.mod = 'cal-celda--turno' %}
+        {% if td|length > 1 %}
+          {% set ns.lab = td[0].franja_horaria.nombre[:1] + '+' %}
+        {% else %}
+          {% set ns.lab = td[0].franja_horaria.nombre[:1] %}
+        {% endif %}
+      {% endif %}
+      {% set tooltip = dia.day|string %}
+      {% if ed %}{% set tooltip = tooltip + ' — ' + etiquetas_estado[ed.tipo] %}
+      {% elif td %}{% set tooltip = tooltip + ' — ' + (td | map(attribute='franja_horaria') | map(attribute='nombre') | join(', ')) %}
+      {% else %}{% set tooltip = tooltip + ' — Sin rellenar' %}{% endif %}
+      {% if nd %}{% set tooltip = tooltip + ' · Tiene nota' %}{% endif %}
+      <button type="button"
+              class="cal-celda {{ ns.mod }}{% if dia == hoy %} cal-celda--hoy{% endif %}"
+              onclick="calNavegar('{{ dia.isoformat() }}')"
+              title="{{ tooltip }}"
+              aria-label="{{ tooltip }}">
+        <span class="cal-num">{{ dia.day }}</span>
+        {% if ns.lab %}<span class="cal-lab">{{ ns.lab }}</span>{% endif %}
+        {% if nd %}<span class="cal-dot"></span>{% endif %}
+      </button>
+    {% endfor %}
+  </div>
+
   <div class="planilla-dias">
     {% for dia in dias %}
       {% set es_hoy = (dia == hoy) %}
@@ -148,7 +191,7 @@
       {% set estado_dia = estados_por_dia.get(dia) %}
       {% set es_finde = (dia.weekday() >= 5) %}
 
-      <div class="planilla-dia{% if es_hoy %} planilla-dia--hoy{% endif %}{% if es_finde %} planilla-dia--finde{% endif %}">
+      <div id="dia-{{ dia.isoformat() }}" class="planilla-dia{% if es_hoy %} planilla-dia--hoy{% endif %}{% if es_finde %} planilla-dia--finde{% endif %}">
 
         <label class="dia-check-wrap" title="{{ _('Seleccionar') }}">
           <input type="checkbox" class="dia-check" data-fecha="{{ dia.isoformat() }}">
@@ -283,6 +326,16 @@
 </div>
 
 <script>
+/* ── Calendario: navegar al día ── */
+function calNavegar(fecha) {
+  var el = document.getElementById('dia-' + fecha);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.remove('planilla-dia--highlight');
+  void el.offsetWidth; // reinicia la animación si se pulsa dos veces
+  el.classList.add('planilla-dia--highlight');
+}
+
 /* ── Onboarding banner ── */
 (function () {
   var KEY    = 'planilla_onboarding_visto';

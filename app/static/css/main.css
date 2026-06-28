@@ -879,6 +879,24 @@ body {
 .planilla-turno-chip--vacaciones { background: #fef9c3; color: #854d0e; }
 .planilla-turno-chip--no_disponible { background: #fee2e2; color: #991b1b; }
 
+/* ── Calendario compacto ───────────────────────────────────────────────── */
+.planilla-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 1.1rem; }
+.cal-header { background: #f1f5f9; text-align: center; font-size: 0.68rem; font-weight: 700; color: #64748b; padding: 0.28rem 0; letter-spacing: 0.04em; }
+.cal-celda { background: #fff; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.22rem 0; min-height: 46px; position: relative; transition: filter 0.1s; font-family: inherit; }
+.cal-celda:hover:not(.cal-celda--fuera) { filter: brightness(0.87); }
+.cal-celda--fuera { background: #f8fafc; cursor: default; pointer-events: none; }
+.cal-num { font-size: 0.82rem; font-weight: 700; line-height: 1; color: inherit; }
+.cal-lab { font-size: 0.58rem; line-height: 1; margin-top: 2px; opacity: 0.8; color: inherit; font-weight: 600; }
+.cal-dot { position: absolute; top: 4px; right: 4px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: 0.7; }
+.cal-celda--hoy { box-shadow: inset 0 0 0 2px #2563eb; }
+.cal-celda--turno         { background: #dbeafe; color: #1e40af; }
+.cal-celda--libre         { background: #dcfce7; color: #166534; }
+.cal-celda--vacaciones    { background: #fef9c3; color: #854d0e; }
+.cal-celda--no_disponible { background: #fee2e2; color: #991b1b; }
+.cal-celda--vacio         { background: #f9fafb; color: #9ca3af; }
+@keyframes dia-flash { 0%,100% { box-shadow: none; } 25%,65% { box-shadow: 0 0 0 3px #2563eb; } }
+.planilla-dia--highlight  { animation: dia-flash 1.1s ease-out; }
+
 /* ── Nota del día ─────────────────────────────────────────────────────── */
 .dia-nota { flex-basis: 100%; border: none; padding: 0; margin-top: 0.1rem; font-size: 0.8rem; }
 .dia-nota-toggle { cursor: pointer; list-style: none; padding: 0.1rem 0.2rem; border-radius: 4px; color: #6b7280; user-select: none; }
