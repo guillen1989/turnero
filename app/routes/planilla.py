@@ -59,9 +59,10 @@ def index():
     for turno in turnos:
         turnos_por_dia.setdefault(turno.fecha, []).append(turno)
 
-    estados_por_dia  = get_estados_mes(current_user, anyo, mes)
+    estados_por_dia   = get_estados_mes(current_user, anyo, mes)
     salientes_por_dia = get_salientes_mes(current_user, anyo, mes)
-    notas_por_dia    = get_notas_mes(current_user, anyo, mes)
+    notas_por_dia     = get_notas_mes(current_user, anyo, mes)
+    num_vacios        = len(dias_sin_cumplimentar(current_user, anyo, mes))
     matches_pendientes = get_matches_pendientes_volcar(current_user)
 
     planilla_mes_obj = PlanillaMes.query.filter_by(
@@ -87,6 +88,7 @@ def index():
         estados_por_dia=estados_por_dia,
         salientes_por_dia=salientes_por_dia,
         notas_por_dia=notas_por_dia,
+        num_vacios=num_vacios,
         matches_pendientes=matches_pendientes,
         planilla_mes=planilla_mes_obj,
         franjas=franjas,
@@ -329,6 +331,38 @@ def volcar_cambios():
                 "success",
             )
 
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+
+@bp.route("/vacios/aplicar", methods=["POST"])
+@login_required
+def vacios_aplicar():
+    """Aplica un turno o estado a todos los días del mes que aún no tienen nada asignado."""
+    seleccion = request.form.get("seleccion", "").strip()
+    anyo = request.form.get("anyo", type=int)
+    mes  = request.form.get("mes",  type=int)
+
+    if not seleccion:
+        flash("Elige qué aplicar a los días vacíos.", "error")
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+    tipo_estado, franja_id = _resolver_seleccion(seleccion)
+    if tipo_estado is None and franja_id is None:
+        flash("Selección no válida.", "error")
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+    vacios = dias_sin_cumplimentar(current_user, anyo, mes)
+    if not vacios:
+        flash("No hay días vacíos en este mes.", "info")
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+    for fecha in vacios:
+        if tipo_estado:
+            establecer_estado_dia(current_user, fecha, tipo_estado)
+        else:
+            añadir_turno(current_user, fecha, franja_id)
+
+    flash(f"{len(vacios)} día(s) vacío(s) rellenados.", "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
 

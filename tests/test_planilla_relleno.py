@@ -177,3 +177,69 @@ def test_multiples_sin_fechas_no_hace_nada(client, db):
     }, follow_redirects=False)
     assert resp.status_code == 302
     assert get_estados_mes(usuario, 2026, 7) == {}
+
+
+# ── Tests de /planilla/vacios/aplicar ────────────────────────────────────────
+
+def test_vacios_aplicar_rellena_dias_sin_asignar(client, db):
+    """Rellena todos los días del mes que no tienen nada asignado."""
+    from app.services.planilla import añadir_turno
+    usuario, franja_m, _ = _setup(client, db, "vacios1@t.es")
+    # Asigna explícitamente solo el día 1
+    añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
+
+    client.post("/planilla/vacios/aplicar", data={
+        "seleccion": "libre",
+        "anyo": 2026,
+        "mes": 7,
+    })
+
+    estados = get_estados_mes(usuario, 2026, 7)
+    # Los 30 días restantes (2-31) deben quedar como libre
+    assert len(estados) == 30
+    assert date(2026, 7, 2) in estados
+    assert date(2026, 7, 31) in estados
+    # El día 1 no debe haberse tocado (sigue siendo turno, no estado)
+    assert date(2026, 7, 1) not in estados
+
+
+def test_vacios_aplicar_con_turno_rellena_vacios(client, db):
+    """También acepta un turno (franja) como selección."""
+    usuario, franja_m, franja_t = _setup(client, db, "vacios2@t.es")
+    # Julio 2026 tiene 31 días; dejamos todo vacío
+    client.post("/planilla/vacios/aplicar", data={
+        "seleccion": str(franja_t.id),
+        "anyo": 2026,
+        "mes": 7,
+    })
+    turnos = TurnoPlanilla.query.filter_by(usuario_id=usuario.id).all()
+    assert len(turnos) == 31
+
+
+def test_vacios_aplicar_mes_completo_no_toca_nada(client, db):
+    """Si no hay días vacíos, redirige sin cambiar nada."""
+    from app.services.planilla import establecer_estado_dia
+    usuario, _, _ = _setup(client, db, "vacios3@t.es")
+    for d in range(1, 32):
+        establecer_estado_dia(usuario, date(2026, 7, d), "libre")
+
+    estados_antes = get_estados_mes(usuario, 2026, 7)
+    client.post("/planilla/vacios/aplicar", data={
+        "seleccion": "vacaciones",
+        "anyo": 2026,
+        "mes": 7,
+    })
+    estados_despues = get_estados_mes(usuario, 2026, 7)
+    # Nada debe haber cambiado
+    assert all(e.tipo == "libre" for e in estados_despues.values())
+    assert len(estados_despues) == len(estados_antes)
+
+
+def test_vacios_aplicar_sin_seleccion_redirige(client, db):
+    _setup(client, db, "vacios4@t.es")
+    resp = client.post("/planilla/vacios/aplicar", data={
+        "seleccion": "",
+        "anyo": 2026,
+        "mes": 7,
+    }, follow_redirects=False)
+    assert resp.status_code == 302

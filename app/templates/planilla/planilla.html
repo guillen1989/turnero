@@ -208,6 +208,32 @@
     <button type="button" class="btn-link-sm" onclick="mbLimpiar()">{{ _('Ninguno') }}</button>
   </div>
 
+  {# ── Rellenar días vacíos ── #}
+  {% if num_vacios > 0 %}
+  <div class="planilla-vacios-rapido">
+    <form method="post" action="{{ url_for('planilla.vacios_aplicar') }}" class="relleno-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="anyo" value="{{ anyo }}">
+      <input type="hidden" name="mes"  value="{{ mes }}">
+      <span class="relleno-label">{{ _('Rellenar los') }} <strong>{{ num_vacios }}</strong> {{ _('días vacíos con') }}</span>
+      <select name="seleccion" class="planilla-select" required aria-label="{{ _('Qué aplicar a días vacíos') }}">
+        <option value="">{{ _('— elige —') }}</option>
+        <optgroup label="{{ _('Estado del día') }}">
+          <option value="libre" selected>{{ _('Libre') }}</option>
+          <option value="vacaciones">{{ _('Vacaciones') }}</option>
+          <option value="no_disponible">{{ _('No disponible') }}</option>
+        </optgroup>
+        {% if franjas %}
+        <optgroup label="{{ _('Turno') }}">
+          {% for franja in franjas %}<option value="{{ franja.id }}">{{ franja.nombre }}</option>{% endfor %}
+        </optgroup>
+        {% endif %}
+      </select>
+      <button type="submit" class="btn btn-secondary btn-sm">{{ _('Aplicar') }}</button>
+    </form>
+  </div>
+  {% endif %}
+
   <div class="planilla-dias">
     {% for dia in dias %}
       {% set es_hoy = (dia == hoy) %}
