@@ -17,6 +17,11 @@ def _añadir_linea_nota(usuario, fecha: date, linea: str):
         nota.texto = (nota.texto + "\n" + linea) if nota.texto else linea
 
 
+def _fmt(turno) -> str:
+    """'22/07 (Tarde)' a partir de un TurnoCedido."""
+    return f"{turno.fecha.strftime('%-d/%m')} ({turno.franja_horaria.nombre})"
+
+
 def get_matches_pendientes_volcar(usuario) -> list[dict]:
     """
     Devuelve una lista de dicts con info de matches confirmados que el usuario
@@ -90,24 +95,31 @@ def volcar_matches_a_planilla(usuario, participacion_ids: list[int]) -> int:
 
         otras = [o for o in p.match.participaciones if o.publicacion.usuario_id != usuario.id]
         companero_nombres = ", ".join(o.publicacion.usuario.nombre for o in otras)
+        n_bandas = len(p.match.participaciones)
+        prefijo = f"Cambio a {n_bandas} bandas con" if n_bandas > 2 else "Cambio con"
 
-        if p.turno_cedido:
-            eliminar_turno(usuario, p.turno_cedido.fecha, p.turno_cedido.franja_horaria_id)
-            _añadir_linea_nota(
-                usuario, p.turno_cedido.fecha,
-                f"Cambio con {companero_nombres}: cediste este turno."
-            )
-
+        # Localizar el turno que el usuario recibe a cambio
+        turno_recibido = None
         if p.turno_aceptado:
             fecha_rec = p.turno_aceptado.fecha
             for otra in otras:
                 if otra.turno_cedido and otra.turno_cedido.fecha == fecha_rec:
-                    añadir_turno(usuario, fecha_rec, otra.turno_cedido.franja_horaria_id)
-                    _añadir_linea_nota(
-                        usuario, fecha_rec,
-                        f"Cambio con {companero_nombres}: recibiste este turno."
-                    )
+                    turno_recibido = otra.turno_cedido
                     break
+
+        if p.turno_cedido:
+            eliminar_turno(usuario, p.turno_cedido.fecha, p.turno_cedido.franja_horaria_id)
+            nota = f"{prefijo} {companero_nombres}: cediste este turno."
+            if turno_recibido:
+                nota += f" A cambio, trabajas el {_fmt(turno_recibido)}."
+            _añadir_linea_nota(usuario, p.turno_cedido.fecha, nota)
+
+        if turno_recibido:
+            añadir_turno(usuario, turno_recibido.fecha, turno_recibido.franja_horaria_id)
+            nota = f"{prefijo} {companero_nombres}: recibiste este turno."
+            if p.turno_cedido:
+                nota += f" A cambio, cediste el {_fmt(p.turno_cedido)}."
+            _añadir_linea_nota(usuario, turno_recibido.fecha, nota)
 
         p.volcado_planilla = True
         count += 1

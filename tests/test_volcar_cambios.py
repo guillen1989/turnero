@@ -170,7 +170,7 @@ def test_volcar_crea_nota_en_dia_cedido(db):
         usuario_id=u_a.id, fecha=date(2026, 7, 10)
     ).first()
     assert nota_cedido is not None
-    assert "cediste" in nota_cedido.texto.lower() or "user_b" in nota_cedido.texto.lower()
+    assert "cediste" in nota_cedido.texto.lower()
 
 
 def test_volcar_crea_nota_en_dia_recibido(db):
@@ -183,7 +183,31 @@ def test_volcar_crea_nota_en_dia_recibido(db):
         usuario_id=u_a.id, fecha=date(2026, 7, 20)
     ).first()
     assert nota_recibido is not None
-    assert "recibiste" in nota_recibido.texto.lower() or "user_b" in nota_recibido.texto.lower()
+    assert "recibiste" in nota_recibido.texto.lower()
+
+
+def test_nota_cedido_menciona_dia_recibido(db):
+    u_a, u_b, franja_m, franja_t = _setup_dos_usuarios(db)
+    _crear_match_confirmado(db, u_a, u_b, franja_m, franja_t)
+    pendientes = get_matches_pendientes_volcar(u_a)
+    volcar_matches_a_planilla(u_a, [pendientes[0]["participacion_id"]])
+
+    nota = NotaDia.query.filter_by(usuario_id=u_a.id, fecha=date(2026, 7, 10)).first()
+    # La nota del día cedido debe mencionar cuándo trabaja a cambio
+    assert "20/07" in nota.texto
+    assert "Tarde" in nota.texto
+
+
+def test_nota_recibido_menciona_dia_cedido(db):
+    u_a, u_b, franja_m, franja_t = _setup_dos_usuarios(db)
+    _crear_match_confirmado(db, u_a, u_b, franja_m, franja_t)
+    pendientes = get_matches_pendientes_volcar(u_a)
+    volcar_matches_a_planilla(u_a, [pendientes[0]["participacion_id"]])
+
+    nota = NotaDia.query.filter_by(usuario_id=u_a.id, fecha=date(2026, 7, 20)).first()
+    # La nota del día recibido debe mencionar qué turno cedió a cambio
+    assert "10/07" in nota.texto
+    assert "Mañana" in nota.texto
 
 
 def test_volcar_no_aplica_si_no_pertenece_al_usuario(db):
