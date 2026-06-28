@@ -53,9 +53,38 @@
     </div>
 
     <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📅</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('2. Publica tu planilla mensual') }}</h2>
+        <p>
+          {{ _('La planilla es tu cuadrante del mes: qué días trabajas (y en qué turno) y qué días libras o tienes vacaciones.') }}
+          {{ _('Al publicarla, tus compañeros pueden saber si están disponibles para hacerte el cambio, y tú puedes ver quién libra o tiene turno compatible el día que quieres ceder.') }}
+        </p>
+        <p>{{ _('Rellenar el mes es rápido gracias a dos herramientas:') }}</p>
+        <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.9">
+          <li>
+            <strong>{{ _('Relleno por rango') }}</strong> —
+            {{ _('elige "del día N al día M" y el turno o estado, y se rellenan todos los días de ese bloque de un solo clic. Ideal para semanas de vacaciones o bloques de mañanas consecutivos.') }}
+          </li>
+          <li>
+            <strong>{{ _('Selección múltiple') }}</strong> —
+            {{ _('marca los días que quieras con los checkbox de cada fila; aparece una barra en la parte inferior para aplicar el mismo turno o estado a todos a la vez. Perfecto para las mañanas o noches sueltas repartidas por el mes.') }}
+          </li>
+        </ul>
+        <p>
+          {{ _('Cuando publicas un cambio, en tu panel "Activos" aparece una tarjeta verde con los compañeros que tienen ese día disponible según su planilla publicada.') }}
+          {{ _('No son matches confirmados —todavía no han publicado un cambio—, pero puedes contactarlos directamente por WhatsApp.') }}
+        </p>
+        <a href="{{ url_for('planilla.index') }}" class="btn btn-secondary btn-sm">
+          {{ _('Mi planilla') }}
+        </a>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">🤝</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('2. Si hay match, te avisamos') }}</h2>
+        <h2>{{ _('3. Si hay match, te avisamos') }}</h2>
         <p>
           {{ _('Cuando otra persona de tu misma categoría y grupo publique algo compatible con lo tuyo, recibirás una notificación.') }}
         </p>
@@ -77,7 +106,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">🔍</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('3. Consulta lo que publican tus compañeros') }}</h2>
+        <h2>{{ _('4. Consulta lo que publican tus compañeros') }}</h2>
         <p>
           {{ _('En "Buscar cambios" ves todas las publicaciones abiertas de tu categoría y grupo.') }}
           {{ _('Puedes filtrar por mes, día o franja horaria.') }}
@@ -95,7 +124,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">🔔</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('4. Suscríbete a un compañero') }}</h2>
+        <h2>{{ _('5. Suscríbete a un compañero') }}</h2>
         <p>
           {{ _('¿Hay alguien con quien te resulte fácil cambiar? Suscríbete a sus publicaciones y te avisaremos cada vez que publique algo nuevo.') }}
         </p>
@@ -108,7 +137,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">📲</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('5. Comparte tu cambio por WhatsApp') }}</h2>
+        <h2>{{ _('6. Comparte tu cambio por WhatsApp') }}</h2>
         <p>
           {{ _('¿Conoces a alguien que puede encajarte pero aún no usa Turnero? Desde cualquier publicación tuya puedes') }}
           <strong>{{ _('compartir el enlace directo por WhatsApp') }}</strong>.
@@ -122,7 +151,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">📲</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('6. Instala Turnero en tu móvil') }}</h2>
+        <h2>{{ _('7. Instala Turnero en tu móvil') }}</h2>
         <p>
           {{ _('Puedes instalar Turnero como una app normal en tu móvil: sin pasar por la App Store ni Google Play, directamente desde el navegador.') }}
           {{ _('Una vez instalada, abre como cualquier otra app, sin barras del navegador.') }}
