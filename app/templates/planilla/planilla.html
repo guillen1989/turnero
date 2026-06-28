@@ -9,7 +9,12 @@
 <div class="form-container">
 
   <div class="planilla-header">
-    <h1>{{ _('Mi planilla') }}</h1>
+    <div class="planilla-header-titulo">
+      <h1>{{ _('Mi planilla') }}</h1>
+      <button type="button" class="planilla-ayuda-link" onclick="planillaAyudaMostrar()">
+        &#9432; {{ _('¿Cómo funciona?') }}
+      </button>
+    </div>
 
     <div class="planilla-mes-nav">
       <a href="{{ url_for('planilla.index', anyo=prev_anyo, mes=prev_mes) }}" class="btn btn-secondary btn-sm">&#8249;</a>
@@ -31,6 +36,33 @@
           <button type="submit" class="btn btn-primary btn-sm">{{ _('Publicar mes') }}</button>
         </form>
       {% endif %}
+    </div>
+  </div>
+
+  {# ── Banner de bienvenida (primera visita, controlado por localStorage) ── #}
+  <div id="planilla-onboarding" class="planilla-onboarding-banner" style="display:none" role="note">
+    <h3 class="planilla-onboarding-titulo">{{ _('¿Cómo funciona la planilla?') }}</h3>
+    <p class="planilla-onboarding-p">
+      {{ _('Añade en cada día lo que corresponda: tu turno de trabajo, si libras, si tienes vacaciones o si no estás disponible para cambios. Al publicar el mes tus compañeros podrán cruzar su disponibilidad con la tuya.') }}
+    </p>
+    <p class="planilla-onboarding-subtitulo">{{ _('Para rellenar rápido tienes dos atajos:') }}</p>
+    <ul class="planilla-onboarding-lista">
+      <li>
+        <strong>{{ _('Relleno por rango') }}</strong> —
+        {{ _('en la barra de herramientas de abajo elige «del día N al M» y qué aplicar; se rellena todo el bloque de un clic. Ideal para semanas de vacaciones o una racha de mañanas seguidas.') }}
+      </li>
+      <li>
+        <strong>{{ _('Selección múltiple') }}</strong> —
+        {{ _('activa los checkbox que aparecen a la izquierda de cada día; una barra azul emerge en la parte inferior para aplicar el mismo turno o estado a todos los días marcados. Perfecto para las mañanas o noches sueltas repartidas por el mes.') }}
+      </li>
+    </ul>
+    <div class="planilla-onboarding-footer">
+      <a href="{{ url_for('main.como_funciona') }}" class="planilla-onboarding-link">
+        {{ _('Ver explicación completa →') }}
+      </a>
+      <button type="button" class="btn btn-primary btn-sm" onclick="planillaOnboardingCerrar()">
+        {{ _('Entendido') }}
+      </button>
     </div>
   </div>
 
@@ -190,6 +222,27 @@
 </div>
 
 <script>
+/* ── Onboarding banner ── */
+(function () {
+  var KEY    = 'planilla_onboarding_visto';
+  var banner = document.getElementById('planilla-onboarding');
+
+  if (!localStorage.getItem(KEY)) {
+    banner.style.display = 'block';
+  }
+
+  window.planillaOnboardingCerrar = function () {
+    localStorage.setItem(KEY, '1');
+    banner.style.display = 'none';
+  };
+
+  window.planillaAyudaMostrar = function () {
+    banner.style.display = 'block';
+    banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+})();
+
+/* ── Selección múltiple ── */
 (function () {
   var bar    = document.getElementById('mb-bar');
   var countEl = document.getElementById('mb-count');

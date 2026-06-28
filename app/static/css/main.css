@@ -821,6 +821,19 @@ body {
 
 /* Planilla de turnos */
 .planilla-header { margin-bottom: 1rem; }
+.planilla-header-titulo { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.planilla-header-titulo h1 { margin: 0; }
+.planilla-ayuda-link { background: none; border: none; cursor: pointer; font-size: 0.85rem; color: #2563eb; padding: 0.2rem 0.4rem; border-radius: 4px; text-decoration: underline; }
+.planilla-ayuda-link:hover { color: #1d4ed8; }
+
+/* Banner de onboarding de planilla */
+.planilla-onboarding-banner { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 1.1rem 1.25rem; margin-bottom: 1.1rem; }
+.planilla-onboarding-titulo { font-size: 1rem; font-weight: 700; color: #1e40af; margin: 0 0 0.6rem; }
+.planilla-onboarding-p { font-size: 0.9rem; color: #1e3a8a; margin: 0 0 0.5rem; line-height: 1.6; }
+.planilla-onboarding-subtitulo { font-size: 0.87rem; font-weight: 600; color: #1e40af; margin: 0.6rem 0 0.3rem; }
+.planilla-onboarding-lista { font-size: 0.87rem; color: #1e3a8a; margin: 0 0 0.75rem 1.2rem; line-height: 1.7; }
+.planilla-onboarding-footer { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; }
+.planilla-onboarding-link { font-size: 0.85rem; color: #2563eb; text-decoration: underline; }
 .planilla-mes-nav { display: flex; align-items: center; gap: 0.75rem; margin: 0.75rem 0; }
 .planilla-mes-titulo { font-size: 1.1rem; font-weight: 600; min-width: 160px; text-align: center; }
 .planilla-estado { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
