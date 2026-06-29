@@ -528,9 +528,10 @@ def crear_pub_sintetica(pub_a, pub_b):
     """
     from app.models import TurnoCedido as TC, TurnoAceptado as TA
 
-    existente = PublicacionCambio.query.filter_by(
-        sintetica_pub_a_id=pub_a.id,
-        sintetica_pub_b_id=pub_b.id,
+    existente = PublicacionCambio.query.filter(
+        PublicacionCambio.sintetica_pub_a_id == pub_a.id,
+        PublicacionCambio.sintetica_pub_b_id == pub_b.id,
+        PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
     ).first()
     if existente:
         return existente

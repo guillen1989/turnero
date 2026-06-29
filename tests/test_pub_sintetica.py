@@ -110,6 +110,46 @@ def test_idempotente_no_duplica(db):
     ).count() == 1
 
 
+def test_sintetica_cancelada_se_recrea_con_turnos_actualizados(db):
+    """
+    Regresión: al editar pub_a los turnos cambian y la sintetica antigua queda
+    cancelada. La siguiente llamada a crear_pub_sintetica debe crear una nueva
+    con los turnos actualizados, no devolver la cancelada.
+    """
+    from app.services.publicaciones import editar_publicacion
+
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id, "Mañana")
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+
+    sint_orig = crear_pub_sintetica(pub_a, pub_b)
+    assert sint_orig.estado == "abierta"
+
+    # Simula una edición: los turnos aceptados de pub_a cambian (se añade 09/08)
+    editar_publicacion(
+        pub_a,
+        [(date(2026, 7, 10), m.id)],
+        [(date(2026, 8, 3), t.id), (date(2026, 8, 9), t.id)],
+    )
+
+    db.session.refresh(sint_orig)
+    assert sint_orig.estado == "cancelada"
+
+    # La siguiente llamada a crear_pub_sintetica debe crear una nueva
+    sint_nueva = crear_pub_sintetica(pub_a, pub_b)
+
+    assert sint_nueva.id != sint_orig.id
+    assert sint_nueva.estado == "abierta"
+
+    fechas_cedidas = {tc.fecha for tc in sint_nueva.turnos_cedidos}
+    assert date(2026, 8, 3) in fechas_cedidas
+    assert date(2026, 8, 9) in fechas_cedidas
+
+
 def test_sintetica_no_aparece_en_candidatas_normales(db):
     """Una pub sintética no debe aparecer como candidata en búsquedas regulares."""
     ana = _usuario("Ana", "ana@test.es")
