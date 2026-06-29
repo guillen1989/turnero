@@ -472,9 +472,10 @@ def buscar_avisos_interes_para(publicacion):
     return resultado
 
 
-def crear_aviso_interes(pub_a, pub_b):
+def crear_aviso_oportunidad_3(pub_a, pub_b):
     """
-    Crea una Notificacion de tipo 'aviso_interes' para cada usuario implicado.
+    Crea una Notificacion combinada de tipo 'aviso_oportunidad_3' para cada usuario.
+    Reemplaza el par aviso_interes + aviso_sintetica en un único aviso.
     Idempotente: no duplica si ya existe para el mismo par.
     """
     for destinatario_id, pub_ref in (
@@ -484,26 +485,25 @@ def crear_aviso_interes(pub_a, pub_b):
         existe = Notificacion.query.filter_by(
             usuario_id=destinatario_id,
             publicacion_id=pub_ref.id,
-            tipo="aviso_interes",
+            tipo="aviso_oportunidad_3",
         ).first()
         if not existe:
             db.session.add(Notificacion(
                 usuario_id=destinatario_id,
                 publicacion_id=pub_ref.id,
-                tipo="aviso_interes",
+                tipo="aviso_oportunidad_3",
             ))
     db.session.commit()
 
-    enviar_push_condicional(pub_a.usuario, "aviso_interes")
-    enviar_push_condicional(pub_b.usuario, "aviso_interes")
+    enviar_push_condicional(pub_a.usuario, "aviso_oportunidad_3")
+    enviar_push_condicional(pub_b.usuario, "aviso_oportunidad_3")
 
 
 def procesar_aviso_y_sintetica(pub, candidata):
     """
-    Crea el aviso de interés y la pub sintética para un par (pub, candidata)
+    Crea la pub sintética y el aviso combinado para un par (pub, candidata)
     con solapamiento unilateral. Determina automáticamente la dirección A→B.
     """
-    crear_aviso_interes(pub, candidata)
     cedidos_pub = _cedidos_abiertos(pub)
     aceptados_candidata = _aceptados(candidata)
     if bool(cedidos_pub & aceptados_candidata):
@@ -512,6 +512,7 @@ def procesar_aviso_y_sintetica(pub, candidata):
     else:
         # pub acepta el cedido de candidata → candidata=A, pub=B
         crear_pub_sintetica(candidata, pub)
+    crear_aviso_oportunidad_3(pub, candidata)
 
 
 def crear_pub_sintetica(pub_a, pub_b):
@@ -569,31 +570,7 @@ def crear_pub_sintetica(pub_a, pub_b):
         ))
 
     db.session.commit()
-    _notificar_aviso_sintetica(pub_a, pub_b)
     return sint
-
-
-def _notificar_aviso_sintetica(pub_a, pub_b):
-    """Notifica a los usuarios de pub_a y pub_b que se ha creado una pub sintética."""
-    for destinatario_id, pub_ref in (
-        (pub_a.usuario_id, pub_b),
-        (pub_b.usuario_id, pub_a),
-    ):
-        existe = Notificacion.query.filter_by(
-            usuario_id=destinatario_id,
-            publicacion_id=pub_ref.id,
-            tipo="aviso_sintetica",
-        ).first()
-        if not existe:
-            db.session.add(Notificacion(
-                usuario_id=destinatario_id,
-                publicacion_id=pub_ref.id,
-                tipo="aviso_sintetica",
-            ))
-    db.session.commit()
-
-    enviar_push_condicional(pub_a.usuario, "aviso_sintetica")
-    enviar_push_condicional(pub_b.usuario, "aviso_sintetica")
 
 
 def buscar_sinteticas_que_coinciden_con(publicacion):

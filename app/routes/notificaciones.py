@@ -85,8 +85,7 @@ def avisos():
                 "nueva_publicacion_seguido",
                 "contraoferta",
                 "alerta_busqueda_guardada",
-                "aviso_interes",
-                "aviso_sintetica",
+                "aviso_oportunidad_3",
             )),
         )
         .order_by(Notificacion.fecha.desc())
@@ -118,8 +117,7 @@ def borrar_todos_avisos():
             "nueva_publicacion_seguido",
             "contraoferta",
             "alerta_busqueda_guardada",
-            "aviso_interes",
-            "aviso_sintetica",
+            "aviso_oportunidad_3",
         )),
     ).delete()
     db.session.commit()

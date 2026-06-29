@@ -120,9 +120,9 @@ def test_golden_path_staging(page):
     1. Registra Ana, Pedro y Carlos en La Paz/UCO/Enfermería (mismos grupo).
     2. Ana publica cambio (cede 10/07 M · acepta 03/08 T).
     3. Pedro publica cambio (cede 21/07 M · acepta 10/07 M) → solapamiento.
-       Sistema genera aviso_interes + publicación sintética.
-    4. Pedro · /avisos (5 s): «Interés» y «Oportunidad a 3».
-    5. Pedro · dashboard (5 s): tarjetas oportunidad e interés, botón Compartir.
+       Sistema genera aviso_oportunidad_3 + publicación sintética.
+    4. Pedro · /avisos (5 s): «Oportunidad a 3» (aviso combinado).
+    5. Pedro · dashboard (5 s): tarjeta oportunidad a 3 y botón Compartir.
     6. Pedro logout.
     7. Carlos · Buscar cambios (3 s): ve la sintética con botón WhatsApp.
     8. Carlos · «Me interesa» → modal (2 s) → acepta → cadena_3.
@@ -154,14 +154,13 @@ def test_golden_path_staging(page):
 
     # ── 3. Pedro · /avisos (5 s) ───────────────────────────────────────────
     page.goto(f"{_BASE}/avisos")
-    assert "Interés" in page.content(), "Falta aviso_interes en /avisos de Pedro"
-    assert "Oportunidad a 3" in page.content(), "Falta aviso_sintetica en /avisos de Pedro"
+    assert "Oportunidad a 3" in page.content(), "Falta aviso_oportunidad_3 en /avisos de Pedro"
     page.wait_for_timeout(5000)
 
     # ── 4. Pedro · dashboard Activos (5 s) ────────────────────────────────
     page.goto(f"{_BASE}/")
     assert "Oportunidad a 3 bandas" in page.content(), "Falta tarjeta oportunidad_3 en dashboard de Pedro"
-    assert "Interés parcial"        in page.content(), "Falta tarjeta aviso_interes en dashboard de Pedro"
+    assert "Oportunidad a 3"        in page.content(), "Falta aviso oportunidad_3 en dashboard de Pedro"
     assert "Compartir"              in page.content(), "Falta botón de compartir por WhatsApp"
     page.wait_for_timeout(5000)
 

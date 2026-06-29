@@ -90,8 +90,7 @@ def create_app(config_name=None):
                     Notificacion.tipo.in_([
                         "nueva_publicacion_seguido",
                         "alerta_busqueda_guardada",
-                        "aviso_interes",
-                        "aviso_sintetica",
+                        "aviso_oportunidad_3",
                     ]),
                     Notificacion.leida.is_(False),
                 ).count()
