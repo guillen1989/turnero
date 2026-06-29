@@ -174,6 +174,88 @@ def test_cadena_3_solo_tipo_cambio(db):
     assert buscar_cadenas_3_para(pub_junte) == []
 
 
+def _pub_listas(usuario, cedidos, aceptados):
+    """Crea una pub de tipo cambio con múltiples cedidos y/o aceptados.
+
+    cedidos / aceptados: lista de (fecha, franja).
+    """
+    pub = PublicacionCambio(usuario_id=usuario.id, tipo="cambio")
+    db.session.add(pub)
+    db.session.flush()
+    for fecha, franja in cedidos:
+        db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja.id))
+    for fecha, franja in aceptados:
+        db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja.id))
+    db.session.commit()
+    return pub
+
+
+def test_cadena_3_detecta_ciclos_para_todos_los_cedidos(db):
+    """Con dos cedidos abiertos, el motor encuentra cadenas independientes para cada uno."""
+    guillen = _usuario("Guillén", "guillen@test.es")
+    u_b1    = _usuario("B1", "b1@test.es")
+    u_c1    = _usuario("C1", "c1@test.es")
+    u_b2    = _usuario("B2", "b2@test.es")
+    u_c2    = _usuario("C2", "c2@test.es")
+
+    gid = guillen.unidad.grupo_intercambio_id
+    fr_m = _franja(gid, "Mañana")
+    fr_t = _franja(gid, "Tarde")
+    fr_n = _franja(gid, "Noche")
+    d1, d2, d3, d4, d5 = [date(2026, 7, i) for i in range(1, 6)]
+
+    # Guillén cede {día1-Tarde, día2-Mañana}, acepta día3-Noche
+    pub_g = _pub_listas(guillen, [(d1, fr_t), (d2, fr_m)], [(d3, fr_n)])
+
+    # Ciclo 1: Guillén→B1 (día1-Tarde), B1→C1 (día4-Tarde), C1→Guillén (día3-Noche)
+    pub_b1 = _pub(u_b1, d4, fr_t, d1, fr_t)
+    pub_c1 = _pub(u_c1, d3, fr_n, d4, fr_t)
+
+    # Ciclo 2: Guillén→B2 (día2-Mañana), B2→C2 (día5-Mañana), C2→Guillén (día3-Noche)
+    pub_b2 = _pub(u_b2, d5, fr_m, d2, fr_m)
+    pub_c2 = _pub(u_c2, d3, fr_n, d5, fr_m)
+
+    cadenas = buscar_cadenas_3_para(pub_g)
+
+    assert len(cadenas) == 2
+    pares = {frozenset({c[0].id, c[1].id}) for c in cadenas}
+    assert frozenset({pub_b1.id, pub_c1.id}) in pares
+    assert frozenset({pub_b2.id, pub_c2.id}) in pares
+
+
+def test_cadena_3_detecta_ciclos_para_todos_los_aceptados(db):
+    """Con dos aceptados distintos, el motor encuentra cadenas que se cierran por cualquiera de ellos."""
+    guillen = _usuario("Guillén", "guillen@test.es")
+    u_b1    = _usuario("B1", "b1@test.es")
+    u_c1    = _usuario("C1", "c1@test.es")
+    u_b2    = _usuario("B2", "b2@test.es")
+    u_c2    = _usuario("C2", "c2@test.es")
+
+    gid = guillen.unidad.grupo_intercambio_id
+    fr_m = _franja(gid, "Mañana")
+    fr_t = _franja(gid, "Tarde")
+    fr_n = _franja(gid, "Noche")
+    d1, d2, d3, d4, d5, d6 = [date(2026, 7, i) for i in range(1, 7)]
+
+    # Guillén cede día1-Tarde, acepta {día3-Noche, día4-Mañana}
+    pub_g = _pub_listas(guillen, [(d1, fr_t)], [(d3, fr_n), (d4, fr_m)])
+
+    # Ciclo 1 cierra por día3-Noche: Guillén→B1 (día1-Tarde), B1→C1 (día5-Tarde), C1→Guillén (día3-Noche)
+    pub_b1 = _pub(u_b1, d5, fr_t, d1, fr_t)
+    pub_c1 = _pub(u_c1, d3, fr_n, d5, fr_t)
+
+    # Ciclo 2 cierra por día4-Mañana: Guillén→B2 (día1-Tarde), B2→C2 (día6-Tarde), C2→Guillén (día4-Mañana)
+    pub_b2 = _pub(u_b2, d6, fr_t, d1, fr_t)
+    pub_c2 = _pub(u_c2, d4, fr_m, d6, fr_t)
+
+    cadenas = buscar_cadenas_3_para(pub_g)
+
+    assert len(cadenas) == 2
+    pares = {frozenset({c[0].id, c[1].id}) for c in cadenas}
+    assert frozenset({pub_b1.id, pub_c1.id}) in pares
+    assert frozenset({pub_b2.id, pub_c2.id}) in pares
+
+
 # --- crear_match_cadena_3 ---
 
 def test_crear_match_cadena_3_tipo_y_estado(db):
