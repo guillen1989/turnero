@@ -283,10 +283,10 @@
     {% if aviso.publicacion %}
     <div class="aviso-interes-card">
       <div class="aviso-interes-header">
-        <span class="tipo-badge tipo-badge--interes">{{ _('Interés parcial') }}</span>
+        <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3') }}</span>
         <strong class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</strong>
       </div>
-      <p class="aviso-interes-desc">{{ _('%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran completamente en ambas direcciones. Puede ser la base para un cambio a 3 bandas.', nombre=aviso.publicacion.usuario.nombre) }}</p>
+      <p class="aviso-interes-desc">{{ _('%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran del todo. El sistema ha generado una publicación puente: si un compañero la acepta, el cambio a 3 se cerrará automáticamente.', nombre=aviso.publicacion.usuario.nombre) }}</p>
       <a href="{{ url_for('main.cambios', usuario=aviso.publicacion.usuario.nombre) }}" class="btn btn-sm btn-secondary">{{ _('Ver publicación') }}</a>
     </div>
     {% endif %}

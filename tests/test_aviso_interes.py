@@ -11,7 +11,7 @@ from app.models import (
     TurnoAceptado,
     insertar_categorias_semilla,
 )
-from app.matching.service import buscar_avisos_interes_para, crear_aviso_interes
+from app.matching.service import buscar_avisos_interes_para, crear_aviso_oportunidad_3
 from app.services.registro import registrar_usuario
 
 
@@ -97,7 +97,7 @@ def test_cedido_b_en_aceptados_a_devuelve_candidata(db):
     assert pub_pedro in result
 
 
-# --- crear_aviso_interes ---
+# --- crear_aviso_oportunidad_3 ---
 
 def test_crea_notificaciones_para_ambos_usuarios(db):
     ana = _usuario("Ana", "ana@test.es")
@@ -106,13 +106,13 @@ def test_crea_notificaciones_para_ambos_usuarios(db):
     pub_ana = _pub_cambio(ana, franja, date(2026, 7, 10), date(2026, 8, 3))
     pub_pedro = _pub_cambio(pedro, franja, date(2026, 7, 21), date(2026, 7, 10))
 
-    crear_aviso_interes(pub_ana, pub_pedro)
+    crear_aviso_oportunidad_3(pub_ana, pub_pedro)
 
     assert Notificacion.query.filter_by(
-        usuario_id=ana.id, publicacion_id=pub_pedro.id, tipo="aviso_interes"
+        usuario_id=ana.id, publicacion_id=pub_pedro.id, tipo="aviso_oportunidad_3"
     ).count() == 1
     assert Notificacion.query.filter_by(
-        usuario_id=pedro.id, publicacion_id=pub_ana.id, tipo="aviso_interes"
+        usuario_id=pedro.id, publicacion_id=pub_ana.id, tipo="aviso_oportunidad_3"
     ).count() == 1
 
 
@@ -123,11 +123,11 @@ def test_no_duplica_notificaciones(db):
     pub_ana = _pub_cambio(ana, franja, date(2026, 7, 10), date(2026, 8, 3))
     pub_pedro = _pub_cambio(pedro, franja, date(2026, 7, 21), date(2026, 7, 10))
 
-    crear_aviso_interes(pub_ana, pub_pedro)
-    crear_aviso_interes(pub_ana, pub_pedro)
+    crear_aviso_oportunidad_3(pub_ana, pub_pedro)
+    crear_aviso_oportunidad_3(pub_ana, pub_pedro)
 
     assert Notificacion.query.filter_by(
-        usuario_id=ana.id, publicacion_id=pub_pedro.id, tipo="aviso_interes"
+        usuario_id=ana.id, publicacion_id=pub_pedro.id, tipo="aviso_oportunidad_3"
     ).count() == 1
 
 
@@ -153,5 +153,5 @@ def test_aviso_generado_al_publicar(client, db):
 
     pub_pedro = PublicacionCambio.query.filter_by(usuario_id=pedro.id).first()
     assert pub_pedro is not None
-    assert Notificacion.query.filter_by(usuario_id=pedro.id, tipo="aviso_interes").count() >= 1
-    assert Notificacion.query.filter_by(usuario_id=ana.id, tipo="aviso_interes").count() >= 1
+    assert Notificacion.query.filter_by(usuario_id=pedro.id, tipo="aviso_oportunidad_3").count() >= 1
+    assert Notificacion.query.filter_by(usuario_id=ana.id, tipo="aviso_oportunidad_3").count() >= 1

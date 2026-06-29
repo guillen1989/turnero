@@ -17,7 +17,6 @@ from app.models import (
 from app.matching.service import (
     buscar_avisos_interes_para,
     buscar_sinteticas_que_coinciden_con,
-    crear_aviso_interes,
     crear_cadena_3_desde_sintetica,
     crear_pub_sintetica,
 )
@@ -109,6 +108,46 @@ def test_idempotente_no_duplica(db):
     assert PublicacionCambio.query.filter_by(
         sintetica_pub_a_id=pub_a.id, sintetica_pub_b_id=pub_b.id
     ).count() == 1
+
+
+def test_sintetica_cancelada_se_recrea_con_turnos_actualizados(db):
+    """
+    Regresión: al editar pub_a los turnos cambian y la sintetica antigua queda
+    cancelada. La siguiente llamada a crear_pub_sintetica debe crear una nueva
+    con los turnos actualizados, no devolver la cancelada.
+    """
+    from app.services.publicaciones import editar_publicacion
+
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id, "Mañana")
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+
+    sint_orig = crear_pub_sintetica(pub_a, pub_b)
+    assert sint_orig.estado == "abierta"
+
+    # Simula una edición: los turnos aceptados de pub_a cambian (se añade 09/08)
+    editar_publicacion(
+        pub_a,
+        [(date(2026, 7, 10), m.id)],
+        [(date(2026, 8, 3), t.id), (date(2026, 8, 9), t.id)],
+    )
+
+    db.session.refresh(sint_orig)
+    assert sint_orig.estado == "cancelada"
+
+    # La siguiente llamada a crear_pub_sintetica debe crear una nueva
+    sint_nueva = crear_pub_sintetica(pub_a, pub_b)
+
+    assert sint_nueva.id != sint_orig.id
+    assert sint_nueva.estado == "abierta"
+
+    fechas_cedidas = {tc.fecha for tc in sint_nueva.turnos_cedidos}
+    assert date(2026, 8, 3) in fechas_cedidas
+    assert date(2026, 8, 9) in fechas_cedidas
 
 
 def test_sintetica_no_aparece_en_candidatas_normales(db):
@@ -307,11 +346,12 @@ def test_publicar_c_genera_cadena_3(client, db):
 
 
 # ---------------------------------------------------------------------------
-# Notificaciones aviso_sintetica
+# Notificaciones: crear_pub_sintetica no genera notificaciones propias
 # ---------------------------------------------------------------------------
 
-def test_crear_sintetica_notifica_a_ambos_usuarios(db):
-    """Al crear una pub sintética, ambos usuarios reciben aviso_sintetica."""
+def test_crear_sintetica_no_genera_notificaciones(db):
+    """crear_pub_sintetica crea la pub pero no genera notificaciones; las genera
+    crear_aviso_oportunidad_3 llamada desde procesar_aviso_y_sintetica."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     m = _franja(ana.unidad.grupo_intercambio_id)
@@ -322,42 +362,8 @@ def test_crear_sintetica_notifica_a_ambos_usuarios(db):
 
     crear_pub_sintetica(pub_a, pub_b)
 
-    notif_ana = Notificacion.query.filter_by(
-        usuario_id=ana.id, tipo="aviso_sintetica"
-    ).first()
-    notif_pedro = Notificacion.query.filter_by(
-        usuario_id=pedro.id, tipo="aviso_sintetica"
-    ).first()
-
-    assert notif_ana is not None
-    assert notif_pedro is not None
-    # Cada notificación apunta a la publicación del otro
-    assert notif_ana.publicacion_id == pub_b.id
-    assert notif_pedro.publicacion_id == pub_a.id
-
-
-def test_crear_sintetica_no_duplica_notificacion(db):
-    """Llamar crear_pub_sintetica dos veces no duplica los avisos."""
-    ana = _usuario("Ana", "ana@test.es")
-    pedro = _usuario("Pedro", "pedro@test.es")
-    m = _franja(ana.unidad.grupo_intercambio_id)
-    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
-
-    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
-    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
-
-    crear_pub_sintetica(pub_a, pub_b)
-    crear_pub_sintetica(pub_a, pub_b)
-
-    count_ana = Notificacion.query.filter_by(
-        usuario_id=ana.id, tipo="aviso_sintetica"
-    ).count()
-    count_pedro = Notificacion.query.filter_by(
-        usuario_id=pedro.id, tipo="aviso_sintetica"
-    ).count()
-
-    assert count_ana == 1
-    assert count_pedro == 1
+    assert Notificacion.query.filter_by(usuario_id=ana.id).count() == 0
+    assert Notificacion.query.filter_by(usuario_id=pedro.id).count() == 0
 
 
 # ---------------------------------------------------------------------------
