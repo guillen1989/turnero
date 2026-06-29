@@ -35,6 +35,22 @@ def _pub_cambio(usuario, franja, fecha_cede, fecha_acepta):
     return pub
 
 
+def _pub_listas(usuario, cedidos, aceptados):
+    """Crea una pub de tipo cambio con múltiples cedidos y/o aceptados.
+
+    cedidos / aceptados: lista de (fecha, franja).
+    """
+    pub = PublicacionCambio(usuario_id=usuario.id, tipo="cambio")
+    db.session.add(pub)
+    db.session.flush()
+    for fecha, franja in cedidos:
+        db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja.id))
+    for fecha, franja in aceptados:
+        db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja.id))
+    db.session.commit()
+    return pub
+
+
 # --- buscar_avisos_interes_para ---
 
 def test_sin_candidatas_devuelve_vacio(db):
@@ -155,3 +171,57 @@ def test_aviso_generado_al_publicar(client, db):
     assert pub_pedro is not None
     assert Notificacion.query.filter_by(usuario_id=pedro.id, tipo="aviso_oportunidad_3").count() >= 1
     assert Notificacion.query.filter_by(usuario_id=ana.id, tipo="aviso_oportunidad_3").count() >= 1
+
+
+# --- Multi-turno: todos los cedidos y aceptados participan en la búsqueda de oportunidades ---
+
+def test_aviso_detecta_solapamiento_para_todos_los_cedidos(db):
+    """Con dos cedidos, se genera aviso para candidatas que aceptan cualquiera de ellos."""
+    guillen = _usuario("Guillén", "guillen@test.es")
+    u_b     = _usuario("B", "b@test.es")
+    u_c     = _usuario("C", "c@test.es")
+
+    gid = guillen.unidad.grupo_intercambio_id
+    fr_m = _franja(gid, "Mañana")
+    fr_t = _franja(gid, "Tarde")
+    fr_n = _franja(gid, "Noche")
+    d1, d2, d3, d5, d6 = date(2026, 7, 1), date(2026, 7, 2), date(2026, 7, 3), date(2026, 7, 5), date(2026, 7, 6)
+
+    # Guillén cede {día1-Tarde, día2-Mañana}, acepta día3-Noche
+    pub_g = _pub_listas(guillen, [(d1, fr_t), (d2, fr_m)], [(d3, fr_n)])
+
+    # pub_b acepta día1-Tarde (primer cedido de Guillén), cede día5-Tarde ≠ día3-Noche → unilateral
+    pub_b = _pub_cambio(u_b, fr_t, d5, d1)
+    # pub_c acepta día2-Mañana (segundo cedido de Guillén), cede día6-Mañana ≠ día3-Noche → unilateral
+    pub_c = _pub_cambio(u_c, fr_m, d6, d2)
+
+    resultado = buscar_avisos_interes_para(pub_g)
+
+    assert pub_b in resultado
+    assert pub_c in resultado
+
+
+def test_aviso_detecta_solapamiento_para_todos_los_aceptados(db):
+    """Con dos aceptados, se genera aviso para candidatas cuyo cedido cuadra con cualquiera de ellos."""
+    guillen = _usuario("Guillén", "guillen@test.es")
+    u_b     = _usuario("B", "b@test.es")
+    u_c     = _usuario("C", "c@test.es")
+
+    gid = guillen.unidad.grupo_intercambio_id
+    fr_m = _franja(gid, "Mañana")
+    fr_t = _franja(gid, "Tarde")
+    fr_n = _franja(gid, "Noche")
+    d1, d3, d4, d5, d6 = date(2026, 7, 1), date(2026, 7, 3), date(2026, 7, 4), date(2026, 7, 5), date(2026, 7, 6)
+
+    # Guillén cede día1-Tarde, acepta {día3-Noche, día4-Mañana}
+    pub_g = _pub_listas(guillen, [(d1, fr_t)], [(d3, fr_n), (d4, fr_m)])
+
+    # pub_b cede día3-Noche (primer aceptado de Guillén), acepta día5-Noche ≠ día1-Tarde → unilateral
+    pub_b = _pub_cambio(u_b, fr_n, d3, d5)
+    # pub_c cede día4-Mañana (segundo aceptado de Guillén), acepta día6-Mañana ≠ día1-Tarde → unilateral
+    pub_c = _pub_cambio(u_c, fr_m, d4, d6)
+
+    resultado = buscar_avisos_interes_para(pub_g)
+
+    assert pub_b in resultado
+    assert pub_c in resultado
