@@ -221,6 +221,28 @@ def test_eliminar_regalo_con_match_no_da_error(client, db):
     assert MatchCambio.query.count() == 0
 
 
+def test_eliminar_publicacion_fuente_con_sintetica_dependiente_no_da_error(client, db):
+    """Regresión: eliminar pub_a cuando existe una sintética que la referencia via
+    sintetica_pub_a_id lanzaba ForeignKeyViolation porque _cancelar_sinteticas_de
+    solo marca estado='cancelada' pero no elimina la fila."""
+    from app.matching.service import crear_pub_sintetica
+
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    pub_a = _pub(u1, date(2026, 10, 1), date(2026, 10, 2))
+    pub_b = _pub(u2, date(2026, 10, 2), date(2026, 10, 1))
+    sint = crear_pub_sintetica(pub_a, pub_b)
+    sint_id = sint.id
+    pub_a_id = pub_a.id
+
+    _login(client, u1.email)
+    resp = client.post(f"/publicaciones/{pub_a_id}/eliminar", follow_redirects=False)
+
+    assert resp.status_code == 302
+    assert db.session.get(PublicacionCambio, pub_a_id) is None
+    assert db.session.get(PublicacionCambio, sint_id) is None
+
+
 def test_eliminar_con_notificacion_publicacion_id_no_da_error(client, db):
     """Eliminar una publicación que tiene notificaciones por publicacion_id no debe dar 500.
 
