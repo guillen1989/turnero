@@ -137,10 +137,31 @@ def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo
     return pub
 
 
+def _eliminar_sinteticas_de(pub_id):
+    """Elimina físicamente todas las sintéticas que referencian pub_id (cualquier estado).
+
+    _cancelar_sinteticas_de solo marca estado='cancelada' pero las filas siguen
+    en DB referenciando la pub padre via FK, lo que bloquea el DELETE posterior.
+    """
+    from sqlalchemy import or_
+    dependientes = PublicacionCambio.query.filter(
+        PublicacionCambio.es_sintetica.is_(True),
+        or_(
+            PublicacionCambio.sintetica_pub_a_id == pub_id,
+            PublicacionCambio.sintetica_pub_b_id == pub_id,
+        ),
+    ).all()
+    for sint in dependientes:
+        _eliminar_matches_de_publicacion(sint.id)
+        Notificacion.query.filter_by(publicacion_id=sint.id).delete()
+        db.session.delete(sint)
+    db.session.flush()
+
+
 def eliminar_publicacion(pub):
     """Borra completamente una publicación y todos sus datos asociados."""
     unidad_id = pub.usuario.unidad_id if pub.usuario else None
-    _cancelar_sinteticas_de(pub.id)
+    _eliminar_sinteticas_de(pub.id)
     _eliminar_matches_de_publicacion(pub.id)
     Notificacion.query.filter_by(publicacion_id=pub.id).delete()
     db.session.delete(pub)
