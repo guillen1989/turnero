@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 
 from flask import current_app
 from sqlalchemy import exists, select as sa_select, update as sa_update
@@ -56,7 +56,7 @@ def caducar_publicaciones_expiradas(hoy=None):
             tiene_cedido_abierto,
             ~tiene_cedido_vigente,
         )
-        .values(estado="caducada")
+        .values(estado="caducada", fecha_cierre=datetime.now(timezone.utc))
         .execution_options(synchronize_session=False)
     )
 
@@ -79,7 +79,7 @@ def caducar_publicaciones_expiradas(hoy=None):
             tiene_aceptado,
             ~tiene_aceptado_vigente,
         )
-        .values(estado="caducada")
+        .values(estado="caducada", fecha_cierre=datetime.now(timezone.utc))
         .execution_options(synchronize_session=False)
     )
 
@@ -106,7 +106,7 @@ def caducar_publicaciones_expiradas(hoy=None):
                 )
             ),
         )
-        .values(estado="cancelada")
+        .values(estado="cancelada", fecha_cierre=datetime.now(timezone.utc))
         .execution_options(synchronize_session=False)
     )
     db.session.execute(stmt_sinteticas)

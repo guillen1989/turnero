@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Notas de día + volcado de cambios confirmados a planilla. Siguiente: probar en staging y colectar feedback.
+Probar en staging. Siguiente: colectar feedback de usuarios.
 
 ## Backlog (fuente: .backlog)
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
@@ -46,6 +46,7 @@ Notas de día + volcado de cambios confirmados a planilla. Siguiente: probar en 
 - [x] test(e2e): golden path local con tres usuarios (Ana/Pedro/Carlos) · headed · Playwright · pausa 5 s en pantallas clave · Carlos cierra el triángulo con «Me interesa»
 - [x] test(e2e): golden path contra staging en Railway · registro de usuarios via UI (cascade hospital) · selector específico para el botón de la tarjeta sintética · diagnóstico en aserciones
 - [x] merge(staging→main): todo el bloque de cambio a 3 bandas fusionado en producción · conflictos resueltos a favor de staging · 481 tests passing · deploy en Railway
+- [x] feat(analytics): clics «Me interesa» + cambios activos acumulados en gráfica + backfill match.fecha_creacion NULLs · Event "me_interesa" en ruta me_interesa · fecha_cierre en PublicacionCambio (event listener ORM + caducidad bulk) · migración 40d574d237f8 · nueva serie "activas (acumulado)" en chart · tarjeta contador me_interesa · 7 tests nuevos · 19 passing en suite analytics
 - [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
 - [x] Fase 0, paso 2: Flask-Babel configurado · catálogo `es` · test de locale passing
 - [x] Fase 1, paso 1: modelos Hospital, GrupoIntercambio y Unidad · conftest con PostgreSQL · 8 tests passing

@@ -12,6 +12,7 @@ from app.forms.admin import (
 )
 from app.models import (
     AuditEliminacion,
+    Event,
     Pais, Provincia, Ciudad,
     Categoria, Feedback, FranjaHoraria, GrupoIntercambio, Hospital,
     MatchCambio, MatchParticipacion,
@@ -921,6 +922,7 @@ def analytics_data():
     def to_dict(rows):
         return {str(row.periodo.date()): row.total for row in rows if row.periodo is not None}
 
+    # ── usuarios nuevos ──────────────────────────────────────────────────────
     q_u = db.session.query(
         func.date_trunc(granularity, Usuario.fecha_registro).label("periodo"),
         func.count(Usuario.id).label("total"),
@@ -929,6 +931,7 @@ def analytics_data():
         q_u = q_u.filter(Usuario.unidad_id == unidad_id)
     rows_u = q_u.group_by("periodo").order_by("periodo").all()
 
+    # ── publicaciones nuevas ─────────────────────────────────────────────────
     q_p = db.session.query(
         func.date_trunc(granularity, PublicacionCambio.fecha_creacion).label("periodo"),
         func.count(PublicacionCambio.id).label("total"),
@@ -939,6 +942,21 @@ def analytics_data():
         )
     rows_p = q_p.group_by("periodo").order_by("periodo").all()
 
+    # ── publicaciones cerradas (para cálculo de activas acumuladas) ──────────
+    q_pc = db.session.query(
+        func.date_trunc(granularity, PublicacionCambio.fecha_cierre).label("periodo"),
+        func.count(PublicacionCambio.id).label("total"),
+    ).filter(
+        PublicacionCambio.es_sintetica.is_(False),
+        PublicacionCambio.fecha_cierre.isnot(None),
+    )
+    if unidad_id:
+        q_pc = q_pc.join(Usuario, Usuario.id == PublicacionCambio.usuario_id).filter(
+            Usuario.unidad_id == unidad_id
+        )
+    rows_pc = q_pc.group_by("periodo").order_by("periodo").all()
+
+    # ── matches nuevos ───────────────────────────────────────────────────────
     q_m = db.session.query(
         func.date_trunc(granularity, MatchCambio.fecha_creacion).label("periodo"),
         func.count(distinct(MatchCambio.id)).label("total"),
@@ -953,6 +971,7 @@ def analytics_data():
         )
     rows_m = q_m.group_by("periodo").order_by("periodo").all()
 
+    # ── confirmados ──────────────────────────────────────────────────────────
     q_c = db.session.query(
         func.date_trunc(granularity, MatchCambio.fecha_confirmacion_total).label("periodo"),
         func.count(distinct(MatchCambio.id)).label("total"),
@@ -970,14 +989,40 @@ def analytics_data():
         )
     rows_c = q_c.group_by("periodo").order_by("periodo").all()
 
-    d_u = to_dict(rows_u)
-    d_p = to_dict(rows_p)
-    d_m = to_dict(rows_m)
-    d_c = to_dict(rows_c)
+    # ── clics "Me interesa" ──────────────────────────────────────────────────
+    q_mi = db.session.query(
+        func.date_trunc(granularity, Event.created_at).label("periodo"),
+        func.count(Event.id).label("total"),
+    ).filter(Event.event_type == "me_interesa")
+    if unidad_id:
+        q_mi = q_mi.join(Usuario, Usuario.id == Event.user_id).filter(
+            Usuario.unidad_id == unidad_id
+        )
+    rows_mi = q_mi.group_by("periodo").order_by("periodo").all()
 
-    all_dates = sorted(set(d_u) | set(d_p) | set(d_m) | set(d_c))
+    d_u  = to_dict(rows_u)
+    d_p  = to_dict(rows_p)
+    d_pc = to_dict(rows_pc)
+    d_m  = to_dict(rows_m)
+    d_c  = to_dict(rows_c)
+    d_mi = to_dict(rows_mi)
 
-    # Totales para los contadores (filtrados por unidad si procede)
+    # Unión de todas las fechas con actividad
+    all_dates = sorted(set(d_u) | set(d_p) | set(d_pc) | set(d_m) | set(d_c) | set(d_mi))
+
+    # Activas acumuladas: suma corriente de (creadas - cerradas) por bucket
+    all_delta_dates = sorted(set(d_p) | set(d_pc))
+    i_delta = 0
+    running_activas = 0
+    d_activas = {}
+    for d in all_dates:
+        while i_delta < len(all_delta_dates) and all_delta_dates[i_delta] <= d:
+            dd = all_delta_dates[i_delta]
+            running_activas += d_p.get(dd, 0) - d_pc.get(dd, 0)
+            i_delta += 1
+        d_activas[d] = running_activas
+
+    # ── Totales para los contadores ──────────────────────────────────────────
     if unidad_id:
         unidad_obj = db.session.get(Unidad, unidad_id)
         t_usuarios = Usuario.query.filter_by(unidad_id=unidad_id).count()
@@ -1029,6 +1074,13 @@ def analytics_data():
             .filter(PlanillaMes.publicada.is_(True), Usuario.unidad_id == unidad_id)
             .scalar() or 0
         )
+        t_me_interesa = (
+            db.session.query(func.count(Event.id))
+            .filter(Event.event_type == "me_interesa")
+            .join(Usuario, Usuario.id == Event.user_id)
+            .filter(Usuario.unidad_id == unidad_id)
+            .scalar() or 0
+        )
     else:
         t_usuarios = Usuario.query.count()
         t_hospitales = Hospital.query.count()
@@ -1048,14 +1100,21 @@ def analytics_data():
             .filter(PlanillaMes.publicada.is_(True))
             .scalar() or 0
         )
+        t_me_interesa = (
+            db.session.query(func.count(Event.id))
+            .filter(Event.event_type == "me_interesa")
+            .scalar() or 0
+        )
 
     return jsonify({
         "labels": all_dates,
         "datasets": {
             "usuarios": [d_u.get(d, 0) for d in all_dates],
             "publicaciones": [d_p.get(d, 0) for d in all_dates],
+            "activas": [d_activas.get(d, 0) for d in all_dates],
             "matches": [d_m.get(d, 0) for d in all_dates],
             "confirmados": [d_c.get(d, 0) for d in all_dates],
+            "me_interesa": [d_mi.get(d, 0) for d in all_dates],
         },
         "totals": {
             "usuarios": t_usuarios,
@@ -1069,5 +1128,6 @@ def analytics_data():
             "confirmados": t_confirmados,
             "eliminadas": t_eliminadas,
             "planillas_publicadas": t_planillas_publicadas,
+            "me_interesa": t_me_interesa,
         },
     })

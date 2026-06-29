@@ -64,6 +64,10 @@
     <span class="admin-stat-num" id="stat-planillas-publicadas">{{ stats.planillas_publicadas }}</span>
     <span class="admin-stat-label">{{ _('Usuarios con planilla publicada') }}</span>
   </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-num" id="stat-me-interesa">—</span>
+    <span class="admin-stat-label">{{ _('Clics «Me interesa»') }}</span>
+  </div>
 </div>
 
 <div class="analytics-controls">
@@ -99,6 +103,7 @@
     confirmados: "stat-confirmados",
     eliminadas: "stat-eliminadas",
     planillas_publicadas: "stat-planillas-publicadas",
+    me_interesa: "stat-me-interesa",
   };
 
   function formatLabel(isoDate, granularity) {
@@ -137,8 +142,10 @@
       chart.data.labels = labels;
       chart.data.datasets[0].data = ds.usuarios;
       chart.data.datasets[1].data = ds.publicaciones;
-      chart.data.datasets[2].data = ds.matches;
-      chart.data.datasets[3].data = ds.confirmados;
+      chart.data.datasets[2].data = ds.activas;
+      chart.data.datasets[3].data = ds.matches;
+      chart.data.datasets[4].data = ds.confirmados;
+      chart.data.datasets[5].data = ds.me_interesa;
       chart.update();
       return;
     }
@@ -166,6 +173,14 @@
             fill: true,
           },
           {
+            label: "{{ _('Cambios activos (acumulado)') }}",
+            data: ds.activas,
+            borderColor: "#0891b2",
+            backgroundColor: "rgba(8,145,178,0.08)",
+            tension: 0.3,
+            fill: true,
+          },
+          {
             label: "{{ _('Matches') }}",
             data: ds.matches,
             borderColor: "#d97706",
@@ -178,6 +193,14 @@
             data: ds.confirmados,
             borderColor: "#7c3aed",
             backgroundColor: "rgba(124,58,237,0.08)",
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: "{{ _('Clics «Me interesa»') }}",
+            data: ds.me_interesa,
+            borderColor: "#e11d48",
+            backgroundColor: "rgba(225,29,72,0.08)",
             tension: 0.3,
             fill: true,
           },

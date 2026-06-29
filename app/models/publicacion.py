@@ -1,9 +1,12 @@
 from datetime import datetime, timezone
+from sqlalchemy import event as sa_event
 from app.extensions import db
 
 ESTADOS_PUBLICACION = ("abierta", "parcialmente_resuelta", "confirmada", "cancelada", "caducada")
 ESTADOS_TURNO_CEDIDO = ("abierto", "resuelto")
 TIPOS_PUBLICACION = ("cambio", "regalo", "peticion", "junte", "cambio_dia")
+
+_ESTADOS_CERRADO = frozenset(("confirmada", "cancelada", "caducada"))
 
 
 class PublicacionCambio(db.Model):
@@ -15,6 +18,7 @@ class PublicacionCambio(db.Model):
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
     estado = db.Column(db.String(30), nullable=False, default="abierta")
+    fecha_cierre = db.Column(db.DateTime, nullable=True)
     tipo = db.Column(db.String(20), nullable=False, default="cambio")
     mensaje = db.Column(db.String(200), nullable=True)
     es_sintetica = db.Column(db.Boolean, nullable=False, default=False)
@@ -98,3 +102,10 @@ class TurnoAceptado(db.Model):
 
     def __repr__(self):
         return f"<TurnoAceptado {self.fecha} franja={self.franja_horaria_id} [{self.estado}]>"
+
+
+@sa_event.listens_for(PublicacionCambio.estado, "set")
+def _auto_fecha_cierre(target, value, oldvalue, initiator):
+    """Sella fecha_cierre la primera vez que el estado pasa a un estado cerrado."""
+    if value in _ESTADOS_CERRADO and target.fecha_cierre is None:
+        target.fecha_cierre = datetime.now(timezone.utc)

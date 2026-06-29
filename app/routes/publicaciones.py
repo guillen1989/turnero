@@ -6,6 +6,7 @@ from flask_login import current_user, login_required
 
 from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
+from app.services.eventos import registrar_evento
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default, asignar_color_franja
 from app.services.compat_planilla_persistente import calcular_y_guardar_compatibilidad
@@ -333,6 +334,9 @@ def eliminar(pub_id):
 @login_required
 def me_interesa(pub_id):
     pub_a = db.get_or_404(PublicacionCambio, pub_id)
+
+    registrar_evento(current_user.id, "me_interesa", pub_id)
+    db.session.commit()
 
     if pub_a.usuario_id == current_user.id:
         flash(_("No puedes aceptar tu propia publicación."), "warning")
