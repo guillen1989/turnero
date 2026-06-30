@@ -3,6 +3,7 @@ from urllib.parse import quote as urlquote
 from flask import Blueprint, jsonify, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_babel import _
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
@@ -178,7 +179,16 @@ def api_provincias():
     if not pais_id:
         return jsonify([])
     provincias = Provincia.query.filter_by(pais_id=pais_id).order_by(Provincia.nombre).all()
-    return jsonify([{"id": p.id, "nombre": p.nombre} for p in provincias])
+    ids = [p.id for p in provincias]
+    counts = dict(
+        db.session.query(Ciudad.provincia_id, func.count(Ciudad.id))
+        .filter(Ciudad.provincia_id.in_(ids))
+        .group_by(Ciudad.provincia_id).all()
+    )
+    return jsonify([
+        {"id": p.id, "nombre": p.nombre, "count": counts.get(p.id, 0)}
+        for p in provincias
+    ])
 
 
 @bp.get("/api/ciudades")
@@ -187,7 +197,16 @@ def api_ciudades():
     if not provincia_id:
         return jsonify([])
     ciudades = Ciudad.query.filter_by(provincia_id=provincia_id).order_by(Ciudad.nombre).all()
-    return jsonify([{"id": c.id, "nombre": c.nombre} for c in ciudades])
+    ids = [c.id for c in ciudades]
+    counts = dict(
+        db.session.query(Hospital.ciudad_id, func.count(Hospital.id))
+        .filter(Hospital.ciudad_id.in_(ids))
+        .group_by(Hospital.ciudad_id).all()
+    )
+    return jsonify([
+        {"id": c.id, "nombre": c.nombre, "count": counts.get(c.id, 0)}
+        for c in ciudades
+    ])
 
 
 @bp.get("/api/hospitales")
@@ -196,7 +215,16 @@ def api_hospitales():
     if not ciudad_id:
         return jsonify([])
     hospitales = Hospital.query.filter_by(ciudad_id=ciudad_id).order_by(Hospital.nombre).all()
-    return jsonify([{"id": h.id, "nombre": h.nombre} for h in hospitales])
+    ids = [h.id for h in hospitales]
+    counts = dict(
+        db.session.query(Unidad.hospital_id, func.count(Unidad.id))
+        .filter(Unidad.hospital_id.in_(ids))
+        .group_by(Unidad.hospital_id).all()
+    )
+    return jsonify([
+        {"id": h.id, "nombre": h.nombre, "count": counts.get(h.id, 0)}
+        for h in hospitales
+    ])
 
 
 @bp.get("/api/unidades")
@@ -209,7 +237,16 @@ def api_unidades():
     if categoria_id:
         q = q.filter_by(categoria_id=categoria_id)
     unidades = q.order_by(Unidad.nombre).all()
-    return jsonify([{"id": u.id, "nombre": u.nombre} for u in unidades])
+    ids = [u.id for u in unidades]
+    counts = dict(
+        db.session.query(Usuario.unidad_id, func.count(Usuario.id))
+        .filter(Usuario.unidad_id.in_(ids))
+        .group_by(Usuario.unidad_id).all()
+    )
+    return jsonify([
+        {"id": u.id, "nombre": u.nombre, "count": counts.get(u.id, 0)}
+        for u in unidades
+    ])
 
 
 # ---------------------------------------------------------------------------

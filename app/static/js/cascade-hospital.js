@@ -50,13 +50,15 @@
     return o;
   }
 
-  function poblarSelect(sel, lista, labelPlaceholder, labelNueva, selectedId) {
+  function poblarSelect(sel, lista, labelPlaceholder, labelNueva, selectedId, labelCount) {
     sel.innerHTML = '';
     sel.appendChild(opcionPlaceholder(labelPlaceholder));
     lista.forEach(function (item) {
       var o = document.createElement('option');
       o.value = item.id;
-      o.textContent = item.nombre;
+      o.textContent = (labelCount && item.count > 0)
+        ? item.nombre + ' (' + item.count + ' ' + labelCount + ')'
+        : item.nombre;
       if (String(item.id) === String(selectedId)) o.selected = true;
       sel.appendChild(o);
     });
@@ -93,7 +95,7 @@
       return;
     }
     fetchJSON('/auth/api/provincias?pais_id=' + paisId, function (lista) {
-      poblarSelect(provinciaSel, lista, '— Selecciona provincia —', '— Añadir nueva provincia —', selectedId);
+      poblarSelect(provinciaSel, lista, '— Selecciona provincia —', '— Añadir nueva provincia —', selectedId, 'ciudades');
       mostrar('provincia-nuevo-group', provinciaSel.value === NUEVA);
       cargarCiudades(
         (provinciaSel.value && provinciaSel.value !== NUEVA) ? provinciaSel.value : null,
@@ -111,7 +113,7 @@
       return;
     }
     fetchJSON('/auth/api/ciudades?provincia_id=' + provinciaId, function (lista) {
-      poblarSelect(ciudadSel, lista, '— Selecciona ciudad —', '— Añadir nueva ciudad —', selectedId);
+      poblarSelect(ciudadSel, lista, '— Selecciona ciudad —', '— Añadir nueva ciudad —', selectedId, 'hospitales');
       mostrar('ciudad-nuevo-group', ciudadSel.value === NUEVA);
       cargarHospitales(
         (ciudadSel.value && ciudadSel.value !== NUEVA) ? ciudadSel.value : null,
@@ -129,7 +131,7 @@
       return;
     }
     fetchJSON('/auth/api/hospitales?ciudad_id=' + ciudadId, function (lista) {
-      poblarSelect(hospitalSel, lista, '— Selecciona hospital —', '— Añadir nuevo hospital —', selectedId);
+      poblarSelect(hospitalSel, lista, '— Selecciona hospital —', '— Añadir nuevo hospital —', selectedId, 'unidades');
       mostrar('hospital-nuevo-group', hospitalSel.value === NUEVA);
       cargarUnidades(
         (hospitalSel.value && hospitalSel.value !== NUEVA) ? hospitalSel.value : null,
@@ -148,7 +150,7 @@
     var catId = (categoriaSel && categoriaSel.value && categoriaSel.value !== NUEVA)
       ? '&categoria_id=' + categoriaSel.value : '';
     fetchJSON('/auth/api/unidades?hospital_id=' + hospitalId + catId, function (lista) {
-      poblarSelect(unidadSel, lista, '— Selecciona unidad —', '— Añadir nueva unidad —', selectedId);
+      poblarSelect(unidadSel, lista, '— Selecciona unidad —', '— Añadir nueva unidad —', selectedId, 'usuarios');
       mostrar('unidad-nuevo-group', unidadSel.value === NUEVA);
     });
   }
@@ -214,19 +216,19 @@
     // Cargar provincias y dentro de esa callback cargar ciudades, luego hospitales, luego unidades
     if (provinciaSel) {
       fetchJSON('/auth/api/provincias?pais_id=' + initPaisId, function (lista) {
-        poblarSelect(provinciaSel, lista, '— Selecciona provincia —', '— Añadir nueva provincia —', initProvinciaId);
+        poblarSelect(provinciaSel, lista, '— Selecciona provincia —', '— Añadir nueva provincia —', initProvinciaId, 'ciudades');
         mostrar('provincia-nuevo-group', provinciaSel.value === NUEVA);
 
         var provId = initProvinciaId || (lista.length === 1 ? String(lista[0].id) : null);
         if (provId && provId !== NUEVA && ciudadSel) {
           fetchJSON('/auth/api/ciudades?provincia_id=' + provId, function (lista2) {
-            poblarSelect(ciudadSel, lista2, '— Selecciona ciudad —', '— Añadir nueva ciudad —', initCiudadId);
+            poblarSelect(ciudadSel, lista2, '— Selecciona ciudad —', '— Añadir nueva ciudad —', initCiudadId, 'hospitales');
             mostrar('ciudad-nuevo-group', ciudadSel.value === NUEVA);
 
             var civId = initCiudadId || (lista2.length === 1 ? String(lista2[0].id) : null);
             if (civId && civId !== NUEVA && hospitalSel) {
               fetchJSON('/auth/api/hospitales?ciudad_id=' + civId, function (lista3) {
-                poblarSelect(hospitalSel, lista3, '— Selecciona hospital —', '— Añadir nuevo hospital —', initHospitalId);
+                poblarSelect(hospitalSel, lista3, '— Selecciona hospital —', '— Añadir nuevo hospital —', initHospitalId, 'unidades');
                 mostrar('hospital-nuevo-group', hospitalSel.value === NUEVA);
 
                 var hId = initHospitalId || (lista3.length === 1 ? String(lista3[0].id) : null);
