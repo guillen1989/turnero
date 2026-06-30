@@ -107,6 +107,92 @@ def create_app(config_name=None):
 def _registrar_comandos(app):
     import click
 
+    @app.cli.command("rematch")
+    @click.option("--dry-run", is_flag=True, help="Muestra qué matches crearía sin guardar nada.")
+    def rematch(dry_run):
+        """Relanza el motor de matching sobre todas las publicaciones abiertas.
+
+        Útil para recuperar matches perdidos en publicaciones creadas via script
+        o anteriores a algún cambio en la lógica de matching.
+        """
+        from sqlalchemy import select as sa_select
+        from app.models import (
+            MatchCambio, MatchParticipacion, PublicacionCambio, Unidad, Usuario
+        )
+        from app.matching.service import (
+            buscar_avisos_interes_para,
+            buscar_matches_para,
+            buscar_sinteticas_que_coinciden_con,
+            crear_cadena_3_desde_sintetica,
+            crear_match_directo,
+            procesar_aviso_y_sintetica,
+        )
+
+        def _ya_tienen_match_activo(id_a, id_b):
+            match_ids = db.session.execute(
+                sa_select(MatchParticipacion.match_id)
+                .join(MatchCambio)
+                .where(
+                    MatchParticipacion.publicacion_id == id_a,
+                    MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
+                )
+            ).scalars().all()
+            if not match_ids:
+                return False
+            return db.session.execute(
+                sa_select(MatchParticipacion.match_id).where(
+                    MatchParticipacion.match_id.in_(match_ids),
+                    MatchParticipacion.publicacion_id == id_b,
+                )
+            ).scalar() is not None
+
+        pubs = (
+            PublicacionCambio.query
+            .join(Usuario, PublicacionCambio.usuario_id == Usuario.id)
+            .join(Unidad, Usuario.unidad_id == Unidad.id)
+            .filter(
+                PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
+                PublicacionCambio.es_sintetica.is_(False),
+            )
+            .all()
+        )
+
+        n_matches = 0
+        n_cadenas = 0
+        n_sinteticas = 0
+        pares_vistos = set()
+
+        for pub in pubs:
+            for candidata in buscar_matches_para(pub):
+                par = frozenset({pub.id, candidata.id})
+                if par in pares_vistos:
+                    continue
+                pares_vistos.add(par)
+                if not _ya_tienen_match_activo(pub.id, candidata.id):
+                    if not dry_run:
+                        crear_match_directo(pub, candidata)
+                    n_matches += 1
+
+            for sint in buscar_sinteticas_que_coinciden_con(pub):
+                if not dry_run:
+                    crear_cadena_3_desde_sintetica(pub, sint)
+                n_cadenas += 1
+
+            for candidata in buscar_avisos_interes_para(pub):
+                par = frozenset({pub.id, candidata.id})
+                if par in pares_vistos:
+                    continue
+                pares_vistos.add(par)
+                if not dry_run:
+                    procesar_aviso_y_sintetica(pub, candidata)
+                n_sinteticas += 1
+
+        prefijo = "[dry-run] " if dry_run else ""
+        click.echo(f"{prefijo}Matches directos nuevos:   {n_matches}")
+        click.echo(f"{prefijo}Cadenas a 3 cerradas:      {n_cadenas}")
+        click.echo(f"{prefijo}Avisos/sintéticas nuevas:  {n_sinteticas}")
+        click.echo(f"{prefijo}Publicaciones analizadas:  {len(pubs)}")
+
     @app.cli.command("seed-franjas")
     def seed_franjas():
         """Siembra Mañana/Tarde/Noche en grupos que todavía no tienen franjas."""
