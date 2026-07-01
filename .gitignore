@@ -18,3 +18,8 @@ htmlcov/
 .notes.*
 .testmondata
 .testmondata*
+
+# Backups de la BD de producción — nunca deben versionarse (contienen datos reales)
+*.dump
+turnero_prod_*
+backups/
