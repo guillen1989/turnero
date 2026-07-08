@@ -174,3 +174,32 @@ def test_calendario_titulo_corto_y_boton_ayuda(client, db):
     assert b"Calendario de cambios" not in resp.data
     assert b'id="calendario-onboarding"' in resp.data
     assert "¿Cómo funciona?".encode("utf-8") in resp.data
+
+
+def test_calendario_muestra_oportunidad_a_3_para_sintetica(client, db):
+    """Las publicaciones sintéticas (oportunidades a 3 bandas) se etiquetan
+    de forma distinta en los datos del drill-down, no como "Cambio" normal."""
+    import json
+    import re
+
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    sint = PublicacionCambio(usuario_id=pedro.id, tipo="cambio", es_sintetica=True)
+    db.session.add(sint)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=sint.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
+    db.session.commit()
+
+    _login(client, ana.email)
+    resp = client.get("/calendario/?anyo=2026&mes=7&modo=ofertas")
+    assert resp.status_code == 200
+
+    html = resp.data.decode("utf-8")
+    m_pubs = re.search(
+        r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
+    )
+    datos_pubs = json.loads(m_pubs.group(1))
+    assert datos_pubs[str(sint.id)]["tipo_label"] == "Oportunidad a 3"

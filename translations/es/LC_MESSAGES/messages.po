@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-08 13:16+0200\n"
+"POT-Creation-Date: 2026-07-08 15:26+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -344,6 +344,12 @@ msgstr ""
 #: app/templates/publicaciones/editar.html:38
 #: app/templates/publicaciones/publicar.html:52
 msgid "Cambio de turno en el día"
+msgstr ""
+
+#: app/routes/calendario.py:63 app/templates/main/cambios.html:102
+#: app/templates/main/cambios.html:201 app/templates/main/dashboard.html:286
+#: app/templates/notificaciones/avisos.html:27
+msgid "Oportunidad a 3"
 msgstr ""
 
 #: app/routes/feedback.py:13
@@ -706,7 +712,7 @@ msgid "Instalar"
 msgstr ""
 
 #: app/templates/base.html:62 app/templates/base.html:77
-#: app/templates/calendario/calendario.html:106
+#: app/templates/calendario/calendario.html:114
 msgid "Cerrar"
 msgstr ""
 
@@ -1459,7 +1465,7 @@ msgid ""
 msgstr ""
 
 #: app/templates/calendario/calendario.html:56
-#: app/templates/calendario/calendario.html:94
+#: app/templates/calendario/calendario.html:102
 #: app/templates/main/como_funciona.html:71
 #: app/templates/main/dashboard.html:10
 #: app/templates/publicaciones/publicar.html:3
@@ -1487,15 +1493,15 @@ msgstr ""
 msgid "Sin ofertas"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:103
+#: app/templates/calendario/calendario.html:111
 msgid "Volver"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:127
+#: app/templates/calendario/calendario.html:135
 msgid "Nadie ha publicado nada este día todavía."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:128
+#: app/templates/calendario/calendario.html:136
 msgid "Publicar un cambio para este día"
 msgstr ""
 
@@ -1693,12 +1699,6 @@ msgstr ""
 #: app/templates/main/dashboard.html:148
 #: app/templates/publicaciones/publicar.html:45
 msgid "Junte de noches"
-msgstr ""
-
-#: app/templates/main/cambios.html:102 app/templates/main/cambios.html:201
-#: app/templates/main/dashboard.html:286
-#: app/templates/notificaciones/avisos.html:27
-msgid "Oportunidad a 3"
 msgstr ""
 
 #: app/templates/main/cambios.html:108

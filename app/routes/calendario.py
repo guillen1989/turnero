@@ -60,10 +60,11 @@ def index():
         "peticion": _("Petición"),
         "cambio_dia": _("Cambio de turno en el día"),
     }
+    etiqueta_oportunidad_3 = _("Oportunidad a 3")
     datos_publicaciones = {
         str(p["id"]): {
             "usuario_nombre": p["usuario_nombre"],
-            "tipo_label": tipo_labels.get(p["tipo"], p["tipo"]),
+            "tipo_label": etiqueta_oportunidad_3 if p["es_sintetica"] else tipo_labels.get(p["tipo"], p["tipo"]),
         }
         for p in resumen_publicaciones(pub_ids)
     }

@@ -186,15 +186,28 @@ def test_excluye_publicaciones_no_activas(db, estado):
     assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
 
 
-def test_excluye_sinteticas(db):
+def test_incluye_sinteticas_en_ofertas(db):
+    """Las oportunidades a 3 (publicaciones sintéticas) también se muestran en
+    el calendario — son justo el tipo de match más difícil de descubrir."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     gid = ana.unidad.grupo_intercambio_id
     manana = _franja(gid, "Mañana")
 
-    _pub(pedro, "cambio", aceptados=[(date(2026, 7, 3), manana)], es_sintetica=True)
+    pub = _pub(pedro, "cambio", aceptados=[(date(2026, 7, 3), manana)], es_sintetica=True)
 
-    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {date(2026, 7, 3): {manana.id: [pub.id]}}
+
+
+def test_incluye_sinteticas_en_peticiones(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    tarde = _franja(gid, "Tarde")
+
+    pub = _pub(pedro, "cambio", cedidos=[(date(2026, 7, 5), tarde)], es_sintetica=True)
+
+    assert construir_calendario_mes(ana, 2026, 7, "peticiones") == {date(2026, 7, 5): {tarde.id: [pub.id]}}
 
 
 def test_excluye_turnos_fuera_de_mes(db):
@@ -430,7 +443,19 @@ def test_resumen_publicaciones_devuelve_usuario_y_tipo(db):
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([pub.id])
 
-    assert resumen == [{"id": pub.id, "usuario_nombre": "Pedro", "tipo": "regalo"}]
+    assert resumen == [{"id": pub.id, "usuario_nombre": "Pedro", "tipo": "regalo", "es_sintetica": False}]
+
+
+def test_resumen_publicaciones_indica_si_es_sintetica(db):
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    pub = _pub(pedro, "cambio", aceptados=[(date(2026, 7, 3), manana)], es_sintetica=True)
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([pub.id])
+
+    assert resumen == [{"id": pub.id, "usuario_nombre": "Pedro", "tipo": "cambio", "es_sintetica": True}]
 
 
 def test_resumen_publicaciones_lista_vacia_sin_ids(db):

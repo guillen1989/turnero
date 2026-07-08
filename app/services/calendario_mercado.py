@@ -22,6 +22,12 @@ _TIPOS_POR_MODO = {
 
 
 def _candidatas(usuario, tipos):
+    """Publicaciones candidatas, visibles y activas para el usuario.
+
+    Incluye las sintéticas (oportunidades a 3 bandas): tienen tipo 'cambio' y
+    son justo el tipo de match más difícil de descubrir, así que también se
+    muestran en el calendario (etiquetadas aparte, ver resumen_publicaciones).
+    """
     grupo_id = usuario.unidad.grupo_intercambio_id
     return (
         PublicacionCambio.query
@@ -31,7 +37,6 @@ def _candidatas(usuario, tipos):
             PublicacionCambio.usuario_id != usuario.id,
             PublicacionCambio.tipo.in_(tipos),
             PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
-            PublicacionCambio.es_sintetica.is_(False),
             Usuario.categoria_id == usuario.categoria_id,
             Unidad.grupo_intercambio_id == grupo_id,
         )
@@ -195,7 +200,9 @@ def preparar_celdas_mes(dias, calendario_mes, franjas):
 
 
 def resumen_publicaciones(pub_ids):
-    """Datos mínimos de cada publicación (autor + tipo) para el drill-down."""
+    """Datos mínimos de cada publicación (autor + tipo + si es sintética) para
+    el drill-down. es_sintetica permite etiquetarla como "Oportunidad a 3"
+    en vez de con la etiqueta genérica de su tipo."""
     if not pub_ids:
         return []
     pubs = (
@@ -204,4 +211,7 @@ def resumen_publicaciones(pub_ids):
         .options(joinedload(PublicacionCambio.usuario))
         .all()
     )
-    return [{"id": p.id, "usuario_nombre": p.usuario.nombre, "tipo": p.tipo} for p in pubs]
+    return [
+        {"id": p.id, "usuario_nombre": p.usuario.nombre, "tipo": p.tipo, "es_sintetica": p.es_sintetica}
+        for p in pubs
+    ]
