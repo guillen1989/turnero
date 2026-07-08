@@ -165,6 +165,14 @@
     var claves = Object.keys(franjasDia);
 
     pila = [{ tipo: 'dia', fecha: fechaIso }];
+
+    // Un único tipo de turno ese día: nos ahorramos el paso intermedio de
+    // elegir franja y vamos directos a la lista de publicaciones.
+    if (claves.length === 1) {
+      window.calendarioAbrirFranja(fechaIso, claves[0], true);
+      return;
+    }
+
     var html = '';
     if (claves.length > 0) {
       html += '<ul class="calendario-lista">';
@@ -181,7 +189,7 @@
     mostrarVista(html, true);
   };
 
-  window.calendarioAbrirFranja = function (fechaIso, clave) {
+  window.calendarioAbrirFranja = function (fechaIso, clave, esRaiz) {
     var ids = (datosMes[fechaIso] || {})[clave] || [];
     pila.push({ tipo: 'franja', fecha: fechaIso, clave: clave });
     var html = '<ul class="calendario-lista">';
@@ -191,7 +199,7 @@
         (pub.usuario_nombre || '?') + ' — ' + (pub.tipo_label || '') + '</a></li>';
     });
     html += '</ul>';
-    mostrarVista(html, false);
+    mostrarVista(html, !!esRaiz);
   };
 
   window.calendarioVolver = function () {

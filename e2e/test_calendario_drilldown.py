@@ -55,14 +55,42 @@ def test_drilldown_dia_franja_navega_a_publicacion(page, live_server, escenario_
 
     panel = page.locator("#calendario-panel")
     assert panel.is_visible()
-    page.locator(".calendario-lista-item").first.click()
-
-    enlace = page.locator(".calendario-lista-item").first
-    enlace.click()
+    # El día solo tiene un tipo de turno, así que el panel salta directo a
+    # la lista de publicaciones (sin el paso intermedio de elegir franja).
+    page.locator("a.calendario-lista-item").first.click()
 
     page.wait_for_url(lambda url: "/cambios" in url)
     assert escenario_oferta["pedro_nombre"] in page.content()
     assert page.locator('button:has-text("Me interesa")').first.is_visible()
+
+
+def test_dia_con_una_sola_franja_salta_directo_a_publicaciones(page, live_server, escenario_oferta):
+    """Cuando un día solo tiene un tipo de turno, el panel debe saltarse el
+    paso intermedio de elegir franja y mostrar directo la lista de
+    publicaciones de esa franja (sin el botón "Mañana (1)")."""
+    page.goto(f"{live_server}/auth/login")
+    page.locator('input[name="email"]').fill(escenario_oferta["email"])
+    page.locator('input[name="password"]').fill(escenario_oferta["password"])
+    page.locator('[type="submit"]').click()
+    page.wait_for_load_state("networkidle")
+
+    page.goto(f"{live_server}/calendario/")
+
+    fecha_iso = escenario_oferta["fecha"].isoformat()
+    page.locator(f'[data-fecha="{fecha_iso}"]').click()
+
+    panel = page.locator("#calendario-panel")
+    assert panel.is_visible()
+
+    # No debe verse el botón intermedio de franja ("Mañana (1)")...
+    assert page.locator("button.calendario-lista-item").count() == 0
+    # ...sino directamente el enlace a la publicación de Pedro.
+    enlace = page.locator("a.calendario-lista-item").first
+    assert enlace.is_visible()
+    assert escenario_oferta["pedro_nombre"] in page.locator("#calendario-panel").inner_text()
+
+    # Al ser la vista "raíz" de ese día, no debe ofrecerse "Volver".
+    assert page.locator("#calendario-panel-volver").is_hidden()
 
 
 def test_dia_vacio_ofrece_publicar_cambio(page, live_server, escenario_oferta):

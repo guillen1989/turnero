@@ -206,6 +206,7 @@ body {
   margin-top: 0.25rem;
 }
 
+.btn[hidden] { display: none; }
 .btn {
   display: inline-block;
   padding: 0.65rem 1.5rem;
