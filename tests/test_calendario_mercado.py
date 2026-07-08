@@ -322,7 +322,12 @@ def test_preparar_celdas_dia_con_dos_franjas_pinta_bandas_de_color(db):
 
     celda = celdas[date(2026, 7, 1)]
     assert celda["mod"] == "cal-celda--multi"
-    assert "linear-gradient" in celda["estilo"]
+    # Regresión: el estilo debe ser una declaración CSS completa y válida
+    # ("background: ...;"), no solo la función linear-gradient suelta —
+    # un navegador descarta silenciosamente un style="linear-gradient(...)"
+    # sin la propiedad, dejando la celda sin ningún color.
+    assert celda["estilo"].startswith("background: linear-gradient(")
+    assert celda["estilo"].rstrip().endswith(";")
     assert (manana.color or "#3B82F6") in celda["estilo"]
     assert tarde.color in celda["estilo"]
     assert celda["etiqueta"] == ""

@@ -137,7 +137,8 @@ def _gradiente_bandas(colores):
         fin = (i + 1) * ancho
         paradas.append(f"{color} {inicio:.2f}%")
         paradas.append(f"{color} {fin:.2f}%")
-    return "linear-gradient(to right, " + ", ".join(paradas) + ")"
+    gradiente = "linear-gradient(to right, " + ", ".join(paradas) + ")"
+    return f"background: {gradiente}; color: #ffffff;"
 
 
 def preparar_celdas_mes(dias, calendario_mes, franjas):
