@@ -7,7 +7,7 @@ def test_login_correcto_redirige_al_inicio(page, live_server, usuario):
     page.locator('input[name="password"]').fill(usuario["password"])
     page.locator('[type="submit"]').click()
 
-    page.wait_for_url(f"{live_server}/")
+    page.wait_for_url(f"{live_server}/calendario/")
     assert "Turnero" in page.title()
 
 

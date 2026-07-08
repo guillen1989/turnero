@@ -41,14 +41,21 @@ def clean_e2e_db(e2e_app):
 
 @pytest.fixture
 def usuario(e2e_app, clean_e2e_db):
-    """Crea un usuario de test en la BD y devuelve sus credenciales."""
+    """Crea un usuario de test en la BD y devuelve sus credenciales.
+
+    Marca onboarding_visto=True: este fixture es para probar funcionalidad
+    general (no el propio flujo de onboarding), así que el login debe
+    aterrizar directo en la pantalla de inicio en vez de en /como-funciona.
+    """
     with e2e_app.app_context():
         insertar_categorias_semilla()
         cat = Categoria.query.filter_by(nombre="Enfermería").first()
-        registrar_usuario(
+        u = registrar_usuario(
             "Ana García", "ana@test.es", "pass1234",
             "Hospital E2E", "Urgencias", cat.id,
         )
+        u.onboarding_visto = True
+        _db.session.commit()
     return {"email": "ana@test.es", "password": "pass1234"}
 
 
@@ -59,5 +66,5 @@ def pagina_autenticada(page, live_server, usuario):
     page.locator('input[name="email"]').fill(usuario["email"])
     page.locator('input[name="password"]').fill(usuario["password"])
     page.locator('[type="submit"]').click()
-    page.wait_for_url(f"{live_server}/")
+    page.wait_for_url(f"{live_server}/calendario/")
     return page

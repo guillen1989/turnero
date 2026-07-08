@@ -33,7 +33,7 @@ def _login(page, base, email, password="pass1234"):
     page.locator('input[name="email"]').fill(email)
     page.locator('input[name="password"]').fill(password)
     page.locator('[type="submit"]').click()
-    page.wait_for_url(f"{base}/")
+    page.wait_for_url(f"{base}/calendario/")
 
 
 def _publicar(page, base, fecha_cede, franja_cede, fecha_acepta, franja_acepta):
