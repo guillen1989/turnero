@@ -131,6 +131,24 @@ def test_aplicar_plantilla_mantiene_franjas_en_uso(client, db):
     assert FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo.id, nombre="Guardia médica").first() is not None
 
 
+def test_aplicar_plantilla_asigna_color_a_franjas_nuevas(client, db):
+    """
+    Regresión: las franjas nuevas creadas al aplicar una plantilla deben recibir
+    un color de la paleta (como ya hacían crear_franjas_default/admin), no quedar
+    en color=None (lo que las haría indistinguibles en el calendario, todas con
+    el mismo azul de fallback).
+    """
+    usuario = _usuario_y_login(client)
+    grupo = usuario.unidad.grupo_intercambio
+    client.post("/unidad/turnos/plantilla", data={"plantilla_id": "doce_horas"}, follow_redirects=True)
+
+    diurno = FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo.id, nombre="Diurno").first()
+    nocturno = FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo.id, nombre="Nocturno").first()
+    assert diurno is not None and diurno.color is not None
+    assert nocturno is not None and nocturno.color is not None
+    assert diurno.color != nocturno.color
+
+
 def test_aplicar_plantilla_invalida_muestra_error(client, db):
     _usuario_y_login(client)
     resp = client.post(
@@ -159,6 +177,7 @@ def test_agregar_franja_personalizada(client, db):
     assert franja is not None
     assert franja.hora_inicio == time(8, 0)
     assert franja.hora_fin == time(20, 0)
+    assert franja.color is not None
 
 
 def test_agregar_franja_nombre_vacio_muestra_error(client, db):
