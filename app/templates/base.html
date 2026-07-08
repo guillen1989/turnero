@@ -11,7 +11,7 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="logo" href="{{ url_for('main.index') }}">{{ _('Turnero') }}</a>
+    <a class="logo" href="{{ url_for('calendario.index') }}">{{ _('Turnero') }}</a>
 
     {% if current_user.is_authenticated %}
       <div class="nav-header-actions">
@@ -26,9 +26,9 @@
 
       <nav class="main-nav" id="main-nav">
         <span class="nav-user">{{ current_user.nombre }}</span>
+        <a href="{{ url_for('calendario.index') }}">{{ _('Calendario') }}</a>
         <a href="{{ url_for('main.index') }}">{{ _('Mis cambios') }}</a>
         <a href="{{ url_for('main.cambios') }}">{{ _('Buscar cambios') }}</a>
-        <a href="{{ url_for('calendario.index') }}">{{ _('Calendario') }}</a>
         <a href="{{ url_for('planilla.index') }}">{{ _('Mi planilla') }}</a>
         <a href="{{ url_for('notificaciones.panel') }}">{{ _('Notificaciones') }}</a>
         <a href="{{ url_for('auth.perfil') }}">{{ _('Mi perfil') }}</a>

@@ -256,3 +256,34 @@ def test_perfil_cuenta_rechaza_contraseña_nueva_sin_actual(client, db):
     from app.extensions import db as _db
     _db.session.refresh(usuario)
     assert not usuario.check_password("nueva_clave_99")
+
+
+# --- Ronda 2, Paso 6: el calendario pasa a ser la pantalla de inicio ---
+
+def test_login_exitoso_con_onboarding_visto_redirige_a_calendario(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    Usuario.query.filter_by(email="ana@test.es").update({"onboarding_visto": True})
+    db.session.commit()
+    client.get("/auth/logout")
+
+    resp = client.post(
+        "/auth/login",
+        data={"email": "ana@test.es", "password": "contraseña123"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/calendario/")
+
+
+def test_login_ya_autenticado_redirige_a_calendario(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/login", follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/calendario/")
+
+
+def test_registro_ya_autenticado_redirige_a_calendario(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/registro", follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/calendario/")

@@ -61,7 +61,7 @@ def _choices_categorias():
 @bp.route("/registro", methods=["GET", "POST"])
 def registro():
     if current_user.is_authenticated:
-        return redirect(url_for("main.index"))
+        return redirect(url_for("calendario.index"))
 
     form = RegistroForm()
     form.categoria_id.choices = _choices_categorias()
@@ -143,7 +143,7 @@ def registro():
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("main.index"))
+        return redirect(url_for("calendario.index"))
 
     form = LoginForm()
     if form.validate_on_submit():
@@ -155,7 +155,7 @@ def login():
                 return redirect(siguiente)
             if not usuario.onboarding_visto:
                 return redirect(url_for("main.como_funciona"))
-            return redirect(url_for("main.index"))
+            return redirect(url_for("calendario.index"))
         flash(_("Correo o contraseña incorrectos."), "danger")
 
     return render_template("auth/login.html", form=form)

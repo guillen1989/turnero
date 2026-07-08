@@ -4,10 +4,16 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Ronda 2 del calendario (rama `staging`, sin push — lo hace el usuario a mano)
-— Pasos 1-5/6 completados. Siguiente y último: Paso 6, calendario como
-pantalla de inicio (redirect de login, logo, orden del menú, CTA final de
-"Cómo funciona"), sin tocar la ruta `main.index`.
+Ronda 2 del calendario completa (Pasos 1-6, rama `staging`, sin push — lo
+hace el usuario a mano). Siguiente: cuando se decida abordar B18 (modo
+"Juntes de noches"), retomar desde ahí.
+
+Nota: hay 3 tests e2e que fallan de forma preexistente y no relacionada con
+el calendario (`test_auth.py::test_login_correcto_redirige_al_inicio`,
+`test_sintetica_golden_path.py`, `test_sintetica_staging.py`, y 3 errores en
+`test_publicar.py` por un selector `#provincia-select` sin opciones) —
+confirmado con `git stash` que ya fallaban antes de esta ronda. Pendiente de
+investigar en otra sesión.
 
 ## Backlog (fuente: .backlog)
 - [ ] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones). Diseño ya contempla el hueco para un tercer `modo`; implementar más adelante.
@@ -113,6 +119,7 @@ pantalla de inicio (redirect de login, logo, orden del menú, CTA final de
 - [x] feat(calendario): Ronda 2, Paso 3 — botón fijo "Publicar cambio" bajo el grid · cualquier día (con o sin ofertas) abre el panel de drill-down; si está vacío muestra "Nadie ha publicado nada este día todavía" + enlace a `/publicar?fecha=&modo=` precargado (usa el Paso 2) · 1 test de ruta + 1 test e2e nuevo (día vacío → enlace correcto → aterriza en /publicar con el campo precargado) · 713 tests unitarios + 2 e2e passing
 - [x] feat(calendario): Ronda 2, Paso 4 — título corto "Calendario" (antes "Calendario de cambios") + icono ⓘ "¿Cómo funciona?" con banner de ayuda inline, replicando el patrón exacto de `/planilla` (mismas clases CSS `.planilla-ayuda-link`/`.planilla-onboarding-*`, mismo control por localStorage) · banner enlaza a `main.como_funciona` con anchor `#calendario` (preparado para el Paso 5) · 1 test nuevo · 714 tests unitarios + 2 e2e passing
 - [x] feat(onboarding): Ronda 2, Paso 5 — nueva sección "1. Descubre cambios en el calendario" en `/como-funciona` (con `id="calendario"` para el anchor del banner del Paso 4), renumerando el resto de secciones (2→8) · 1 test nuevo (verifica orden) · 715 tests unitarios + 2 e2e passing
+- [x] feat(nav): Ronda 2, Paso 6 (último) — el calendario pasa a ser la pantalla de inicio: redirect de login/registro (guard ya-autenticado + login exitoso) apunta a `calendario.index` en vez de `main.index`, logo de la cabecera y CTA final de "Cómo funciona" también · orden del menú: "Calendario" antes que "Mis cambios" · no se toca la ruta `main.index` ni sus redirects post-acción (publicar/cancelar/editar siguen llevando a "Mis cambios") · 5 tests nuevos · 720 tests unitarios + 2 e2e passing. **Ronda 2 completa (Pasos 1-6).**
 
 ## Backlog de calidad (pendiente)
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓

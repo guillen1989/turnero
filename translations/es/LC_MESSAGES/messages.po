@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-08 13:08+0200\n"
+"POT-Creation-Date: 2026-07-08 13:16+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -634,19 +634,19 @@ msgstr ""
 msgid "Menú"
 msgstr ""
 
-#: app/templates/base.html:29
-msgid "Mis cambios"
-msgstr ""
-
-#: app/templates/base.html:30 app/templates/main/cambios.html:3
-#: app/templates/main/cambios.html:8 app/templates/main/como_funciona.html:140
-msgid "Buscar cambios"
-msgstr ""
-
-#: app/templates/base.html:31 app/templates/calendario/calendario.html:3
+#: app/templates/base.html:29 app/templates/calendario/calendario.html:3
 #: app/templates/calendario/calendario.html:12
 #: app/templates/calendario/calendario.html:70
 msgid "Calendario"
+msgstr ""
+
+#: app/templates/base.html:30
+msgid "Mis cambios"
+msgstr ""
+
+#: app/templates/base.html:31 app/templates/main/cambios.html:3
+#: app/templates/main/cambios.html:8 app/templates/main/como_funciona.html:140
+msgid "Buscar cambios"
 msgstr ""
 
 #: app/templates/base.html:32 app/templates/main/como_funciona.html:100
@@ -2220,7 +2220,7 @@ msgid "La app quedará en tu pantalla de inicio igual que cualquier otra."
 msgstr ""
 
 #: app/templates/main/como_funciona.html:217
-msgid "Ir a mis cambios"
+msgid "Ir al calendario"
 msgstr ""
 
 #: app/templates/main/como_funciona.html:220
@@ -3419,5 +3419,8 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "7. Instala Turnero en tu móvil"
+#~ msgstr ""
+
+#~ msgid "Ir a mis cambios"
 #~ msgstr ""
 

@@ -185,3 +185,16 @@ def test_smoke_rechazar_match_post(client, db):
     with patch("app.push.sender.webpush"):
         resp = client.post(f"/matches/{match.id}/rechazar", follow_redirects=False)
     assert resp.status_code == 302
+
+
+def test_logo_y_menu_apuntan_al_calendario(client, db):
+    """Ronda 2, Paso 6: el calendario es la pantalla de inicio."""
+    u = _setup()
+    _login(client, u.email)
+    resp = client.get("/calendario/")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert 'class="logo" href="/calendario/"' in html
+    pos_calendario = html.index(">Calendario<")
+    pos_mis_cambios = html.index("Mis cambios")
+    assert pos_calendario < pos_mis_cambios

@@ -84,3 +84,12 @@ def test_como_funciona_seccion_calendario_aparece_primero(client, db):
     pos_calendario = html.index("Descubre cambios en el calendario")
     pos_publica = html.index("Publica tu cambio")
     assert pos_calendario < pos_publica
+
+
+def test_como_funciona_cta_final_apunta_al_calendario(client, db):
+    """Ronda 2, Paso 6: el botón final de "Cómo funciona" lleva al calendario."""
+    u = _usuario(onboarding_visto=True)
+    _login(client, u.email)
+    resp = client.get("/como-funciona")
+    assert resp.status_code == 200
+    assert b'href="/calendario/" class="btn btn-primary"' in resp.data
