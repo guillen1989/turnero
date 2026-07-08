@@ -227,6 +227,57 @@ def test_post_recuperar_contrasena_redirige_al_login(client, db):
     assert "/auth/login" in resp.headers["Location"] or "login" in resp.headers["Location"]
 
 
+# --- Push a administradores al recibir feedback ---
+
+def _admin_con_push(app, client):
+    admin = _login(client, email="admin@test.es", es_admin=True)
+    admin.push_subscription = '{"endpoint": "https://push.example.com/x", "keys": {"p256dh": "A", "auth": "B"}}'
+    _db.session.commit()
+    client.get("/auth/logout", follow_redirects=False)
+    old_key = app.config.get("VAPID_PRIVATE_KEY")
+    old_email = app.config.get("VAPID_CLAIM_EMAIL")
+    app.config["VAPID_PRIVATE_KEY"] = "fake-key"
+    app.config["VAPID_CLAIM_EMAIL"] = "admin@test.es"
+    return admin, old_key, old_email
+
+
+def test_nuevo_feedback_envia_push_a_admin(app, client, db):
+    admin, old_key, old_email = _admin_con_push(app, client)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            client.post("/feedback", data={
+                "tipo": "error",
+                "descripcion": "La app no carga en Safari.",
+                "email_contacto": "usuario@test.es",
+            })
+            mock_wp.assert_called_once()
+            assert mock_wp.call_args.kwargs.get("headers") is None
+    finally:
+        app.config["VAPID_PRIVATE_KEY"] = old_key
+        app.config["VAPID_CLAIM_EMAIL"] = old_email
+
+
+def test_recuperar_contrasena_envia_push_urgente_a_admin(app, client, db):
+    admin, old_key, old_email = _admin_con_push(app, client)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            client.post("/recuperar-contrasena", data={"email": "victima@test.es"})
+            mock_wp.assert_called_once()
+            assert mock_wp.call_args.kwargs.get("headers") == {"Urgency": "high"}
+    finally:
+        app.config["VAPID_PRIVATE_KEY"] = old_key
+        app.config["VAPID_CLAIM_EMAIL"] = old_email
+
+
+def test_feedback_sin_admins_no_falla(client, db):
+    resp = client.post("/feedback", data={
+        "tipo": "error",
+        "descripcion": "Sin admins en el sistema.",
+        "email_contacto": "usuario@test.es",
+    }, follow_redirects=False)
+    assert resp.status_code == 302
+
+
 def test_admin_restablecer_contrasena_cambia_password(client, db):
     u = _login(client, email="admin@test.es", es_admin=True)
     usuario_target = registrar_usuario("Víctima", "victima@test.es", "pass_original", "H", "U",

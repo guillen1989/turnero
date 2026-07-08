@@ -5,7 +5,8 @@ from flask_babel import _
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import Feedback
+from app.models import Feedback, Usuario
+from app.push.sender import enviar_push
 
 bp = Blueprint("feedback", __name__)
 
@@ -14,6 +15,21 @@ TIPOS = {
     "sugerencia": _("Sugerencia de mejora"),
     "recuperacion": _("Recuperación de contraseña"),
 }
+
+
+def _notificar_admins_nuevo_feedback(fb):
+    """Avisa por push a los administradores. Las solicitudes de recuperación
+    de contraseña se marcan como urgentes porque bloquean el acceso del usuario."""
+    urgente = fb.tipo == "recuperacion"
+    if urgente:
+        titulo = _("Recuperación de contraseña (urgente)")
+        cuerpo = _("Solicitud de %(email)s", email=fb.email_contacto or "")
+    else:
+        titulo = _("Nuevo mensaje de feedback")
+        cuerpo = fb.descripcion[:120]
+
+    for admin in Usuario.query.filter_by(es_admin=True).all():
+        enviar_push(admin, titulo, cuerpo, url="/admin/feedback", urgente=urgente)
 
 
 @bp.route("/feedback", methods=["GET", "POST"])
@@ -43,6 +59,7 @@ def nuevo():
         )
         db.session.add(fb)
         db.session.commit()
+        _notificar_admins_nuevo_feedback(fb)
         flash(_("Gracias, hemos recibido tu mensaje."), "success")
         return redirect(url_for("main.index"))
 
@@ -65,6 +82,7 @@ def recuperar_contrasena():
         )
         db.session.add(fb)
         db.session.commit()
+        _notificar_admins_nuevo_feedback(fb)
         flash(_("Hemos recibido tu solicitud. El administrador te contactará en breve."), "success")
         return redirect(url_for("auth.login"))
 

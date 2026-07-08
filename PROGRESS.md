@@ -145,6 +145,7 @@ así que añadir esa lógica era sobre-ingeniería para el problema real.
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓
 - [x] Añadir APP_URL al .env local y smoke test integrado en GitHub Actions post-deploy ✓
 - [x] fix(admin): la contraseña temporal al restablecer cuenta desde el panel de feedback ya no se muestra en un flash message (el admin reportó que no lo veía) · ahora se envía como `Notificacion` tipo `contrasena_restablecida` (nuevo campo `mensaje` en el modelo, migración `9310c6bbcb55`) al usuario afectado, visible en /avisos y contando en el badge de la campana · 5 tests nuevos
+- [x] feat(push): aviso push a todos los administradores (`es_admin=True`) al crearse cualquier Feedback (formulario de contacto o solicitud de recuperación) · las solicitudes de recuperación de contraseña van marcadas como urgentes (cabecera `Urgency: high` en `enviar_push`, nuevo parámetro `urgente`) · 5 tests nuevos
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

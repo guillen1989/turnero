@@ -92,6 +92,44 @@ def test_envia_cuando_hay_suscripcion_y_vapid(app, db):
         app.config["VAPID_CLAIM_EMAIL"] = old_email
 
 
+def test_envia_con_header_urgency_high_si_urgente(app, db):
+    usuario = _usuario()
+    usuario.push_subscription = json.dumps(SUBSCRIPTION)
+    db.session.commit()
+
+    old_key = app.config.get("VAPID_PRIVATE_KEY")
+    old_email = app.config.get("VAPID_CLAIM_EMAIL")
+    app.config["VAPID_PRIVATE_KEY"] = "fake-key"
+    app.config["VAPID_CLAIM_EMAIL"] = "admin@test.es"
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push(usuario, "Título", "Cuerpo", urgente=True)
+            mock_wp.assert_called_once()
+            assert mock_wp.call_args.kwargs.get("headers") == {"Urgency": "high"}
+    finally:
+        app.config["VAPID_PRIVATE_KEY"] = old_key
+        app.config["VAPID_CLAIM_EMAIL"] = old_email
+
+
+def test_envia_sin_header_urgency_por_defecto(app, db):
+    usuario = _usuario()
+    usuario.push_subscription = json.dumps(SUBSCRIPTION)
+    db.session.commit()
+
+    old_key = app.config.get("VAPID_PRIVATE_KEY")
+    old_email = app.config.get("VAPID_CLAIM_EMAIL")
+    app.config["VAPID_PRIVATE_KEY"] = "fake-key"
+    app.config["VAPID_CLAIM_EMAIL"] = "admin@test.es"
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push(usuario, "Título", "Cuerpo")
+            mock_wp.assert_called_once()
+            assert mock_wp.call_args.kwargs.get("headers") is None
+    finally:
+        app.config["VAPID_PRIVATE_KEY"] = old_key
+        app.config["VAPID_CLAIM_EMAIL"] = old_email
+
+
 def test_ignora_excepcion_webpush(app, db):
     """Si webpush lanza WebPushException, enviar_push no propaga el error."""
     from pywebpush import WebPushException

@@ -154,11 +154,15 @@ def _textos_para(tipo, n):
     return titulo, cuerpo
 
 
-def enviar_push(usuario, titulo, cuerpo, url="/", tag=None):
+def enviar_push(usuario, titulo, cuerpo, url="/", tag=None, urgente=False):
     """
     Envía una notificación push al usuario en un hilo daemon para no bloquear
     el worker. No hace nada si el usuario no tiene suscripción guardada
     o si las claves VAPID no están configuradas.
+
+    `urgente=True` añade la cabecera Urgency: high (RFC 8030) para que el
+    servicio push la entregue con prioridad incluso en dispositivos con
+    ahorro de batería.
     """
     if not usuario.push_subscription:
         return
@@ -175,6 +179,7 @@ def enviar_push(usuario, titulo, cuerpo, url="/", tag=None):
     if tag:
         payload["tag"] = tag
     data = json.dumps(payload)
+    headers = {"Urgency": "high"} if urgente else None
 
     def _send():
         try:
@@ -183,6 +188,7 @@ def enviar_push(usuario, titulo, cuerpo, url="/", tag=None):
                 data=data,
                 vapid_private_key=vapid_private_key,
                 vapid_claims=vapid_claims,
+                headers=headers,
             )
         except Exception as exc:
             app.logger.warning("Push no entregado a usuario %s: %s", usuario_id, exc)
