@@ -254,7 +254,28 @@ def nueva():
         calcular_y_guardar_compatibilidad(pub)
         return redirect(url_for("main.index"))
 
-    return render_template("publicaciones/publicar.html", franjas=franjas, today=date.today().isoformat())
+    prefill_fecha, prefill_modo = _leer_prefill_calendario()
+    return render_template(
+        "publicaciones/publicar.html", franjas=franjas, today=date.today().isoformat(),
+        prefill_fecha=prefill_fecha, prefill_modo=prefill_modo,
+    )
+
+
+def _leer_prefill_calendario():
+    """Lee ?fecha=&modo= del calendario para precargar el formulario de publicar.
+
+    fecha debe ser una fecha ISO válida y modo uno de 'ofertas'/'peticiones';
+    si no, se ignoran silenciosamente (no hay prefill).
+    """
+    fecha_str = request.args.get("fecha", "")
+    modo = request.args.get("modo", "")
+    if modo not in ("ofertas", "peticiones"):
+        return None, None
+    try:
+        date.fromisoformat(fecha_str)
+    except ValueError:
+        return None, None
+    return fecha_str, modo
 
 
 @bp.post("/publicaciones/<int:pub_id>/cancelar")

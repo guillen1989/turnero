@@ -194,3 +194,39 @@ def test_publicar_rechaza_turno_aceptado_con_fecha_pasada(client, db):
     }, follow_redirects=True)
     assert resp.status_code == 200
     assert PublicacionCambio.query.count() == 0
+
+
+# --- Prefill de fecha/modo vía query params (Ronda 2, Paso 2) ---
+
+def test_publicar_prefill_modo_ofertas_precarga_fecha_aceptada(client, db):
+    usuario = _usuario_y_login(client)
+    _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.get("/publicar?fecha=2026-07-15&modo=ofertas")
+    assert resp.status_code == 200
+    assert b'name="fecha_aceptada_0" min="' in resp.data
+    assert b'value="2026-07-15"' in resp.data
+
+
+def test_publicar_prefill_modo_peticiones_precarga_fecha_cedida(client, db):
+    usuario = _usuario_y_login(client)
+    _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.get("/publicar?fecha=2026-08-02&modo=peticiones")
+    assert resp.status_code == 200
+    assert b'name="fecha_cedida_0" min="' in resp.data
+    assert b'value="2026-08-02"' in resp.data
+
+
+def test_publicar_sin_prefill_no_precarga_nada(client, db):
+    usuario = _usuario_y_login(client)
+    _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.get("/publicar")
+    assert resp.status_code == 200
+    assert b'value="2026-' not in resp.data
+
+
+def test_publicar_prefill_fecha_invalida_se_ignora(client, db):
+    usuario = _usuario_y_login(client)
+    _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.get("/publicar?fecha=no-es-una-fecha&modo=ofertas")
+    assert resp.status_code == 200
+    assert b'value="no-es-una-fecha"' not in resp.data

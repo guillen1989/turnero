@@ -124,7 +124,7 @@
         <div class="turno-row">
           <div class="turno-row-campo">
             <label>{{ _('Fecha') }}</label>
-            <input type="date" name="fecha_cedida_0" min="{{ today }}">
+            <input type="date" name="fecha_cedida_0" min="{{ today }}"{% if prefill_modo == 'peticiones' %} value="{{ prefill_fecha }}"{% endif %}>
           </div>
           <div class="turno-row-campo">
             <label>{{ _('Tipo de turno') }}</label>
@@ -148,7 +148,7 @@
         <div class="turno-row">
           <div class="turno-row-campo">
             <label>{{ _('Fecha') }}</label>
-            <input type="date" name="fecha_aceptada_0" min="{{ today }}">
+            <input type="date" name="fecha_aceptada_0" min="{{ today }}"{% if prefill_modo == 'ofertas' %} value="{{ prefill_fecha }}"{% endif %}>
           </div>
           <div class="turno-row-campo">
             <label>{{ _('Tipo de turno') }}</label>
