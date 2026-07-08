@@ -310,7 +310,7 @@ def test_preparar_celdas_dia_con_cualquier_franja(db):
     assert celda["tooltip"] == "Cualquiera"
 
 
-def test_preparar_celdas_dia_con_varias_franjas(db):
+def test_preparar_celdas_dia_con_dos_franjas_pinta_bandas_de_color(db):
     ana = _usuario("Ana", "ana@test.es")
     gid = ana.unidad.grupo_intercambio_id
     manana = _franja(gid, "Mañana")
@@ -322,8 +322,75 @@ def test_preparar_celdas_dia_con_varias_franjas(db):
 
     celda = celdas[date(2026, 7, 1)]
     assert celda["mod"] == "cal-celda--multi"
-    assert celda["etiqueta"] == "2"
+    assert "linear-gradient" in celda["estilo"]
+    assert (manana.color or "#3B82F6") in celda["estilo"]
+    assert tarde.color in celda["estilo"]
+    assert celda["etiqueta"] == ""
     assert celda["tooltip"] == "Mañana, Tarde"
+
+
+def test_preparar_celdas_bandas_respetan_orden_por_hora_inicio(db):
+    """Las bandas siguen el orden cronológico de las franjas, no el de inserción."""
+    ana = _usuario("Ana", "ana@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+    noche = _franja(gid, "Noche")
+
+    dias = [date(2026, 7, 1)]
+    # Insertadas en desorden en el dict de datos (Noche, Mañana, Tarde)
+    calendario_mes = {date(2026, 7, 1): {noche.id: [1], manana.id: [2], tarde.id: [3]}}
+    celdas = preparar_celdas_mes(dias, calendario_mes, [manana, tarde, noche])
+
+    estilo = celdas[date(2026, 7, 1)]["estilo"]
+    pos_manana = estilo.index(manana.color or "#3B82F6")
+    pos_tarde = estilo.index(tarde.color)
+    pos_noche = estilo.index(noche.color)
+    assert pos_manana < pos_tarde < pos_noche
+
+
+def test_preparar_celdas_cualquiera_va_al_final_de_las_bandas(db):
+    ana = _usuario("Ana", "ana@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+
+    dias = [date(2026, 7, 1)]
+    calendario_mes = {date(2026, 7, 1): {"cualquiera": [1], manana.id: [2], tarde.id: [3]}}
+    celdas = preparar_celdas_mes(dias, calendario_mes, [manana, tarde])
+
+    estilo = celdas[date(2026, 7, 1)]["estilo"]
+    pos_manana = estilo.index(manana.color or "#3B82F6")
+    pos_tarde = estilo.index(tarde.color)
+    pos_cualquiera = estilo.index("#9333ea")
+    assert pos_manana < pos_tarde < pos_cualquiera
+
+
+def test_preparar_celdas_mas_de_cuatro_franjas_usa_fallback_neutro(db):
+    """Más de 4 tipos distintos: demasiadas bandas serían ilegibles, se mantiene
+    el tratamiento neutro con el número de tipos distintos."""
+    ana = _usuario("Ana", "ana@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+    noche = _franja(gid, "Noche")
+    from app.models import FranjaHoraria
+    from datetime import time
+    f4 = FranjaHoraria(nombre="Guardia especial A", hora_inicio=time(6, 0), hora_fin=time(6, 0), grupo_intercambio_id=gid, color="#111111")
+    f5 = FranjaHoraria(nombre="Guardia especial B", hora_inicio=time(9, 0), hora_fin=time(21, 0), grupo_intercambio_id=gid, color="#222222")
+    db.session.add_all([f4, f5])
+    db.session.commit()
+
+    dias = [date(2026, 7, 1)]
+    calendario_mes = {date(2026, 7, 1): {
+        manana.id: [1], tarde.id: [2], noche.id: [3], f4.id: [4], f5.id: [5],
+    }}
+    celdas = preparar_celdas_mes(dias, calendario_mes, [manana, tarde, noche, f4, f5])
+
+    celda = celdas[date(2026, 7, 1)]
+    assert celda["mod"] == "cal-celda--multi"
+    assert "linear-gradient" not in celda["estilo"]
+    assert celda["etiqueta"] == "5"
 
 
 # --- resumen_publicaciones (Paso 4: datos mínimos para el drill-down) ---

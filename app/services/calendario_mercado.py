@@ -94,6 +94,11 @@ _COLOR_TEXTO_CUALQUIERA = "#ffffff"
 _COLOR_MULTI = "#dbeafe"
 _COLOR_TEXTO_MULTI = "#1e40af"
 
+# Por encima de este número de tipos distintos, las bandas de color serían
+# demasiado finas para distinguirse en una celda de ~40px; se usa el
+# tratamiento neutro (color plano + nº de tipos) en su lugar.
+_MAX_FRANJAS_EN_BANDAS = 4
+
 
 def _info_clave(clave, franjas_por_id):
     """(color, color_texto, nombre) para una clave de franja o CUALQUIER_FRANJA."""
@@ -105,6 +110,36 @@ def _info_clave(clave, franjas_por_id):
     return franja.color or "#3B82F6", franja.color_texto, franja.nombre
 
 
+def _ordenar_claves(claves, franjas):
+    """Ordena claves cronológicamente por hora_inicio de la franja
+    (CUALQUIER_FRANJA y franjas desconocidas van al final)."""
+    orden_ids = [f.id for f in franjas]
+
+    def _posicion(clave):
+        if clave == CUALQUIER_FRANJA:
+            return len(orden_ids)
+        try:
+            return orden_ids.index(clave)
+        except ValueError:
+            return len(orden_ids)
+
+    return sorted(claves, key=_posicion)
+
+
+def _gradiente_bandas(colores):
+    """Linear-gradient con cortes duros: una banda igual de ancha por color,
+    en el orden recibido, sin transición entre bandas."""
+    n = len(colores)
+    ancho = 100 / n
+    paradas = []
+    for i, color in enumerate(colores):
+        inicio = i * ancho
+        fin = (i + 1) * ancho
+        paradas.append(f"{color} {inicio:.2f}%")
+        paradas.append(f"{color} {fin:.2f}%")
+    return "linear-gradient(to right, " + ", ".join(paradas) + ")"
+
+
 def preparar_celdas_mes(dias, calendario_mes, franjas):
     """
     Convierte el resultado de construir_calendario_mes en datos listos para
@@ -112,19 +147,25 @@ def preparar_celdas_mes(dias, calendario_mes, franjas):
 
     - Sin franjas ese día: celda vacía.
     - Una franja: color sólido de esa franja, etiqueta = su inicial.
-    - Varias franjas: estilo neutro "multi", etiqueta = nº de franjas,
-      tooltip con los nombres separados por coma (no se puede codificar más
-      de un color de forma legible en una celda pequeña).
+    - Entre 2 y _MAX_FRANJAS_EN_BANDAS franjas distintas: la celda se divide
+      en bandas de igual ancho, una por franja, coloreada con el color de
+      esa franja y ordenadas cronológicamente (hora_inicio). Sin etiqueta:
+      el propio patrón de color ya es la información.
+    - Más de _MAX_FRANJAS_EN_BANDAS: demasiadas bandas serían ilegibles;
+      se usa el tratamiento neutro anterior (color plano + nº de tipos),
+      con el tooltip listando los nombres separados por coma.
     """
     franjas_por_id = {f.id: f for f in franjas}
     celdas = {}
     for dia in dias:
-        claves = list(calendario_mes.get(dia, {}).keys())
+        claves = _ordenar_claves(list(calendario_mes.get(dia, {}).keys()), franjas)
         if not claves:
             celdas[dia] = {"mod": "cal-celda--vacio", "estilo": "", "etiqueta": "", "tooltip": ""}
             continue
 
         infos = [_info_clave(c, franjas_por_id) for c in claves]
+        nombres = [info[2] for info in infos]
+
         if len(infos) == 1:
             color, color_texto, nombre = infos[0]
             etiqueta = "?" if claves[0] == CUALQUIER_FRANJA else nombre[:1]
@@ -134,8 +175,15 @@ def preparar_celdas_mes(dias, calendario_mes, franjas):
                 "etiqueta": etiqueta,
                 "tooltip": nombre,
             }
+        elif len(infos) <= _MAX_FRANJAS_EN_BANDAS:
+            colores = [info[0] for info in infos]
+            celdas[dia] = {
+                "mod": "cal-celda--multi",
+                "estilo": _gradiente_bandas(colores),
+                "etiqueta": "",
+                "tooltip": ", ".join(nombres),
+            }
         else:
-            nombres = [info[2] for info in infos]
             celdas[dia] = {
                 "mod": "cal-celda--multi",
                 "estilo": f"background:{_COLOR_MULTI}; color:{_COLOR_TEXTO_MULTI};",

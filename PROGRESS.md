@@ -4,12 +4,10 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Ronda 2 del calendario completa (Pasos 1-6, rama `staging`, sin push — lo
-hace el usuario a mano). Todos los fallos e2e locales investigados y
-corregidos — los 9 tests e2e locales pasan (`e2e/test_sintetica_staging.py`
-queda deliberadamente sin ejecutar por apuntar a la app real de Railway).
-Siguiente: cuando se decida abordar B18 (modo "Juntes de noches"), retomar
-desde ahí.
+Ronda 2 del calendario completa (Pasos 1-6) + fallos e2e corregidos, y
+ahora también las bandas de color por franja en días con varios tipos
+distintos (rama `staging`, con push a origin). Siguiente: cuando se decida
+abordar B18 (modo "Juntes de noches"), retomar desde ahí.
 `e2e/test_sintetica_staging.py` apunta a la app real de Railway (STAGING_URL)
 y no se ha vuelto a ejecutar tras el diagnóstico para no seguir escribiendo
 usuarios de prueba en la base de datos compartida de staging sin necesidad.
@@ -119,6 +117,8 @@ usuarios de prueba en la base de datos compartida de staging sin necesidad.
 - [x] feat(calendario): Ronda 2, Paso 4 — título corto "Calendario" (antes "Calendario de cambios") + icono ⓘ "¿Cómo funciona?" con banner de ayuda inline, replicando el patrón exacto de `/planilla` (mismas clases CSS `.planilla-ayuda-link`/`.planilla-onboarding-*`, mismo control por localStorage) · banner enlaza a `main.como_funciona` con anchor `#calendario` (preparado para el Paso 5) · 1 test nuevo · 714 tests unitarios + 2 e2e passing
 - [x] feat(onboarding): Ronda 2, Paso 5 — nueva sección "1. Descubre cambios en el calendario" en `/como-funciona` (con `id="calendario"` para el anchor del banner del Paso 4), renumerando el resto de secciones (2→8) · 1 test nuevo (verifica orden) · 715 tests unitarios + 2 e2e passing
 - [x] feat(nav): Ronda 2, Paso 6 (último) — el calendario pasa a ser la pantalla de inicio: redirect de login/registro (guard ya-autenticado + login exitoso) apunta a `calendario.index` en vez de `main.index`, logo de la cabecera y CTA final de "Cómo funciona" también · orden del menú: "Calendario" antes que "Mis cambios" · no se toca la ruta `main.index` ni sus redirects post-acción (publicar/cancelar/editar siguen llevando a "Mis cambios") · 5 tests nuevos · 720 tests unitarios + 2 e2e passing. **Ronda 2 completa (Pasos 1-6).**
+- [x] fix(e2e): fixture compartido `usuario` sin `onboarding_visto=True` (redirigía a /como-funciona en vez de a la pantalla de inicio) + `_login` de `test_sintetica_golden_path.py` actualizado a `/calendario/` tras el Paso 6 + aserciones obsoletas de `aviso_interes`/"Interés parcial" reescritas al aviso combinado `aviso_oportunidad_3` actual · 9/9 tests e2e locales passing (`test_sintetica_staging.py` deliberadamente no ejecutado, apunta a Railway real)
+- [x] feat(calendario): bandas de color por franja en días con varios tipos distintos — `preparar_celdas_mes` genera un `linear-gradient` de cortes duros (una banda de igual ancho por franja, ordenadas por `hora_inicio`, sin transición) en vez del color neutro anterior · tope de 4 franjas distintas antes de caer al tratamiento neutro con nº de tipos (más bandas serían ilegibles en ~40px) · sin etiqueta superpuesta en el caso de bandas (el propio patrón de color ya informa) · 4 tests nuevos + 1 actualizado · 723 tests unitarios + 9 e2e passing
 
 ## Backlog de calidad (pendiente)
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓
