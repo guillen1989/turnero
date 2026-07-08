@@ -127,12 +127,13 @@ def _ordenar_claves(claves, franjas):
 
 
 def _bandas(claves, infos):
-    """Una banda por franja: color sólido + su inicial (o '?' para
-    CUALQUIER_FRANJA), en el mismo orden que claves/infos."""
+    """Una banda por franja: color sólido + su color de texto legible (según
+    el brillo de ese color, igual que en el caso de una sola franja) + su
+    inicial (o '?' para CUALQUIER_FRANJA), en el mismo orden que claves/infos."""
     bandas = []
-    for clave, (color, _color_texto, nombre) in zip(claves, infos):
+    for clave, (color, color_texto, nombre) in zip(claves, infos):
         letra = "?" if clave == CUALQUIER_FRANJA else nombre[:1]
-        bandas.append({"color": color, "letra": letra})
+        bandas.append({"color": color, "color_texto": color_texto, "letra": letra})
     return bandas
 
 

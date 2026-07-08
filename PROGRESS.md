@@ -6,9 +6,10 @@ Fase 9 — Mejoras post-MVP
 ## Paso actual / siguiente paso
 Ronda 2 del calendario completa (Pasos 1-6) + fallos e2e corregidos +
 bandas de color por franja (con su bug de CSS ya corregido) + letra por
-banda para distinguirlas mejor que solo por color. Rama `staging`, con
-push a origin. Siguiente: cuando se decida abordar B18 (modo "Juntes de
-noches"), retomar desde ahí.
+banda, ahora con color de texto legible por banda (no blanco fijo — evita
+letra ilegible sobre colores claros de la paleta como amarillo/cian).
+Rama `staging`, con push a origin. Siguiente: cuando se decida abordar
+B18 (modo "Juntes de noches"), retomar desde ahí.
 `e2e/test_sintetica_staging.py` apunta a la app real de Railway (STAGING_URL)
 y no se ha vuelto a ejecutar tras el diagnóstico para no seguir escribiendo
 usuarios de prueba en la base de datos compartida de staging sin necesidad.
@@ -122,6 +123,7 @@ usuarios de prueba en la base de datos compartida de staging sin necesidad.
 - [x] feat(calendario): bandas de color por franja en días con varios tipos distintos — `preparar_celdas_mes` genera un `linear-gradient` de cortes duros (una banda de igual ancho por franja, ordenadas por `hora_inicio`, sin transición) en vez del color neutro anterior · tope de 4 franjas distintas antes de caer al tratamiento neutro con nº de tipos (más bandas serían ilegibles en ~40px) · sin etiqueta superpuesta en el caso de bandas (el propio patrón de color ya informa) · 4 tests nuevos + 1 actualizado · 723 tests unitarios + 9 e2e passing
 - [x] fix(calendario): `_gradiente_bandas` devolvía `linear-gradient(...)` suelto, sin el prefijo `background:` ni el `;` final — CSS inválido que el navegador descarta en silencio, dejando la celda en blanco/negro por defecto en vez de con las bandas de color. Detectado por el usuario probando en staging (confirmado leyendo en solo lectura la BD de staging y ejecutando las funciones reales contra datos reales del 20 de septiembre). Corregido devolviendo la declaración CSS completa (`background: linear-gradient(...); color: #ffffff;`) · test reforzado para comprobar el formato exacto de la declaración, no solo que contuviera las palabras · 723 tests unitarios + 9 e2e passing
 - [x] feat(calendario): letra por banda además del color — sustituido el `linear-gradient` de una sola celda por sub-elementos independientes (`celda.bandas`: lista de {color, letra}, uno por franja, ordenados por hora_inicio), cada uno con su color sólido y su inicial (o "?" para "cualquier turno") · más fiable que superponer texto sobre un gradiente CSS · nuevas clases `.cal-bandas-row`/`.cal-banda` · tests reescritos para comprobar la lista de bandas en vez del string de gradiente · 723 tests unitarios + 9 e2e passing
+- [x] fix(calendario): color de texto por banda en vez de blanco fijo — al pensar en turnos personalizados (que reciclan la misma paleta que los de serie) se detectó que un color claro de la paleta (amarillo `#EAB308`, cian `#06B6D4`) dejaría la letra casi ilegible en blanco. `celda.bandas` ahora lleva también `color_texto` (mismo cálculo de brillo que ya usa el caso de una sola franja) · 1 test de regresión nuevo · 724 tests unitarios + 9 e2e passing
 
 ## Backlog de calidad (pendiente)
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓

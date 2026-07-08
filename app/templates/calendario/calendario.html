@@ -87,7 +87,7 @@
         {% if celda.bandas %}
         <span class="cal-bandas-row">
           {% for banda in celda.bandas %}
-          <span class="cal-banda" style="background:{{ banda.color }};">{{ banda.letra }}</span>
+          <span class="cal-banda" style="background:{{ banda.color }}; color:{{ banda.color_texto }};">{{ banda.letra }}</span>
           {% endfor %}
         </span>
         {% elif celda.etiqueta %}

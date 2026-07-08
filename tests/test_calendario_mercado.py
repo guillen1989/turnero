@@ -326,9 +326,35 @@ def test_preparar_celdas_dia_con_dos_franjas_genera_una_banda_por_franja(db):
     assert celda["etiqueta"] == ""
     assert celda["tooltip"] == "Mañana, Tarde"
     assert celda["bandas"] == [
-        {"color": manana.color or "#3B82F6", "letra": "M"},
-        {"color": tarde.color, "letra": "T"},
+        {"color": manana.color or "#3B82F6", "color_texto": manana.color_texto, "letra": "M"},
+        {"color": tarde.color, "color_texto": tarde.color_texto, "letra": "T"},
     ]
+
+
+def test_preparar_celdas_banda_usa_color_texto_legible_sobre_color_claro(db):
+    """Regresión: una franja personalizada con un color claro (p. ej. amarillo)
+    debe llevar texto oscuro en su banda, no blanco fijo — igual que ya hace
+    el caso de una sola franja con franja.color_texto."""
+    ana = _usuario("Ana", "ana@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    from app.models import FranjaHoraria
+    from datetime import time
+    amarilla = FranjaHoraria(
+        nombre="Turno personalizado", hora_inicio=time(6, 0), hora_fin=time(6, 0),
+        grupo_intercambio_id=gid, color="#EAB308",
+    )
+    db.session.add(amarilla)
+    db.session.commit()
+
+    dias = [date(2026, 7, 1)]
+    calendario_mes = {date(2026, 7, 1): {manana.id: [1], amarilla.id: [2]}}
+    celdas = preparar_celdas_mes(dias, calendario_mes, [amarilla, manana])
+
+    bandas = celdas[date(2026, 7, 1)]["bandas"]
+    banda_amarilla = next(b for b in bandas if b["color"] == "#EAB308")
+    assert banda_amarilla["color_texto"] == amarilla.color_texto
+    assert banda_amarilla["color_texto"] != "#ffffff"
 
 
 def test_preparar_celdas_bandas_respetan_orden_por_hora_inicio(db):
