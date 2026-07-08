@@ -84,7 +84,15 @@
               title="{{ celda.tooltip or _('Sin ofertas') }}"
               aria-label="{{ dia.day }} — {{ celda.tooltip or _('Sin ofertas') }}">
         <span class="cal-num">{{ dia.day }}</span>
-        {% if celda.etiqueta %}<span class="cal-lab">{{ celda.etiqueta }}</span>{% endif %}
+        {% if celda.bandas %}
+        <span class="cal-bandas-row">
+          {% for banda in celda.bandas %}
+          <span class="cal-banda" style="background:{{ banda.color }};">{{ banda.letra }}</span>
+          {% endfor %}
+        </span>
+        {% elif celda.etiqueta %}
+        <span class="cal-lab">{{ celda.etiqueta }}</span>
+        {% endif %}
       </button>
     {% endfor %}
   </div>

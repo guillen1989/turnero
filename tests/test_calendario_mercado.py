@@ -274,8 +274,8 @@ def test_preparar_celdas_dia_sin_franjas_es_vacio(db):
     dias = [date(2026, 7, 1), date(2026, 7, 2)]
     celdas = preparar_celdas_mes(dias, {}, [manana])
 
-    assert celdas[date(2026, 7, 1)] == {"mod": "cal-celda--vacio", "estilo": "", "etiqueta": "", "tooltip": ""}
-    assert celdas[date(2026, 7, 2)] == {"mod": "cal-celda--vacio", "estilo": "", "etiqueta": "", "tooltip": ""}
+    assert celdas[date(2026, 7, 1)] == {"mod": "cal-celda--vacio", "estilo": "", "etiqueta": "", "tooltip": "", "bandas": []}
+    assert celdas[date(2026, 7, 2)] == {"mod": "cal-celda--vacio", "estilo": "", "etiqueta": "", "tooltip": "", "bandas": []}
 
 
 def test_preparar_celdas_dia_con_una_franja(db):
@@ -310,7 +310,7 @@ def test_preparar_celdas_dia_con_cualquier_franja(db):
     assert celda["tooltip"] == "Cualquiera"
 
 
-def test_preparar_celdas_dia_con_dos_franjas_pinta_bandas_de_color(db):
+def test_preparar_celdas_dia_con_dos_franjas_genera_una_banda_por_franja(db):
     ana = _usuario("Ana", "ana@test.es")
     gid = ana.unidad.grupo_intercambio_id
     manana = _franja(gid, "Mañana")
@@ -322,16 +322,13 @@ def test_preparar_celdas_dia_con_dos_franjas_pinta_bandas_de_color(db):
 
     celda = celdas[date(2026, 7, 1)]
     assert celda["mod"] == "cal-celda--multi"
-    # Regresión: el estilo debe ser una declaración CSS completa y válida
-    # ("background: ...;"), no solo la función linear-gradient suelta —
-    # un navegador descarta silenciosamente un style="linear-gradient(...)"
-    # sin la propiedad, dejando la celda sin ningún color.
-    assert celda["estilo"].startswith("background: linear-gradient(")
-    assert celda["estilo"].rstrip().endswith(";")
-    assert (manana.color or "#3B82F6") in celda["estilo"]
-    assert tarde.color in celda["estilo"]
+    assert celda["estilo"] == ""
     assert celda["etiqueta"] == ""
     assert celda["tooltip"] == "Mañana, Tarde"
+    assert celda["bandas"] == [
+        {"color": manana.color or "#3B82F6", "letra": "M"},
+        {"color": tarde.color, "letra": "T"},
+    ]
 
 
 def test_preparar_celdas_bandas_respetan_orden_por_hora_inicio(db):
@@ -347,11 +344,11 @@ def test_preparar_celdas_bandas_respetan_orden_por_hora_inicio(db):
     calendario_mes = {date(2026, 7, 1): {noche.id: [1], manana.id: [2], tarde.id: [3]}}
     celdas = preparar_celdas_mes(dias, calendario_mes, [manana, tarde, noche])
 
-    estilo = celdas[date(2026, 7, 1)]["estilo"]
-    pos_manana = estilo.index(manana.color or "#3B82F6")
-    pos_tarde = estilo.index(tarde.color)
-    pos_noche = estilo.index(noche.color)
-    assert pos_manana < pos_tarde < pos_noche
+    bandas = celdas[date(2026, 7, 1)]["bandas"]
+    assert [b["letra"] for b in bandas] == ["M", "T", "N"]
+    assert bandas[0]["color"] == (manana.color or "#3B82F6")
+    assert bandas[1]["color"] == tarde.color
+    assert bandas[2]["color"] == noche.color
 
 
 def test_preparar_celdas_cualquiera_va_al_final_de_las_bandas(db):
@@ -364,11 +361,9 @@ def test_preparar_celdas_cualquiera_va_al_final_de_las_bandas(db):
     calendario_mes = {date(2026, 7, 1): {"cualquiera": [1], manana.id: [2], tarde.id: [3]}}
     celdas = preparar_celdas_mes(dias, calendario_mes, [manana, tarde])
 
-    estilo = celdas[date(2026, 7, 1)]["estilo"]
-    pos_manana = estilo.index(manana.color or "#3B82F6")
-    pos_tarde = estilo.index(tarde.color)
-    pos_cualquiera = estilo.index("#9333ea")
-    assert pos_manana < pos_tarde < pos_cualquiera
+    bandas = celdas[date(2026, 7, 1)]["bandas"]
+    assert [b["letra"] for b in bandas] == ["M", "T", "?"]
+    assert bandas[-1]["color"] == "#9333ea"
 
 
 def test_preparar_celdas_mas_de_cuatro_franjas_usa_fallback_neutro(db):
@@ -394,7 +389,7 @@ def test_preparar_celdas_mas_de_cuatro_franjas_usa_fallback_neutro(db):
 
     celda = celdas[date(2026, 7, 1)]
     assert celda["mod"] == "cal-celda--multi"
-    assert "linear-gradient" not in celda["estilo"]
+    assert celda["bandas"] == []
     assert celda["etiqueta"] == "5"
 
 
