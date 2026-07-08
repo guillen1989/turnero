@@ -2,6 +2,7 @@ from datetime import time
 
 from app.extensions import db
 from app.models import FranjaHoraria, TurnoCedido, TurnoAceptado
+from app.services.registro import asignar_color_franja
 
 PLANTILLAS = {
     "tres_turnos": {
@@ -71,6 +72,7 @@ def aplicar_plantilla(grupo, plantilla_id):
                 hora_inicio=inicio,
                 hora_fin=fin,
                 grupo_intercambio_id=grupo.id,
+                color=asignar_color_franja(nombre, grupo.id),
             ))
 
 
@@ -83,6 +85,7 @@ def agregar_franja(grupo, nombre, hora_inicio, hora_fin):
         hora_inicio=hora_inicio,
         hora_fin=hora_fin,
         grupo_intercambio_id=grupo.id,
+        color=asignar_color_franja(nombre, grupo.id),
     )
     db.session.add(franja)
     return franja
