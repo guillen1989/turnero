@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-08 12:07+0200\n"
+"POT-Creation-Date: 2026-07-08 12:13+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -643,84 +643,88 @@ msgstr ""
 msgid "Buscar cambios"
 msgstr ""
 
-#: app/templates/base.html:31 app/templates/main/como_funciona.html:72
+#: app/templates/base.html:31
+msgid "Calendario"
+msgstr ""
+
+#: app/templates/base.html:32 app/templates/main/como_funciona.html:72
 #: app/templates/planilla/planilla.html:3
 #: app/templates/planilla/planilla.html:13
 msgid "Mi planilla"
 msgstr ""
 
-#: app/templates/base.html:32 app/templates/notificaciones/panel.html:3
+#: app/templates/base.html:33 app/templates/notificaciones/panel.html:3
 #: app/templates/notificaciones/panel.html:7
 msgid "Notificaciones"
 msgstr ""
 
 #: app/templates/auth/perfil.html:3 app/templates/auth/perfil.html:7
 #: app/templates/auth/perfil_cuenta.html:3
-#: app/templates/auth/perfil_cuenta.html:7 app/templates/base.html:33
+#: app/templates/auth/perfil_cuenta.html:7 app/templates/base.html:34
 msgid "Mi perfil"
 msgstr ""
 
-#: app/templates/base.html:34 app/templates/main/como_funciona.html:3
+#: app/templates/base.html:35 app/templates/main/como_funciona.html:3
 msgid "Cómo funciona"
 msgstr ""
 
-#: app/templates/base.html:36
+#: app/templates/base.html:37
 msgid "Administración"
 msgstr ""
 
 #: app/templates/admin/base_admin.html:17 app/templates/admin/feedback.html:3
-#: app/templates/base.html:37
+#: app/templates/base.html:38
 msgid "Feedback"
 msgstr ""
 
-#: app/templates/base.html:40
+#: app/templates/base.html:41
 msgid "Cerrar sesión"
 msgstr ""
 
 #: app/templates/auth/login.html:3 app/templates/auth/login.html:7
-#: app/templates/base.html:44 app/templates/main/index.html:9
+#: app/templates/base.html:45 app/templates/main/index.html:9
 msgid "Entrar"
 msgstr ""
 
 #: app/templates/auth/registro.html:3 app/templates/auth/registro.html:7
-#: app/templates/base.html:45 app/templates/main/index.html:8
+#: app/templates/base.html:46 app/templates/main/index.html:8
 msgid "Crear cuenta"
 msgstr ""
 
-#: app/templates/base.html:55 app/templates/base.html:70
+#: app/templates/base.html:56 app/templates/base.html:71
 msgid "Instala Turnero"
 msgstr ""
 
-#: app/templates/base.html:56
+#: app/templates/base.html:57
 msgid "Accede más rápido desde tu pantalla de inicio"
 msgstr ""
 
-#: app/templates/base.html:60
+#: app/templates/base.html:61
 msgid "Instalar"
 msgstr ""
 
-#: app/templates/base.html:61 app/templates/base.html:76
+#: app/templates/base.html:62 app/templates/base.html:77
 #: app/templates/calendario/calendario.html:71
 msgid "Cerrar"
 msgstr ""
 
-#: app/templates/base.html:71 app/templates/main/como_funciona.html:176
+#: app/templates/base.html:72 app/templates/main/como_funciona.html:176
 msgid "Pulsa"
 msgstr ""
 
-#: app/templates/base.html:73
+#: app/templates/base.html:74
 msgid "y luego \"Añadir a pantalla de inicio\""
 msgstr ""
 
-#: app/templates/base.html:94
+#: app/templates/base.html:95
 msgid "¿Tienes algún problema o sugerencia?"
 msgstr ""
 
-#: app/templates/base.html:188
+#: app/templates/base.html:189
 msgid "Notificaciones activas ✓"
 msgstr ""
 
-#: app/templates/base.html:191
+#: app/templates/base.html:192
 msgid "Activar notificaciones"
 msgstr ""
 

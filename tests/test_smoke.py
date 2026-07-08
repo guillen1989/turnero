@@ -102,6 +102,12 @@ def test_smoke_cambios_get(client, db):
     assert client.get("/cambios").status_code == 200
 
 
+def test_smoke_calendario_get(client, db):
+    u = _setup()
+    _login(client, u.email)
+    assert client.get("/calendario/").status_code == 200
+
+
 def test_smoke_perfil_get(client, db):
     u = _setup()
     _login(client, u.email)
