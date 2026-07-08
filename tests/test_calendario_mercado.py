@@ -1,0 +1,264 @@
+"""Tests del servicio de agregación mensual para el calendario visual de
+ofertas/peticiones (Paso 1 del plan). Módulo puro: agrupa turnos abiertos
+de publicaciones activas y visibles para el usuario, por fecha y franja.
+"""
+from datetime import date
+
+import pytest
+
+from app.extensions import db
+from app.models import (
+    Categoria,
+    FranjaHoraria,
+    PublicacionCambio,
+    TurnoAceptado,
+    TurnoCedido,
+    insertar_categorias_semilla,
+)
+from app.services.calendario_mercado import construir_calendario_mes
+from app.services.registro import registrar_usuario
+
+
+# --- Helpers ---
+
+def _categoria(nombre="Enfermería"):
+    insertar_categorias_semilla()
+    return Categoria.query.filter_by(nombre=nombre).first()
+
+
+def _usuario(nombre, email, hospital="H1", unidad="Urgencias", categoria=None):
+    if categoria is None:
+        categoria = _categoria()
+    return registrar_usuario(nombre, email, "password123", hospital, unidad, categoria.id)
+
+
+def _franja(grupo_id, nombre="Mañana"):
+    return FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id, nombre=nombre).first()
+
+
+def _pub(usuario, tipo, cedidos=None, aceptados=None, estado="abierta", es_sintetica=False):
+    """cedidos/aceptados: lista de (fecha, franja) o (fecha, franja, cualquier_franja)."""
+    pub = PublicacionCambio(usuario_id=usuario.id, tipo=tipo, estado=estado, es_sintetica=es_sintetica)
+    db.session.add(pub)
+    db.session.flush()
+    for item in (cedidos or []):
+        fecha, franja = item[0], item[1]
+        db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja.id))
+    for item in (aceptados or []):
+        fecha, franja = item[0], item[1]
+        cualquier = item[2] if len(item) > 2 else False
+        db.session.add(TurnoAceptado(
+            publicacion_id=pub.id, fecha=fecha,
+            franja_horaria_id=None if cualquier else franja.id,
+            cualquier_franja=cualquier,
+        ))
+    db.session.commit()
+    return pub
+
+
+# --- Ofertas: agrupa turno_aceptado ---
+
+def test_ofertas_agrupa_turno_aceptado_por_fecha_y_franja(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    pub = _pub(pedro, "regalo", aceptados=[(date(2026, 7, 3), manana)])
+
+    resultado = construir_calendario_mes(ana, 2026, 7, "ofertas")
+    assert resultado == {date(2026, 7, 3): {manana.id: [pub.id]}}
+
+
+def test_peticiones_agrupa_turno_cedido_por_fecha_y_franja(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    tarde = _franja(gid, "Tarde")
+
+    pub = _pub(pedro, "peticion", cedidos=[(date(2026, 7, 5), tarde)])
+
+    resultado = construir_calendario_mes(ana, 2026, 7, "peticiones")
+    assert resultado == {date(2026, 7, 5): {tarde.id: [pub.id]}}
+
+
+# --- Tipo 'cambio' cuenta en ambos modos ---
+
+def test_ofertas_incluye_turno_aceptado_de_tipo_cambio(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    noche = _franja(gid, "Noche")
+
+    pub = _pub(pedro, "cambio", cedidos=[(date(2026, 7, 1), noche)], aceptados=[(date(2026, 7, 3), manana)])
+
+    resultado = construir_calendario_mes(ana, 2026, 7, "ofertas")
+    assert resultado[date(2026, 7, 3)] == {manana.id: [pub.id]}
+
+
+def test_peticiones_incluye_turno_cedido_de_tipo_cambio(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    noche = _franja(gid, "Noche")
+
+    pub = _pub(pedro, "cambio", cedidos=[(date(2026, 7, 1), noche)], aceptados=[(date(2026, 7, 3), manana)])
+
+    resultado = construir_calendario_mes(ana, 2026, 7, "peticiones")
+    assert resultado[date(2026, 7, 1)] == {noche.id: [pub.id]}
+
+
+# --- cambio_dia cuenta en ambos modos ---
+
+def test_cambio_dia_aparece_en_ofertas_y_peticiones(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+
+    pub = _pub(pedro, "cambio_dia", cedidos=[(date(2026, 7, 10), manana)], aceptados=[(date(2026, 7, 10), tarde)])
+
+    ofertas = construir_calendario_mes(ana, 2026, 7, "ofertas")
+    peticiones = construir_calendario_mes(ana, 2026, 7, "peticiones")
+    assert ofertas[date(2026, 7, 10)] == {tarde.id: [pub.id]}
+    assert peticiones[date(2026, 7, 10)] == {manana.id: [pub.id]}
+
+
+# --- Exclusiones ---
+
+def test_excluye_tipo_junte(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    _pub(pedro, "junte", aceptados=[(date(2026, 7, 3), manana)])
+
+    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+
+
+def test_excluye_publicaciones_propias(db):
+    ana = _usuario("Ana", "ana@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    _pub(ana, "regalo", aceptados=[(date(2026, 7, 3), manana)])
+
+    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+
+
+def test_excluye_categoria_distinta(db):
+    cat_enf = _categoria("Enfermería")
+    cat_aux = _categoria("Auxiliar de enfermería (TCAE)")
+    ana = _usuario("Ana", "ana@test.es", categoria=cat_enf)
+    pedro = _usuario("Pedro", "pedro@test.es", categoria=cat_aux)
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    _pub(pedro, "regalo", aceptados=[(date(2026, 7, 3), manana)])
+
+    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+
+
+def test_excluye_grupo_intercambio_distinto(db):
+    ana = _usuario("Ana", "ana@test.es", unidad="Urgencias")
+    pedro = _usuario("Pedro", "pedro@test.es", unidad="Traumatología")
+    gid_pedro = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid_pedro, "Mañana")
+
+    _pub(pedro, "regalo", aceptados=[(date(2026, 7, 3), manana)])
+
+    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+
+
+@pytest.mark.parametrize("estado", ["cancelada", "caducada", "confirmada"])
+def test_excluye_publicaciones_no_activas(db, estado):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    _pub(pedro, "regalo", aceptados=[(date(2026, 7, 3), manana)], estado=estado)
+
+    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+
+
+def test_excluye_sinteticas(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    _pub(pedro, "cambio", aceptados=[(date(2026, 7, 3), manana)], es_sintetica=True)
+
+    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+
+
+def test_excluye_turnos_fuera_de_mes(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    _pub(pedro, "regalo", aceptados=[(date(2026, 8, 1), manana)])
+
+    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+
+
+def test_excluye_turnos_ya_resueltos(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    pub = _pub(pedro, "regalo", aceptados=[(date(2026, 7, 3), manana)])
+    pub.turnos_aceptados[0].estado = "resuelto"
+    db.session.commit()
+
+    assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+
+
+# --- cualquier_franja ---
+
+def test_cualquier_franja_se_agrupa_bajo_clave_especial(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    pub = _pub(pedro, "regalo", aceptados=[(date(2026, 7, 3), manana, True)])
+
+    resultado = construir_calendario_mes(ana, 2026, 7, "ofertas")
+    assert resultado == {date(2026, 7, 3): {"cualquiera": [pub.id]}}
+
+
+# --- Multi-turno ---
+
+def test_multiples_turnos_misma_publicacion_caen_en_dias_distintos(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    noche = _franja(gid, "Noche")
+
+    pub = _pub(pedro, "regalo", aceptados=[
+        (date(2026, 7, 3), manana),
+        (date(2026, 7, 8), noche),
+    ])
+
+    resultado = construir_calendario_mes(ana, 2026, 7, "ofertas")
+    assert resultado == {
+        date(2026, 7, 3): {manana.id: [pub.id]},
+        date(2026, 7, 8): {noche.id: [pub.id]},
+    }
+
+
+# --- Validación de modo ---
+
+def test_modo_invalido_lanza_error(db):
+    ana = _usuario("Ana", "ana@test.es")
+    with pytest.raises(ValueError):
+        construir_calendario_mes(ana, 2026, 7, "juntes")

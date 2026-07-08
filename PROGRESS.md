@@ -4,9 +4,13 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Probar en staging. Siguiente: colectar feedback de usuarios.
+Calendario visual de ofertas/peticiones (rama `staging`) — Paso 1 completado
+(servicio puro `construir_calendario_mes`). Siguiente: Paso 2, ruta
+`GET /calendario` con navegación mensual (reutilizando el patrón de
+`app/routes/planilla.py`).
 
 ## Backlog (fuente: .backlog)
+- [ ] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones). Diseño ya contempla el hueco para un tercer `modo`; implementar más adelante.
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
 - [x] B0b: «Me interesa» en Buscar cambios: match manual desde cualquier publicación ajena (Regalo/Petición/Junte/Cambio con modal de selección) ✓
 - [x] B1: Mensaje opcional (≤200 chars) al publicar un cambio ✓
@@ -98,6 +102,7 @@ Probar en staging. Siguiente: colectar feedback de usuarios.
 - [x] feat: búsquedas guardadas con alertas · modelo BusquedaGuardada · servicio puro publicacion_cumple_filtros · notificar_busquedas_guardadas integrado en publicar_cambio · rutas CRUD · pestaña "Mis alertas" en /cambios · botón "Guardar como alerta" con filtros activos · notificación alerta_busqueda_guardada en panel /avisos y push · migración · 33 tests · 416 tests passing
 - [x] feat(ux): UX refactor /cambios + push toggle búsquedas guardadas · título "Buscar cambios" · tabs en formato visual · botón "Guardar búsqueda como alerta" junto a filtrar/limpiar (HTML5 form= attribute) · pestaña Activos combina matches+publicaciones abiertas (backcompat via _ALIASES_ESTADO) · toggle notif_busqueda_guardada en panel notificaciones · aviso alerta_busqueda_guardada enlaza a /cambios con filtros de búsqueda (busqueda_guardada_id FK con ondelete=SET NULL) · migración e93a778414b8 · 419 tests passing
 - [x] fix(matching): cancelar/editar/eliminar una publicación con un match activo (propuesto/confirmado_parcial) ya no lo deja huérfano ni lo borra en silencio · nuevo `_rechazar_matches_activos_de_publicacion` reutiliza `rechazar_match` (notifica a la contraparte + registra evento match_cancelled) antes de tocar los turnos · `_eliminar_matches_de_publicacion` ahora solo borra el MatchCambio si se queda sin ninguna participación, preservando el historial de rechazo · detectado analizando por qué la tasa de confirmación de matches en producción era tan baja (18%) · 8 tests nuevos + 6 tests existentes actualizados a la nueva semántica · 675 tests passing
+- [x] feat(calendario): Paso 1 — servicio puro `construir_calendario_mes` (app/services/calendario_mercado.py) · agrupa TurnoAceptado (modo "ofertas") o TurnoCedido (modo "peticiones") abiertos, por fecha y franja, para tipos cambio/regalo/peticion/cambio_dia (excluye junte) · respeta visibilidad (misma categoría+grupo), excluye propias/sintéticas/no-activas/fuera de mes · clave especial "cualquiera" para turnos con cualquier_franja · 18 tests · 693 tests passing
 
 ## Backlog de calidad (pendiente)
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓
