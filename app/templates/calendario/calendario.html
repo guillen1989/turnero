@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Calendario de cambios') }} — {{ _('Turnero') }}{% endblock %}
+{% block title %}{{ _('Calendario') }} — {{ _('Turnero') }}{% endblock %}
 
 {% block content %}
 {% set MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
@@ -9,7 +9,10 @@
 
   <div class="planilla-header">
     <div class="planilla-header-titulo">
-      <h1>{{ _('Calendario de cambios') }}</h1>
+      <h1>{{ _('Calendario') }}</h1>
+      <button type="button" class="planilla-ayuda-link" onclick="calendarioAyudaMostrar()">
+        &#9432; {{ _('¿Cómo funciona?') }}
+      </button>
     </div>
 
     <div class="planilla-mes-nav">
@@ -38,7 +41,33 @@
     </p>
   </div>
 
-  <div class="planilla-cal" role="grid" aria-label="{{ _('Calendario de cambios') }}">
+  {# ── Banner de bienvenida (primera visita, controlado por localStorage) ── #}
+  <div id="calendario-onboarding" class="planilla-onboarding-banner" style="display:none" role="note">
+    <h3 class="planilla-onboarding-titulo">{{ _('¿Cómo funciona el calendario?') }}</h3>
+    <p class="planilla-onboarding-p">
+      {{ _('Elige si quieres ver los turnos que otros compañeros ofrecen trabajar (Ofertas) o los que quieren librar (Peticiones). Cada día del mes muestra de un vistazo qué franjas hay disponibles.') }}
+    </p>
+    <ul class="planilla-onboarding-lista">
+      <li>
+        <strong>{{ _('Toca un día') }}</strong> —
+        {{ _('verás el detalle de las franjas disponibles ese día y podrás acceder a la publicación completa. Si el día está vacío, puedes publicar tu propio cambio directamente desde ahí.') }}
+      </li>
+      <li>
+        <strong>{{ _('Publicar cambio') }}</strong> —
+        {{ _('el botón bajo el calendario te lleva al formulario de publicación en cualquier momento.') }}
+      </li>
+    </ul>
+    <div class="planilla-onboarding-footer">
+      <a href="{{ url_for('main.como_funciona', _anchor='calendario') }}" class="planilla-onboarding-link">
+        {{ _('Ver explicación completa →') }}
+      </a>
+      <button type="button" class="btn btn-primary btn-sm" onclick="calendarioOnboardingCerrar()">
+        {{ _('Entendido') }}
+      </button>
+    </div>
+  </div>
+
+  <div class="planilla-cal" role="grid" aria-label="{{ _('Calendario') }}">
     {% for inicial in ['L','M','X','J','V','S','D'] %}
       <div class="cal-header" role="columnheader">{{ inicial }}</div>
     {% endfor %}
@@ -167,6 +196,27 @@
   window.calendarioCerrarPanel = function () {
     pila = [];
     document.getElementById('calendario-panel').hidden = true;
+  };
+})();
+
+/* ── Onboarding banner ── */
+(function () {
+  var KEY    = 'calendario_onboarding_visto';
+  var banner = document.getElementById('calendario-onboarding');
+  var esDemo = {{ 'true' if current_user.es_demo else 'false' }};
+
+  if (esDemo || !localStorage.getItem(KEY)) {
+    banner.style.display = 'block';
+  }
+
+  window.calendarioOnboardingCerrar = function () {
+    if (!esDemo) { localStorage.setItem(KEY, '1'); }
+    banner.style.display = 'none';
+  };
+
+  window.calendarioAyudaMostrar = function () {
+    banner.style.display = 'block';
+    banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 })();
 </script>

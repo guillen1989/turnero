@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-08 12:55+0200\n"
+"POT-Creation-Date: 2026-07-08 13:02+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -643,7 +643,9 @@ msgstr ""
 msgid "Buscar cambios"
 msgstr ""
 
-#: app/templates/base.html:31
+#: app/templates/base.html:31 app/templates/calendario/calendario.html:3
+#: app/templates/calendario/calendario.html:12
+#: app/templates/calendario/calendario.html:70
 msgid "Calendario"
 msgstr ""
 
@@ -704,7 +706,7 @@ msgid "Instalar"
 msgstr ""
 
 #: app/templates/base.html:62 app/templates/base.html:77
-#: app/templates/calendario/calendario.html:77
+#: app/templates/calendario/calendario.html:106
 msgid "Cerrar"
 msgstr ""
 
@@ -1409,51 +1411,89 @@ msgstr ""
 msgid "Entra aquí"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:3
-#: app/templates/calendario/calendario.html:12
-#: app/templates/calendario/calendario.html:41
-msgid "Calendario de cambios"
+#: app/templates/calendario/calendario.html:14
+#: app/templates/planilla/planilla.html:15
+msgid "¿Cómo funciona?"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:24
+#: app/templates/calendario/calendario.html:27
 msgid "Ofertas"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:28
+#: app/templates/calendario/calendario.html:31
 msgid "Peticiones"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:34
+#: app/templates/calendario/calendario.html:37
 msgid "Turnos que otros compañeros trabajarían. Toca un día para ver el detalle."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:36
+#: app/templates/calendario/calendario.html:39
 msgid ""
 "Turnos que otros compañeros quieren librar. Toca un día para ver el "
 "detalle."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:55
-#: app/templates/calendario/calendario.html:56
-msgid "Sin ofertas"
+#: app/templates/calendario/calendario.html:46
+msgid "¿Cómo funciona el calendario?"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:65
+#: app/templates/calendario/calendario.html:48
+msgid ""
+"Elige si quieres ver los turnos que otros compañeros ofrecen trabajar "
+"(Ofertas) o los que quieren librar (Peticiones). Cada día del mes muestra"
+" de un vistazo qué franjas hay disponibles."
+msgstr ""
+
+#: app/templates/calendario/calendario.html:52
+msgid "Toca un día"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:53
+msgid ""
+"verás el detalle de las franjas disponibles ese día y podrás acceder a la"
+" publicación completa. Si el día está vacío, puedes publicar tu propio "
+"cambio directamente desde ahí."
+msgstr ""
+
+#: app/templates/calendario/calendario.html:56
+#: app/templates/calendario/calendario.html:94
 #: app/templates/main/como_funciona.html:43
 #: app/templates/main/dashboard.html:10
 #: app/templates/publicaciones/publicar.html:3
 msgid "Publicar cambio"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:74
+#: app/templates/calendario/calendario.html:57
+msgid ""
+"el botón bajo el calendario te lleva al formulario de publicación en "
+"cualquier momento."
+msgstr ""
+
+#: app/templates/calendario/calendario.html:62
+#: app/templates/planilla/planilla.html:65
+msgid "Ver explicación completa →"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:65
+#: app/templates/planilla/planilla.html:68
+msgid "Entendido"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:84
+#: app/templates/calendario/calendario.html:85
+msgid "Sin ofertas"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:103
 msgid "Volver"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:98
+#: app/templates/calendario/calendario.html:127
 msgid "Nadie ha publicado nada este día todavía."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:99
+#: app/templates/calendario/calendario.html:128
 msgid "Publicar un cambio para este día"
 msgstr ""
 
@@ -2679,10 +2719,6 @@ msgstr ""
 msgid "Las notificaciones están bloqueadas en el navegador."
 msgstr ""
 
-#: app/templates/planilla/planilla.html:15
-msgid "¿Cómo funciona?"
-msgstr ""
-
 #: app/templates/planilla/planilla.html:27
 msgid "Publicada"
 msgstr ""
@@ -2734,14 +2770,6 @@ msgid ""
 "cuando ya has añadido todos tus turnos, aparece una barra verde que te "
 "permite asignar de un solo clic el mismo estado (normalmente Libre) a "
 "todos los días que aún no tienen nada."
-msgstr ""
-
-#: app/templates/planilla/planilla.html:65
-msgid "Ver explicación completa →"
-msgstr ""
-
-#: app/templates/planilla/planilla.html:68
-msgid "Entendido"
 msgstr ""
 
 #: app/templates/planilla/planilla.html:75
@@ -3327,5 +3355,8 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "No tienes cambios compatibles aún."
+#~ msgstr ""
+
+#~ msgid "Calendario de cambios"
 #~ msgstr ""
 

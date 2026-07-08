@@ -162,3 +162,15 @@ def test_calendario_muestra_boton_publicar_cambio_fijo(client, db):
     assert resp.status_code == 200
     assert b'href="/publicar"' in resp.data
     assert "Publicar cambio".encode("utf-8") in resp.data
+
+
+def test_calendario_titulo_corto_y_boton_ayuda(client, db):
+    """Ronda 2, Paso 4: título corto + icono ⓘ con banner de ayuda inline."""
+    u = _usuario("Ana", "ana@test.es")
+    _login(client, u.email)
+    resp = client.get("/calendario/")
+    assert resp.status_code == 200
+    assert b"<h1>Calendario</h1>" in resp.data
+    assert b"Calendario de cambios" not in resp.data
+    assert b'id="calendario-onboarding"' in resp.data
+    assert "¿Cómo funciona?".encode("utf-8") in resp.data
