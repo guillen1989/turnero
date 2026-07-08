@@ -2,7 +2,7 @@
 
 ## 1. Visión y alcance
 
-**Qué es:** Una app móvil (iOS y Android) que permite a los trabajadores sanitarios de una unidad publicar turnos que quieren ceder, junto con los turnos que aceptarían a cambio. La app detecta automáticamente coincidencias entre publicaciones (1 a 1, y más adelante a 3 o más bandas) y notifica a los implicados para que confirmen el cambio.
+**Qué es:** Una app móvil (iOS y Android) que permite a los trabajadores sanitarios de una unidad publicar turnos que quieren ceder, junto con los turnos que aceptarían a cambio. La app detecta automáticamente coincidencias entre publicaciones (1 a 1, y también cadenas de 3 bandas) y notifica a los implicados para que confirmen el cambio.
 
 **Para quién:** Personal sanitario (inicialmente enfermería) organizado por unidades dentro de hospitales. La app soporta múltiples hospitales y múltiples unidades, de forma independiente entre sí.
 
@@ -12,7 +12,7 @@
 - No deja constancia oficial del cambio para terceros (no es un documento de RRHH).
 - No gestiona altas/bajas administrativas de unidades: el registro es libre y auto-gestionado por los propios usuarios.
 
-**Principio de diseño clave:** El MVP solo resolverá coincidencias 1 a 1, pero el modelo de datos y la lógica de matching deben diseñarse desde el principio pensando en extender el algoritmo a coincidencias de 3, 4 o más bandas sin rehacer la arquitectura.
+**Principio de diseño clave:** Además de las coincidencias 1 a 1, el motor de matching detecta y cierra ciclos de 3 bandas (ver regla de negocio 3 y CU9). El modelo de datos y la lógica de matching siguen diseñados para poder extender el algoritmo a cadenas de 4 o más bandas sin rehacer la arquitectura, aunque eso queda fuera del alcance actual.
 
 ---
 
@@ -57,11 +57,12 @@
 - turnos_que_cede: lista de Turno que el usuario quiere quitarse (puede ser uno o varios)
 - turnos_que_acepta: lista de Turno que el usuario aceptaría trabajar a cambio (puede ser uno o varios)
 - *(Una publicación agrupa TODOS los turnos que un usuario quiere cambiar en un momento dado, no una publicación por turno. Cada turno individual dentro de la publicación puede resolverse de forma independiente — ver regla de negocio 2bis — sin afectar a los demás turnos de la misma publicación.)*
-- *(Nota de diseño: aunque el MVP resuelva 1 a 1, conviene modelar cada publicación como una oferta general — "cedo [X1, X2], acepto cualquiera de [Y1, Y2, Y3]" — para que el motor de matching futuro pueda recombinarlas en cadenas de 3+ sin cambiar el modelo de datos)*
+- *(Nota de diseño: cada publicación se modela como una oferta general — "cedo [X1, X2], acepto cualquiera de [Y1, Y2, Y3]" — lo que permite al motor de matching recombinarlas en cadenas de 3+ sin cambiar el modelo de datos)*
+- **es_sintética** (booleano, por defecto falso) + **sintética_pub_a_id** / **sintética_pub_b_id**: una publicación puede ser generada automáticamente por el propio sistema (no por un usuario) para representar el "hueco" que cerraría un ciclo de 3 bandas entre otras dos publicaciones reales A y B (ver regla de negocio 3). No aparece como propia de nadie en el dashboard del usuario propietario; solo se ofrece a terceros compatibles en el buscador. Se cancela automáticamente si A o B se cancelan, editan o caducan.
 
 **Match / Coincidencia**
-- id, tipo (directo_2 / cadena_3 / cadena_n)
-- publicaciones_implicadas: lista de PublicaciónDeCambio (2 para directo, 3+ para cadena)
+- id, tipo (directo_2 / cadena_3 / cadena_n — `cadena_n` con n>3 queda fuera del alcance actual)
+- publicaciones_implicadas: lista de PublicaciónDeCambio (2 para directo, 3 para cadena_3)
 - estado (propuesto / confirmado_parcial / confirmado_total / rechazado)
 - confirmaciones: registro de qué usuarios han confirmado y quiénes faltan
 
@@ -84,7 +85,10 @@
 
 2bis. **Resolución parcial:** Una publicación puede ceder varios turnos a la vez. Cuando uno de esos turnos queda resuelto mediante un match confirmado, ese turno concreto se cierra, pero el resto de turnos de la misma publicación siguen abiertos y disponibles para futuros matches. La publicación en su conjunto solo pasa a estado "confirmada" cuando TODOS sus turnos a ceder han sido resueltos; mientras tanto permanece en estado "parcialmente_resuelta".
 
-3. **Condición de match en cadena (3 personas):** A cede algo que B acepta; B cede algo que C acepta; C cede algo que A acepta (cierre del ciclo). El sistema debe detectar estos ciclos automáticamente entre las publicaciones abiertas. *(En el MVP no se implementa el algoritmo, pero el modelo de datos debe permitirlo.)*
+3. **Condición de match en cadena (3 personas):** A cede algo que B acepta; B cede algo que C acepta; C cede algo que A acepta (cierre del ciclo). El sistema detecta estos ciclos automáticamente entre las publicaciones abiertas, por dos vías complementarias:
+   - **Detección directa:** cada vez que se publica o edita una publicación tipo "cambio", el sistema busca entre las publicaciones activas del mismo grupo/categoría si existe algún par que, junto con la nueva, cierre un ciclo de 3 bandas. Si lo encuentra, crea el match `cadena_3` inmediatamente, sin intervención del usuario.
+   - **Publicaciones sintéticas (caso de solape unilateral entre solo 2 personas):** cuando A y B tienen coincidencia en un solo sentido (A puede dar a B lo que B quiere, pero no al revés, o viceversa) no hay match directo, pero falta solo un tercero para cerrar el ciclo. En ese caso el sistema genera automáticamente una **publicación sintética** (no publicada por ningún usuario) que representa exactamente lo que ese tercer usuario C necesitaría ofrecer para cerrarlo, y notifica a A y B de la oportunidad. Esa sintética aparece en el buscador de cualquier tercer usuario compatible. Si un tercero C la ve, puede aceptarla con un único gesto ("me interesa"), que genera automáticamente su publicación real con los turnos correspondientes y cierra el ciclo. Pero **el ciclo también se detecta si C nunca ve la sintética** y simplemente publica su propio cambio por su cuenta: el mismo chequeo de detección directa (arriba) compara su nueva publicación contra las sintéticas existentes y cierra el ciclo igualmente.
+   - En ambos casos, cerrar el ciclo crea un match `cadena_3` sujeto a la misma regla de confirmación obligatoria (regla 4) que un match directo: nadie queda cerrado hasta que las tres partes confirman.
 
 4. **Confirmación obligatoria:** Ningún match se cierra automáticamente. Cada usuario implicado debe confirmar explícitamente "acepto este cambio" dentro de la app. El match solo queda **confirmado** cuando TODAS las partes implicadas han confirmado.
 
@@ -128,8 +132,11 @@ Ana decide que ya no necesita cambiar el turno y cancela su publicación manualm
 ### CU7 — Caducidad automática
 Si nadie confirma un match con Ana antes del 25/06, la publicación de Ana caduca automáticamente al pasar esa fecha y desaparece de las búsquedas activas.
 
-### CU8 — (Futuro, fuera del MVP) Match en cadena de 3
-Ana cede mañana del 25, acepta tarde del 26. Andrea cede tarde del 27, acepta mañana del 25. Pedro cede tarde del 26, acepta tarde del 27. El sistema detecta el ciclo A→B→C→A y notifica a los tres usuarios de un posible cambio a tres bandas, donde cada uno deberá confirmar igualmente su parte.
+### CU8 — Match en cadena de 3 entre publicaciones ya existentes
+Ana cede mañana del 25, acepta tarde del 26. Andrea cede tarde del 27, acepta mañana del 25. Pedro publica que cede tarde del 26 y acepta tarde del 27, sin haber visto las publicaciones de Ana ni de Andrea. Al publicar, el sistema detecta automáticamente el ciclo Ana→Andrea→Pedro→Ana entre las tres publicaciones y notifica a los tres de un posible cambio a tres bandas, donde cada uno deberá confirmar igualmente su parte.
+
+### CU9 — Match en cadena de 3 vía publicación sintética
+Ana cede mañana del 25 y acepta tarde del 26. Andrea cede tarde del 26 y acepta mañana del 25... pero solo en parte: en realidad Andrea cede tarde del 27 y acepta mañana del 25 (no coincide con lo que cede Ana). Hay solape en un solo sentido: Ana puede dar a Andrea lo que quiere, pero Andrea no tiene nada que Ana acepte. El sistema no puede cerrar un match directo, pero detecta que falta solo un tercero y genera automáticamente una publicación sintética (invisible como "propia" para nadie) que representa lo que ese tercero necesitaría ofrecer. Ana y Andrea reciben un aviso de "oportunidad a 3 bandas". Más tarde, Pedro busca cambios y ve esa publicación sintética marcada como oportunidad a 3 bandas; pulsa "me interesa", el sistema crea automáticamente su publicación real y cierra el ciclo Ana→Andrea→Pedro→Ana sin que Pedro tenga que rellenar el formulario de publicación a mano.
 
 ---
 
@@ -142,7 +149,7 @@ Ana cede mañana del 25, acepta tarde del 26. Andrea cede tarde del 27, acepta m
 - **Despliegue:** Railway.
 - **Notificaciones push:** mediante Web Push API (notificaciones push web estándar, compatibles con PWA). Aviso importante: en iOS el soporte de Web Push tiene más limitaciones que en Android (requiere iOS 16.4+ y que el usuario haya instalado la PWA en pantalla de inicio); se acepta esta limitación para el MVP, revisable en el futuro si se necesita migrar a app nativa.
 - **Prioridad del MVP:** velocidad de desarrollo y validación de la idea por encima de robustez para producción a gran escala.
-- **Motor de matching:** módulo independiente dentro del backend Flask, empezando por matching 1 a 1, diseñado para poder añadir detección de ciclos de N publicaciones (3, 4 o más bandas) más adelante sin rehacer el modelo de datos.
+- **Motor de matching:** módulo puro e independiente dentro del backend Flask (`app/matching/engine.py` + `app/matching/service.py`), que resuelve matching 1 a 1 y ciclos de 3 bandas (directos y vía publicación sintética), diseñado para poder añadir detección de ciclos de 4 o más bandas más adelante sin rehacer el modelo de datos.
 
 ---
 
@@ -248,6 +255,28 @@ Formato: Dado [contexto] / Cuando [acción] / Entonces [resultado esperado].
 - Cuando llega o pasa esa fecha sin que se haya confirmado ningún match,
 - Entonces ese turno (y la publicación, si era el único pendiente) pasa a estado "caducada" automáticamente, sin acción manual del usuario.
 
+### Cadenas a 3 bandas
+
+**UAT-7.1 — Detección de cadena a 3 bandas entre publicaciones ya existentes**
+- Dado que Ana cede la mañana del 25 y acepta la tarde del 26; Andrea cede la tarde del 27 y acepta la mañana del 25,
+- Cuando Pedro publica que cede la tarde del 26 y acepta la tarde del 27 (sin haber visto las publicaciones de Ana ni Andrea),
+- Entonces el motor de matching detecta el ciclo cerrado entre las tres publicaciones al momento de publicar, y los tres usuarios reciben notificación de un posible cambio a tres bandas, donde cada uno debe confirmar su parte individualmente para cerrarlo.
+
+**UAT-7.2 — Aviso de oportunidad a 3 bandas por solape unilateral**
+- Dado que Ana cede la mañana del 25 y acepta la tarde del 26, y Andrea cede la tarde del 27 y acepta la mañana del 25 (Ana puede cubrir a Andrea, pero Andrea no tiene nada que Ana acepte),
+- Cuando el sistema procesa ambas publicaciones,
+- Entonces no se genera un match directo, pero el sistema crea una publicación sintética con el hueco que cerraría el ciclo, y Ana y Andrea reciben un aviso de "oportunidad a 3 bandas".
+
+**UAT-7.3 — Cierre de la cadena mediante "me interesa" sobre la sintética**
+- Dado que existe la publicación sintética del UAT-7.2,
+- Cuando Pedro, compatible por categoría y grupo de intercambio, la encuentra en el buscador y pulsa "me interesa",
+- Entonces el sistema crea automáticamente la publicación real de Pedro con los turnos correspondientes, cierra el match `cadena_3` entre Ana, Andrea y Pedro, y cancela la publicación sintética.
+
+**UAT-7.4 — Cierre de la cadena aunque el tercero no haya visto la sintética**
+- Dado que existe la publicación sintética del UAT-7.2,
+- Cuando Pedro publica su propio cambio de forma independiente (cede tarde del 26, acepta tarde del 27) sin haber visto ni interactuado con la sintética,
+- Entonces el sistema detecta igualmente la coincidencia con la sintética al procesar la nueva publicación de Pedro, y cierra el match `cadena_3` entre Ana, Andrea y Pedro automáticamente.
+
 ### Notificaciones
 
 **UAT-6.1 — Notificación ante nuevo match potencial**
@@ -262,8 +291,4 @@ Formato: Dado [contexto] / Cuando [acción] / Entonces [resultado esperado].
 
 ### Fuera de alcance del MVP (a validar en fase futura)
 
-**UAT-7.1 — (Futuro) Detección de cadena a 3 bandas**
-- Dado que Ana cede la mañana del 25 y acepta la tarde del 26; Andrea cede la tarde del 27 y acepta la mañana del 25; Pedro cede la tarde del 26 y acepta la tarde del 27,
-- Cuando el motor de matching detecta el ciclo cerrado entre las tres publicaciones,
-- Entonces los tres usuarios reciben notificación de un posible cambio a tres bandas, y cada uno debe confirmar su parte individualmente para cerrarlo.
-- *(No se implementa en el MVP, pero el modelo de datos debe soportarlo sin rediseño.)*
+Cadenas de 4 o más bandas: el modelo de datos y el motor de matching están diseñados para soportarlas sin rediseño, pero el algoritmo de detección de ciclos de N>3 publicaciones no está implementado.
