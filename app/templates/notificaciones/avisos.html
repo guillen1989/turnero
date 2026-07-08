@@ -49,6 +49,8 @@
           {% if aviso.publicacion.esta_activa() %}
             {% if aviso.tipo == 'alerta_busqueda_guardada' and aviso.busqueda_guardada %}
             <a href="{{ url_for('main.cambios', **aviso.busqueda_guardada.url_params) }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver resultados') }}</a>
+            {% elif aviso.tipo == 'aviso_oportunidad_3' %}
+            <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver publicación') }}</a>
             {% else %}
             <a href="{{ url_for('main.cambios', usuario=aviso.publicacion.usuario.nombre) }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver publicación') }}</a>
             {% endif %}

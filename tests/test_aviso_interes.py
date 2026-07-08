@@ -173,6 +173,31 @@ def test_aviso_generado_al_publicar(client, db):
     assert Notificacion.query.filter_by(usuario_id=ana.id, tipo="aviso_oportunidad_3").count() >= 1
 
 
+# --- Vista de avisos: el enlace debe llevar al panel de oportunidades, no a un callejón sin salida ---
+
+def test_aviso_oportunidad_3_enlaza_al_panel_no_al_otro_usuario(client, db):
+    """
+    El botón «Ver publicación» de un aviso_oportunidad_3 debe llevar al panel
+    (donde vive la sección de oportunidades a 3), no al listado de /cambios
+    filtrado por el nombre del otro usuario original (que no le sirve de nada
+    a quien recibe el aviso: no puede aceptar su propio puente).
+    """
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+    pub_ana = _pub_cambio(ana, franja, date(2026, 7, 10), date(2026, 8, 3))
+    pub_pedro = _pub_cambio(pedro, franja, date(2026, 7, 21), date(2026, 7, 10))
+
+    crear_aviso_oportunidad_3(pub_ana, pub_pedro)
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/avisos")
+    body = resp.data.decode()
+
+    assert f"usuario={pedro.nombre}" not in body
+    assert 'href="/"' in body
+
+
 # --- Multi-turno: todos los cedidos y aceptados participan en la búsqueda de oportunidades ---
 
 def test_aviso_detecta_solapamiento_para_todos_los_cedidos(db):
