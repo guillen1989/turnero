@@ -86,12 +86,28 @@
   var datosMes = JSON.parse(document.getElementById('calendario-datos-mes').textContent);
   var datosPubs = JSON.parse(document.getElementById('calendario-datos-publicaciones').textContent);
   var nombreFranja = JSON.parse(document.getElementById('calendario-datos-franjas').textContent);
+  var MODO = {{ modo | tojson }};
+  var CAMBIOS_URL = {{ url_for('main.cambios') | tojson }};
   var pila = [];
 
   function mostrarVista(html, esRaiz) {
     document.getElementById('calendario-panel-cuerpo').innerHTML = html;
     document.getElementById('calendario-panel-volver').hidden = !!esRaiz;
     document.getElementById('calendario-panel').hidden = false;
+  }
+
+  // Enlace a la publicación completa en Buscar cambios: ahí ya existen la
+  // tarjeta completa (cede/acepta/mensaje) y las acciones "Me interesa" /
+  // "Contraoferta" — no se duplican aquí.
+  function _urlPublicacion(fechaIso, clave, pub) {
+    var partes = fechaIso.split('-');
+    var mes = parseInt(partes[1], 10);
+    var dia = parseInt(partes[2], 10);
+    var tipoFecha = (MODO === 'ofertas') ? 'aceptado' : 'cedido';
+    var params = 'mes=' + mes + '&dia=' + dia + '&tipo_fecha=' + tipoFecha +
+      '&usuario=' + encodeURIComponent(pub.usuario_nombre || '');
+    if (clave !== 'cualquiera') { params += '&franja=' + clave; }
+    return CAMBIOS_URL + '?' + params;
   }
 
   window.calendarioAbrirDia = function (fechaIso) {
@@ -115,19 +131,10 @@
     var html = '<ul class="calendario-lista">';
     ids.forEach(function (id) {
       var pub = datosPubs[id] || {};
-      html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirPublicacion(' + id + ')">' +
-        (pub.usuario_nombre || '?') + ' — ' + (pub.tipo_label || '') + '</button></li>';
+      html += '<li><a class="calendario-lista-item" href="' + _urlPublicacion(fechaIso, clave, pub) + '">' +
+        (pub.usuario_nombre || '?') + ' — ' + (pub.tipo_label || '') + '</a></li>';
     });
     html += '</ul>';
-    mostrarVista(html, false);
-  };
-
-  window.calendarioAbrirPublicacion = function (id) {
-    var pub = datosPubs[id] || {};
-    pila.push({ tipo: 'publicacion', id: id });
-    var html = '<div class="calendario-detalle">' +
-      '<p><strong>' + (pub.usuario_nombre || '?') + '</strong> — ' + (pub.tipo_label || '') + '</p>' +
-      '</div>';
     mostrarVista(html, false);
   };
 
@@ -136,7 +143,6 @@
     var actual = pila[pila.length - 1];
     if (!actual) { calendarioCerrarPanel(); return; }
     if (actual.tipo === 'dia') { pila.pop(); window.calendarioAbrirDia(actual.fecha); }
-    else if (actual.tipo === 'franja') { pila.pop(); window.calendarioAbrirFranja(actual.fecha, actual.clave); }
   };
 
   window.calendarioCerrarPanel = function () {

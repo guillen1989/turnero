@@ -1,0 +1,65 @@
+"""E2E: drill-down del calendario de ofertas (Paso 5).
+
+Escenario: Pedro publica un 'regalo' (turno que se ofrece a trabajar) para
+un día conocido del mes actual. Ana entra a /calendario, toca ese día,
+toca la franja y sigue el enlace resultante — debe aterrizar en Buscar
+cambios (/cambios) viendo la publicación de Pedro con el botón "Me interesa"
+ya funcional (reutilizado, no reimplementado en el calendario).
+"""
+from datetime import date, timedelta
+
+import pytest
+
+from app.extensions import db
+from app.models import Categoria, FranjaHoraria, insertar_categorias_semilla
+from app.services.publicaciones import publicar_cambio
+from app.services.registro import registrar_usuario
+
+
+@pytest.fixture
+def escenario_oferta(e2e_app, clean_e2e_db):
+    with e2e_app.app_context():
+        insertar_categorias_semilla()
+        cat = Categoria.query.filter_by(nombre="Enfermería").first()
+        ana = registrar_usuario("Ana García", "ana@test.es", "pass1234", "Hospital E2E", "Urgencias", cat.id)
+        pedro = registrar_usuario("Pedro Ruiz", "pedro@test.es", "pass1234", "Hospital E2E", "Urgencias", cat.id)
+
+        gid = ana.unidad.grupo_intercambio_id
+        manana = FranjaHoraria.query.filter_by(grupo_intercambio_id=gid, nombre="Mañana").first()
+
+        fecha = date.today().replace(day=1) + timedelta(days=14)
+        publicar_cambio(pedro.id, [], [(fecha, manana.id)], tipo="regalo")
+        db.session.commit()
+
+    return {
+        "email": "ana@test.es",
+        "password": "pass1234",
+        "fecha": fecha,
+        "pedro_nombre": "Pedro Ruiz",
+    }
+
+
+def test_drilldown_dia_franja_navega_a_publicacion(page, live_server, escenario_oferta):
+    page.goto(f"{live_server}/auth/login")
+    page.locator('input[name="email"]').fill(escenario_oferta["email"])
+    page.locator('input[name="password"]').fill(escenario_oferta["password"])
+    page.locator('[type="submit"]').click()
+    page.wait_for_load_state("networkidle")
+
+    # Un usuario recién registrado aterriza primero en /como-funciona (onboarding);
+    # navegamos directamente al calendario en vez de depender de ese redirect.
+    page.goto(f"{live_server}/calendario/")
+
+    fecha_iso = escenario_oferta["fecha"].isoformat()
+    page.locator(f'[data-fecha="{fecha_iso}"]').click()
+
+    panel = page.locator("#calendario-panel")
+    assert panel.is_visible()
+    page.locator(".calendario-lista-item").first.click()
+
+    enlace = page.locator(".calendario-lista-item").first
+    enlace.click()
+
+    page.wait_for_url(lambda url: "/cambios" in url)
+    assert escenario_oferta["pedro_nombre"] in page.content()
+    assert page.locator('button:has-text("Me interesa")').first.is_visible()
