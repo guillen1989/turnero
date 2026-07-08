@@ -60,6 +60,12 @@
     {% endfor %}
   </div>
 
+  <div class="calendario-publicar-fijo">
+    <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary calendario-btn-publicar">
+      {{ _('Publicar cambio') }}
+    </a>
+  </div>
+
   {# ── Panel de drill-down: día → franjas → publicaciones ── #}
   <div id="calendario-panel" class="calendario-panel" hidden role="dialog" aria-modal="true">
     <div class="calendario-panel-contenido">
@@ -88,7 +94,14 @@
   var nombreFranja = JSON.parse(document.getElementById('calendario-datos-franjas').textContent);
   var MODO = {{ modo | tojson }};
   var CAMBIOS_URL = {{ url_for('main.cambios') | tojson }};
+  var PUBLICAR_URL = {{ url_for('publicaciones.nueva') | tojson }};
+  var TEXTO_SIN_OFERTAS = {{ _('Nadie ha publicado nada este día todavía.') | tojson }};
+  var TEXTO_PUBLICAR_DIA = {{ _('Publicar un cambio para este día') | tojson }};
   var pila = [];
+
+  function _urlPublicarDia(fechaIso) {
+    return PUBLICAR_URL + '?fecha=' + fechaIso + '&modo=' + MODO;
+  }
 
   function mostrarVista(html, esRaiz) {
     document.getElementById('calendario-panel-cuerpo').innerHTML = html;
@@ -113,15 +126,21 @@
   window.calendarioAbrirDia = function (fechaIso) {
     var franjasDia = datosMes[fechaIso] || {};
     var claves = Object.keys(franjasDia);
-    if (claves.length === 0) return;
 
     pila = [{ tipo: 'dia', fecha: fechaIso }];
-    var html = '<ul class="calendario-lista">';
-    claves.forEach(function (clave) {
-      html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirFranja(\'' + fechaIso + '\',\'' + clave + '\')">' +
-        (nombreFranja[clave] || clave) + ' (' + franjasDia[clave].length + ')</button></li>';
-    });
-    html += '</ul>';
+    var html = '';
+    if (claves.length > 0) {
+      html += '<ul class="calendario-lista">';
+      claves.forEach(function (clave) {
+        html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirFranja(\'' + fechaIso + '\',\'' + clave + '\')">' +
+          (nombreFranja[clave] || clave) + ' (' + franjasDia[clave].length + ')</button></li>';
+      });
+      html += '</ul>';
+    } else {
+      html += '<p class="calendario-panel-vacio">' + TEXTO_SIN_OFERTAS + '</p>';
+    }
+    html += '<a class="btn btn-primary calendario-btn-publicar" href="' + _urlPublicarDia(fechaIso) + '">' +
+      TEXTO_PUBLICAR_DIA + '</a>';
     mostrarVista(html, true);
   };
 

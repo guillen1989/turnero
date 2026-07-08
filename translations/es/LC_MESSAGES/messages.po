@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-08 12:13+0200\n"
+"POT-Creation-Date: 2026-07-08 12:55+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -198,11 +198,11 @@ msgstr ""
 msgid "Categoría eliminada."
 msgstr ""
 
-#: app/routes/admin.py:674 app/routes/publicaciones.py:269
+#: app/routes/admin.py:674 app/routes/publicaciones.py:290
 msgid "Publicación cancelada."
 msgstr ""
 
-#: app/routes/admin.py:683 app/routes/publicaciones.py:329
+#: app/routes/admin.py:683 app/routes/publicaciones.py:350
 msgid "Publicación eliminada."
 msgstr ""
 
@@ -452,15 +452,15 @@ msgid "El turno que cedes y el que deseas deben ser diferentes."
 msgstr ""
 
 #: app/routes/publicaciones.py:110 app/routes/publicaciones.py:160
-#: app/routes/publicaciones.py:503
+#: app/routes/publicaciones.py:524
 msgid "Las fechas de los turnos no pueden ser anteriores a hoy."
 msgstr ""
 
-#: app/routes/publicaciones.py:143 app/routes/publicaciones.py:497
+#: app/routes/publicaciones.py:143 app/routes/publicaciones.py:518
 msgid "Debes indicar al menos un turno que cedes."
 msgstr ""
 
-#: app/routes/publicaciones.py:145 app/routes/publicaciones.py:500
+#: app/routes/publicaciones.py:145 app/routes/publicaciones.py:521
 msgid "Debes indicar al menos un turno que aceptarías."
 msgstr ""
 
@@ -497,91 +497,91 @@ msgstr ""
 msgid "Publicación creada correctamente."
 msgstr ""
 
-#: app/routes/publicaciones.py:280
+#: app/routes/publicaciones.py:301
 msgid "Solo puedes editar publicaciones activas."
 msgstr ""
 
-#: app/routes/publicaciones.py:316
+#: app/routes/publicaciones.py:337
 msgid "Publicación actualizada."
 msgstr ""
 
-#: app/routes/publicaciones.py:342
+#: app/routes/publicaciones.py:363
 msgid "No puedes aceptar tu propia publicación."
 msgstr ""
 
-#: app/routes/publicaciones.py:346 app/routes/publicaciones.py:470
+#: app/routes/publicaciones.py:367 app/routes/publicaciones.py:491
 msgid "Esta publicación ya no está activa."
 msgstr ""
 
-#: app/routes/publicaciones.py:366
+#: app/routes/publicaciones.py:387
 msgid "Esta oportunidad ya no está disponible."
 msgstr ""
 
-#: app/routes/publicaciones.py:372
+#: app/routes/publicaciones.py:393
 msgid ""
 "No fue posible cerrar el cambio a 3 bandas. Los turnos pueden haber "
 "cambiado."
 msgstr ""
 
-#: app/routes/publicaciones.py:374
+#: app/routes/publicaciones.py:395
 msgid "¡Cambio a 3 bandas iniciado! Ve a «Mis cambios» para confirmar."
 msgstr ""
 
-#: app/routes/publicaciones.py:386
+#: app/routes/publicaciones.py:407
 msgid "No fue posible crear el match. Los turnos pueden haber cambiado."
 msgstr ""
 
-#: app/routes/publicaciones.py:388
+#: app/routes/publicaciones.py:409
 msgid "¡Match creado! Ve a «Mis cambios» para confirmar."
 msgstr ""
 
-#: app/routes/publicaciones.py:403
+#: app/routes/publicaciones.py:424
 msgid "Este regalo no tiene turnos disponibles."
 msgstr ""
 
-#: app/routes/publicaciones.py:413
+#: app/routes/publicaciones.py:434
 msgid "Selecciona el turno que quieres cubrir."
 msgstr ""
 
-#: app/routes/publicaciones.py:416
+#: app/routes/publicaciones.py:437
 msgid "Turno no encontrado o ya resuelto."
 msgstr ""
 
-#: app/routes/publicaciones.py:423
+#: app/routes/publicaciones.py:444
 msgid "El junte ya no tiene turnos disponibles."
 msgstr ""
 
-#: app/routes/publicaciones.py:430
+#: app/routes/publicaciones.py:451
 msgid "Este cambio de turno ya no está disponible."
 msgstr ""
 
-#: app/routes/publicaciones.py:437
+#: app/routes/publicaciones.py:458
 msgid "Selecciona los dos turnos."
 msgstr ""
 
-#: app/routes/publicaciones.py:441
+#: app/routes/publicaciones.py:462
 msgid "Turnos no encontrados en esta publicación."
 msgstr ""
 
-#: app/routes/publicaciones.py:445
+#: app/routes/publicaciones.py:466
 msgid "Especifica el turno que quieres librar."
 msgstr ""
 
-#: app/routes/publicaciones.py:452
+#: app/routes/publicaciones.py:473
 msgid "Tipo de publicación no reconocido."
 msgstr ""
 
-#: app/routes/publicaciones.py:474
+#: app/routes/publicaciones.py:495
 msgid "No puedes hacer una contraoferta a tu propia publicación."
 msgstr ""
 
-#: app/routes/publicaciones.py:510
+#: app/routes/publicaciones.py:531
 msgid ""
 "La contraoferta debe coincidir con al menos una parte de la publicación "
 "original."
 msgstr ""
 
-#: app/routes/publicaciones.py:537
+#: app/routes/publicaciones.py:558
 msgid ""
 "Tu contraoferta ha sido enviada. El autor de la publicación recibirá un "
 "aviso."
@@ -704,7 +704,7 @@ msgid "Instalar"
 msgstr ""
 
 #: app/templates/base.html:62 app/templates/base.html:77
-#: app/templates/calendario/calendario.html:71
+#: app/templates/calendario/calendario.html:77
 msgid "Cerrar"
 msgstr ""
 
@@ -1438,8 +1438,23 @@ msgstr ""
 msgid "Sin ofertas"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:68
+#: app/templates/calendario/calendario.html:65
+#: app/templates/main/como_funciona.html:43
+#: app/templates/main/dashboard.html:10
+#: app/templates/publicaciones/publicar.html:3
+msgid "Publicar cambio"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:74
 msgid "Volver"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:98
+msgid "Nadie ha publicado nada este día todavía."
+msgstr ""
+
+#: app/templates/calendario/calendario.html:99
+msgid "Publicar un cambio para este día"
 msgstr ""
 
 #: app/templates/feedback/nuevo.html:3 app/templates/feedback/nuevo.html:7
@@ -1873,12 +1888,6 @@ msgstr ""
 
 #: app/templates/main/como_funciona.html:39
 msgid "por ejemplo, cambiar tu turno de mañana por el de tarde el día 16."
-msgstr ""
-
-#: app/templates/main/como_funciona.html:43
-#: app/templates/main/dashboard.html:10
-#: app/templates/publicaciones/publicar.html:3
-msgid "Publicar cambio"
 msgstr ""
 
 #: app/templates/main/como_funciona.html:51

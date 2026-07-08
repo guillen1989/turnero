@@ -859,6 +859,9 @@ body {
 .calendario-lista-item { width: 100%; text-align: left; padding: 0.6rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 0.95rem; cursor: pointer; }
 .calendario-lista-item:hover { background: #f1f5f9; }
 .calendario-detalle { padding: 0.25rem 0; }
+.calendario-publicar-fijo { margin: 1rem 0; text-align: center; }
+.calendario-btn-publicar { display: inline-block; margin-top: 0.75rem; text-decoration: none; text-align: center; }
+.calendario-panel-vacio { color: #6b7280; font-size: 0.9rem; margin: 0 0 0.5rem; }
 /* Relleno rápido por rango */
 .planilla-relleno-rapido { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.6rem 0.9rem; margin-bottom: 0.5rem; }
 .planilla-vacios-rapido { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.6rem 0.9rem; margin-bottom: 0.9rem; }

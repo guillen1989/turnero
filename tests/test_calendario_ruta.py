@@ -152,3 +152,13 @@ def test_calendario_embebe_datos_para_drilldown(client, db):
     assert datos_mes["2026-07-03"][str(manana.id)] == [pub.id]
     assert datos_pubs[str(pub.id)]["usuario_nombre"] == "Pedro"
     assert datos_pubs[str(pub.id)]["tipo_label"]
+
+
+def test_calendario_muestra_boton_publicar_cambio_fijo(client, db):
+    """Ronda 2, Paso 3: botón fijo de publicar bajo el calendario."""
+    u = _usuario("Ana", "ana@test.es")
+    _login(client, u.email)
+    resp = client.get("/calendario/")
+    assert resp.status_code == 200
+    assert b'href="/publicar"' in resp.data
+    assert "Publicar cambio".encode("utf-8") in resp.data

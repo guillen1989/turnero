@@ -63,3 +63,33 @@ def test_drilldown_dia_franja_navega_a_publicacion(page, live_server, escenario_
     page.wait_for_url(lambda url: "/cambios" in url)
     assert escenario_oferta["pedro_nombre"] in page.content()
     assert page.locator('button:has-text("Me interesa")').first.is_visible()
+
+
+def test_dia_vacio_ofrece_publicar_cambio(page, live_server, escenario_oferta):
+    """Ronda 2, Paso 3: tocar un día SIN ofertas también abre el panel,
+    con un enlace para publicar un cambio precargado con esa fecha/modo."""
+    page.goto(f"{live_server}/auth/login")
+    page.locator('input[name="email"]').fill(escenario_oferta["email"])
+    page.locator('input[name="password"]').fill(escenario_oferta["password"])
+    page.locator('[type="submit"]').click()
+    page.wait_for_load_state("networkidle")
+
+    page.goto(f"{live_server}/calendario/?modo=ofertas")
+
+    fecha_vacia = escenario_oferta["fecha"] + timedelta(days=1)
+    fecha_iso = fecha_vacia.isoformat()
+    page.locator(f'[data-fecha="{fecha_iso}"]').click()
+
+    panel = page.locator("#calendario-panel")
+    assert panel.is_visible()
+
+    enlace_publicar = page.locator("#calendario-panel a.calendario-btn-publicar")
+    assert enlace_publicar.is_visible()
+
+    href = enlace_publicar.get_attribute("href")
+    assert f"fecha={fecha_iso}" in href
+    assert "modo=ofertas" in href
+
+    enlace_publicar.click()
+    page.wait_for_url(lambda url: "/publicar" in url)
+    assert page.locator(f'input[name="fecha_aceptada_0"][value="{fecha_iso}"]').count() == 1
