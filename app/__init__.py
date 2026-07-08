@@ -76,6 +76,9 @@ def create_app(config_name=None):
     from app.routes.planilla import bp as planilla_bp
     app.register_blueprint(planilla_bp)
 
+    from app.routes.calendario import bp as calendario_bp
+    app.register_blueprint(calendario_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 

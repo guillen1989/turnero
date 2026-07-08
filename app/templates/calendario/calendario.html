@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Calendario de cambios') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+{% set MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+
+<div class="form-container" data-modo-actual="{{ modo }}">
+
+  <div class="planilla-header">
+    <div class="planilla-header-titulo">
+      <h1>{{ _('Calendario de cambios') }}</h1>
+    </div>
+
+    <div class="planilla-mes-nav">
+      <a href="{{ url_for('calendario.index', anyo=prev_anyo, mes=prev_mes, modo=modo) }}" class="btn btn-secondary btn-sm">&#8249;</a>
+      <span class="planilla-mes-titulo">{{ MESES[mes - 1] }} {{ anyo }}</span>
+      <a href="{{ url_for('calendario.index', anyo=next_anyo, mes=next_mes, modo=modo) }}" class="btn btn-secondary btn-sm">&#8250;</a>
+    </div>
+
+    <div class="calendario-modo-selector">
+      <a href="{{ url_for('calendario.index', anyo=anyo, mes=mes, modo='ofertas') }}"
+         class="btn btn-sm {{ 'btn-primary' if modo == 'ofertas' else 'btn-secondary' }}">
+        {{ _('Ofertas') }}
+      </a>
+      <a href="{{ url_for('calendario.index', anyo=anyo, mes=mes, modo='peticiones') }}"
+         class="btn btn-sm {{ 'btn-primary' if modo == 'peticiones' else 'btn-secondary' }}">
+        {{ _('Peticiones') }}
+      </a>
+    </div>
+  </div>
+
+  <div class="calendario-grid">
+    {% for dia in dias %}
+      {% set franjas_del_dia = calendario_mes.get(dia, {}) %}
+      <div class="calendario-dia" id="dia-{{ dia.isoformat() }}">
+        <span class="calendario-dia-numero">{{ dia.day }}</span>
+        {% for clave, pub_ids in franjas_del_dia.items() %}
+          <span class="calendario-franja-chip">
+            {% if clave == cualquier_franja_clave %}
+              {{ _('Cualquiera') }}
+            {% else %}
+              {{ nombre_franja.get(clave, '?') }}
+            {% endif %}
+          </span>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}
