@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-08 11:48+0200\n"
+"POT-Creation-Date: 2026-07-08 11:57+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -308,6 +308,42 @@ msgstr ""
 
 #: app/routes/auth.py:452
 msgid "Tu cuenta ha sido eliminada. Hasta pronto."
+msgstr ""
+
+#: app/routes/calendario.py:47
+msgid "Cualquiera"
+msgstr ""
+
+#: app/routes/calendario.py:58 app/templates/main/cambios.html:97
+#: app/templates/main/cambios.html:224 app/templates/main/como_funciona.html:22
+#: app/templates/main/dashboard.html:170
+#: app/templates/publicaciones/editar.html:23
+#: app/templates/publicaciones/publicar.html:24
+msgid "Cambio"
+msgstr ""
+
+#: app/routes/calendario.py:59 app/templates/main/cambios.html:98
+#: app/templates/main/cambios.html:145 app/templates/main/como_funciona.html:26
+#: app/templates/main/dashboard.html:132
+#: app/templates/publicaciones/editar.html:28
+#: app/templates/publicaciones/publicar.html:31
+msgid "Regalo"
+msgstr ""
+
+#: app/routes/calendario.py:60 app/templates/main/cambios.html:99
+#: app/templates/main/cambios.html:154 app/templates/main/como_funciona.html:30
+#: app/templates/main/dashboard.html:140
+#: app/templates/publicaciones/editar.html:33
+#: app/templates/publicaciones/publicar.html:38
+msgid "Petición"
+msgstr ""
+
+#: app/routes/calendario.py:61 app/templates/main/cambios.html:101
+#: app/templates/main/cambios.html:187 app/templates/main/como_funciona.html:38
+#: app/templates/main/dashboard.html:162
+#: app/templates/publicaciones/editar.html:38
+#: app/templates/publicaciones/publicar.html:52
+msgid "Cambio de turno en el día"
 msgstr ""
 
 #: app/routes/feedback.py:13
@@ -664,6 +700,7 @@ msgid "Instalar"
 msgstr ""
 
 #: app/templates/base.html:61 app/templates/base.html:76
+#: app/templates/calendario/calendario.html:71
 msgid "Cerrar"
 msgstr ""
 
@@ -1392,9 +1429,13 @@ msgid ""
 "detalle."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:53
-#: app/templates/calendario/calendario.html:54
+#: app/templates/calendario/calendario.html:55
+#: app/templates/calendario/calendario.html:56
 msgid "Sin ofertas"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:68
+msgid "Volver"
 msgstr ""
 
 #: app/templates/feedback/nuevo.html:3 app/templates/feedback/nuevo.html:7
@@ -1586,43 +1627,11 @@ msgstr ""
 msgid "— Todos los tipos —"
 msgstr ""
 
-#: app/templates/main/cambios.html:97 app/templates/main/cambios.html:224
-#: app/templates/main/como_funciona.html:22
-#: app/templates/main/dashboard.html:170
-#: app/templates/publicaciones/editar.html:23
-#: app/templates/publicaciones/publicar.html:24
-msgid "Cambio"
-msgstr ""
-
-#: app/templates/main/cambios.html:98 app/templates/main/cambios.html:145
-#: app/templates/main/como_funciona.html:26
-#: app/templates/main/dashboard.html:132
-#: app/templates/publicaciones/editar.html:28
-#: app/templates/publicaciones/publicar.html:31
-msgid "Regalo"
-msgstr ""
-
-#: app/templates/main/cambios.html:99 app/templates/main/cambios.html:154
-#: app/templates/main/como_funciona.html:30
-#: app/templates/main/dashboard.html:140
-#: app/templates/publicaciones/editar.html:33
-#: app/templates/publicaciones/publicar.html:38
-msgid "Petición"
-msgstr ""
-
 #: app/templates/main/cambios.html:100 app/templates/main/cambios.html:163
 #: app/templates/main/como_funciona.html:34
 #: app/templates/main/dashboard.html:148
 #: app/templates/publicaciones/publicar.html:45
 msgid "Junte de noches"
-msgstr ""
-
-#: app/templates/main/cambios.html:101 app/templates/main/cambios.html:187
-#: app/templates/main/como_funciona.html:38
-#: app/templates/main/dashboard.html:162
-#: app/templates/publicaciones/editar.html:38
-#: app/templates/publicaciones/publicar.html:52
-msgid "Cambio de turno en el día"
 msgstr ""
 
 #: app/templates/main/cambios.html:102 app/templates/main/cambios.html:201

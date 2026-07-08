@@ -113,3 +113,42 @@ def test_calendario_no_muestra_publicaciones_de_categoria_distinta(client, db):
     resp = client.get("/calendario/?anyo=2026&mes=7&modo=ofertas")
     assert resp.status_code == 200
     assert "Noche".encode("utf-8") not in resp.data
+
+
+def test_calendario_embebe_datos_para_drilldown(client, db):
+    """Paso 4: los datos del mes (día→franja→pubs, resumen por pub) se embeben
+    como JSON en la página para el drill-down en JS, sin llamadas adicionales."""
+    import json
+    import re
+
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    pub = PublicacionCambio(usuario_id=pedro.id, tipo="regalo")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
+    db.session.commit()
+
+    _login(client, ana.email)
+    resp = client.get("/calendario/?anyo=2026&mes=7&modo=ofertas")
+    assert resp.status_code == 200
+
+    html = resp.data.decode("utf-8")
+    m_calendario = re.search(
+        r'<script type="application/json" id="calendario-datos-mes">(.*?)</script>', html, re.S
+    )
+    m_pubs = re.search(
+        r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
+    )
+    assert m_calendario is not None
+    assert m_pubs is not None
+
+    datos_mes = json.loads(m_calendario.group(1))
+    datos_pubs = json.loads(m_pubs.group(1))
+
+    assert datos_mes["2026-07-03"][str(manana.id)] == [pub.id]
+    assert datos_pubs[str(pub.id)]["usuario_nombre"] == "Pedro"
+    assert datos_pubs[str(pub.id)]["tipo_label"]

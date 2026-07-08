@@ -9,6 +9,8 @@ por fecha y franja, para pintarlos en un grid mensual.
 import calendar
 from datetime import date
 
+from sqlalchemy.orm import joinedload
+
 from app.models import PublicacionCambio, TurnoAceptado, TurnoCedido, Unidad, Usuario
 
 CUALQUIER_FRANJA = "cualquiera"
@@ -142,3 +144,16 @@ def preparar_celdas_mes(dias, calendario_mes, franjas):
             }
 
     return celdas
+
+
+def resumen_publicaciones(pub_ids):
+    """Datos mínimos de cada publicación (autor + tipo) para el drill-down."""
+    if not pub_ids:
+        return []
+    pubs = (
+        PublicacionCambio.query
+        .filter(PublicacionCambio.id.in_(pub_ids))
+        .options(joinedload(PublicacionCambio.usuario))
+        .all()
+    )
+    return [{"id": p.id, "usuario_nombre": p.usuario.nombre, "tipo": p.tipo} for p in pubs]

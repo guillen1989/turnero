@@ -324,3 +324,22 @@ def test_preparar_celdas_dia_con_varias_franjas(db):
     assert celda["mod"] == "cal-celda--multi"
     assert celda["etiqueta"] == "2"
     assert celda["tooltip"] == "Mañana, Tarde"
+
+
+# --- resumen_publicaciones (Paso 4: datos mínimos para el drill-down) ---
+
+def test_resumen_publicaciones_devuelve_usuario_y_tipo(db):
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    pub = _pub(pedro, "regalo", aceptados=[(date(2026, 7, 3), manana)])
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([pub.id])
+
+    assert resumen == [{"id": pub.id, "usuario_nombre": "Pedro", "tipo": "regalo"}]
+
+
+def test_resumen_publicaciones_lista_vacia_sin_ids(db):
+    from app.services.calendario_mercado import resumen_publicaciones
+    assert resumen_publicaciones([]) == []

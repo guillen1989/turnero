@@ -846,6 +846,13 @@ body {
 .planilla-hint { margin-bottom: 1.25rem; }
 .calendario-modo-selector { display: flex; gap: 0.5rem; margin: 0.5rem 0; }
 .calendario-ayuda-texto { font-size: 0.85rem; color: #6b7280; margin: 0.25rem 0 0.75rem; }
+.calendario-panel { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex; align-items: flex-end; z-index: 50; }
+.calendario-panel-contenido { background: #fff; width: 100%; max-height: 80vh; overflow-y: auto; border-radius: 12px 12px 0 0; padding: 1rem; }
+.calendario-panel-cabecera { display: flex; justify-content: space-between; margin-bottom: 0.75rem; }
+.calendario-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.calendario-lista-item { width: 100%; text-align: left; padding: 0.6rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 0.95rem; cursor: pointer; }
+.calendario-lista-item:hover { background: #f1f5f9; }
+.calendario-detalle { padding: 0.25rem 0; }
 /* Relleno rápido por rango */
 .planilla-relleno-rapido { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.6rem 0.9rem; margin-bottom: 0.5rem; }
 .planilla-vacios-rapido { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.6rem 0.9rem; margin-bottom: 0.9rem; }

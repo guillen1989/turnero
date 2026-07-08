@@ -4,11 +4,12 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Calendario visual de ofertas/peticiones (rama `staging`) — Pasos 1-3
+Calendario visual de ofertas/peticiones (rama `staging`) — Pasos 1-4
 completados (servicio puro, ruta con navegación mensual, grid visual con
-colores por franja reutilizando `.cal-celda`/`.planilla-cal` de `/planilla`).
-Siguiente: Paso 4, drill-down día → franjas → publicaciones (JS embebiendo
-el JSON del mes, sin llamadas adicionales al servidor).
+colores por franja, drill-down día→franja→publicaciones vía JS con datos
+embebidos, sin llamadas adicionales al servidor). Siguiente: Paso 5, detalle
+completo de publicación (extraer a macro/include la tarjeta que hoy está
+inline en `main/cambios.html`) + CTA de acción (contraoferta / me interesa).
 
 ## Backlog (fuente: .backlog)
 - [ ] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones). Diseño ya contempla el hueco para un tercer `modo`; implementar más adelante.
@@ -106,6 +107,7 @@ el JSON del mes, sin llamadas adicionales al servidor).
 - [x] feat(calendario): Paso 1 — servicio puro `construir_calendario_mes` (app/services/calendario_mercado.py) · agrupa TurnoAceptado (modo "ofertas") o TurnoCedido (modo "peticiones") abiertos, por fecha y franja, para tipos cambio/regalo/peticion/cambio_dia (excluye junte) · respeta visibilidad (misma categoría+grupo), excluye propias/sintéticas/no-activas/fuera de mes · clave especial "cualquiera" para turnos con cualquier_franja · 18 tests · 693 tests passing
 - [x] feat(calendario): Paso 2 — ruta `GET /calendario` (app/routes/calendario.py) · navegación mensual anyo/mes igual que `/planilla` · selector ofertas/peticiones vía query param `modo` (con fallback a "ofertas" si es inválido) · plantilla mínima sin colores ni drill-down todavía (calendario/calendario.html) · blueprint registrado en app/__init__.py · 7 tests · 700 tests passing
 - [x] feat(calendario): Paso 3 — grid visual mensual reutilizando `.planilla-cal`/`.cal-celda` de `/planilla` · nueva función pura `preparar_celdas_mes` (color sólido si hay 1 franja ese día, estilo "multi" neutro + tooltip con nombres si hay varias, clave especial para "cualquiera") · CSS nuevo (.calendario-modo-selector, .calendario-ayuda-texto) · catálogo i18n actualizado (pybabel extract/update/compile) · 4 tests nuevos · 704 tests passing
+- [x] feat(calendario): Paso 4 — drill-down día→franja→publicaciones · nueva `resumen_publicaciones` (autor+tipo) en calendario_mercado.py · datos del mes embebidos como JSON (`<script type="application/json">`) en la página, JS vanilla navega los 3 niveles con pila de "volver" sin llamadas adicionales al servidor · panel modal deslizante (.calendario-panel) · fix de bug real: `_, num_dias = calendar.monthrange(...)` shadowaba el `_()` de flask_babel importado en el mismo módulo, rompiendo la ruta en cuanto se usó gettext · 1 test nuevo · 707 tests passing
 
 ## Backlog de calidad (pendiente)
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓

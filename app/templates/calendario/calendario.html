@@ -50,6 +50,8 @@
       <button type="button"
               class="cal-celda {{ celda.mod }}{% if dia == hoy %} cal-celda--hoy{% endif %}"
               {% if celda.estilo %}style="{{ celda.estilo }}"{% endif %}
+              data-fecha="{{ dia.isoformat() }}"
+              onclick="calendarioAbrirDia('{{ dia.isoformat() }}')"
               title="{{ celda.tooltip or _('Sin ofertas') }}"
               aria-label="{{ dia.day }} — {{ celda.tooltip or _('Sin ofertas') }}">
         <span class="cal-num">{{ dia.day }}</span>
@@ -58,5 +60,89 @@
     {% endfor %}
   </div>
 
+  {# ── Panel de drill-down: día → franjas → publicaciones ── #}
+  <div id="calendario-panel" class="calendario-panel" hidden role="dialog" aria-modal="true">
+    <div class="calendario-panel-contenido">
+      <div class="calendario-panel-cabecera">
+        <button type="button" id="calendario-panel-volver" class="btn btn-secondary btn-sm" hidden onclick="calendarioVolver()">
+          &#8249; {{ _('Volver') }}
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="calendarioCerrarPanel()">
+          {{ _('Cerrar') }}
+        </button>
+      </div>
+      <div id="calendario-panel-cuerpo"></div>
+    </div>
+  </div>
+
 </div>
+
+<script type="application/json" id="calendario-datos-mes">{{ datos_mes | tojson }}</script>
+<script type="application/json" id="calendario-datos-publicaciones">{{ datos_publicaciones | tojson }}</script>
+<script type="application/json" id="calendario-datos-franjas">{{ nombre_franja_por_clave | tojson }}</script>
+
+<script>
+(function () {
+  var datosMes = JSON.parse(document.getElementById('calendario-datos-mes').textContent);
+  var datosPubs = JSON.parse(document.getElementById('calendario-datos-publicaciones').textContent);
+  var nombreFranja = JSON.parse(document.getElementById('calendario-datos-franjas').textContent);
+  var pila = [];
+
+  function mostrarVista(html, esRaiz) {
+    document.getElementById('calendario-panel-cuerpo').innerHTML = html;
+    document.getElementById('calendario-panel-volver').hidden = !!esRaiz;
+    document.getElementById('calendario-panel').hidden = false;
+  }
+
+  window.calendarioAbrirDia = function (fechaIso) {
+    var franjasDia = datosMes[fechaIso] || {};
+    var claves = Object.keys(franjasDia);
+    if (claves.length === 0) return;
+
+    pila = [{ tipo: 'dia', fecha: fechaIso }];
+    var html = '<ul class="calendario-lista">';
+    claves.forEach(function (clave) {
+      html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirFranja(\'' + fechaIso + '\',\'' + clave + '\')">' +
+        (nombreFranja[clave] || clave) + ' (' + franjasDia[clave].length + ')</button></li>';
+    });
+    html += '</ul>';
+    mostrarVista(html, true);
+  };
+
+  window.calendarioAbrirFranja = function (fechaIso, clave) {
+    var ids = (datosMes[fechaIso] || {})[clave] || [];
+    pila.push({ tipo: 'franja', fecha: fechaIso, clave: clave });
+    var html = '<ul class="calendario-lista">';
+    ids.forEach(function (id) {
+      var pub = datosPubs[id] || {};
+      html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirPublicacion(' + id + ')">' +
+        (pub.usuario_nombre || '?') + ' — ' + (pub.tipo_label || '') + '</button></li>';
+    });
+    html += '</ul>';
+    mostrarVista(html, false);
+  };
+
+  window.calendarioAbrirPublicacion = function (id) {
+    var pub = datosPubs[id] || {};
+    pila.push({ tipo: 'publicacion', id: id });
+    var html = '<div class="calendario-detalle">' +
+      '<p><strong>' + (pub.usuario_nombre || '?') + '</strong> — ' + (pub.tipo_label || '') + '</p>' +
+      '</div>';
+    mostrarVista(html, false);
+  };
+
+  window.calendarioVolver = function () {
+    pila.pop();
+    var actual = pila[pila.length - 1];
+    if (!actual) { calendarioCerrarPanel(); return; }
+    if (actual.tipo === 'dia') { pila.pop(); window.calendarioAbrirDia(actual.fecha); }
+    else if (actual.tipo === 'franja') { pila.pop(); window.calendarioAbrirFranja(actual.fecha, actual.clave); }
+  };
+
+  window.calendarioCerrarPanel = function () {
+    pila = [];
+    document.getElementById('calendario-panel').hidden = true;
+  };
+})();
+</script>
 {% endblock %}
