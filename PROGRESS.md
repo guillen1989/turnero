@@ -14,6 +14,22 @@ Nota: `e2e/test_sintetica_staging.py` apunta a la app real de Railway
 (STAGING_URL) y no se ejecuta salvo necesidad explícita, para no seguir
 escribiendo usuarios de prueba en la base de datos compartida de staging.
 
+Análisis de datos de producción (2026-07-08): de 361 publicaciones tipo
+`cambio`, 137 son reales y 224 sintéticas (oportunidad a 3 detectada); de
+esas 224, ninguna había terminado en match confirmado y solo 1 tenía un
+"me interesa" registrado. Causa raíz: `crear_pub_sintetica()` no disparaba
+ninguna notificación proactiva a terceros, y el aviso a los dos usuarios
+originales enlazaba a un callejón sin salida. Arreglos aplicados:
+- La sintética ahora pasa por `notificar_busquedas_guardadas()` al
+  crearse, igual que cualquier publicación normal.
+- El aviso `aviso_oportunidad_3` en `/avisos` enlaza al panel (dashboard,
+  donde ya vive la sección "oportunidades a 3") en vez de al listado
+  filtrado por el nombre del otro usuario original.
+Se descartó una tercera solución (re-escanear candidatas reales ya
+existentes contra sintéticas nuevas de forma retroactiva): el caso que
+resolvía es poco frecuente y el aviso a terceros ya cubre el hueco real,
+así que añadir esa lógica era sobre-ingeniería para el problema real.
+
 ## Backlog (fuente: .backlog)
 - [ ] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones). Diseño ya contempla el hueco para un tercer `modo`; implementar más adelante.
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
