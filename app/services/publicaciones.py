@@ -4,6 +4,8 @@ from app.push.sender import enviar_push_condicional
 from app.services.eventos import registrar_evento
 from app.services.busquedas_guardadas import notificar_busquedas_guardadas
 
+_ESTADOS_MATCH_ACTIVOS = ("propuesto", "confirmado_parcial")
+
 
 
 def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, tipo="cambio"):
@@ -67,11 +69,36 @@ def _notificar_suscriptores(publicador, pub):
 def cancelar_publicacion(pub):
     """Marca la publicación como cancelada y propaga la cancelación a las sintéticas
     que la referencian como pub_a o pub_b."""
+    _rechazar_matches_activos_de_publicacion(pub)
     pub.estado = "cancelada"
     _cancelar_sinteticas_de(pub.id)
     db.session.commit()
     registrar_evento(pub.usuario_id, "publication_cancelled", pub.id)
     db.session.commit()
+
+
+def _rechazar_matches_activos_de_publicacion(pub):
+    """Rechaza (marca 'rechazado', notifica a la contraparte y registra evento)
+    los matches todavía activos (propuesto/confirmado_parcial) de esta publicación.
+
+    Sin esto, cancelar/editar/eliminar una publicación dejaba a la contraparte con
+    un match huérfano (al cancelar) o lo borraba de la BD en silencio y sin avisar
+    (al editar/eliminar), rompiendo confirmaciones ya hechas por la otra parte.
+    """
+    from app.services.matches import rechazar_match
+
+    matches_activos = (
+        MatchCambio.query
+        .join(MatchParticipacion)
+        .filter(
+            MatchParticipacion.publicacion_id == pub.id,
+            MatchCambio.estado.in_(_ESTADOS_MATCH_ACTIVOS),
+        )
+        .distinct()
+        .all()
+    )
+    for match in matches_activos:
+        rechazar_match(match, pub.usuario_id)
 
 
 def _cancelar_sinteticas_de(pub_id):
@@ -90,18 +117,30 @@ def _cancelar_sinteticas_de(pub_id):
 
 
 def _eliminar_matches_de_publicacion(pub_id):
-    """Borra los matches (y sus notificaciones) que involucran esta publicación."""
-    matches = (
-        MatchCambio.query
-        .join(MatchParticipacion)
-        .filter(MatchParticipacion.publicacion_id == pub_id)
-        .all()
-    )
-    for match in matches:
-        Notificacion.query.filter_by(match_id=match.id).delete()
-        db.session.delete(match)
+    """Desvincula esta publicación de cualquier match que la involucre, para
+    poder borrar/reemplazar sus turnos sin violar la FK de MatchParticipacion.
+
+    Solo borra el MatchCambio (y sus notificaciones) por completo si se queda
+    sin ninguna otra participación; si el match tenía más partes (p. ej. un
+    rechazo ya registrado por `_rechazar_matches_activos_de_publicacion` para
+    la contraparte), el match y su notificación de rechazo se preservan como
+    historial.
+    """
+    participaciones = MatchParticipacion.query.filter_by(publicacion_id=pub_id).all()
+    match_ids = {p.match_id for p in participaciones}
+    for p in participaciones:
+        db.session.delete(p)
     # Flush antes de continuar: garantiza que MatchParticipacion (que puede referenciar
     # TurnoAceptado via turno_aceptado_id) se elimine antes que TurnoAceptado.
+    db.session.flush()
+
+    for match_id in match_ids:
+        le_quedan_participaciones = (
+            MatchParticipacion.query.filter_by(match_id=match_id).count() > 0
+        )
+        if not le_quedan_participaciones:
+            Notificacion.query.filter_by(match_id=match_id).delete()
+            MatchCambio.query.filter_by(id=match_id).delete()
     db.session.flush()
 
 
@@ -111,6 +150,7 @@ def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo
     turnos_cedidos/aceptados: listas de (fecha: date, franja_horaria_id: int)
     """
     _cancelar_sinteticas_de(pub.id)
+    _rechazar_matches_activos_de_publicacion(pub)
     _eliminar_matches_de_publicacion(pub.id)
 
     for tc in list(pub.turnos_cedidos):
@@ -162,6 +202,7 @@ def eliminar_publicacion(pub):
     """Borra completamente una publicación y todos sus datos asociados."""
     unidad_id = pub.usuario.unidad_id if pub.usuario else None
     _eliminar_sinteticas_de(pub.id)
+    _rechazar_matches_activos_de_publicacion(pub)
     _eliminar_matches_de_publicacion(pub.id)
     Notificacion.query.filter_by(publicacion_id=pub.id).delete()
     db.session.delete(pub)

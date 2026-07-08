@@ -329,11 +329,15 @@ def test_admin_elimina_publicacion_con_matches(client, db):
     )
     assert resp.status_code == 200
     assert PublicacionCambio.query.get(pub1_id) is None
-    assert MatchCambio.query.get(match_id) is None
+    # El match se rechaza (avisando a la contraparte) en vez de desaparecer en silencio.
+    match = MatchCambio.query.get(match_id)
+    assert match is not None
+    assert match.estado == "rechazado"
 
 
-def test_admin_elimina_publicacion_y_borra_sus_notificaciones(client, db):
-    """Eliminar una publicación con match también limpia las Notificacion del match."""
+def test_admin_elimina_publicacion_y_notifica_rechazo_a_la_contraparte(client, db):
+    """Eliminar una publicación con match activo notifica el rechazo a la
+    contraparte en vez de borrar sus notificaciones en silencio."""
     from unittest.mock import patch
     from app.extensions import db as _db
     from app.models import MatchCambio, Notificacion
@@ -371,7 +375,8 @@ def test_admin_elimina_publicacion_y_borra_sus_notificaciones(client, db):
         data={"csrf_token": ""},
         follow_redirects=True,
     )
-    assert Notificacion.query.filter_by(match_id=match_id).count() == 0
+    n = Notificacion.query.filter_by(match_id=match_id, usuario_id=u2.id, tipo="rechazo").first()
+    assert n is not None
 
 
 def test_admin_elimina_publicacion_con_notificacion_publicacion_id(client, db):

@@ -177,13 +177,15 @@ def test_flujo_eliminar_pub_con_sintetica_y_notificacion(client, db):
 # ---------------------------------------------------------------------------
 
 def test_flujo_editar_pub_invalida_match_existente(client, db):
-    """Editar una pub con match propuesto borra el match y no da 500."""
+    """Editar una pub con match propuesto rechaza el match (y avisa a la
+    contraparte) en vez de borrarlo en silencio, y no da 500."""
     u1, u2 = _dos_usuarios()
     pub1 = _pub_db(u1, date(2026, 9, 1), date(2026, 9, 2))
     pub2 = _pub_db(u2, date(2026, 9, 2), date(2026, 9, 1))
     for candidata in buscar_matches_para(pub1):
         crear_match_directo(pub1, candidata)
     assert MatchCambio.query.count() == 1
+    match = MatchCambio.query.first()
 
     _login(client, "a@test.es")
     franja = _franja(u1.unidad.grupo_intercambio_id)
@@ -195,4 +197,6 @@ def test_flujo_editar_pub_invalida_match_existente(client, db):
     }, follow_redirects=False)
 
     assert resp.status_code == 302
-    assert MatchCambio.query.count() == 0
+    db.session.refresh(match)
+    assert match.estado == "rechazado"
+    assert Notificacion.query.filter_by(usuario_id=u2.id, tipo="rechazo", match_id=match.id).first() is not None

@@ -112,6 +112,8 @@ def test_editar_actualiza_mensaje(client, db):
 
 
 def test_editar_elimina_matches_existentes(client, db):
+    """Editar rechaza (no borra en silencio) los matches activos y avisa a la
+    contraparte, para no dejar una confirmación de la otra parte huérfana."""
     u1 = _usuario(email="u1@test.es")
     u2 = _usuario(email="u2@test.es")
     franja = _franja(u1.unidad.grupo_intercambio_id)
@@ -123,6 +125,7 @@ def test_editar_elimina_matches_existentes(client, db):
     for c in buscar_matches_para(pub1):
         crear_match_directo(pub1, c)
     assert MatchCambio.query.count() == 1
+    match = MatchCambio.query.first()
 
     _login(client, u1.email)
     client.post(f"/publicaciones/{pub1.id}/editar", data={
@@ -132,7 +135,9 @@ def test_editar_elimina_matches_existentes(client, db):
         "franja_aceptada_0": franja.id,
     })
 
-    assert MatchCambio.query.count() == 0
+    db.session.refresh(match)
+    assert match.estado == "rechazado"
+    assert Notificacion.query.filter_by(usuario_id=u2.id, tipo="rechazo", match_id=match.id).first() is not None
 
 
 # ---------------------------------------------------------------------------
@@ -168,6 +173,8 @@ def test_eliminar_403_si_publicacion_ajena(client, db):
 
 
 def test_eliminar_borra_matches_asociados(client, db):
+    """Eliminar la publicación rechaza (no borra en silencio) el match asociado
+    y avisa a la contraparte, aunque la propia publicación desaparezca."""
     u1 = _usuario(email="u1@test.es")
     u2 = _usuario(email="u2@test.es")
 
@@ -178,12 +185,15 @@ def test_eliminar_borra_matches_asociados(client, db):
     for c in buscar_matches_para(pub1):
         crear_match_directo(pub1, c)
     assert MatchCambio.query.count() == 1
+    match = MatchCambio.query.first()
 
     _login(client, u1.email)
     client.post(f"/publicaciones/{pub1.id}/eliminar")
 
     assert db.session.get(PublicacionCambio, pub1.id) is None
-    assert MatchCambio.query.count() == 0
+    db.session.refresh(match)
+    assert match.estado == "rechazado"
+    assert Notificacion.query.filter_by(usuario_id=u2.id, tipo="rechazo", match_id=match.id).first() is not None
 
 
 def test_eliminar_regalo_con_match_no_da_error(client, db):
@@ -211,14 +221,15 @@ def test_eliminar_regalo_con_match_no_da_error(client, db):
     db.session.commit()
 
     from app.matching.service import crear_match_directo
-    crear_match_directo(regalo, peticion)
+    match = crear_match_directo(regalo, peticion)
     assert MatchCambio.query.count() == 1
 
     _login(client, u1.email)
     resp = client.post(f"/publicaciones/{regalo.id}/eliminar", follow_redirects=False)
     assert resp.status_code == 302
     assert db.session.get(PublicacionCambio, regalo.id) is None
-    assert MatchCambio.query.count() == 0
+    db.session.refresh(match)
+    assert match.estado == "rechazado"
 
 
 def test_eliminar_publicacion_fuente_con_sintetica_dependiente_no_da_error(client, db):
