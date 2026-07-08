@@ -1,5 +1,5 @@
 """Tests para matching a 3 bandas: motor de búsqueda y creación de matches."""
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -351,16 +351,21 @@ def test_publicar_crea_match_cadena_3_cuando_hay_ciclo(client, db):
     fr_t = FranjaHoraria.query.filter_by(grupo_intercambio_id=gid, nombre="Tarde").first()
     fr_n = FranjaHoraria.query.filter_by(grupo_intercambio_id=gid, nombre="Noche").first()
 
+    # Fechas futuras relativas a hoy: la ruta /publicar rechaza fechas pasadas.
+    dia1 = date.today() + timedelta(days=1)
+    dia2 = date.today() + timedelta(days=2)
+    dia3 = date.today() + timedelta(days=3)
+
     # Ana y Pedro publican (sin ciclo todavía)
-    pub_ana = _pub(ana, date(2026, 7, 1), fr_m, date(2026, 7, 3), fr_n)
-    pub_pedro = _pub(pedro, date(2026, 7, 2), fr_t, date(2026, 7, 1), fr_m)
+    pub_ana = _pub(ana, dia1, fr_m, dia3, fr_n)
+    pub_pedro = _pub(pedro, dia2, fr_t, dia1, fr_m)
 
     # María publica → cierra el ciclo
     client.post("/auth/login", data={"email": "maria@test.es", "password": "password123"})
     client.post("/publicar", data={
-        "fecha_cedida_0": "2026-07-03",
+        "fecha_cedida_0": dia3.isoformat(),
         "franja_cedida_0": fr_n.id,
-        "fecha_aceptada_0": "2026-07-02",
+        "fecha_aceptada_0": dia2.isoformat(),
         "franja_aceptada_0": fr_t.id,
     })
 
