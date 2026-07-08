@@ -85,3 +85,60 @@ def construir_calendario_mes(usuario, anio, mes, modo):
         resultado.setdefault(turno.fecha, {}).setdefault(clave, []).append(turno.publicacion_id)
 
     return resultado
+
+
+_COLOR_CUALQUIERA = "#9333ea"
+_COLOR_TEXTO_CUALQUIERA = "#ffffff"
+_COLOR_MULTI = "#dbeafe"
+_COLOR_TEXTO_MULTI = "#1e40af"
+
+
+def _info_clave(clave, franjas_por_id):
+    """(color, color_texto, nombre) para una clave de franja o CUALQUIER_FRANJA."""
+    if clave == CUALQUIER_FRANJA:
+        return _COLOR_CUALQUIERA, _COLOR_TEXTO_CUALQUIERA, "Cualquiera"
+    franja = franjas_por_id.get(clave)
+    if franja is None:
+        return "#3B82F6", "#ffffff", "?"
+    return franja.color or "#3B82F6", franja.color_texto, franja.nombre
+
+
+def preparar_celdas_mes(dias, calendario_mes, franjas):
+    """
+    Convierte el resultado de construir_calendario_mes en datos listos para
+    pintar cada celda del grid: {fecha: {mod, estilo, etiqueta, tooltip}}.
+
+    - Sin franjas ese día: celda vacía.
+    - Una franja: color sólido de esa franja, etiqueta = su inicial.
+    - Varias franjas: estilo neutro "multi", etiqueta = nº de franjas,
+      tooltip con los nombres separados por coma (no se puede codificar más
+      de un color de forma legible en una celda pequeña).
+    """
+    franjas_por_id = {f.id: f for f in franjas}
+    celdas = {}
+    for dia in dias:
+        claves = list(calendario_mes.get(dia, {}).keys())
+        if not claves:
+            celdas[dia] = {"mod": "cal-celda--vacio", "estilo": "", "etiqueta": "", "tooltip": ""}
+            continue
+
+        infos = [_info_clave(c, franjas_por_id) for c in claves]
+        if len(infos) == 1:
+            color, color_texto, nombre = infos[0]
+            etiqueta = "?" if claves[0] == CUALQUIER_FRANJA else nombre[:1]
+            celdas[dia] = {
+                "mod": "cal-celda--turno",
+                "estilo": f"background:{color}; color:{color_texto};",
+                "etiqueta": etiqueta,
+                "tooltip": nombre,
+            }
+        else:
+            nombres = [info[2] for info in infos]
+            celdas[dia] = {
+                "mod": "cal-celda--multi",
+                "estilo": f"background:{_COLOR_MULTI}; color:{_COLOR_TEXTO_MULTI};",
+                "etiqueta": str(len(infos)),
+                "tooltip": ", ".join(nombres),
+            }
+
+    return celdas

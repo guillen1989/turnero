@@ -15,7 +15,7 @@ from app.models import (
     TurnoCedido,
     insertar_categorias_semilla,
 )
-from app.services.calendario_mercado import construir_calendario_mes
+from app.services.calendario_mercado import construir_calendario_mes, preparar_celdas_mes
 from app.services.registro import registrar_usuario
 
 
@@ -262,3 +262,65 @@ def test_modo_invalido_lanza_error(db):
     ana = _usuario("Ana", "ana@test.es")
     with pytest.raises(ValueError):
         construir_calendario_mes(ana, 2026, 7, "juntes")
+
+
+# --- preparar_celdas_mes (Paso 3: presentación del grid) ---
+
+def test_preparar_celdas_dia_sin_franjas_es_vacio(db):
+    ana = _usuario("Ana", "ana@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    dias = [date(2026, 7, 1), date(2026, 7, 2)]
+    celdas = preparar_celdas_mes(dias, {}, [manana])
+
+    assert celdas[date(2026, 7, 1)] == {"mod": "cal-celda--vacio", "estilo": "", "etiqueta": "", "tooltip": ""}
+    assert celdas[date(2026, 7, 2)] == {"mod": "cal-celda--vacio", "estilo": "", "etiqueta": "", "tooltip": ""}
+
+
+def test_preparar_celdas_dia_con_una_franja(db):
+    ana = _usuario("Ana", "ana@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    dias = [date(2026, 7, 1)]
+    calendario_mes = {date(2026, 7, 1): {manana.id: [1]}}
+    celdas = preparar_celdas_mes(dias, calendario_mes, [manana])
+
+    celda = celdas[date(2026, 7, 1)]
+    assert celda["mod"] == "cal-celda--turno"
+    color = manana.color or "#3B82F6"
+    assert color in celda["estilo"]
+    assert celda["etiqueta"] == "M"
+    assert celda["tooltip"] == "Mañana"
+
+
+def test_preparar_celdas_dia_con_cualquier_franja(db):
+    ana = _usuario("Ana", "ana@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    dias = [date(2026, 7, 1)]
+    calendario_mes = {date(2026, 7, 1): {"cualquiera": [1]}}
+    celdas = preparar_celdas_mes(dias, calendario_mes, [manana])
+
+    celda = celdas[date(2026, 7, 1)]
+    assert celda["mod"] == "cal-celda--turno"
+    assert celda["etiqueta"] == "?"
+    assert celda["tooltip"] == "Cualquiera"
+
+
+def test_preparar_celdas_dia_con_varias_franjas(db):
+    ana = _usuario("Ana", "ana@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+
+    dias = [date(2026, 7, 1)]
+    calendario_mes = {date(2026, 7, 1): {manana.id: [1], tarde.id: [2]}}
+    celdas = preparar_celdas_mes(dias, calendario_mes, [manana, tarde])
+
+    celda = celdas[date(2026, 7, 1)]
+    assert celda["mod"] == "cal-celda--multi"
+    assert celda["etiqueta"] == "2"
+    assert celda["tooltip"] == "Mañana, Tarde"

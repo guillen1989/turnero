@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request
 from flask_login import login_required, current_user
 
 from app.models.franja_horaria import FranjaHoraria
-from app.services.calendario_mercado import CUALQUIER_FRANJA, construir_calendario_mes
+from app.services.calendario_mercado import construir_calendario_mes, preparar_celdas_mes
 
 bp = Blueprint("calendario", __name__, url_prefix="/calendario")
 
@@ -33,7 +33,7 @@ def index():
         .order_by(FranjaHoraria.hora_inicio)
         .all()
     )
-    nombre_franja = {f.id: f.nombre for f in franjas}
+    celdas = preparar_celdas_mes(dias, calendario_mes, franjas)
 
     prev_mes = mes - 1 if mes > 1 else 12
     prev_anyo = anyo if mes > 1 else anyo - 1
@@ -43,10 +43,7 @@ def index():
     return render_template(
         "calendario/calendario.html",
         anyo=anyo, mes=mes, dias=dias, modo=modo,
-        calendario_mes=calendario_mes,
-        franjas=franjas,
-        nombre_franja=nombre_franja,
-        cualquier_franja_clave=CUALQUIER_FRANJA,
+        celdas=celdas,
         prev_anyo=prev_anyo, prev_mes=prev_mes,
         next_anyo=next_anyo, next_mes=next_mes,
         hoy=hoy,

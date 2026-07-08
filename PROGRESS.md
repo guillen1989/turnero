@@ -4,11 +4,11 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Calendario visual de ofertas/peticiones (rama `staging`) — Pasos 1 y 2
-completados (servicio puro + ruta `GET /calendario` con navegación mensual,
-plantilla mínima sin colores ni drill-down). Siguiente: Paso 3, plantilla
-visual con chips de franja coloreados (FranjaHoraria.color) y selector de
-modo con mejor estilo.
+Calendario visual de ofertas/peticiones (rama `staging`) — Pasos 1-3
+completados (servicio puro, ruta con navegación mensual, grid visual con
+colores por franja reutilizando `.cal-celda`/`.planilla-cal` de `/planilla`).
+Siguiente: Paso 4, drill-down día → franjas → publicaciones (JS embebiendo
+el JSON del mes, sin llamadas adicionales al servidor).
 
 ## Backlog (fuente: .backlog)
 - [ ] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones). Diseño ya contempla el hueco para un tercer `modo`; implementar más adelante.
@@ -105,6 +105,7 @@ modo con mejor estilo.
 - [x] fix(matching): cancelar/editar/eliminar una publicación con un match activo (propuesto/confirmado_parcial) ya no lo deja huérfano ni lo borra en silencio · nuevo `_rechazar_matches_activos_de_publicacion` reutiliza `rechazar_match` (notifica a la contraparte + registra evento match_cancelled) antes de tocar los turnos · `_eliminar_matches_de_publicacion` ahora solo borra el MatchCambio si se queda sin ninguna participación, preservando el historial de rechazo · detectado analizando por qué la tasa de confirmación de matches en producción era tan baja (18%) · 8 tests nuevos + 6 tests existentes actualizados a la nueva semántica · 675 tests passing
 - [x] feat(calendario): Paso 1 — servicio puro `construir_calendario_mes` (app/services/calendario_mercado.py) · agrupa TurnoAceptado (modo "ofertas") o TurnoCedido (modo "peticiones") abiertos, por fecha y franja, para tipos cambio/regalo/peticion/cambio_dia (excluye junte) · respeta visibilidad (misma categoría+grupo), excluye propias/sintéticas/no-activas/fuera de mes · clave especial "cualquiera" para turnos con cualquier_franja · 18 tests · 693 tests passing
 - [x] feat(calendario): Paso 2 — ruta `GET /calendario` (app/routes/calendario.py) · navegación mensual anyo/mes igual que `/planilla` · selector ofertas/peticiones vía query param `modo` (con fallback a "ofertas" si es inválido) · plantilla mínima sin colores ni drill-down todavía (calendario/calendario.html) · blueprint registrado en app/__init__.py · 7 tests · 700 tests passing
+- [x] feat(calendario): Paso 3 — grid visual mensual reutilizando `.planilla-cal`/`.cal-celda` de `/planilla` · nueva función pura `preparar_celdas_mes` (color sólido si hay 1 franja ese día, estilo "multi" neutro + tooltip con nombres si hay varias, clave especial para "cualquiera") · CSS nuevo (.calendario-modo-selector, .calendario-ayuda-texto) · catálogo i18n actualizado (pybabel extract/update/compile) · 4 tests nuevos · 704 tests passing
 
 ## Backlog de calidad (pendiente)
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓
