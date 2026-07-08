@@ -845,6 +845,11 @@ body {
 .badge-draft { background: #f3f4f6; color: #6b7280; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.82rem; font-weight: 600; }
 .planilla-hint { margin-bottom: 1.25rem; }
 .calendario-modo-selector { display: flex; gap: 0.5rem; margin: 0.5rem 0; }
+.calendario-modo-btn { border: 2px solid transparent; font-weight: 600; }
+.calendario-modo-btn--ofertas { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.calendario-modo-btn--ofertas.is-active { background: #10b981; color: #ffffff; border-color: #059669; }
+.calendario-modo-btn--peticiones { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
+.calendario-modo-btn--peticiones.is-active { background: #f97316; color: #ffffff; border-color: #ea580c; }
 .calendario-ayuda-texto { font-size: 0.85rem; color: #6b7280; margin: 0.25rem 0 0.75rem; }
 .calendario-panel[hidden] { display: none; }
 .calendario-panel { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex; align-items: flex-end; z-index: 50; }

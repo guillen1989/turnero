@@ -4,10 +4,9 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Calendario visual de ofertas/peticiones (rama `staging`) — Pasos 1-6
-completados, feature terminada a falta de push a `origin staging` (pendiente,
-a petición del usuario, hasta que confirme). Siguiente: cuando se decida
-abordar B18 (modo "Juntes de noches"), retomar desde ahí.
+Ronda 2 del calendario (rama `staging`, sin push — lo hace el usuario a mano)
+— Paso 1/6 completado (colores por modo en el selector). Siguiente: Paso 2,
+prefill de fecha/modo en `/publicar` vía query params.
 
 ## Backlog (fuente: .backlog)
 - [ ] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones). Diseño ya contempla el hueco para un tercer `modo`; implementar más adelante.
@@ -108,6 +107,7 @@ abordar B18 (modo "Juntes de noches"), retomar desde ahí.
 - [x] feat(calendario): Paso 4 — drill-down día→franja→publicaciones · nueva `resumen_publicaciones` (autor+tipo) en calendario_mercado.py · datos del mes embebidos como JSON (`<script type="application/json">`) en la página, JS vanilla navega los 3 niveles con pila de "volver" sin llamadas adicionales al servidor · panel modal deslizante (.calendario-panel) · fix de bug real: `_, num_dias = calendar.monthrange(...)` shadowaba el `_()` de flask_babel importado en el mismo módulo, rompiendo la ruta en cuanto se usó gettext · 1 test nuevo · 707 tests passing
 - [x] feat(calendario): Paso 5 — el nivel franja→publicaciones enlaza directamente a `/cambios` filtrado (mes/dia/tipo_fecha/usuario/franja) en vez de reimplementar la tarjeta completa y el modal «Me interesa» dentro del calendario · decisión de diseño: reutilizar la página de búsqueda ya existente (con «Me interesa»/«Contraoferta» ya funcionales) en vez de duplicar esa lógica · nuevo test e2e (e2e/test_calendario_drilldown.py, Playwright) que ejerce el click real día→franja→enlace y detectó un bug real: `.calendario-panel { display:flex }` pisaba por especificidad CSS el `display:none` del atributo `hidden`, dejando el overlay interceptando clics aunque estuviera "oculto" · corregido con `.calendario-panel[hidden] { display:none }` · 707 tests unitarios + 1 e2e passing
 - [x] feat(calendario): Paso 6 — enlace "Calendario" en el menú principal (base.html, junto a "Buscar cambios") · smoke test `test_smoke_calendario_get` · catálogo i18n actualizado · 708 tests passing. Feature completa (Pasos 1-6); modo "Juntes de noches" queda en backlog (B18)
+- [x] feat(calendario): Ronda 2, Paso 1 — colores distintos por modo en el selector Ofertas/Peticiones (verde/teal vs. ámbar/naranja, sólido si activo) en vez de azul/gris genérico · solo CSS, sin test automatizado (sin lógica de negocio) · 708 tests passing
 
 ## Backlog de calidad (pendiente)
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓

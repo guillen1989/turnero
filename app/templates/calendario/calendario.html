@@ -20,11 +20,11 @@
 
     <div class="calendario-modo-selector">
       <a href="{{ url_for('calendario.index', anyo=anyo, mes=mes, modo='ofertas') }}"
-         class="btn btn-sm {{ 'btn-primary' if modo == 'ofertas' else 'btn-secondary' }}">
+         class="btn btn-sm calendario-modo-btn calendario-modo-btn--ofertas{% if modo == 'ofertas' %} is-active{% endif %}">
         {{ _('Ofertas') }}
       </a>
       <a href="{{ url_for('calendario.index', anyo=anyo, mes=mes, modo='peticiones') }}"
-         class="btn btn-sm {{ 'btn-primary' if modo == 'peticiones' else 'btn-secondary' }}">
+         class="btn btn-sm calendario-modo-btn calendario-modo-btn--peticiones{% if modo == 'peticiones' %} is-active{% endif %}">
         {{ _('Peticiones') }}
       </a>
     </div>
