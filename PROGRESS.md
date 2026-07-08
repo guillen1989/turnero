@@ -5,19 +5,11 @@ Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
 Ronda 2 del calendario completa (Pasos 1-6, rama `staging`, sin push — lo
-hace el usuario a mano). Investigados y corregidos los fallos e2e que
-quedaban pendientes de la nota anterior (ver más abajo). Siguiente: cuando
-se decida abordar B18 (modo "Juntes de noches"), retomar desde ahí.
-
-Nota: `e2e/test_sintetica_golden_path.py::test_golden_path_cambio_a_3`
-tiene un fallo adicional, real y no relacionado con el calendario ni con el
-Paso 6: espera ver el texto "Interés" en `/avisos`, pero ese tipo de aviso
-(`aviso_interes`) fue sustituido hace tiempo por el aviso combinado
-`aviso_oportunidad_3` (ver plantilla `notificaciones/avisos.html`, que ya
-no gestiona `aviso_interes` ni `aviso_sintetica`) y el test nunca se
-actualizó. Pendiente de reescribir sus aserciones para reflejar el
-comportamiento actual — no se ha tocado todavía.
-
+hace el usuario a mano). Todos los fallos e2e locales investigados y
+corregidos — los 9 tests e2e locales pasan (`e2e/test_sintetica_staging.py`
+queda deliberadamente sin ejecutar por apuntar a la app real de Railway).
+Siguiente: cuando se decida abordar B18 (modo "Juntes de noches"), retomar
+desde ahí.
 `e2e/test_sintetica_staging.py` apunta a la app real de Railway (STAGING_URL)
 y no se ha vuelto a ejecutar tras el diagnóstico para no seguir escribiendo
 usuarios de prueba en la base de datos compartida de staging sin necesidad.
