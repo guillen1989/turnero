@@ -19,6 +19,7 @@ from app.models import (
 )
 from app.matching.engine import detectar_cadena_3, detectar_match_directo, detectar_match_regalo
 from app.push.sender import enviar_push_condicional
+from app.services.busquedas_guardadas import notificar_busquedas_guardadas
 from app.services.eventos import registrar_evento
 from sqlalchemy.orm import selectinload
 
@@ -571,6 +572,9 @@ def crear_pub_sintetica(pub_a, pub_b):
         ))
 
     db.session.commit()
+
+    notificar_busquedas_guardadas(sint)
+
     return sint
 
 

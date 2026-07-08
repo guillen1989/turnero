@@ -1,5 +1,6 @@
 """Tests de publicaciones sintéticas (generador de cambios a 3 bandas)."""
 from datetime import date
+from unittest.mock import patch
 
 import pytest
 
@@ -20,6 +21,7 @@ from app.matching.service import (
     crear_cadena_3_desde_sintetica,
     crear_pub_sintetica,
 )
+from app.services.busquedas_guardadas import guardar_busqueda
 from app.services.publicaciones import cancelar_publicacion
 from app.services.registro import registrar_usuario
 
@@ -350,8 +352,8 @@ def test_publicar_c_genera_cadena_3(client, db):
 # ---------------------------------------------------------------------------
 
 def test_crear_sintetica_no_genera_notificaciones(db):
-    """crear_pub_sintetica crea la pub pero no genera notificaciones; las genera
-    crear_aviso_oportunidad_3 llamada desde procesar_aviso_y_sintetica."""
+    """crear_pub_sintetica crea la pub pero no genera notificaciones a Ana/Pedro; las
+    genera crear_aviso_oportunidad_3 llamada desde procesar_aviso_y_sintetica."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     m = _franja(ana.unidad.grupo_intercambio_id)
@@ -364,6 +366,55 @@ def test_crear_sintetica_no_genera_notificaciones(db):
 
     assert Notificacion.query.filter_by(usuario_id=ana.id).count() == 0
     assert Notificacion.query.filter_by(usuario_id=pedro.id).count() == 0
+
+
+def test_crear_sintetica_notifica_busqueda_guardada_coincidente(db):
+    """
+    Un tercero con una búsqueda guardada que casa con la sintética (p.ej.
+    tipo='cambio') debe recibir una alerta cuando la sintética se genera,
+    igual que si fuera una publicación cualquiera. Antes de este fix, la
+    sintética se creaba sin pasar por notificar_busquedas_guardadas().
+    """
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    carlos = _usuario("Carlos", "carlos@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id)
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    guardar_busqueda(carlos.id, {"tipo": "cambio"})
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+
+    with patch("app.push.sender.webpush"):
+        sint = crear_pub_sintetica(pub_a, pub_b)
+
+    notif = Notificacion.query.filter_by(
+        usuario_id=carlos.id, tipo="alerta_busqueda_guardada"
+    ).first()
+    assert notif is not None
+    assert notif.publicacion_id == sint.id
+
+
+def test_crear_sintetica_no_notifica_busqueda_que_no_coincide(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    carlos = _usuario("Carlos", "carlos@test.es")
+    m = _franja(ana.unidad.grupo_intercambio_id)
+    t = _franja_tarde(ana.unidad.grupo_intercambio_id)
+
+    guardar_busqueda(carlos.id, {"tipo": "peticion"})
+
+    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
+    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+
+    with patch("app.push.sender.webpush"):
+        crear_pub_sintetica(pub_a, pub_b)
+
+    notif = Notificacion.query.filter_by(
+        usuario_id=carlos.id, tipo="alerta_busqueda_guardada"
+    ).first()
+    assert notif is None
 
 
 # ---------------------------------------------------------------------------
