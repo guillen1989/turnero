@@ -268,6 +268,49 @@ def test_avisos_panel_muestra_empty_state_sin_avisos(client, db):
     assert "Avisos" in resp.data.decode()
 
 
+def test_avisos_panel_muestra_contrasena_restablecida(client, db):
+    u1 = _usuario()
+    db.session.add(Notificacion(
+        usuario_id=u1.id, tipo="contrasena_restablecida",
+        mensaje="Un administrador te ha restablecido la contraseña. Nueva contraseña temporal: abc12345",
+        leida=False,
+    ))
+    db.session.commit()
+    _login(client, "user@test.es")
+    resp = client.get("/avisos")
+    assert resp.status_code == 200
+    assert "abc12345" in resp.data.decode()
+
+
+def test_avisos_no_leidos_cuenta_contrasena_restablecida_en_nav(client, db):
+    u1 = _usuario()
+    db.session.add(Notificacion(
+        usuario_id=u1.id, tipo="contrasena_restablecida",
+        mensaje="Nueva contraseña temporal: abc12345",
+        leida=False,
+    ))
+    db.session.commit()
+    _login(client, "user@test.es")
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert "nav-bell--activa" in html
+    assert "nav-bell-badge" in html
+
+
+def test_avisos_panel_marca_contrasena_restablecida_como_leida(client, db):
+    u1 = _usuario()
+    db.session.add(Notificacion(
+        usuario_id=u1.id, tipo="contrasena_restablecida",
+        mensaje="Nueva contraseña temporal: abc12345",
+        leida=False,
+    ))
+    db.session.commit()
+    _login(client, "user@test.es")
+    client.get("/avisos")
+    notif = Notificacion.query.filter_by(usuario_id=u1.id, tipo="contrasena_restablecida").first()
+    assert notif.leida is True
+
+
 def test_push_condicional_envia_cuando_activo(app, db):
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()

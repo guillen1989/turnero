@@ -144,6 +144,7 @@ así que añadir esa lógica era sobre-ingeniería para el problema real.
 - [x] feat(calendario): salto directo a publicaciones cuando el día solo tiene un tipo de turno — se ahorra el paso intermedio de elegir franja (pendiente desde la fase de planificación, nunca se había implementado) · de paso se detectó y corrigió otro caso del bug de especificidad CSS `[hidden]`: `.btn { display: inline-block }` pisaba el `display:none` implícito del atributo `hidden` en el botón "Volver", dejándolo siempre visible · arreglado con `.btn[hidden] { display: none }`, igual que se hizo antes con `.calendario-panel[hidden]` · 1 test e2e nuevo + 1 actualizado · 727 tests unitarios + 10 e2e passing
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓
 - [x] Añadir APP_URL al .env local y smoke test integrado en GitHub Actions post-deploy ✓
+- [x] fix(admin): la contraseña temporal al restablecer cuenta desde el panel de feedback ya no se muestra en un flash message (el admin reportó que no lo veía) · ahora se envía como `Notificacion` tipo `contrasena_restablecida` (nuevo campo `mensaje` en el modelo, migración `9310c6bbcb55`) al usuario afectado, visible en /avisos y contando en el badge de la campana · 5 tests nuevos
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

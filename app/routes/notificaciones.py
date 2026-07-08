@@ -86,6 +86,7 @@ def avisos():
                 "contraoferta",
                 "alerta_busqueda_guardada",
                 "aviso_oportunidad_3",
+                "contrasena_restablecida",
             )),
         )
         .order_by(Notificacion.fecha.desc())
@@ -118,6 +119,7 @@ def borrar_todos_avisos():
             "contraoferta",
             "alerta_busqueda_guardada",
             "aviso_oportunidad_3",
+            "contrasena_restablecida",
         )),
     ).delete()
     db.session.commit()

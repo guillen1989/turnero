@@ -517,6 +517,7 @@ body {
 .tipo-badge--interes    { background: #ffedd5; color: #c2410c; }
 .tipo-badge--sintetica  { background: #e0e7ff; color: #3730a3; }
 .tipo-badge--planilla   { background: #d1fae5; color: #065f46; }
+.tipo-badge--admin      { background: #e5e7eb; color: #374151; }
 .sintetica-nota         { font-size: 0.8rem; color: #6b7280; margin: 0.25rem 0 0.5rem; font-style: italic; }
 
 .estado-badge {

@@ -2,7 +2,7 @@
 from unittest.mock import patch
 
 from app.extensions import db as _db
-from app.models import Categoria, Feedback, Usuario, insertar_categorias_semilla
+from app.models import Categoria, Feedback, Notificacion, Usuario, insertar_categorias_semilla
 from app.services.registro import registrar_usuario
 
 
@@ -263,3 +263,34 @@ def test_admin_restablecer_contrasena_marca_feedback_leido(client, db):
     client.post(f"/admin/feedback/{fb.id}/restablecer-contrasena")
     _db.session.refresh(fb)
     assert fb.leido is True
+
+
+def test_admin_restablecer_contrasena_crea_aviso_para_el_usuario(client, db):
+    """La contraseña temporal se envía como aviso (campana) al usuario, no como flash al admin."""
+    _login(client, email="admin@test.es", es_admin=True)
+    usuario_target = registrar_usuario("Víctima", "victima3@test.es", "pass_original", "H", "U",
+                                        Categoria.query.filter_by(nombre="Enfermería").first().id)
+    fb = Feedback(tipo="recuperacion", descripcion="Solicitud.", email_contacto="victima3@test.es")
+    _db.session.add(fb)
+    _db.session.commit()
+
+    client.post(f"/admin/feedback/{fb.id}/restablecer-contrasena")
+
+    aviso = Notificacion.query.filter_by(usuario_id=usuario_target.id, tipo="contrasena_restablecida").first()
+    assert aviso is not None
+    assert aviso.mensaje
+    contrasena_temporal = aviso.mensaje.split()[-1]
+    assert usuario_target.check_password(contrasena_temporal)
+
+
+def test_admin_restablecer_contrasena_no_muestra_flash_con_password(client, db):
+    """No debe filtrarse la contraseña temporal en un flash message al admin."""
+    _login(client, email="admin@test.es", es_admin=True)
+    registrar_usuario("Víctima", "victima4@test.es", "pass_original", "H", "U",
+                       Categoria.query.filter_by(nombre="Enfermería").first().id)
+    fb = Feedback(tipo="recuperacion", descripcion="Solicitud.", email_contacto="victima4@test.es")
+    _db.session.add(fb)
+    _db.session.commit()
+
+    resp = client.post(f"/admin/feedback/{fb.id}/restablecer-contrasena", follow_redirects=True)
+    assert "Contraseña temporal para" not in resp.data.decode()
