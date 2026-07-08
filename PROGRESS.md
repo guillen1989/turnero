@@ -5,9 +5,9 @@ Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
 Ronda 2 del calendario (rama `staging`, sin push — lo hace el usuario a mano)
-— Pasos 1-4/6 completados. Siguiente: Paso 5, nueva sección 1 en "Cómo
-funciona" (con id="calendario" para el anchor del banner del Paso 4),
-renumerando el resto.
+— Pasos 1-5/6 completados. Siguiente y último: Paso 6, calendario como
+pantalla de inicio (redirect de login, logo, orden del menú, CTA final de
+"Cómo funciona"), sin tocar la ruta `main.index`.
 
 ## Backlog (fuente: .backlog)
 - [ ] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones). Diseño ya contempla el hueco para un tercer `modo`; implementar más adelante.
@@ -112,6 +112,7 @@ renumerando el resto.
 - [x] feat(publicar): Ronda 2, Paso 2 — prefill de fecha/modo en `/publicar` vía `?fecha=&modo=` · modo "ofertas" precarga el primer turno aceptado, "peticiones" el primer turno cedido · valores inválidos (fecha no-ISO o modo desconocido) se ignoran en silencio, sin prefill · 4 tests nuevos · 712 tests passing
 - [x] feat(calendario): Ronda 2, Paso 3 — botón fijo "Publicar cambio" bajo el grid · cualquier día (con o sin ofertas) abre el panel de drill-down; si está vacío muestra "Nadie ha publicado nada este día todavía" + enlace a `/publicar?fecha=&modo=` precargado (usa el Paso 2) · 1 test de ruta + 1 test e2e nuevo (día vacío → enlace correcto → aterriza en /publicar con el campo precargado) · 713 tests unitarios + 2 e2e passing
 - [x] feat(calendario): Ronda 2, Paso 4 — título corto "Calendario" (antes "Calendario de cambios") + icono ⓘ "¿Cómo funciona?" con banner de ayuda inline, replicando el patrón exacto de `/planilla` (mismas clases CSS `.planilla-ayuda-link`/`.planilla-onboarding-*`, mismo control por localStorage) · banner enlaza a `main.como_funciona` con anchor `#calendario` (preparado para el Paso 5) · 1 test nuevo · 714 tests unitarios + 2 e2e passing
+- [x] feat(onboarding): Ronda 2, Paso 5 — nueva sección "1. Descubre cambios en el calendario" en `/como-funciona` (con `id="calendario"` para el anchor del banner del Paso 4), renumerando el resto de secciones (2→8) · 1 test nuevo (verifica orden) · 715 tests unitarios + 2 e2e passing
 
 ## Backlog de calidad (pendiente)
 - [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓

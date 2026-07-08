@@ -8,10 +8,38 @@
 
   <div class="onboarding-steps">
 
+    <div class="onboarding-step" id="calendario">
+      <div class="onboarding-step-icon" aria-hidden="true">🗓️</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('1. Descubre cambios en el calendario') }}</h2>
+        <p>
+          {{ _('El calendario te muestra de un vistazo, día a día, qué turnos ofrecen o necesitan tus compañeros.') }}
+          {{ _('Cambia entre los dos modos con el selector de arriba:') }}
+        </p>
+        <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.8">
+          <li>
+            <strong>{{ _('Ofertas') }}</strong> —
+            {{ _('turnos que otros compañeros trabajarían.') }}
+          </li>
+          <li>
+            <strong>{{ _('Peticiones') }}</strong> —
+            {{ _('turnos que otros compañeros quieren librar.') }}
+          </li>
+        </ul>
+        <p>
+          {{ _('Toca un día para ver qué franjas hay disponibles y acceder a la publicación completa.') }}
+          {{ _('Si el día está vacío, puedes publicar tu propio cambio directamente desde ahí.') }}
+        </p>
+        <a href="{{ url_for('calendario.index') }}" class="btn btn-primary btn-sm">
+          {{ _('Ver calendario') }}
+        </a>
+      </div>
+    </div>
+
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">📢</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('1. Publica tu cambio') }}</h2>
+        <h2>{{ _('2. Publica tu cambio') }}</h2>
         <p>
           {{ _('Dile a tus compañeros qué turno quieres ceder y cuál te interesa a cambio.') }}
           {{ _('Puedes pedir una fecha y turno concreto, o dejar abierto cualquier turno.') }}
@@ -48,7 +76,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">📅</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('2. Publica tu planilla mensual') }}</h2>
+        <h2>{{ _('3. Publica tu planilla mensual') }}</h2>
         <p>
           {{ _('Publica tu cuadrante del mes, con tus turnos y libranzas.') }}
           {{ _('Al publicarla, tus compañeros pueden saber si estás disponible para hacerles el cambio que buscan, y tú puedes ver quién libra o tiene turno compatible el día que quieres ceder.') }}
@@ -77,7 +105,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">🤝</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('3. Si hay match, te avisamos') }}</h2>
+        <h2>{{ _('4. Si hay match, te avisamos') }}</h2>
         <p>
           {{ _('Cuando otra persona de tu unidad publique un cambio compatible con el tuyo, recibirás una notificación.') }}
         </p>
@@ -99,7 +127,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">🔍</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('4. Consulta lo que publican tus compañeros') }}</h2>
+        <h2>{{ _('5. Consulta lo que publican tus compañeros') }}</h2>
         <p>
           {{ _('En "Buscar cambios" ves todas las publicaciones abiertas de tu unidad.') }}
           {{ _('Puedes filtrar por mes, día o turno.') }}
@@ -117,7 +145,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">🔔</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('5. Suscríbete a un compañero') }}</h2>
+        <h2>{{ _('6. Suscríbete a un compañero') }}</h2>
         <p>
           {{ _('¿Hay alguien con quien te resulte fácil cambiar? Suscríbete a sus publicaciones y te avisaremos cada vez que publique algo nuevo.') }}
         </p>
@@ -130,7 +158,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">📲</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('6. Comparte tu cambio por WhatsApp') }}</h2>
+        <h2>{{ _('7. Comparte tu cambio por WhatsApp') }}</h2>
         <p>
           {{ _('¿Conoces a alguien que puede encajarte pero aún no usa Turnero? Desde cualquier publicación tuya puedes') }}
           <strong>{{ _('compartir el enlace directo por WhatsApp') }}</strong>.
@@ -144,7 +172,7 @@
     <div class="onboarding-step">
       <div class="onboarding-step-icon" aria-hidden="true">📲</div>
       <div class="onboarding-step-body">
-        <h2>{{ _('7. Instala Turnero en tu móvil') }}</h2>
+        <h2>{{ _('8. Instala Turnero en tu móvil') }}</h2>
         <p>
           {{ _('Puedes instalar Turnero como una app normal en tu móvil: sin pasar por la App Store ni Google Play, directamente desde el navegador.') }}
           {{ _('Una vez instalada, abre como cualquier otra app, sin barras del navegador.') }}

@@ -71,3 +71,16 @@ def test_login_next_tiene_prioridad_sobre_onboarding(client, db):
     )
     assert resp.status_code == 302
     assert "/cambios" in resp.headers["Location"]
+
+
+def test_como_funciona_seccion_calendario_aparece_primero(client, db):
+    """Ronda 2, Paso 5: la explicación del calendario es la primera sección."""
+    u = _usuario(onboarding_visto=True)
+    _login(client, u.email)
+    resp = client.get("/como-funciona")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert 'id="calendario"' in html
+    pos_calendario = html.index("Descubre cambios en el calendario")
+    pos_publica = html.index("Publica tu cambio")
+    assert pos_calendario < pos_publica
