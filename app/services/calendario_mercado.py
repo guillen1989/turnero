@@ -60,27 +60,35 @@ def construir_calendario_mes(usuario, anio, mes, modo):
     ultimo_dia = date(anio, mes, calendar.monthrange(anio, mes)[1])
 
     candidatas = _candidatas(usuario, _TIPOS_POR_MODO[modo])
-    pub_ids = [p.id for p in candidatas]
-    if not pub_ids:
+    if not candidatas:
         return {}
 
+    normales_ids = [p.id for p in candidatas if not p.es_sintetica]
+    sinteticas_ids = [p.id for p in candidatas if p.es_sintetica]
+
+    # Para publicaciones normales, 'ofertas' = turno_aceptado (días que otros
+    # trabajarían) y 'peticiones' = turno_cedido (días que otros quieren
+    # librar). Para las sintéticas (oportunidades a 3) el sentido está
+    # invertido: crear_pub_sintetica() copia como turno_cedido el ACEPTADO de
+    # pub_a (una oferta real) y como turno_aceptado el CEDIDO de pub_b (una
+    # petición real) — así lo necesita el matching de la cadena a 3. El
+    # calendario debe deshacer esa inversión para mostrarlas en el modo que
+    # corresponde a su significado real.
     if modo == "ofertas":
-        turnos = (
-            TurnoAceptado.query
-            .filter(
-                TurnoAceptado.publicacion_id.in_(pub_ids),
-                TurnoAceptado.estado == "abierto",
-                TurnoAceptado.fecha.between(primer_dia, ultimo_dia),
-            )
-            .all()
-        )
+        modelo_normal, modelo_sintetica = TurnoAceptado, TurnoCedido
     else:
-        turnos = (
-            TurnoCedido.query
+        modelo_normal, modelo_sintetica = TurnoCedido, TurnoAceptado
+
+    turnos = []
+    for modelo, pub_ids in ((modelo_normal, normales_ids), (modelo_sintetica, sinteticas_ids)):
+        if not pub_ids:
+            continue
+        turnos += (
+            modelo.query
             .filter(
-                TurnoCedido.publicacion_id.in_(pub_ids),
-                TurnoCedido.estado == "abierto",
-                TurnoCedido.fecha.between(primer_dia, ultimo_dia),
+                modelo.publicacion_id.in_(pub_ids),
+                modelo.estado == "abierto",
+                modelo.fecha.between(primer_dia, ultimo_dia),
             )
             .all()
         )

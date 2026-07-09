@@ -190,7 +190,9 @@ def test_calendario_muestra_oportunidad_a_3_para_sintetica(client, db):
     sint = PublicacionCambio(usuario_id=pedro.id, tipo="cambio", es_sintetica=True)
     db.session.add(sint)
     db.session.flush()
-    db.session.add(TurnoAceptado(publicacion_id=sint.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
+    # Para una sintética, 'ofertas' se alimenta de turno_cedido (ver
+    # crear_pub_sintetica: su cedido copia el aceptado real de pub_a).
+    db.session.add(TurnoCedido(publicacion_id=sint.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
     db.session.commit()
 
     _login(client, ana.email)

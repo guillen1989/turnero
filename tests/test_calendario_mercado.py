@@ -188,26 +188,63 @@ def test_excluye_publicaciones_no_activas(db, estado):
 
 def test_incluye_sinteticas_en_ofertas(db):
     """Las oportunidades a 3 (publicaciones sintéticas) también se muestran en
-    el calendario — son justo el tipo de match más difícil de descubrir."""
+    el calendario — son justo el tipo de match más difícil de descubrir.
+
+    Para una sintética, crear_pub_sintetica() copia como turno_cedido el
+    ACEPTADO de pub_a (una oferta real: alguien que sí trabajaría ese día),
+    así que en el calendario debe aparecer en 'ofertas', no en 'peticiones'."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     gid = ana.unidad.grupo_intercambio_id
     manana = _franja(gid, "Mañana")
 
-    pub = _pub(pedro, "cambio", aceptados=[(date(2026, 7, 3), manana)], es_sintetica=True)
+    pub = _pub(pedro, "cambio", cedidos=[(date(2026, 7, 3), manana)], es_sintetica=True)
 
     assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {date(2026, 7, 3): {manana.id: [pub.id]}}
 
 
 def test_incluye_sinteticas_en_peticiones(db):
+    """Simétrico al anterior: crear_pub_sintetica() copia como turno_aceptado
+    el CEDIDO de pub_b (una petición real: alguien que necesita cobertura),
+    así que en el calendario debe aparecer en 'peticiones', no en 'ofertas'."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     gid = ana.unidad.grupo_intercambio_id
     tarde = _franja(gid, "Tarde")
 
-    pub = _pub(pedro, "cambio", cedidos=[(date(2026, 7, 5), tarde)], es_sintetica=True)
+    pub = _pub(pedro, "cambio", aceptados=[(date(2026, 7, 5), tarde)], es_sintetica=True)
 
     assert construir_calendario_mes(ana, 2026, 7, "peticiones") == {date(2026, 7, 5): {tarde.id: [pub.id]}}
+
+
+def test_sintetica_generada_por_crear_pub_sintetica_muestra_peticion_de_b_en_peticiones(db):
+    """Regresión: caso real de una oportunidad a 3 (issue del calendario
+    'al revés'). Victoria (pub_b) publica un cambio pidiendo cobertura para
+    una noche; Marta (pub_a) puede cubrirla y a cambio acepta trabajar otro
+    día. La sintética resultante debe mostrar la noche de Victoria como
+    petición (necesita voluntario), no como oferta."""
+    from app.matching.service import crear_pub_sintetica
+
+    marta = _usuario("Marta", "marta@test.es")
+    victoria = _usuario("Victoria", "victoria@test.es")
+    # Viewer distinto de marta y victoria: la sintética queda excluida del
+    # calendario de su propia autora (marta, dueña de pub_a), así que hace
+    # falta un tercero para verla como candidata.
+    carla = _usuario("Carla", "carla@test.es")
+    gid = marta.unidad.grupo_intercambio_id
+    noche = _franja(gid, "Noche")
+    manana = _franja(gid, "Mañana")
+
+    pub_a = _pub(marta, "cambio", aceptados=[(date(2026, 8, 13), manana)])
+    pub_b = _pub(victoria, "cambio", cedidos=[(date(2026, 8, 6), noche)])
+
+    sint = crear_pub_sintetica(pub_a, pub_b)
+
+    peticiones = construir_calendario_mes(carla, 2026, 8, "peticiones")
+    ofertas = construir_calendario_mes(carla, 2026, 8, "ofertas")
+
+    assert sint.id in peticiones[date(2026, 8, 6)][noche.id]
+    assert sint.id not in ofertas.get(date(2026, 8, 6), {}).get(noche.id, [])
 
 
 def test_excluye_turnos_fuera_de_mes(db):
