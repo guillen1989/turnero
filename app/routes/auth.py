@@ -1,6 +1,6 @@
 from urllib.parse import quote as urlquote
 
-from flask import Blueprint, jsonify, render_template, redirect, url_for, flash, request
+from flask import Blueprint, abort, current_app, jsonify, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_babel import _
 from sqlalchemy import func
@@ -158,7 +158,29 @@ def login():
             return redirect(url_for("calendario.index"))
         flash(_("Correo o contraseña incorrectos."), "danger")
 
-    return render_template("auth/login.html", form=form)
+    demo_login_enabled = bool(current_app.config.get("DEMO_LOGIN_EMAIL"))
+    return render_template("auth/login.html", form=form, demo_login_enabled=demo_login_enabled)
+
+
+@bp.route("/login/demo", methods=["POST"])
+def login_demo():
+    if current_user.is_authenticated:
+        return redirect(url_for("calendario.index"))
+
+    demo_email = current_app.config.get("DEMO_LOGIN_EMAIL")
+    demo_password = current_app.config.get("DEMO_LOGIN_PASSWORD")
+    if not demo_email or not demo_password:
+        abort(404)
+
+    usuario = Usuario.query.filter_by(email=demo_email).first()
+    if usuario and usuario.check_password(demo_password):
+        login_user(usuario)
+        if not usuario.onboarding_visto:
+            return redirect(url_for("main.como_funciona"))
+        return redirect(url_for("calendario.index"))
+
+    flash(_("No se pudo iniciar sesión con la cuenta demo."), "danger")
+    return redirect(url_for("auth.login"))
 
 
 @bp.get("/logout")

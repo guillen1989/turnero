@@ -28,6 +28,10 @@ class Config:
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "noreply@turnero.app")
     FEEDBACK_RECIPIENT_EMAIL = os.environ.get("FEEDBACK_RECIPIENT_EMAIL", "")
+    # Botón "Entrar con cuenta demo" en el login: solo aparece si están configuradas
+    # (p. ej. en staging, con el usuario creado por scripts/seed_staging.py).
+    DEMO_LOGIN_EMAIL = os.environ.get("DEMO_LOGIN_EMAIL", "")
+    DEMO_LOGIN_PASSWORD = os.environ.get("DEMO_LOGIN_PASSWORD", "")
 
 
 class DevelopmentConfig(Config):
