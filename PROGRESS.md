@@ -4,13 +4,18 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Ronda 2 del calendario completa (Pasos 1-6) + fallos e2e corregidos +
-bandas de color con letra legible + oportunidades a 3 (sintéticas)
-incluidas en el calendario + salto directo a publicaciones cuando el día
-solo tiene un tipo de turno + fix de las sintéticas mostradas al revés en
-ofertas/peticiones (ver más abajo). Rama `staging`, con push a origin.
-Siguiente: cuando se decida abordar B18 (modo "Juntes de noches"), retomar
-desde ahí.
+Recuperación de contraseña self-service completa (ver más abajo). Rama
+`staging`, con push a origin. Siguiente: cuando se decida abordar B18
+(modo "Juntes de noches"), retomar desde ahí.
+
+Pendiente de acción manual del usuario (no lo puede hacer el agente):
+crear cuenta en resend.com, verificar un dominio propio en
+resend.com/domains, generar una API key, y configurar `RESEND_API_KEY` y
+`RESEND_FROM_EMAIL` como variables de entorno en Railway (production y
+staging). Hasta entonces, `enviar_email()` detecta la ausencia de
+`RESEND_API_KEY`, no intenta conectar, registra un warning y devuelve
+`False` sin romper el flujo — el fallback manual de admin
+(`/admin/feedback/<id>/restablecer-contrasena`) sigue disponible.
 
 Nota: `e2e/test_sintetica_staging.py` apunta a la app real de Railway
 (STAGING_URL) y no se ejecuta salvo necesidad explícita, para no seguir
@@ -149,6 +154,10 @@ así que añadir esa lógica era sobre-ingeniería para el problema real.
 - [x] fix(admin): la contraseña temporal al restablecer cuenta desde el panel de feedback ya no se muestra en un flash message (el admin reportó que no lo veía) · ahora se envía como `Notificacion` tipo `contrasena_restablecida` (nuevo campo `mensaje` en el modelo, migración `9310c6bbcb55`) al usuario afectado, visible en /avisos y contando en el badge de la campana · 5 tests nuevos
 - [x] feat(push): aviso push a todos los administradores (`es_admin=True`) al crearse cualquier Feedback (formulario de contacto o solicitud de recuperación) · las solicitudes de recuperación de contraseña van marcadas como urgentes (cabecera `Urgency: high` en `enviar_push`, nuevo parámetro `urgente`) · 5 tests nuevos
 - [x] fix(calendario): oportunidades a 3 mostradas al revés (ofertas↔peticiones) — reportado por el usuario en producción (turno del 6/8 de Victoria). Causa: `crear_pub_sintetica()` guarda como `turno_cedido` de la sintética el ACEPTADO real de pub_a (una oferta) y como `turno_aceptado` el CEDIDO real de pub_b (una petición) — necesario para el matching de la cadena a 3 (`buscar_sinteticas_que_coinciden_con` compara cedido-con-cedido y aceptado-con-aceptado del mismo día, no en cruce). `construir_calendario_mes` aplicaba a las sintéticas el mismo mapeo genérico que a las publicaciones normales (`turno_cedido`→peticiones, `turno_aceptado`→ofertas), mostrándolas invertidas. Corregido separando candidatas normales/sintéticas y consultando la tabla contraria para las sintéticas. Verificado contra producción (Railway, solo lectura) antes de tocar código: pub 785 de Victoria (real) correcta en peticiones; sintéticas 787/789/790 con esa misma noche mal clasificada en ofertas, confirmando la hipótesis. Los dos tests que fijaban el comportamiento anterior como correcto se corrigieron + 1 test de regresión nuevo que reproduce el caso real vía `crear_pub_sintetica()` · 732 tests unitarios passing
+- [x] feat(email): servicio de envío vía Resend HTTPS API (`app/services/email.py`) — Railway bloquea los puertos SMTP salientes en el plan Hobby (confirmado con la documentación oficial y varios hilos del foro), así que el reintento con Gmail SMTP se descarta a favor de una API HTTPS, que no está bloqueada. `enviar_email()` nunca lanza: sin `RESEND_API_KEY` configurada, sin conexión o con respuesta de error, registra y devuelve `False` en vez de tumbar el flujo que lo llama. Config `RESEND_API_KEY`/`RESEND_FROM_EMAIL`; limpieza del bloque `MAIL_*` de Flask-Mail en `config.py`, que llevaba muerto desde que se eliminó esa dependencia en el commit `5c05ea4` y nadie lo había limpiado · 4 tests
+- [x] feat(auth): modelo y migración `PasswordResetToken` (token de un solo uso, hash SHA-256 en BD, expiración a 60 min) · columnas `fecha_creacion`/`fecha_expiracion` declaradas `timezone=True` a propósito: con `TIMESTAMP` naive, la sesión local de Postgres (`Europe/Madrid`) reinterpreta el datetime aware UTC como hora local al guardarlo, desplazando la expiración ~2h y rompiendo la comparación tras un commit/recarga — detectado por un test que fallaba de forma intermitente
+- [x] feat(auth): servicio `password_reset.py` — `generar_token_reset`/`obtener_usuario_por_token`/`consumir_token`, invalida cualquier token anterior sin usar del mismo usuario al generar uno nuevo · 8 tests
+- [x] feat(auth): recuperación de contraseña self-service — sustituye el flujo manual (el usuario pedía por un ticket de feedback y el admin generaba una contraseña temporal a mano) por `/auth/recuperar-contrasena` + `/auth/restablecer-contrasena/<token>`, con el mismo mensaje de éxito exista o no el email (anti-enumeración) y envío del enlace por email vía Resend · el reseteo manual de admin (`/admin/feedback/<id>/restablecer-contrasena`) se mantiene como fallback si el email no llega · 12 tests · 758 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

@@ -20,14 +20,14 @@ class Config:
     VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
     VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
     VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "")
-    # Flask-Mail
-    MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
-    MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
-    MAIL_USE_TLS = True
-    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
-    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", "noreply@turnero.app")
-    FEEDBACK_RECIPIENT_EMAIL = os.environ.get("FEEDBACK_RECIPIENT_EMAIL", "")
+    # Envío de email transaccional vía Resend (HTTPS API, no SMTP: Railway
+    # bloquea los puertos SMTP salientes en el plan Hobby).
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+    RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "noreply@turnero.xyz")
+    # Botón "Entrar con cuenta demo" en el login: solo aparece si están configuradas
+    # (p. ej. en staging, con el usuario creado por scripts/seed_staging.py).
+    DEMO_LOGIN_EMAIL = os.environ.get("DEMO_LOGIN_EMAIL", "")
+    DEMO_LOGIN_PASSWORD = os.environ.get("DEMO_LOGIN_PASSWORD", "")
 
 
 class DevelopmentConfig(Config):
@@ -35,7 +35,6 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL", "postgresql:///turnero"
     )
-    MAIL_SUPPRESS_SEND = True
 
 
 class TestingConfig(Config):

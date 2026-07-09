@@ -201,31 +201,7 @@ def test_admin_marcar_leidos_bulk_sin_ids_no_da_error(client, db):
     assert resp.status_code == 302
 
 
-# --- Recuperación de contraseña ---
-
-def test_get_recuperar_contrasena_devuelve_200(client, db):
-    resp = client.get("/recuperar-contrasena")
-    assert resp.status_code == 200
-
-
-def test_post_recuperar_contrasena_crea_feedback(client, db):
-    resp = client.post("/recuperar-contrasena", data={"email": "alguien@test.es"}, follow_redirects=False)
-    assert resp.status_code == 302
-    fb = Feedback.query.filter_by(tipo="recuperacion").first()
-    assert fb is not None
-    assert fb.email_contacto == "alguien@test.es"
-
-
-def test_post_recuperar_contrasena_sin_email_no_crea_feedback(client, db):
-    client.post("/recuperar-contrasena", data={"email": ""})
-    assert Feedback.query.filter_by(tipo="recuperacion").count() == 0
-
-
-def test_post_recuperar_contrasena_redirige_al_login(client, db):
-    resp = client.post("/recuperar-contrasena", data={"email": "alguien@test.es"}, follow_redirects=False)
-    assert resp.status_code == 302
-    assert "/auth/login" in resp.headers["Location"] or "login" in resp.headers["Location"]
-
+# --- Restablecimiento manual por el admin (fallback si el email no llega) ---
 
 # --- Push a administradores al recibir feedback ---
 
@@ -252,18 +228,6 @@ def test_nuevo_feedback_envia_push_a_admin(app, client, db):
             })
             mock_wp.assert_called_once()
             assert mock_wp.call_args.kwargs.get("headers") is None
-    finally:
-        app.config["VAPID_PRIVATE_KEY"] = old_key
-        app.config["VAPID_CLAIM_EMAIL"] = old_email
-
-
-def test_recuperar_contrasena_envia_push_urgente_a_admin(app, client, db):
-    admin, old_key, old_email = _admin_con_push(app, client)
-    try:
-        with patch("app.push.sender.webpush") as mock_wp:
-            client.post("/recuperar-contrasena", data={"email": "victima@test.es"})
-            mock_wp.assert_called_once()
-            assert mock_wp.call_args.kwargs.get("headers") == {"Urgency": "high"}
     finally:
         app.config["VAPID_PRIVATE_KEY"] = old_key
         app.config["VAPID_CLAIM_EMAIL"] = old_email

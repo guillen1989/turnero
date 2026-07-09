@@ -47,11 +47,20 @@
     </div>
   </form>
 
+  {% if demo_login_enabled %}
+  <form method="POST" action="{{ url_for('auth.login_demo') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-group">
+      <button type="submit" class="btn btn-secondary btn-full">{{ _('Probar con una cuenta demo') }}</button>
+    </div>
+  </form>
+  {% endif %}
+
   <p class="form-footer">
     {{ _('¿No tienes cuenta?') }} <a href="{{ url_for('auth.registro') }}">{{ _('Créala aquí') }}</a>
   </p>
   <p class="form-footer">
-    <a href="{{ url_for('feedback.recuperar_contrasena') }}">{{ _('¿Has olvidado tu contraseña?') }}</a>
+    <a href="{{ url_for('auth.recuperar_contrasena') }}">{{ _('¿Has olvidado tu contraseña?') }}</a>
   </p>
 </div>
 {% endblock %}

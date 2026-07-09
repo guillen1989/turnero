@@ -287,3 +287,52 @@ def test_registro_ya_autenticado_redirige_a_calendario(client, db):
     resp = client.get("/auth/registro", follow_redirects=False)
     assert resp.status_code == 302
     assert resp.headers["Location"].endswith("/calendario/")
+
+
+# --- Login con cuenta demo ---
+
+def test_login_no_muestra_boton_demo_si_no_configurado(client, db):
+    resp = client.get("/auth/login")
+    assert "Probar con una cuenta demo".encode() not in resp.data
+
+
+def test_login_muestra_boton_demo_si_configurado(client, db, app, monkeypatch):
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    resp = client.get("/auth/login")
+    assert "Probar con una cuenta demo".encode() in resp.data
+
+
+def test_login_demo_deshabilitado_devuelve_404(client, db):
+    resp = client.post("/auth/login/demo", follow_redirects=False)
+    assert resp.status_code == 404
+
+
+def test_login_demo_exitoso_redirige(client, db, app, monkeypatch):
+    client.post("/auth/registro", data=_datos_registro(db, email="ana.garcia@test.es", password="Staging2026!", password2="Staging2026!"))
+    Usuario.query.filter_by(email="ana.garcia@test.es").update({"onboarding_visto": True})
+    db.session.commit()
+    client.get("/auth/logout")
+
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    resp = client.post("/auth/login/demo", follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/calendario/")
+
+
+def test_login_demo_usuario_inexistente_muestra_error(client, db, app, monkeypatch):
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "no-existe@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    resp = client.post("/auth/login/demo", follow_redirects=True)
+    assert "no se pudo iniciar sesión con la cuenta demo".encode() in resp.data.lower()
+
+
+def test_login_demo_ya_autenticado_redirige_a_calendario(client, db, app, monkeypatch):
+    client.post("/auth/registro", data=_datos_registro(db, email="ana.garcia@test.es", password="Staging2026!", password2="Staging2026!"))
+
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    resp = client.post("/auth/login/demo", follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/calendario/")
