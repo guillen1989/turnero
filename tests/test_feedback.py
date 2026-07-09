@@ -242,6 +242,49 @@ def test_feedback_sin_admins_no_falla(client, db):
     assert resp.status_code == 302
 
 
+def test_nuevo_feedback_envia_email_a_cada_admin(client, db):
+    cat = Categoria.query.filter_by(nombre="Enfermería").first() or (
+        insertar_categorias_semilla() or Categoria.query.filter_by(nombre="Enfermería").first()
+    )
+    admin1 = registrar_usuario("Admin Uno", "admin1@test.es", "pass1234", "H", "U", cat.id)
+    admin1.es_admin = True
+    admin2 = registrar_usuario("Admin Dos", "admin2@test.es", "pass1234", "H", "U", cat.id)
+    admin2.es_admin = True
+    _db.session.commit()
+
+    with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+        client.post("/feedback", data={
+            "tipo": "error",
+            "descripcion": "La app no carga en Safari.",
+            "email_contacto": "usuario@test.es",
+        })
+
+    assert mock_enviar.call_count == 2
+    destinatarios = {c.args[0] for c in mock_enviar.call_args_list}
+    assert destinatarios == {"admin1@test.es", "admin2@test.es"}
+
+
+def test_nuevo_feedback_email_incluye_descripcion(client, db):
+    cat = Categoria.query.filter_by(nombre="Enfermería").first() or (
+        insertar_categorias_semilla() or Categoria.query.filter_by(nombre="Enfermería").first()
+    )
+    admin = registrar_usuario("Admin", "admin@test.es", "pass1234", "H", "U", cat.id)
+    admin.es_admin = True
+    _db.session.commit()
+
+    with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+        client.post("/feedback", data={
+            "tipo": "sugerencia",
+            "descripcion": "Sería genial poder exportar el calendario.",
+            "email_contacto": "usuario@test.es",
+        })
+
+    mock_enviar.assert_called_once()
+    cuerpo_html = mock_enviar.call_args.args[2]
+    assert "Sería genial poder exportar el calendario." in cuerpo_html
+    assert "usuario@test.es" in cuerpo_html
+
+
 def test_admin_restablecer_contrasena_cambia_password(client, db):
     u = _login(client, email="admin@test.es", es_admin=True)
     usuario_target = registrar_usuario("Víctima", "victima@test.es", "pass_original", "H", "U",
