@@ -679,7 +679,12 @@ body {
 .form-check { display: flex; align-items: center; gap: 0.5rem; }
 .form-check input { width: auto; }
 @media (max-width: 640px) {
-  .admin-layout { flex-direction: column; }
+  /* En columna, el eje cruzado pasa a ser horizontal: sin "stretch" el
+     admin-content se dimensiona por su contenido (shrink-to-fit) en vez de
+     ocupar el ancho disponible, lo que rompe cualquier contención por
+     overflow-x de sus descendientes (p. ej. el scroll horizontal de los
+     gráficos de analytics). */
+  .admin-layout { flex-direction: column; align-items: stretch; }
   .admin-nav { flex-direction: row; flex-wrap: wrap; min-width: unset; }
 }
 
@@ -821,7 +826,12 @@ body {
 .analytics-unit-filter { display: flex; align-items: center; gap: 0.5rem; }
 .analytics-unit-filter label { font-size: 0.9rem; color: #555; white-space: nowrap; }
 .analytics-select { padding: 0.35rem 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; background: #fff; }
+.analytics-metric-filter { display: flex; align-items: center; gap: 0.5rem; }
+.analytics-metric-filter label { font-size: 0.9rem; color: #555; white-space: nowrap; }
 .analytics-chart-wrapper { background: #fff; border-radius: 8px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.analytics-chart-scroll { overflow-x: auto; padding-bottom: 0.25rem; }
+.analytics-chart-inner { height: 360px; }
+.analytics-section-title { margin: 2rem 0 0; }
 
 
 /* Planilla de turnos */

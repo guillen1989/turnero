@@ -4,7 +4,7 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Recuperación de contraseña self-service completa (ver más abajo). Rama
+Mejoras al panel de Analytics de admin completas (ver más abajo). Rama
 `staging`, con push a origin. Siguiente: cuando se decida abordar B18
 (modo "Juntes de noches"), retomar desde ahí.
 
@@ -156,6 +156,7 @@ así que añadir esa lógica era sobre-ingeniería para el problema real.
 - [x] feat(auth): modelo y migración `PasswordResetToken` (token de un solo uso, hash SHA-256 en BD, expiración a 60 min) · columnas `fecha_creacion`/`fecha_expiracion` declaradas `timezone=True` a propósito: con `TIMESTAMP` naive, la sesión local de Postgres (`Europe/Madrid`) reinterpreta el datetime aware UTC como hora local al guardarlo, desplazando la expiración ~2h y rompiendo la comparación tras un commit/recarga — detectado por un test que fallaba de forma intermitente
 - [x] feat(auth): servicio `password_reset.py` — `generar_token_reset`/`obtener_usuario_por_token`/`consumir_token`, invalida cualquier token anterior sin usar del mismo usuario al generar uno nuevo · 8 tests
 - [x] feat(auth): recuperación de contraseña self-service — sustituye el flujo manual (el usuario pedía por un ticket de feedback y el admin generaba una contraseña temporal a mano) por `/auth/recuperar-contrasena` + `/auth/restablecer-contrasena/<token>`, con el mismo mensaje de éxito exista o no el email (anti-enumeración) y envío del enlace por email vía Resend · el reseteo manual de admin (`/admin/feedback/<id>/restablecer-contrasena`) se mantiene como fallback si el email no llega · 12 tests · 758 tests passing
+- [x] feat(admin): panel de Analytics — scroll horizontal en el gráfico de líneas existente (contenedor con ancho fijo `nº puntos × 44px` dentro de `overflow-x:auto`, sin forzar scroll si el contenido cabe) + segundo gráfico de barras con desplegable de un único indicador (cambios publicados, matches, cambios eliminados, planillas publicadas, clics «Me interesa», confirmados, activos acumulados) y su propia granularidad día/semana/mes · nuevas series temporales `eliminadas` (`AuditEliminacion.fecha`) y `planillas_publicadas` (nuevo `Event` `planilla_publicada`, registrado en `POST /planilla/<a>/<m>/publicar`) añadidas a `/admin/analytics/data` · paleta de las 2 series nuevas validada con el script de la skill dataviz (teal `#0d9488` / dorado `#a16207`, 8 colores categóricos, todos los checks en PASS) · bug real de layout encontrado y corregido de paso: `.admin-layout { align-items: flex-start }` en el breakpoint móvil (`flex-direction: column`) hacía que `.admin-content` se dimensionara por su contenido en vez de por el contenedor, rompiendo cualquier `overflow-x` de un descendiente — corregido con `align-items: stretch` solo dentro de esa media query · verificado con Playwright headless (móvil 500px con scroll contenido + escritorio 1280px sin overflow, selector de métrica e granularidad probados con datos reales insertados y luego limpiados de la BD de desarrollo local) · 6 tests nuevos · 763 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

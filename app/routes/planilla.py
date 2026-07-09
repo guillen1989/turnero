@@ -18,6 +18,7 @@ from app.services.planilla import (
 )
 from app.services.compat_planilla_persistente import actualizar_compat_tras_publicar_planilla
 from app.services.volcar_cambios import get_matches_pendientes_volcar, volcar_matches_a_planilla
+from app.services.eventos import registrar_evento
 
 
 def _resolver_seleccion(seleccion):
@@ -203,8 +204,9 @@ def mes_publicar(anyo, mes):
         )
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    publicar_mes(current_user, anyo, mes)
+    planilla = publicar_mes(current_user, anyo, mes)
     actualizar_compat_tras_publicar_planilla(current_user, anyo, mes)
+    registrar_evento(current_user.id, "planilla_publicada", planilla.id)
     flash("Planilla del mes publicada. Tus compañeros ya pueden ver tu disponibilidad.", "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 

@@ -3,6 +3,7 @@ from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria,
     Usuario, TurnoPlanilla, PlanillaMes,
 )
+from app.models.event import Event
 from app.services.planilla import añadir_turno, publicar_mes, establecer_estado_dia
 
 
@@ -113,6 +114,17 @@ def test_publicar_mes_aceptado_con_mes_completo(client, db):
     assert resp.status_code == 200
     planilla = PlanillaMes.query.filter_by(usuario_id=usuario.id, anyo=2026, mes=7).first()
     assert planilla is not None and planilla.publicada
+
+
+def test_publicar_mes_registra_evento_para_analytics(client, db):
+    """Cada publicación registra un Event 'planilla_publicada' para la serie temporal de analytics."""
+    usuario, _ = _crear_usuario_y_login(client, db, "evento@test.es")
+    _rellenar_mes(usuario, 2026, 7)
+    client.post("/planilla/2026/7/publicar")
+    planilla = PlanillaMes.query.filter_by(usuario_id=usuario.id, anyo=2026, mes=7).first()
+    evento = Event.query.filter_by(event_type="planilla_publicada", user_id=usuario.id).first()
+    assert evento is not None
+    assert evento.entity_id == planilla.id
 
 
 def test_despublicar_mes_via_ruta(client, db):
