@@ -94,6 +94,77 @@ def test_calendario_modo_peticiones_muestra_franja_del_turno_cedido(client, db):
     assert "Tarde".encode("utf-8") in resp.data
 
 
+def test_calendario_modo_juntes_muestra_franja_de_junte(client, db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    noche = _franja(gid, "Noche")
+
+    pub = PublicacionCambio(usuario_id=pedro.id, tipo="junte")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 7, 3), franja_horaria_id=noche.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 1), franja_horaria_id=noche.id))
+    db.session.commit()
+
+    _login(client, ana.email)
+    resp = client.get("/calendario/?anyo=2026&mes=7&modo=juntes")
+    assert resp.status_code == 200
+    assert "Noche".encode("utf-8") in resp.data
+
+    import json
+    import re
+    html = resp.data.decode("utf-8")
+    datos_mes = json.loads(re.search(
+        r'<script type="application/json" id="calendario-datos-mes">(.*?)</script>', html, re.S
+    ).group(1))
+    assert datos_mes["2026-07-01"][str(noche.id)] == [pub.id]
+    assert datos_mes["2026-07-03"][str(noche.id)] == [pub.id]
+
+
+def test_calendario_modo_juntes_etiqueta_publicacion_como_junte(client, db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    noche = _franja(gid, "Noche")
+
+    pub = PublicacionCambio(usuario_id=pedro.id, tipo="junte")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 1), franja_horaria_id=noche.id))
+    db.session.commit()
+
+    _login(client, ana.email)
+    resp = client.get("/calendario/?anyo=2026&mes=7&modo=juntes")
+    assert resp.status_code == 200
+
+    import json
+    import re
+    html = resp.data.decode("utf-8")
+    datos_pubs = json.loads(re.search(
+        r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
+    ).group(1))
+    assert datos_pubs[str(pub.id)]["tipo_label"] == "Junte de noches"
+
+
+def test_calendario_modo_ofertas_no_muestra_juntes(client, db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    noche = _franja(gid, "Noche")
+
+    pub = PublicacionCambio(usuario_id=pedro.id, tipo="junte")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 1), franja_horaria_id=noche.id))
+    db.session.commit()
+
+    _login(client, ana.email)
+    resp = client.get("/calendario/?anyo=2026&mes=7&modo=ofertas")
+    assert resp.status_code == 200
+    assert "Noche".encode("utf-8") not in resp.data
+
+
 def test_calendario_no_muestra_publicaciones_de_categoria_distinta(client, db):
     insertar_categorias_semilla()
     cat_enf = Categoria.query.filter_by(nombre="Enfermería").first()

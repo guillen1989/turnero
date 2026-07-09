@@ -18,6 +18,7 @@ CUALQUIER_FRANJA = "cualquiera"
 _TIPOS_POR_MODO = {
     "ofertas": ("cambio", "regalo", "cambio_dia"),
     "peticiones": ("cambio", "peticion", "cambio_dia"),
+    "juntes": ("junte",),
 }
 
 
@@ -48,10 +49,10 @@ def construir_calendario_mes(usuario, anio, mes, modo):
     """
     Devuelve {fecha: {clave_franja: [publicacion_id, ...]}} para el mes dado.
 
-    modo: 'ofertas' (turnos que otros trabajarían) o 'peticiones' (turnos que
-    otros quieren librar). clave_franja es el id de FranjaHoraria, o la
-    constante CUALQUIER_FRANJA si el turno aceptado admite cualquier franja
-    ese día.
+    modo: 'ofertas' (turnos que otros trabajarían), 'peticiones' (turnos que
+    otros quieren librar) o 'juntes' (noches de publicaciones tipo junte).
+    clave_franja es el id de FranjaHoraria, o la constante CUALQUIER_FRANJA
+    si el turno aceptado admite cualquier franja ese día.
     """
     if modo not in _TIPOS_POR_MODO:
         raise ValueError(f"modo debe ser uno de {tuple(_TIPOS_POR_MODO)}, recibido: {modo!r}")
@@ -74,13 +75,20 @@ def construir_calendario_mes(usuario, anio, mes, modo):
     # petición real) — así lo necesita el matching de la cadena a 3. El
     # calendario debe deshacer esa inversión para mostrarlas en el modo que
     # corresponde a su significado real.
-    if modo == "ofertas":
-        modelo_normal, modelo_sintetica = TurnoAceptado, TurnoCedido
+    #
+    # 'juntes' no tiene ese sentido direccional: cedido y aceptado son las
+    # dos caras de la misma permuta semanal (noches que se libra / noches que
+    # se pasaría a trabajar), así que se muestran ambos. Una publicación
+    # junte nunca es sintética (las sintéticas siempre son tipo 'cambio').
+    if modo == "juntes":
+        pares = ((TurnoCedido, normales_ids), (TurnoAceptado, normales_ids))
+    elif modo == "ofertas":
+        pares = ((TurnoAceptado, normales_ids), (TurnoCedido, sinteticas_ids))
     else:
-        modelo_normal, modelo_sintetica = TurnoCedido, TurnoAceptado
+        pares = ((TurnoCedido, normales_ids), (TurnoAceptado, sinteticas_ids))
 
     turnos = []
-    for modelo, pub_ids in ((modelo_normal, normales_ids), (modelo_sintetica, sinteticas_ids)):
+    for modelo, pub_ids in pares:
         if not pub_ids:
             continue
         turnos += (
