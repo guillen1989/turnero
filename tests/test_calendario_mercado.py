@@ -138,6 +138,45 @@ def test_excluye_tipo_junte(db):
     _pub(pedro, "junte", aceptados=[(date(2026, 7, 3), manana)])
 
     assert construir_calendario_mes(ana, 2026, 7, "ofertas") == {}
+    assert construir_calendario_mes(ana, 2026, 7, "peticiones") == {}
+
+
+# --- Juntes: agrupa turno_cedido y turno_aceptado, ambos son noches ---
+# relevantes de la misma permuta semanal (a diferencia de ofertas/peticiones,
+# donde cedido/aceptado son direccionales y se muestra solo uno de los dos).
+
+def test_juntes_agrupa_cedidos_y_aceptados_de_tipo_junte(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    noche = _franja(gid, "Noche")
+
+    pub = _pub(
+        pedro, "junte",
+        cedidos=[(date(2026, 7, 3), noche), (date(2026, 7, 5), noche)],
+        aceptados=[(date(2026, 7, 1), noche), (date(2026, 7, 8), noche)],
+    )
+
+    resultado = construir_calendario_mes(ana, 2026, 7, "juntes")
+    assert resultado == {
+        date(2026, 7, 1): {noche.id: [pub.id]},
+        date(2026, 7, 3): {noche.id: [pub.id]},
+        date(2026, 7, 5): {noche.id: [pub.id]},
+        date(2026, 7, 8): {noche.id: [pub.id]},
+    }
+
+
+def test_juntes_excluye_otros_tipos(db):
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    noche = _franja(gid, "Noche")
+
+    _pub(pedro, "cambio", cedidos=[(date(2026, 7, 3), noche)], aceptados=[(date(2026, 7, 5), noche)])
+    _pub(pedro, "regalo", aceptados=[(date(2026, 7, 7), noche)])
+    _pub(pedro, "peticion", cedidos=[(date(2026, 7, 9), noche)])
+
+    assert construir_calendario_mes(ana, 2026, 7, "juntes") == {}
 
 
 def test_excluye_publicaciones_propias(db):
@@ -311,7 +350,7 @@ def test_multiples_turnos_misma_publicacion_caen_en_dias_distintos(db):
 def test_modo_invalido_lanza_error(db):
     ana = _usuario("Ana", "ana@test.es")
     with pytest.raises(ValueError):
-        construir_calendario_mes(ana, 2026, 7, "juntes")
+        construir_calendario_mes(ana, 2026, 7, "invalido")
 
 
 # --- preparar_celdas_mes (Paso 3: presentación del grid) ---

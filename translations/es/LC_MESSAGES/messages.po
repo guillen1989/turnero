@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-09 18:19+0200\n"
+"POT-Creation-Date: 2026-07-09 18:51+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -344,7 +344,7 @@ msgid "Cualquiera"
 msgstr ""
 
 #: app/routes/calendario.py:58 app/templates/main/cambios.html:97
-#: app/templates/main/cambios.html:224 app/templates/main/como_funciona.html:50
+#: app/templates/main/cambios.html:224 app/templates/main/como_funciona.html:54
 #: app/templates/main/dashboard.html:170
 #: app/templates/publicaciones/editar.html:23
 #: app/templates/publicaciones/publicar.html:24
@@ -352,7 +352,7 @@ msgid "Cambio"
 msgstr ""
 
 #: app/routes/calendario.py:59 app/templates/main/cambios.html:98
-#: app/templates/main/cambios.html:145 app/templates/main/como_funciona.html:54
+#: app/templates/main/cambios.html:145 app/templates/main/como_funciona.html:58
 #: app/templates/main/dashboard.html:132
 #: app/templates/publicaciones/editar.html:28
 #: app/templates/publicaciones/publicar.html:31
@@ -360,22 +360,29 @@ msgid "Regalo"
 msgstr ""
 
 #: app/routes/calendario.py:60 app/templates/main/cambios.html:99
-#: app/templates/main/cambios.html:154 app/templates/main/como_funciona.html:58
+#: app/templates/main/cambios.html:154 app/templates/main/como_funciona.html:62
 #: app/templates/main/dashboard.html:140
 #: app/templates/publicaciones/editar.html:33
 #: app/templates/publicaciones/publicar.html:38
 msgid "Petición"
 msgstr ""
 
-#: app/routes/calendario.py:61 app/templates/main/cambios.html:101
-#: app/templates/main/cambios.html:187 app/templates/main/como_funciona.html:66
+#: app/routes/calendario.py:61 app/templates/main/cambios.html:100
+#: app/templates/main/cambios.html:163 app/templates/main/como_funciona.html:66
+#: app/templates/main/dashboard.html:148
+#: app/templates/publicaciones/publicar.html:45
+msgid "Junte de noches"
+msgstr ""
+
+#: app/routes/calendario.py:62 app/templates/main/cambios.html:101
+#: app/templates/main/cambios.html:187 app/templates/main/como_funciona.html:70
 #: app/templates/main/dashboard.html:162
 #: app/templates/publicaciones/editar.html:38
 #: app/templates/publicaciones/publicar.html:52
 msgid "Cambio de turno en el día"
 msgstr ""
 
-#: app/routes/calendario.py:63 app/templates/main/cambios.html:102
+#: app/routes/calendario.py:64 app/templates/main/cambios.html:102
 #: app/templates/main/cambios.html:201 app/templates/main/dashboard.html:286
 #: app/templates/notificaciones/avisos.html:39
 msgid "Oportunidad a 3"
@@ -677,7 +684,7 @@ msgstr ""
 
 #: app/templates/base.html:29 app/templates/calendario/calendario.html:3
 #: app/templates/calendario/calendario.html:12
-#: app/templates/calendario/calendario.html:70
+#: app/templates/calendario/calendario.html:76
 msgid "Calendario"
 msgstr ""
 
@@ -686,11 +693,11 @@ msgid "Mis cambios"
 msgstr ""
 
 #: app/templates/base.html:31 app/templates/main/cambios.html:3
-#: app/templates/main/cambios.html:8 app/templates/main/como_funciona.html:140
+#: app/templates/main/cambios.html:8 app/templates/main/como_funciona.html:144
 msgid "Buscar cambios"
 msgstr ""
 
-#: app/templates/base.html:32 app/templates/main/como_funciona.html:100
+#: app/templates/base.html:32 app/templates/main/como_funciona.html:104
 #: app/templates/planilla/planilla.html:3
 #: app/templates/planilla/planilla.html:13
 msgid "Mi planilla"
@@ -747,11 +754,11 @@ msgid "Instalar"
 msgstr ""
 
 #: app/templates/base.html:62 app/templates/base.html:77
-#: app/templates/calendario/calendario.html:114
+#: app/templates/calendario/calendario.html:120
 msgid "Cerrar"
 msgstr ""
 
-#: app/templates/base.html:72 app/templates/main/como_funciona.html:204
+#: app/templates/base.html:72 app/templates/main/como_funciona.html:208
 msgid "Pulsa"
 msgstr ""
 
@@ -1518,76 +1525,88 @@ msgstr ""
 msgid "Peticiones"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:37
+#: app/templates/calendario/calendario.html:35
+#: app/templates/main/como_funciona.html:29
+msgid "Juntes de noches"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:41
 msgid "Turnos que otros compañeros trabajarían. Toca un día para ver el detalle."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:39
+#: app/templates/calendario/calendario.html:43
 msgid ""
 "Turnos que otros compañeros quieren librar. Toca un día para ver el "
 "detalle."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:46
-msgid "¿Cómo funciona el calendario?"
-msgstr ""
-
-#: app/templates/calendario/calendario.html:48
+#: app/templates/calendario/calendario.html:45
 msgid ""
-"Elige si quieres ver los turnos que otros compañeros ofrecen trabajar "
-"(Ofertas) o los que quieren librar (Peticiones). Cada día del mes muestra"
-" de un vistazo qué franjas hay disponibles."
+"Noches de compañeros buscando complementar su junte. Toca un día para ver"
+" el detalle."
 msgstr ""
 
 #: app/templates/calendario/calendario.html:52
+msgid "¿Cómo funciona el calendario?"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:54
+msgid ""
+"Elige si quieres ver los turnos que otros compañeros ofrecen trabajar "
+"(Ofertas), los que quieren librar (Peticiones) o las noches de quienes "
+"buscan complementar un junte (Juntes de noches). Cada día del mes muestra"
+" de un vistazo qué franjas hay disponibles."
+msgstr ""
+
+#: app/templates/calendario/calendario.html:58
 msgid "Toca un día"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:53
+#: app/templates/calendario/calendario.html:59
 msgid ""
 "verás el detalle de las franjas disponibles ese día y podrás acceder a la"
 " publicación completa. Si el día está vacío, puedes publicar tu propio "
 "cambio directamente desde ahí."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:56
-#: app/templates/calendario/calendario.html:102
-#: app/templates/main/como_funciona.html:71
+#: app/templates/calendario/calendario.html:62
+#: app/templates/calendario/calendario.html:108
+#: app/templates/main/como_funciona.html:75
 #: app/templates/main/dashboard.html:10
 #: app/templates/publicaciones/publicar.html:3
 msgid "Publicar cambio"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:57
+#: app/templates/calendario/calendario.html:63
 msgid ""
 "el botón bajo el calendario te lleva al formulario de publicación en "
 "cualquier momento."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:62
+#: app/templates/calendario/calendario.html:68
 #: app/templates/planilla/planilla.html:65
 msgid "Ver explicación completa →"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:65
+#: app/templates/calendario/calendario.html:71
 #: app/templates/planilla/planilla.html:68
 msgid "Entendido"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:84
-#: app/templates/calendario/calendario.html:85
+#: app/templates/calendario/calendario.html:90
+#: app/templates/calendario/calendario.html:91
 msgid "Sin ofertas"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:111
+#: app/templates/calendario/calendario.html:117
 msgid "Volver"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:135
+#: app/templates/calendario/calendario.html:141
 msgid "Nadie ha publicado nada este día todavía."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:136
+#: app/templates/calendario/calendario.html:142
 msgid "Publicar un cambio para este día"
 msgstr ""
 
@@ -1788,13 +1807,6 @@ msgstr ""
 
 #: app/templates/main/cambios.html:96
 msgid "— Todos los tipos —"
-msgstr ""
-
-#: app/templates/main/cambios.html:100 app/templates/main/cambios.html:163
-#: app/templates/main/como_funciona.html:62
-#: app/templates/main/dashboard.html:148
-#: app/templates/publicaciones/publicar.html:45
-msgid "Junte de noches"
 msgstr ""
 
 #: app/templates/main/cambios.html:108
@@ -1999,7 +2011,7 @@ msgid ""
 msgstr ""
 
 #: app/templates/main/como_funciona.html:17
-msgid "Cambia entre los dos modos con el selector de arriba:"
+msgid "Cambia entre los tres modos con el selector de arriba:"
 msgstr ""
 
 #: app/templates/main/como_funciona.html:22
@@ -2011,98 +2023,102 @@ msgid "turnos que otros compañeros quieren librar."
 msgstr ""
 
 #: app/templates/main/como_funciona.html:30
+msgid "noches de compañeros que buscan complementar su junte."
+msgstr ""
+
+#: app/templates/main/como_funciona.html:34
 msgid ""
 "Toca un día para ver qué franjas hay disponibles y acceder a la "
 "publicación completa."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:31
+#: app/templates/main/como_funciona.html:35
 msgid ""
 "Si el día está vacío, puedes publicar tu propio cambio directamente desde"
 " ahí."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:34
+#: app/templates/main/como_funciona.html:38
 msgid "Ver calendario"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:42
+#: app/templates/main/como_funciona.html:46
 msgid "2. Publica tu cambio"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:44
+#: app/templates/main/como_funciona.html:48
 msgid "Dile a tus compañeros qué turno quieres ceder y cuál te interesa a cambio."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:45
+#: app/templates/main/como_funciona.html:49
 msgid "Puedes pedir una fecha y turno concreto, o dejar abierto cualquier turno."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:47
+#: app/templates/main/como_funciona.html:51
 msgid "Hay cuatro tipos de publicación:"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:51
+#: app/templates/main/como_funciona.html:55
 msgid "cedes un turno (o varios) y pides otro (u otros) a cambio."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:55
+#: app/templates/main/como_funciona.html:59
 msgid "trabajas un turno sin pedir nada a cambio. Ideal si ya no lo necesitas."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:59
+#: app/templates/main/como_funciona.html:63
 msgid ""
 "quieres que alguien te cubra un día sin darte ningún turno a cambio, o "
 "hacer la devolución a convenir."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:63
+#: app/templates/main/como_funciona.html:67
 msgid ""
 "intercambias noches sueltas de una semana para juntarlas y librar días "
 "consecutivos."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:67
+#: app/templates/main/como_funciona.html:71
 msgid "por ejemplo, cambiar tu turno de mañana por el de tarde el día 16."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:79
+#: app/templates/main/como_funciona.html:83
 msgid "3. Publica tu planilla mensual"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:81
+#: app/templates/main/como_funciona.html:85
 msgid "Publica tu cuadrante del mes, con tus turnos y libranzas."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:82
+#: app/templates/main/como_funciona.html:86
 msgid ""
 "Al publicarla, tus compañeros pueden saber si estás disponible para "
 "hacerles el cambio que buscan, y tú puedes ver quién libra o tiene turno "
 "compatible el día que quieres ceder."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:84
+#: app/templates/main/como_funciona.html:88
 msgid "Rellenar el mes es rápido gracias a tres herramientas:"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:87
+#: app/templates/main/como_funciona.html:91
 #: app/templates/planilla/planilla.html:51
 msgid "Relleno por rango"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:88
+#: app/templates/main/como_funciona.html:92
 msgid ""
 "elige \"del día X al día Y\" y el turno o estado, y se rellenan todos los"
 " días de ese bloque de un solo clic. Ideal para semanas de vacaciones o "
 "bloques de mañanas consecutivos."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:91
+#: app/templates/main/como_funciona.html:95
 #: app/templates/planilla/planilla.html:55
 msgid "Selección múltiple"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:92
+#: app/templates/main/como_funciona.html:96
 msgid ""
 "marca los días que quieras con los checkbox de cada fila; aparece una "
 "barra en la parte inferior para aplicar el mismo turno o estado a todos a"
@@ -2110,216 +2126,216 @@ msgid ""
 "mes."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:95
+#: app/templates/main/como_funciona.html:99
 #: app/templates/planilla/planilla.html:59
 msgid "Rellenar días vacíos"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:96
+#: app/templates/main/como_funciona.html:100
 msgid ""
 "te permite asignar de un solo clic el mismo estado (por ejemplo, Libre) a"
 " todos los días que aún no tienen nada."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:108
+#: app/templates/main/como_funciona.html:112
 msgid "4. Si hay match, te avisamos"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:110
+#: app/templates/main/como_funciona.html:114
 msgid ""
 "Cuando otra persona de tu unidad publique un cambio compatible con el "
 "tuyo, recibirás una notificación."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:113
+#: app/templates/main/como_funciona.html:117
 msgid "Revisa el match en tu panel de \"Mis cambios\" y"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:114
+#: app/templates/main/como_funciona.html:118
 msgid "confírmalo o recházalo"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:115
+#: app/templates/main/como_funciona.html:119
 msgid "El cambio sólo se cierra cuando todos los implicados lo confirman."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:118
+#: app/templates/main/como_funciona.html:122
 msgid "El detector va más allá del cruce directo entre dos personas:"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:119
+#: app/templates/main/como_funciona.html:123
 msgid "también encuentra"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:119
+#: app/templates/main/como_funciona.html:123
 msgid "cambios a tres bandas"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:120
+#: app/templates/main/como_funciona.html:124
 msgid "(A da a B, B da a C, C da a A) y"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:121
+#: app/templates/main/como_funciona.html:125
 msgid "match parciales"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:122
+#: app/templates/main/como_funciona.html:126
 msgid "(se resuelve parte de un cambio múltiple aunque el resto quede pendiente)."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:130
+#: app/templates/main/como_funciona.html:134
 msgid "5. Consulta lo que publican tus compañeros"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:132
+#: app/templates/main/como_funciona.html:136
 msgid "En \"Buscar cambios\" ves todas las publicaciones abiertas de tu unidad."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:133
+#: app/templates/main/como_funciona.html:137
 msgid "Puedes filtrar por mes, día o turno."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:136
+#: app/templates/main/como_funciona.html:140
 msgid "Guarda tus filtros favoritos como"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:136
+#: app/templates/main/como_funciona.html:140
 msgid "búsquedas guardadas"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:137
+#: app/templates/main/como_funciona.html:141
 msgid ""
 "y activa las notificaciones: te avisaremos cada vez que aparezca una "
 "publicación que encaje con esa búsqueda."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:148
+#: app/templates/main/como_funciona.html:152
 msgid "6. Suscríbete a un compañero"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:150
+#: app/templates/main/como_funciona.html:154
 msgid ""
 "¿Hay alguien con quien te resulte fácil cambiar? Suscríbete a sus "
 "publicaciones y te avisaremos cada vez que publique algo nuevo."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:153
+#: app/templates/main/como_funciona.html:157
 msgid ""
 "Entra en \"Notificaciones\", baja hasta \"Seguir compañeros\", busca a tu"
 " compañero y toca en \"Seguir\"."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:161
+#: app/templates/main/como_funciona.html:165
 msgid "7. Comparte tu cambio por WhatsApp"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:163
+#: app/templates/main/como_funciona.html:167
 msgid ""
 "¿Conoces a alguien que puede encajarte pero aún no usa Turnero? Desde "
 "cualquier publicación tuya puedes"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:164
+#: app/templates/main/como_funciona.html:168
 msgid "compartir el enlace directo por WhatsApp"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:167
+#: app/templates/main/como_funciona.html:171
 msgid ""
 "La persona que lo recibe ve los detalles del cambio y puede registrarse "
 "en el momento para responderlo."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:175
+#: app/templates/main/como_funciona.html:179
 msgid "8. Instala Turnero en tu móvil"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:177
+#: app/templates/main/como_funciona.html:181
 msgid ""
 "Puedes instalar Turnero como una app normal en tu móvil: sin pasar por la"
 " App Store ni Google Play, directamente desde el navegador."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:178
+#: app/templates/main/como_funciona.html:182
 msgid "Una vez instalada, abre como cualquier otra app, sin barras del navegador."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:183
+#: app/templates/main/como_funciona.html:187
 msgid "Instalar en Android"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:186
-#: app/templates/main/como_funciona.html:201
+#: app/templates/main/como_funciona.html:190
+#: app/templates/main/como_funciona.html:205
 msgid "Abre Turnero en"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:187
+#: app/templates/main/como_funciona.html:191
 msgid "Pulsa el icono de los tres puntos"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:187
+#: app/templates/main/como_funciona.html:191
 msgid "arriba a la derecha."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:188
+#: app/templates/main/como_funciona.html:192
 msgid "Toca"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:188
-#: app/templates/main/como_funciona.html:203
+#: app/templates/main/como_funciona.html:192
+#: app/templates/main/como_funciona.html:207
 msgid "«Añadir a pantalla de inicio»"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:189
+#: app/templates/main/como_funciona.html:193
 msgid "Confirma pulsando"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:189
+#: app/templates/main/como_funciona.html:193
 msgid "«Instalar»"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:192
+#: app/templates/main/como_funciona.html:196
 msgid ""
 "En muchos móviles Android el banner de instalación aparece solo en la "
 "parte inferior de la pantalla."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:198
+#: app/templates/main/como_funciona.html:202
 msgid "Instalar en iPhone / iPad"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:201
+#: app/templates/main/como_funciona.html:205
 msgid "(En Chrome para iOS no funciona la instalación.)"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:202
+#: app/templates/main/como_funciona.html:206
 msgid "Pulsa el botón de compartir"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:202
+#: app/templates/main/como_funciona.html:206
 msgid "(la flecha hacia arriba que hay en la barra inferior)."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:203
+#: app/templates/main/como_funciona.html:207
 msgid "Desplázate en el menú y toca"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:204
+#: app/templates/main/como_funciona.html:208
 msgid "«Añadir»"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:204
+#: app/templates/main/como_funciona.html:208
 msgid "en la esquina superior derecha."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:207
+#: app/templates/main/como_funciona.html:211
 msgid "La app quedará en tu pantalla de inicio igual que cualquier otra."
 msgstr ""
 
-#: app/templates/main/como_funciona.html:217
+#: app/templates/main/como_funciona.html:221
 msgid "Ir al calendario"
 msgstr ""
 
-#: app/templates/main/como_funciona.html:220
+#: app/templates/main/como_funciona.html:224
 msgid "Puedes volver a esta página cuando quieras desde el menú."
 msgstr ""
 
@@ -3555,5 +3571,17 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "Solicitar contraseña temporal"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Elige si quieres ver los turnos "
+#~ "que otros compañeros ofrecen trabajar "
+#~ "(Ofertas) o los que quieren librar "
+#~ "(Peticiones). Cada día del mes muestra"
+#~ " de un vistazo qué franjas hay "
+#~ "disponibles."
+#~ msgstr ""
+
+#~ msgid "Cambia entre los dos modos con el selector de arriba:"
 #~ msgstr ""
 

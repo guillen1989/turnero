@@ -15,7 +15,7 @@ from app.services.calendario_mercado import (
 
 bp = Blueprint("calendario", __name__, url_prefix="/calendario")
 
-MODOS_VALIDOS = ("ofertas", "peticiones")
+MODOS_VALIDOS = ("ofertas", "peticiones", "juntes")
 
 
 @bp.route("/")
@@ -58,6 +58,7 @@ def index():
         "cambio": _("Cambio"),
         "regalo": _("Regalo"),
         "peticion": _("Petición"),
+        "junte": _("Junte de noches"),
         "cambio_dia": _("Cambio de turno en el día"),
     }
     etiqueta_oportunidad_3 = _("Oportunidad a 3")

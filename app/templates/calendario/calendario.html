@@ -30,13 +30,19 @@
          class="btn btn-sm calendario-modo-btn calendario-modo-btn--peticiones{% if modo == 'peticiones' %} is-active{% endif %}">
         {{ _('Peticiones') }}
       </a>
+      <a href="{{ url_for('calendario.index', anyo=anyo, mes=mes, modo='juntes') }}"
+         class="btn btn-sm calendario-modo-btn calendario-modo-btn--juntes{% if modo == 'juntes' %} is-active{% endif %}">
+        {{ _('Juntes de noches') }}
+      </a>
     </div>
 
     <p class="calendario-ayuda-texto">
       {% if modo == 'ofertas' %}
         {{ _('Turnos que otros compañeros trabajarían. Toca un día para ver el detalle.') }}
-      {% else %}
+      {% elif modo == 'peticiones' %}
         {{ _('Turnos que otros compañeros quieren librar. Toca un día para ver el detalle.') }}
+      {% else %}
+        {{ _('Noches de compañeros buscando complementar su junte. Toca un día para ver el detalle.') }}
       {% endif %}
     </p>
   </div>
@@ -45,7 +51,7 @@
   <div id="calendario-onboarding" class="planilla-onboarding-banner" style="display:none" role="note">
     <h3 class="planilla-onboarding-titulo">{{ _('¿Cómo funciona el calendario?') }}</h3>
     <p class="planilla-onboarding-p">
-      {{ _('Elige si quieres ver los turnos que otros compañeros ofrecen trabajar (Ofertas) o los que quieren librar (Peticiones). Cada día del mes muestra de un vistazo qué franjas hay disponibles.') }}
+      {{ _('Elige si quieres ver los turnos que otros compañeros ofrecen trabajar (Ofertas), los que quieren librar (Peticiones) o las noches de quienes buscan complementar un junte (Juntes de noches). Cada día del mes muestra de un vistazo qué franjas hay disponibles.') }}
     </p>
     <ul class="planilla-onboarding-lista">
       <li>
@@ -153,9 +159,14 @@
     var partes = fechaIso.split('-');
     var mes = parseInt(partes[1], 10);
     var dia = parseInt(partes[2], 10);
-    var tipoFecha = (MODO === 'ofertas') ? 'aceptado' : 'cedido';
-    var params = 'mes=' + mes + '&dia=' + dia + '&tipo_fecha=' + tipoFecha +
+    // 'juntes' no tiene sentido direccional (una noche puede ser cedida o
+    // aceptada dentro del mismo junte), así que no se fija tipo_fecha: /cambios
+    // ya localiza la publicación por día+franja+usuario buscando en ambos.
+    var params = 'mes=' + mes + '&dia=' + dia +
       '&usuario=' + encodeURIComponent(pub.usuario_nombre || '');
+    if (MODO !== 'juntes') {
+      params += '&tipo_fecha=' + ((MODO === 'ofertas') ? 'aceptado' : 'cedido');
+    }
     if (clave !== 'cualquiera') { params += '&franja=' + clave; }
     return CAMBIOS_URL + '?' + params;
   }
