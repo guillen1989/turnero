@@ -4,6 +4,7 @@
 
 {% block content %}
 {% set MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+{% set MESES_ABREV = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'] %}
 
 <div class="form-container" data-modo-actual="{{ modo }}">
 
@@ -73,6 +74,64 @@
     </div>
   </div>
 
+  {% if modo == 'juntes' %}
+  {# ── Juntes de noches: un junte es un patrón semanal, no una noche suelta;
+     se agrupa por semana y se despliega la distribución trabaja/libra de
+     cada oferta al tocar la fila. Sin JS: <details>/<summary> nativo. ── #}
+  <div class="juntes-leyenda">
+    <span class="juntes-leyenda-item"><span class="juntes-leyenda-marca juntes-leyenda-marca--trabaja"></span>{{ _('Trabajarías esa noche') }}</span>
+    <span class="juntes-leyenda-item"><span class="juntes-leyenda-marca juntes-leyenda-marca--libra"></span>{{ _('La librarías') }}</span>
+  </div>
+
+  <div class="juntes-semanas">
+    {% for semana in semanas %}
+    <details class="juntes-semana{% if not semana.ofertas %} juntes-semana--vacia{% endif %}">
+      <summary class="juntes-semana-cabecera">
+        <span class="juntes-rango">
+          {% if semana.lunes.month == semana.domingo.month %}
+            {{ semana.lunes.day }} – {{ semana.domingo.day }} {{ MESES_ABREV[semana.lunes.month - 1] }}
+          {% else %}
+            {{ semana.lunes.day }} {{ MESES_ABREV[semana.lunes.month - 1] }} – {{ semana.domingo.day }} {{ MESES_ABREV[semana.domingo.month - 1] }}
+          {% endif %}
+          {% if semana.es_parcial %}<span class="juntes-rango-nota">({{ _('semana parcial') }})</span>{% endif %}
+        </span>
+        <span class="juntes-semana-meta">
+          {% if semana.ofertas %}
+            <span class="juntes-contador">{{ ngettext('%(num)d junte disponible', '%(num)d juntes disponibles', semana.ofertas|length) }}</span>
+            <span class="juntes-chevron" aria-hidden="true"></span>
+          {% else %}
+            <span class="juntes-contador juntes-contador--vacio">{{ _('Sin juntes') }}</span>
+          {% endif %}
+        </span>
+      </summary>
+      {% if semana.ofertas %}
+      <div class="juntes-semana-cuerpo">
+        {% for oferta in semana.ofertas %}
+        <div class="juntes-oferta">
+          <div class="juntes-oferta-cabecera">
+            <div>
+              <div class="juntes-oferta-nombre">{{ oferta.usuario_nombre }}</div>
+              <div class="juntes-oferta-resumen">{{ _('Trabaja') }} {{ oferta.trabaja_str }} · {{ _('libra') }} {{ oferta.libra_str }}</div>
+            </div>
+            <a class="juntes-oferta-link" href="{{ url_for('main.cambios', pub_id=oferta.pub_id) }}">{{ _('Ver publicación') }} →</a>
+          </div>
+          <div class="juntes-tira">
+            {% for dia in oferta.dias %}
+            <div class="juntes-dia juntes-dia--{{ dia.estado }}">
+              <span class="juntes-dia-letra">{{ dia.letra }}</span>
+              <span class="juntes-dia-estado">{{ _('Trabaja') if dia.estado == 'trabaja' else _('Libra') }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </details>
+    {% endfor %}
+  </div>
+
+  {% else %}
   <div class="planilla-cal" role="grid" aria-label="{{ _('Calendario') }}">
     {% for inicial in ['L','M','X','J','V','S','D'] %}
       <div class="cal-header" role="columnheader">{{ inicial }}</div>
@@ -102,6 +161,7 @@
       </button>
     {% endfor %}
   </div>
+  {% endif %}
 
   <div class="calendario-publicar-fijo">
     <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary calendario-btn-publicar">
@@ -109,6 +169,7 @@
     </a>
   </div>
 
+  {% if modo != 'juntes' %}
   {# ── Panel de drill-down: día → franjas → publicaciones ── #}
   <div id="calendario-panel" class="calendario-panel" hidden role="dialog" aria-modal="true">
     <div class="calendario-panel-contenido">
@@ -123,9 +184,11 @@
       <div id="calendario-panel-cuerpo"></div>
     </div>
   </div>
+  {% endif %}
 
 </div>
 
+{% if modo != 'juntes' %}
 <script type="application/json" id="calendario-datos-mes">{{ datos_mes | tojson }}</script>
 <script type="application/json" id="calendario-datos-publicaciones">{{ datos_publicaciones | tojson }}</script>
 <script type="application/json" id="calendario-datos-franjas">{{ nombre_franja_por_clave | tojson }}</script>
@@ -225,7 +288,10 @@
     document.getElementById('calendario-panel').hidden = true;
   };
 })();
+</script>
+{% endif %}
 
+<script>
 /* ── Onboarding banner ── */
 (function () {
   var KEY    = 'calendario_onboarding_visto';

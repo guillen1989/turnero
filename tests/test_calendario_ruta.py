@@ -94,7 +94,9 @@ def test_calendario_modo_peticiones_muestra_franja_del_turno_cedido(client, db):
     assert "Tarde".encode("utf-8") in resp.data
 
 
-def test_calendario_modo_juntes_muestra_franja_de_junte(client, db):
+def test_calendario_modo_juntes_muestra_distribucion_semanal(client, db):
+    """modo=juntes agrupa por semana natural (no por día) y muestra el
+    nombre del autor + la distribución trabaja/libra de cada oferta."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     gid = ana.unidad.grupo_intercambio_id
@@ -103,48 +105,21 @@ def test_calendario_modo_juntes_muestra_franja_de_junte(client, db):
     pub = PublicacionCambio(usuario_id=pedro.id, tipo="junte")
     db.session.add(pub)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 7, 3), franja_horaria_id=noche.id))
-    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 1), franja_horaria_id=noche.id))
-    db.session.commit()
-
-    _login(client, ana.email)
-    resp = client.get("/calendario/?anyo=2026&mes=7&modo=juntes")
-    assert resp.status_code == 200
-    assert "Noche".encode("utf-8") in resp.data
-
-    import json
-    import re
-    html = resp.data.decode("utf-8")
-    datos_mes = json.loads(re.search(
-        r'<script type="application/json" id="calendario-datos-mes">(.*?)</script>', html, re.S
-    ).group(1))
-    assert datos_mes["2026-07-01"][str(noche.id)] == [pub.id]
-    assert datos_mes["2026-07-03"][str(noche.id)] == [pub.id]
-
-
-def test_calendario_modo_juntes_etiqueta_publicacion_como_junte(client, db):
-    ana = _usuario("Ana", "ana@test.es")
-    pedro = _usuario("Pedro", "pedro@test.es")
-    gid = ana.unidad.grupo_intercambio_id
-    noche = _franja(gid, "Noche")
-
-    pub = PublicacionCambio(usuario_id=pedro.id, tipo="junte")
-    db.session.add(pub)
-    db.session.flush()
-    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 1), franja_horaria_id=noche.id))
+    # LMVD: cede viernes(10/7) y domingo(12/7); recibe martes(7/7) y jueves(9/7)
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 7, 10), franja_horaria_id=noche.id))
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 7, 12), franja_horaria_id=noche.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 7), franja_horaria_id=noche.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 9), franja_horaria_id=noche.id))
     db.session.commit()
 
     _login(client, ana.email)
     resp = client.get("/calendario/?anyo=2026&mes=7&modo=juntes")
     assert resp.status_code == 200
 
-    import json
-    import re
     html = resp.data.decode("utf-8")
-    datos_pubs = json.loads(re.search(
-        r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
-    ).group(1))
-    assert datos_pubs[str(pub.id)]["tipo_label"] == "Junte de noches"
+    assert "Pedro" in html
+    assert "lunes, martes, miércoles y jueves" in html
+    assert "viernes, sábado y domingo" in html
 
 
 def test_calendario_modo_ofertas_no_muestra_juntes(client, db):

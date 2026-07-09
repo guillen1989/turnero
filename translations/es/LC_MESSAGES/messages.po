@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-09 18:51+0200\n"
+"POT-Creation-Date: 2026-07-09 21:36+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -339,11 +339,11 @@ msgstr ""
 msgid "Tu cuenta ha sido eliminada. Hasta pronto."
 msgstr ""
 
-#: app/routes/calendario.py:47
+#: app/routes/calendario.py:66
 msgid "Cualquiera"
 msgstr ""
 
-#: app/routes/calendario.py:58 app/templates/main/cambios.html:97
+#: app/routes/calendario.py:77 app/templates/main/cambios.html:97
 #: app/templates/main/cambios.html:224 app/templates/main/como_funciona.html:54
 #: app/templates/main/dashboard.html:170
 #: app/templates/publicaciones/editar.html:23
@@ -351,7 +351,7 @@ msgstr ""
 msgid "Cambio"
 msgstr ""
 
-#: app/routes/calendario.py:59 app/templates/main/cambios.html:98
+#: app/routes/calendario.py:78 app/templates/main/cambios.html:98
 #: app/templates/main/cambios.html:145 app/templates/main/como_funciona.html:58
 #: app/templates/main/dashboard.html:132
 #: app/templates/publicaciones/editar.html:28
@@ -359,7 +359,7 @@ msgstr ""
 msgid "Regalo"
 msgstr ""
 
-#: app/routes/calendario.py:60 app/templates/main/cambios.html:99
+#: app/routes/calendario.py:79 app/templates/main/cambios.html:99
 #: app/templates/main/cambios.html:154 app/templates/main/como_funciona.html:62
 #: app/templates/main/dashboard.html:140
 #: app/templates/publicaciones/editar.html:33
@@ -367,14 +367,7 @@ msgstr ""
 msgid "Petición"
 msgstr ""
 
-#: app/routes/calendario.py:61 app/templates/main/cambios.html:100
-#: app/templates/main/cambios.html:163 app/templates/main/como_funciona.html:66
-#: app/templates/main/dashboard.html:148
-#: app/templates/publicaciones/publicar.html:45
-msgid "Junte de noches"
-msgstr ""
-
-#: app/routes/calendario.py:62 app/templates/main/cambios.html:101
+#: app/routes/calendario.py:80 app/templates/main/cambios.html:101
 #: app/templates/main/cambios.html:187 app/templates/main/como_funciona.html:70
 #: app/templates/main/dashboard.html:162
 #: app/templates/publicaciones/editar.html:38
@@ -382,7 +375,7 @@ msgstr ""
 msgid "Cambio de turno en el día"
 msgstr ""
 
-#: app/routes/calendario.py:64 app/templates/main/cambios.html:102
+#: app/routes/calendario.py:82 app/templates/main/cambios.html:102
 #: app/templates/main/cambios.html:201 app/templates/main/dashboard.html:286
 #: app/templates/notificaciones/avisos.html:39
 msgid "Oportunidad a 3"
@@ -683,8 +676,8 @@ msgid "Menú"
 msgstr ""
 
 #: app/templates/base.html:29 app/templates/calendario/calendario.html:3
-#: app/templates/calendario/calendario.html:12
-#: app/templates/calendario/calendario.html:76
+#: app/templates/calendario/calendario.html:13
+#: app/templates/calendario/calendario.html:135
 msgid "Calendario"
 msgstr ""
 
@@ -754,7 +747,7 @@ msgid "Instalar"
 msgstr ""
 
 #: app/templates/base.html:62 app/templates/base.html:77
-#: app/templates/calendario/calendario.html:120
+#: app/templates/calendario/calendario.html:181
 msgid "Cerrar"
 msgstr ""
 
@@ -1510,47 +1503,47 @@ msgstr ""
 msgid "Elige una nueva contraseña"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:14
+#: app/templates/calendario/calendario.html:15
 #: app/templates/planilla/planilla.html:15
 msgid "¿Cómo funciona?"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:27
+#: app/templates/calendario/calendario.html:28
 #: app/templates/main/como_funciona.html:21
 msgid "Ofertas"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:31
+#: app/templates/calendario/calendario.html:32
 #: app/templates/main/como_funciona.html:25
 msgid "Peticiones"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:35
+#: app/templates/calendario/calendario.html:36
 #: app/templates/main/como_funciona.html:29
 msgid "Juntes de noches"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:41
+#: app/templates/calendario/calendario.html:42
 msgid "Turnos que otros compañeros trabajarían. Toca un día para ver el detalle."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:43
+#: app/templates/calendario/calendario.html:44
 msgid ""
 "Turnos que otros compañeros quieren librar. Toca un día para ver el "
 "detalle."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:45
+#: app/templates/calendario/calendario.html:46
 msgid ""
 "Noches de compañeros buscando complementar su junte. Toca un día para ver"
 " el detalle."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:52
+#: app/templates/calendario/calendario.html:53
 msgid "¿Cómo funciona el calendario?"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:54
+#: app/templates/calendario/calendario.html:55
 msgid ""
 "Elige si quieres ver los turnos que otros compañeros ofrecen trabajar "
 "(Ofertas), los que quieren librar (Peticiones) o las noches de quienes "
@@ -1558,55 +1551,98 @@ msgid ""
 " de un vistazo qué franjas hay disponibles."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:58
+#: app/templates/calendario/calendario.html:59
 msgid "Toca un día"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:59
+#: app/templates/calendario/calendario.html:60
 msgid ""
 "verás el detalle de las franjas disponibles ese día y podrás acceder a la"
 " publicación completa. Si el día está vacío, puedes publicar tu propio "
 "cambio directamente desde ahí."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:62
-#: app/templates/calendario/calendario.html:108
+#: app/templates/calendario/calendario.html:63
+#: app/templates/calendario/calendario.html:168
 #: app/templates/main/como_funciona.html:75
 #: app/templates/main/dashboard.html:10
 #: app/templates/publicaciones/publicar.html:3
 msgid "Publicar cambio"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:63
+#: app/templates/calendario/calendario.html:64
 msgid ""
 "el botón bajo el calendario te lleva al formulario de publicación en "
 "cualquier momento."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:68
+#: app/templates/calendario/calendario.html:69
 #: app/templates/planilla/planilla.html:65
 msgid "Ver explicación completa →"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:71
+#: app/templates/calendario/calendario.html:72
 #: app/templates/planilla/planilla.html:68
 msgid "Entendido"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:90
-#: app/templates/calendario/calendario.html:91
+#: app/templates/calendario/calendario.html:82
+msgid "Trabajarías esa noche"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:83
+msgid "La librarías"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:96
+msgid "semana parcial"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:100
+#, python-format
+msgid "%(num)d junte disponible"
+msgid_plural "%(num)d juntes disponibles"
+msgstr[0] ""
+msgstr[1] ""
+
+#: app/templates/calendario/calendario.html:103
+msgid "Sin juntes"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:114
+#: app/templates/calendario/calendario.html:122
+msgid "Trabaja"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:114
+msgid "libra"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:116
+#: app/templates/main/dashboard.html:290
+#: app/templates/notificaciones/avisos.html:65
+#: app/templates/notificaciones/avisos.html:67
+msgid "Ver publicación"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:122
+msgid "Libra"
+msgstr ""
+
+#: app/templates/calendario/calendario.html:149
+#: app/templates/calendario/calendario.html:150
 msgid "Sin ofertas"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:117
+#: app/templates/calendario/calendario.html:178
 msgid "Volver"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:141
+#: app/templates/calendario/calendario.html:204
 msgid "Nadie ha publicado nada este día todavía."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:142
+#: app/templates/calendario/calendario.html:205
 msgid "Publicar un cambio para este día"
 msgstr ""
 
@@ -1807,6 +1843,13 @@ msgstr ""
 
 #: app/templates/main/cambios.html:96
 msgid "— Todos los tipos —"
+msgstr ""
+
+#: app/templates/main/cambios.html:100 app/templates/main/cambios.html:163
+#: app/templates/main/como_funciona.html:66
+#: app/templates/main/dashboard.html:148
+#: app/templates/publicaciones/publicar.html:45
+msgid "Junte de noches"
 msgstr ""
 
 #: app/templates/main/cambios.html:108
@@ -2643,12 +2686,6 @@ msgid ""
 "%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran del "
 "todo. El sistema ha generado una publicación puente: si un compañero la "
 "acepta, el cambio a 3 se cerrará automáticamente."
-msgstr ""
-
-#: app/templates/main/dashboard.html:290
-#: app/templates/notificaciones/avisos.html:65
-#: app/templates/notificaciones/avisos.html:67
-msgid "Ver publicación"
 msgstr ""
 
 #: app/templates/main/dashboard.html:306

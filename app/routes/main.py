@@ -1,4 +1,3 @@
-from datetime import timedelta
 from urllib.parse import quote as _urlquote
 
 from flask import Blueprint, jsonify, render_template, request
@@ -9,50 +8,21 @@ from sqlalchemy.orm import contains_eager, joinedload, selectinload
 from app.extensions import db
 from app.models import BusquedaGuardada, CompatibilidadPlanilla, FranjaHoraria, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
 from app.services.caducidad import caducar_publicaciones_expiradas
+from app.services.junte_semanal import calcular_distribucion, resumen_textual
 
 bp = Blueprint("main", __name__)
-
-# ---------------------------------------------------------------------------
-# Helpers para junte de noches
-# ---------------------------------------------------------------------------
-_DIAS_ES = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
-_LMVD = frozenset([0, 2, 4, 6])
-_MJS  = frozenset([1, 3, 5])
-
-
-def _lista_es(items):
-    if not items:
-        return ''
-    if len(items) == 1:
-        return items[0]
-    return ', '.join(items[:-1]) + ' y ' + items[-1]
 
 
 def _junte_info(pub):
     """Para una publicación de tipo junte, devuelve número de noches, días y semana."""
-    cedidos_wd   = frozenset(tc.fecha.weekday() for tc in pub.turnos_cedidos)
-    aceptados_wd = frozenset(ta.fecha.weekday() for ta in pub.turnos_aceptados)
-
-    cadencia   = _LMVD if (cedidos_wd & _LMVD) else _MJS
-    num_noches = len(cadencia)
-    partner    = frozenset(range(7)) - cadencia
-
-    trabaja = (cadencia - cedidos_wd) | aceptados_wd
-    libra   = cedidos_wd | (partner - aceptados_wd)
-
-    # Lunes de la semana del junte (para el mensaje de WA)
-    primer_cedido = pub.turnos_cedidos[0].fecha if pub.turnos_cedidos else None
-    if primer_cedido:
-        lunes = primer_cedido - timedelta(days=primer_cedido.weekday())
-        semana_str = lunes.strftime('%d/%m/%Y')
-    else:
-        semana_str = ''
+    lunes, trabaja, libra, num_noches = calcular_distribucion(pub)
+    trabaja_str, libra_str = resumen_textual(trabaja, libra)
 
     return {
         'num_noches':  num_noches,
-        'semana_str':  semana_str,
-        'trabaja_str': _lista_es([_DIAS_ES[d] for d in sorted(trabaja)]),
-        'libra_str':   _lista_es([_DIAS_ES[d] for d in sorted(libra)]),
+        'semana_str':  lunes.strftime('%d/%m/%Y') if lunes else '',
+        'trabaja_str': trabaja_str,
+        'libra_str':   libra_str,
     }
 
 
