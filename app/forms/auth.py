@@ -98,3 +98,23 @@ class LoginForm(FlaskForm):
         validators=[DataRequired()],
     )
     submit = SubmitField(_l("Entrar"))
+
+
+class SolicitarResetForm(FlaskForm):
+    email = StringField(
+        _l("Correo electrónico"),
+        validators=[DataRequired(), Email()],
+    )
+    submit = SubmitField(_l("Enviar enlace de recuperación"))
+
+
+class RestablecerPasswordForm(FlaskForm):
+    password = PasswordField(
+        _l("Nueva contraseña"),
+        validators=[DataRequired(), Length(min=8, message=_l("Mínimo 8 caracteres"))],
+    )
+    password2 = PasswordField(
+        _l("Repite la nueva contraseña"),
+        validators=[DataRequired(), EqualTo("password", message=_l("Las contraseñas no coinciden"))],
+    )
+    submit = SubmitField(_l("Cambiar contraseña"))
