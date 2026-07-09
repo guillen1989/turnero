@@ -1,6 +1,6 @@
 from urllib.parse import quote as _urlquote
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, current_app, jsonify, render_template, request
 from flask_login import current_user, login_required
 from sqlalchemy import and_, exists, extract, or_
 from sqlalchemy.orm import contains_eager, joinedload, selectinload
@@ -370,7 +370,8 @@ def index():
             compat_por_pub=compat_por_pub,
             mostrar_nombres_por_pub=mostrar_nombres_por_pub,
         )
-    return render_template("main/index.html")
+    demo_login_enabled = bool(current_app.config.get("DEMO_LOGIN_EMAIL"))
+    return render_template("main/index.html", demo_login_enabled=demo_login_enabled)
 
 
 @bp.get("/cambios")

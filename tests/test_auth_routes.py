@@ -308,6 +308,20 @@ def test_login_demo_deshabilitado_devuelve_404(client, db):
     assert resp.status_code == 404
 
 
+# --- Botón demo en la portada (junto a "Crear cuenta"/"Entrar") ---
+
+def test_portada_no_muestra_boton_demo_si_no_configurado(client, db):
+    resp = client.get("/")
+    assert "Probar con una cuenta demo".encode() not in resp.data
+
+
+def test_portada_muestra_boton_demo_si_configurado(client, db, app, monkeypatch):
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    resp = client.get("/")
+    assert "Probar con una cuenta demo".encode() in resp.data
+
+
 def test_login_demo_exitoso_redirige(client, db, app, monkeypatch):
     client.post("/auth/registro", data=_datos_registro(db, email="ana.garcia@test.es", password="Staging2026!", password2="Staging2026!"))
     Usuario.query.filter_by(email="ana.garcia@test.es").update({"onboarding_visto": True})
