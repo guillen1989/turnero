@@ -16,6 +16,19 @@ Botón "Probar con una cuenta demo" añadido también en la portada (`/`,
 `/auth/login`) — mismo flag `demo_login_enabled` (`DEMO_LOGIN_EMAIL`
 configurada), mismo endpoint `auth.login_demo`.
 
+`APP_BASE_URL` en staging: al probar el feedback en staging tras el fix de
+producción, el email volvió a rebotar — el enlace usaba
+`turnero-staging.up.railway.app` (mismo problema que producción, staging
+nunca tuvo dominio propio). Corregido igual que producción: dominio
+`staging.turnero.xyz` añadido en Railway (servicio `turnero`, entorno
+`staging`) y `APP_BASE_URL=https://staging.turnero.xyz` configurada en ese
+servicio. Importante: NO apuntar `APP_BASE_URL` de staging a
+`app.turnero.xyz` (el de producción) — el email quedaría enlazando a la
+app de producción con tokens/datos de la BD de staging, rota. Pendiente
+de acción manual del usuario (no lo puede hacer el agente): añadir en el
+DNS de `turnero.xyz` el `CNAME staging → ezh8vdkw.up.railway.app` y el
+`TXT _railway-verify.staging → railway-verify=03ea54e3d41023334f9b4de5d77f467d20e0c8a4f159b483a68e7b28b8f7ab79`.
+
 Siguiente: decidir el próximo punto del backlog.
 
 Añadido `APP_BASE_URL` + dominio propio `app.turnero.xyz` (ver más abajo).
