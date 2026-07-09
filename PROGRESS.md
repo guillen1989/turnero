@@ -7,8 +7,10 @@ Fase 9 — Mejoras post-MVP
 Ronda 2 del calendario completa (Pasos 1-6) + fallos e2e corregidos +
 bandas de color con letra legible + oportunidades a 3 (sintéticas)
 incluidas en el calendario + salto directo a publicaciones cuando el día
-solo tiene un tipo de turno. Rama `staging`, con push a origin. Siguiente:
-cuando se decida abordar B18 (modo "Juntes de noches"), retomar desde ahí.
+solo tiene un tipo de turno + fix de las sintéticas mostradas al revés en
+ofertas/peticiones (ver más abajo). Rama `staging`, con push a origin.
+Siguiente: cuando se decida abordar B18 (modo "Juntes de noches"), retomar
+desde ahí.
 
 Nota: `e2e/test_sintetica_staging.py` apunta a la app real de Railway
 (STAGING_URL) y no se ejecuta salvo necesidad explícita, para no seguir
@@ -146,6 +148,7 @@ así que añadir esa lógica era sobre-ingeniería para el problema real.
 - [x] Añadir APP_URL al .env local y smoke test integrado en GitHub Actions post-deploy ✓
 - [x] fix(admin): la contraseña temporal al restablecer cuenta desde el panel de feedback ya no se muestra en un flash message (el admin reportó que no lo veía) · ahora se envía como `Notificacion` tipo `contrasena_restablecida` (nuevo campo `mensaje` en el modelo, migración `9310c6bbcb55`) al usuario afectado, visible en /avisos y contando en el badge de la campana · 5 tests nuevos
 - [x] feat(push): aviso push a todos los administradores (`es_admin=True`) al crearse cualquier Feedback (formulario de contacto o solicitud de recuperación) · las solicitudes de recuperación de contraseña van marcadas como urgentes (cabecera `Urgency: high` en `enviar_push`, nuevo parámetro `urgente`) · 5 tests nuevos
+- [x] fix(calendario): oportunidades a 3 mostradas al revés (ofertas↔peticiones) — reportado por el usuario en producción (turno del 6/8 de Victoria). Causa: `crear_pub_sintetica()` guarda como `turno_cedido` de la sintética el ACEPTADO real de pub_a (una oferta) y como `turno_aceptado` el CEDIDO real de pub_b (una petición) — necesario para el matching de la cadena a 3 (`buscar_sinteticas_que_coinciden_con` compara cedido-con-cedido y aceptado-con-aceptado del mismo día, no en cruce). `construir_calendario_mes` aplicaba a las sintéticas el mismo mapeo genérico que a las publicaciones normales (`turno_cedido`→peticiones, `turno_aceptado`→ofertas), mostrándolas invertidas. Corregido separando candidatas normales/sintéticas y consultando la tabla contraria para las sintéticas. Verificado contra producción (Railway, solo lectura) antes de tocar código: pub 785 de Victoria (real) correcta en peticiones; sintéticas 787/789/790 con esa misma noche mal clasificada en ofertas, confirmando la hipótesis. Los dos tests que fijaban el comportamiento anterior como correcto se corrigieron + 1 test de regresión nuevo que reproduce el caso real vía `crear_pub_sintetica()` · 732 tests unitarios passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
