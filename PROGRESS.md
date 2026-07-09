@@ -4,18 +4,13 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Recuperación de contraseña self-service completa (ver más abajo). Rama
-`staging`, con push a origin. Siguiente: cuando se decida abordar B18
-(modo "Juntes de noches"), retomar desde ahí.
-
-Pendiente de acción manual del usuario (no lo puede hacer el agente):
-crear cuenta en resend.com, verificar un dominio propio en
-resend.com/domains, generar una API key, y configurar `RESEND_API_KEY` y
-`RESEND_FROM_EMAIL` como variables de entorno en Railway (production y
-staging). Hasta entonces, `enviar_email()` detecta la ausencia de
-`RESEND_API_KEY`, no intenta conectar, registra un warning y devuelve
-`False` sin romper el flujo — el fallback manual de admin
-(`/admin/feedback/<id>/restablecer-contrasena`) sigue disponible.
+Recuperación de contraseña self-service completa + email a admins por
+feedback nuevo (ver más abajo). Dominio `turnero.xyz` comprado en
+Hostinger, verificado en Resend (DNS propagado: DKIM + MX/SPF en
+`send.turnero.xyz`) y `RESEND_API_KEY`/`RESEND_FROM_EMAIL` ya
+configuradas en Railway — el envío de email funciona en producción.
+Rama `staging`, con push a origin. Siguiente: cuando se decida abordar
+B18 (modo "Juntes de noches"), retomar desde ahí.
 
 Nota: `e2e/test_sintetica_staging.py` apunta a la app real de Railway
 (STAGING_URL) y no se ejecuta salvo necesidad explícita, para no seguir
@@ -158,6 +153,7 @@ así que añadir esa lógica era sobre-ingeniería para el problema real.
 - [x] feat(auth): modelo y migración `PasswordResetToken` (token de un solo uso, hash SHA-256 en BD, expiración a 60 min) · columnas `fecha_creacion`/`fecha_expiracion` declaradas `timezone=True` a propósito: con `TIMESTAMP` naive, la sesión local de Postgres (`Europe/Madrid`) reinterpreta el datetime aware UTC como hora local al guardarlo, desplazando la expiración ~2h y rompiendo la comparación tras un commit/recarga — detectado por un test que fallaba de forma intermitente
 - [x] feat(auth): servicio `password_reset.py` — `generar_token_reset`/`obtener_usuario_por_token`/`consumir_token`, invalida cualquier token anterior sin usar del mismo usuario al generar uno nuevo · 8 tests
 - [x] feat(auth): recuperación de contraseña self-service — sustituye el flujo manual (el usuario pedía por un ticket de feedback y el admin generaba una contraseña temporal a mano) por `/auth/recuperar-contrasena` + `/auth/restablecer-contrasena/<token>`, con el mismo mensaje de éxito exista o no el email (anti-enumeración) y envío del enlace por email vía Resend · el reseteo manual de admin (`/admin/feedback/<id>/restablecer-contrasena`) se mantiene como fallback si el email no llega · 12 tests · 758 tests passing
+- [x] feat(feedback): email a todos los admins (además del push ya existente) cuando llega un feedback nuevo de tipo error/sugerencia · excluye a propósito el tipo `recuperacion`, que ya está cubierto por el flujo self-service y solo queda como fallback manual poco frecuente · reutiliza la misma consulta de admins que ya usaba el push · 5 tests
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

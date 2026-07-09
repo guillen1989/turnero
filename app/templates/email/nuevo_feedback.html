@@ -1,0 +1,12 @@
+<div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+  <h2 style="color: #1a1a1a;">{{ _('Nuevo mensaje de feedback') }}</h2>
+  <p><strong>{{ _('Tipo:') }}</strong> {{ tipo_legible }}</p>
+  {% if fb.email_contacto %}
+  <p><strong>{{ _('Contacto:') }}</strong> {{ fb.email_contacto }}</p>
+  {% endif %}
+  <p><strong>{{ _('Mensaje:') }}</strong></p>
+  <p style="white-space: pre-wrap;">{{ fb.descripcion }}</p>
+  <p style="margin-top: 32px;">
+    <a href="{{ url_for('admin.feedback', _external=True) }}">{{ _('Ver en el panel de administración') }}</a>
+  </p>
+</div>

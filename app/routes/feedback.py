@@ -5,6 +5,7 @@ from flask_login import current_user, login_required
 from app.extensions import db
 from app.models import Feedback, Usuario
 from app.push.sender import enviar_push
+from app.services.email import enviar_email
 
 bp = Blueprint("feedback", __name__)
 
@@ -16,8 +17,15 @@ TIPOS = {
 
 
 def _notificar_admins_nuevo_feedback(fb):
-    """Avisa por push a los administradores. Las solicitudes de recuperación
-    de contraseña se marcan como urgentes porque bloquean el acceso del usuario."""
+    """Avisa a los administradores de un feedback nuevo, por push y por email.
+
+    Las solicitudes de recuperación de contraseña se marcan como urgentes en
+    el push porque bloquean el acceso del usuario, pero no generan email: el
+    flujo self-service (/auth/recuperar-contrasena) ya cubre ese caso y este
+    tipo de feedback solo queda como fallback manual poco frecuente.
+    """
+    admins = Usuario.query.filter_by(es_admin=True).all()
+
     urgente = fb.tipo == "recuperacion"
     if urgente:
         titulo = _("Recuperación de contraseña (urgente)")
@@ -26,8 +34,14 @@ def _notificar_admins_nuevo_feedback(fb):
         titulo = _("Nuevo mensaje de feedback")
         cuerpo = fb.descripcion[:120]
 
-    for admin in Usuario.query.filter_by(es_admin=True).all():
+    for admin in admins:
         enviar_push(admin, titulo, cuerpo, url="/admin/feedback", urgente=urgente)
+
+    if fb.tipo != "recuperacion":
+        asunto = _("Nuevo feedback: %(tipo)s", tipo=TIPOS.get(fb.tipo, fb.tipo))
+        cuerpo_html = render_template("email/nuevo_feedback.html", fb=fb, tipo_legible=TIPOS.get(fb.tipo, fb.tipo))
+        for admin in admins:
+            enviar_email(admin.email, asunto, cuerpo_html)
 
 
 @bp.route("/feedback", methods=["GET", "POST"])

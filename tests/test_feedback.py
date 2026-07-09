@@ -242,6 +242,84 @@ def test_feedback_sin_admins_no_falla(client, db):
     assert resp.status_code == 302
 
 
+# --- Email a administradores al recibir feedback (excepto recuperación) ---
+
+def _crear_admin(email="admin@test.es"):
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    admin = registrar_usuario("Admin", email, "pass1234", "H", "U", cat.id)
+    admin.es_admin = True
+    _db.session.commit()
+    return admin
+
+
+def test_nuevo_feedback_tipo_error_envia_email_al_admin(client, db):
+    _crear_admin("admin@test.es")
+
+    with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+        client.post("/feedback", data={
+            "tipo": "error",
+            "descripcion": "La app no carga en Safari.",
+            "email_contacto": "usuario@test.es",
+        })
+
+    mock_enviar.assert_called_once()
+    assert mock_enviar.call_args[0][0] == "admin@test.es"
+
+
+def test_nuevo_feedback_tipo_sugerencia_envia_email_al_admin(client, db):
+    _crear_admin("admin@test.es")
+
+    with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+        client.post("/feedback", data={
+            "tipo": "sugerencia",
+            "descripcion": "Añadir filtro por fecha.",
+            "email_contacto": "usuario@test.es",
+        })
+
+    mock_enviar.assert_called_once()
+
+
+def test_nuevo_feedback_tipo_recuperacion_no_envia_email(client, db):
+    _crear_admin("admin@test.es")
+
+    with patch("app.routes.feedback.enviar_email") as mock_enviar:
+        client.post("/feedback", data={
+            "tipo": "recuperacion",
+            "descripcion": "Solicitud de recuperación.",
+            "email_contacto": "usuario@test.es",
+        })
+
+    mock_enviar.assert_not_called()
+
+
+def test_nuevo_feedback_envia_email_a_todos_los_admins(client, db):
+    _crear_admin("admin1@test.es")
+    _crear_admin("admin2@test.es")
+
+    with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+        client.post("/feedback", data={
+            "tipo": "error",
+            "descripcion": "Fallo visible para ambos admins.",
+            "email_contacto": "usuario@test.es",
+        })
+
+    destinatarios = {llamada.args[0] for llamada in mock_enviar.call_args_list}
+    assert destinatarios == {"admin1@test.es", "admin2@test.es"}
+
+
+def test_feedback_sin_admins_no_envia_email_ni_falla(client, db):
+    with patch("app.routes.feedback.enviar_email") as mock_enviar:
+        resp = client.post("/feedback", data={
+            "tipo": "error",
+            "descripcion": "Sin admins en el sistema.",
+            "email_contacto": "usuario@test.es",
+        }, follow_redirects=False)
+
+    assert resp.status_code == 302
+    mock_enviar.assert_not_called()
+
+
 def test_admin_restablecer_contrasena_cambia_password(client, db):
     u = _login(client, email="admin@test.es", es_admin=True)
     usuario_target = registrar_usuario("Víctima", "victima@test.es", "pass_original", "H", "U",
