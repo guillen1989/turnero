@@ -872,6 +872,44 @@ body {
 .calendario-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
 .calendario-lista-item { width: 100%; text-align: left; padding: 0.6rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 0.95rem; cursor: pointer; }
 .calendario-lista-item:hover { background: #f1f5f9; }
+
+/* ── Juntes de noches: filas-semana + tira desplegable trabaja/libra ── */
+.juntes-leyenda { display: flex; gap: 1.1rem; flex-wrap: wrap; align-items: center; font-size: 0.78rem; color: #4b5563; margin: 0 0 0.85rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.55rem 0.85rem; }
+.juntes-leyenda-item { display: flex; align-items: center; gap: 0.4rem; }
+.juntes-leyenda-marca { width: 0.7rem; height: 0.7rem; border-radius: 3px; flex: none; }
+.juntes-leyenda-marca--trabaja { background: #10b981; }
+.juntes-leyenda-marca--libra { background: #f97316; }
+
+.juntes-semanas { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.1rem; }
+.juntes-semana { border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; overflow: hidden; }
+.juntes-semana[open] { border-color: #9333ea; }
+.juntes-semana-cabecera { list-style: none; cursor: pointer; padding: 0.85rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.juntes-semana-cabecera::-webkit-details-marker { display: none; }
+.juntes-semana-cabecera:focus-visible { outline: 2px solid #005a9c; outline-offset: -2px; }
+.juntes-semana--vacia .juntes-semana-cabecera { cursor: default; }
+.juntes-rango { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; }
+.juntes-rango-nota { font-weight: 500; color: #6b7280; font-size: 0.8rem; margin-left: 0.25rem; }
+.juntes-semana-meta { display: flex; align-items: center; gap: 0.7rem; flex: none; }
+.juntes-contador { font-size: 0.78rem; font-weight: 700; padding: 0.22rem 0.65rem; border-radius: 999px; background: #ede9fe; color: #5b21b6; white-space: nowrap; }
+.juntes-contador--vacio { background: #f9fafb; color: #6b7280; font-weight: 600; }
+.juntes-chevron { width: 0.55rem; height: 0.55rem; border-right: 2px solid #6b7280; border-bottom: 2px solid #6b7280; transform: rotate(45deg); transition: transform 0.18s ease; flex: none; }
+.juntes-semana[open] .juntes-chevron { transform: rotate(-135deg); }
+
+.juntes-semana-cuerpo { padding: 0 1rem 1rem; border-top: 1px solid #e5e7eb; }
+.juntes-oferta { padding: 0.9rem 0; }
+.juntes-oferta + .juntes-oferta { border-top: 1px solid #e5e7eb; }
+.juntes-oferta-cabecera { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.55rem; flex-wrap: wrap; }
+.juntes-oferta-nombre { font-size: 0.9rem; font-weight: 700; }
+.juntes-oferta-resumen { font-size: 0.78rem; color: #6b7280; }
+.juntes-oferta-link { font-size: 0.78rem; color: #005a9c; text-decoration: none; font-weight: 600; white-space: nowrap; }
+.juntes-oferta-link:hover { text-decoration: underline; }
+
+.juntes-tira { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.juntes-dia { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; border-radius: 7px; padding: 0.4rem 0; min-height: 44px; }
+.juntes-dia--trabaja { background: #10b981; color: #ffffff; }
+.juntes-dia--libra { background: #ffedd5; color: #9a3412; }
+.juntes-dia-letra { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em; opacity: 0.85; }
+.juntes-dia-estado { font-size: 0.62rem; font-weight: 700; }
 .calendario-detalle { padding: 0.25rem 0; }
 .calendario-publicar-fijo { margin: 1rem 0; text-align: center; }
 .calendario-btn-publicar { display: inline-block; margin-top: 0.75rem; text-decoration: none; text-align: center; }
