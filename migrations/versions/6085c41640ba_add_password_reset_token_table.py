@@ -1,7 +1,7 @@
 """add password_reset_token table
 
 Revision ID: 6085c41640ba
-Revises: 40d574d237f8
+Revises: 9310c6bbcb55
 Create Date: 2026-07-09 11:53:01.747590
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '6085c41640ba'
-down_revision = '40d574d237f8'
+down_revision = '9310c6bbcb55'
 branch_labels = None
 depends_on = None
 

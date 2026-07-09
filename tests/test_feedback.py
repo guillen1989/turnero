@@ -2,7 +2,7 @@
 from unittest.mock import patch
 
 from app.extensions import db as _db
-from app.models import Categoria, Feedback, Usuario, insertar_categorias_semilla
+from app.models import Categoria, Feedback, Notificacion, Usuario, insertar_categorias_semilla
 from app.services.registro import registrar_usuario
 
 
@@ -203,6 +203,45 @@ def test_admin_marcar_leidos_bulk_sin_ids_no_da_error(client, db):
 
 # --- Restablecimiento manual por el admin (fallback si el email no llega) ---
 
+# --- Push a administradores al recibir feedback ---
+
+def _admin_con_push(app, client):
+    admin = _login(client, email="admin@test.es", es_admin=True)
+    admin.push_subscription = '{"endpoint": "https://push.example.com/x", "keys": {"p256dh": "A", "auth": "B"}}'
+    _db.session.commit()
+    client.get("/auth/logout", follow_redirects=False)
+    old_key = app.config.get("VAPID_PRIVATE_KEY")
+    old_email = app.config.get("VAPID_CLAIM_EMAIL")
+    app.config["VAPID_PRIVATE_KEY"] = "fake-key"
+    app.config["VAPID_CLAIM_EMAIL"] = "admin@test.es"
+    return admin, old_key, old_email
+
+
+def test_nuevo_feedback_envia_push_a_admin(app, client, db):
+    admin, old_key, old_email = _admin_con_push(app, client)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            client.post("/feedback", data={
+                "tipo": "error",
+                "descripcion": "La app no carga en Safari.",
+                "email_contacto": "usuario@test.es",
+            })
+            mock_wp.assert_called_once()
+            assert mock_wp.call_args.kwargs.get("headers") is None
+    finally:
+        app.config["VAPID_PRIVATE_KEY"] = old_key
+        app.config["VAPID_CLAIM_EMAIL"] = old_email
+
+
+def test_feedback_sin_admins_no_falla(client, db):
+    resp = client.post("/feedback", data={
+        "tipo": "error",
+        "descripcion": "Sin admins en el sistema.",
+        "email_contacto": "usuario@test.es",
+    }, follow_redirects=False)
+    assert resp.status_code == 302
+
+
 def test_admin_restablecer_contrasena_cambia_password(client, db):
     u = _login(client, email="admin@test.es", es_admin=True)
     usuario_target = registrar_usuario("Víctima", "victima@test.es", "pass_original", "H", "U",
@@ -239,3 +278,34 @@ def test_admin_restablecer_contrasena_marca_feedback_leido(client, db):
     client.post(f"/admin/feedback/{fb.id}/restablecer-contrasena")
     _db.session.refresh(fb)
     assert fb.leido is True
+
+
+def test_admin_restablecer_contrasena_crea_aviso_para_el_usuario(client, db):
+    """La contraseña temporal se envía como aviso (campana) al usuario, no como flash al admin."""
+    _login(client, email="admin@test.es", es_admin=True)
+    usuario_target = registrar_usuario("Víctima", "victima3@test.es", "pass_original", "H", "U",
+                                        Categoria.query.filter_by(nombre="Enfermería").first().id)
+    fb = Feedback(tipo="recuperacion", descripcion="Solicitud.", email_contacto="victima3@test.es")
+    _db.session.add(fb)
+    _db.session.commit()
+
+    client.post(f"/admin/feedback/{fb.id}/restablecer-contrasena")
+
+    aviso = Notificacion.query.filter_by(usuario_id=usuario_target.id, tipo="contrasena_restablecida").first()
+    assert aviso is not None
+    assert aviso.mensaje
+    contrasena_temporal = aviso.mensaje.split()[-1]
+    assert usuario_target.check_password(contrasena_temporal)
+
+
+def test_admin_restablecer_contrasena_no_muestra_flash_con_password(client, db):
+    """No debe filtrarse la contraseña temporal en un flash message al admin."""
+    _login(client, email="admin@test.es", es_admin=True)
+    registrar_usuario("Víctima", "victima4@test.es", "pass_original", "H", "U",
+                       Categoria.query.filter_by(nombre="Enfermería").first().id)
+    fb = Feedback(tipo="recuperacion", descripcion="Solicitud.", email_contacto="victima4@test.es")
+    _db.session.add(fb)
+    _db.session.commit()
+
+    resp = client.post(f"/admin/feedback/{fb.id}/restablecer-contrasena", follow_redirects=True)
+    assert "Contraseña temporal para" not in resp.data.decode()

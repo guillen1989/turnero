@@ -735,11 +735,17 @@ def feedback_restablecer_contrasena(id):
     contrasena_temporal = secrets.token_urlsafe(8)
     usuario.set_password(contrasena_temporal)
     fb.leido = True
+    db.session.add(Notificacion(
+        usuario_id=usuario.id,
+        tipo="contrasena_restablecida",
+        mensaje=_("Un administrador te ha restablecido la contraseña. Nueva contraseña temporal: %(pwd)s",
+                   pwd=contrasena_temporal),
+    ))
     db.session.commit()
 
     flash(
-        _("Contraseña temporal para %(email)s: %(pwd)s — Comunícasela por email o mensaje.",
-          email=fb.email_contacto, pwd=contrasena_temporal),
+        _("Contraseña restablecida para %(email)s. Se le ha enviado un aviso con la nueva contraseña.",
+          email=fb.email_contacto),
         "success",
     )
     return redirect(url_for("admin.feedback"))

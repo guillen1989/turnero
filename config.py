@@ -23,7 +23,7 @@ class Config:
     # Envío de email transaccional vía Resend (HTTPS API, no SMTP: Railway
     # bloquea los puertos SMTP salientes en el plan Hobby).
     RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
-    RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "noreply@turnero.app")
+    RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "noreply@turnero.xyz")
     # Botón "Entrar con cuenta demo" en el login: solo aparece si están configuradas
     # (p. ej. en staging, con el usuario creado por scripts/seed_staging.py).
     DEMO_LOGIN_EMAIL = os.environ.get("DEMO_LOGIN_EMAIL", "")

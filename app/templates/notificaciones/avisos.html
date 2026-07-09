@@ -16,7 +16,19 @@
   <ul class="avisos-list">
     {% for aviso in avisos %}
     <li class="aviso-row{% if not aviso.leida %} aviso-row--nueva{% endif %}">
-      {% if aviso.publicacion %}
+      {% if aviso.tipo == 'contrasena_restablecida' %}
+        <div class="aviso-info">
+          <span class="aviso-tipo tipo-badge tipo-badge--admin">{{ _('Cuenta') }}</span>
+          <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        <p class="aviso-mensaje">{{ aviso.mensaje }}</p>
+        <div class="aviso-actions">
+          <form method="post" action="{{ url_for('notificaciones.borrar_aviso', notif_id=aviso.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-ghost aviso-btn-borrar" title="{{ _('Borrar aviso') }}">✕</button>
+          </form>
+        </div>
+      {% elif aviso.publicacion %}
         <div class="aviso-info">
           <span class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</span>
           {% if aviso.tipo == 'contraoferta' %}

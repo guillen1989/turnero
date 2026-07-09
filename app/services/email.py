@@ -17,7 +17,7 @@ def enviar_email(destinatario, asunto, cuerpo_html):
         current_app.logger.warning("RESEND_API_KEY no configurada: email no enviado a %s", destinatario)
         return False
 
-    remitente = current_app.config.get("RESEND_FROM_EMAIL", "noreply@turnero.app")
+    remitente = current_app.config.get("RESEND_FROM_EMAIL", "noreply@turnero.xyz")
 
     try:
         respuesta = requests.post(
