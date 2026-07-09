@@ -1,8 +1,21 @@
 import requests
-from flask import current_app
+from flask import current_app, url_for
 
 RESEND_API_URL = "https://api.resend.com/emails"
 _TIMEOUT_SEGUNDOS = 10
+
+
+def url_absoluta(endpoint, **values):
+    """Construye una URL absoluta para usar en emails.
+
+    Usa APP_BASE_URL (dominio propio) en vez del host de la petición entrante
+    cuando está configurada: algunos filtros de correo corporativos bloquean
+    o rebotan enlaces al dominio compartido *.up.railway.app.
+    """
+    base = current_app.config.get("APP_BASE_URL", "").rstrip("/")
+    if base:
+        return base + url_for(endpoint, **values)
+    return url_for(endpoint, _external=True, **values)
 
 
 def enviar_email(destinatario, asunto, cuerpo_html):

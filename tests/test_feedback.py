@@ -282,6 +282,32 @@ def test_nuevo_feedback_email_incluye_descripcion(client, db):
     mock_enviar.assert_called_once()
     cuerpo_html = mock_enviar.call_args.args[2]
     assert "Sería genial poder exportar el calendario." in cuerpo_html
+
+
+def test_nuevo_feedback_email_usa_app_base_url_si_esta_configurada(app, client, db):
+    # El enlace del email debe apuntar siempre al dominio propio configurado,
+    # no al host de la petición entrante (p. ej. *.up.railway.app, que algunos
+    # filtros de correo corporativos bloquean).
+    cat = Categoria.query.filter_by(nombre="Enfermería").first() or (
+        insertar_categorias_semilla() or Categoria.query.filter_by(nombre="Enfermería").first()
+    )
+    admin = registrar_usuario("Admin", "admin@test.es", "pass1234", "H", "U", cat.id)
+    admin.es_admin = True
+    _db.session.commit()
+
+    app.config["APP_BASE_URL"] = "https://app.turnero.xyz"
+    try:
+        with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+            client.post("/feedback", data={
+                "tipo": "error",
+                "descripcion": "La app no carga en Safari.",
+                "email_contacto": "usuario@test.es",
+            })
+    finally:
+        app.config["APP_BASE_URL"] = ""
+
+    cuerpo_html = mock_enviar.call_args.args[2]
+    assert "https://app.turnero.xyz/admin/feedback" in cuerpo_html
     assert "usuario@test.es" in cuerpo_html
 
 

@@ -13,7 +13,7 @@ from app.forms.auth import (
     SolicitarResetForm, RestablecerPasswordForm,
 )
 from app.models.usuario import Usuario
-from app.services.email import enviar_email
+from app.services.email import enviar_email, url_absoluta
 from app.services.password_reset import (
     TOKEN_TTL_MINUTOS, consumir_token, generar_token_reset, obtener_usuario_por_token,
 )
@@ -206,7 +206,7 @@ def recuperar_contrasena():
         usuario = Usuario.query.filter_by(email=email).first()
         if usuario:
             token = generar_token_reset(usuario)
-            enlace = url_for("auth.restablecer_password", token=token, _external=True)
+            enlace = url_absoluta("auth.restablecer_password", token=token)
             cuerpo_html = render_template(
                 "email/recuperar_password.html",
                 usuario=usuario, enlace=enlace, ttl_minutos=TOKEN_TTL_MINUTOS,

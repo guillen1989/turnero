@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 from app.extensions import db
 from app.models import Feedback, Usuario
 from app.push.sender import enviar_push
-from app.services.email import enviar_email
+from app.services.email import enviar_email, url_absoluta
 
 bp = Blueprint("feedback", __name__)
 
@@ -35,7 +35,7 @@ def _enviar_email_admins_nuevo_feedback(fb):
     """Avisa por email a los administradores. Complementa el push: el push
     depende de que el admin tenga la suscripción activa en ese navegador,
     mientras que el email siempre llega."""
-    enlace = url_for("admin.feedback", _external=True)
+    enlace = url_absoluta("admin.feedback")
     cuerpo_html = render_template(
         "email/nuevo_feedback.html",
         tipo_label=TIPOS.get(fb.tipo, fb.tipo),
