@@ -266,3 +266,42 @@ def test_cadena_4_publicacion_se_confirma_cuando_todos_confirman(db):
     assert pub_pedro.estado == "confirmada"
     assert pub_maria.estado == "confirmada"
     assert pub_luis.estado == "confirmada"
+
+
+# --- Integración con la ruta de publicar ---
+
+def test_publicar_crea_match_cadena_4_cuando_hay_ciclo(client, db):
+    """Al publicar la cuarta publicación que cierra el ciclo se crea un cadena_4 match."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "H1", "Urgencias", cat.id)
+    maria = registrar_usuario("María", "maria@test.es", "password123", "H1", "Urgencias", cat.id)
+    luis = registrar_usuario("Luis", "luis@test.es", "password123", "H1", "Urgencias", cat.id)
+
+    gid = ana.unidad.grupo_intercambio_id
+    fr_m = FranjaHoraria.query.filter_by(grupo_intercambio_id=gid, nombre="Mañana").first()
+    fr_t = FranjaHoraria.query.filter_by(grupo_intercambio_id=gid, nombre="Tarde").first()
+    fr_n = FranjaHoraria.query.filter_by(grupo_intercambio_id=gid, nombre="Noche").first()
+
+    dia1 = date.today() + timedelta(days=1)
+    dia2 = date.today() + timedelta(days=2)
+    dia3 = date.today() + timedelta(days=3)
+    dia4 = date.today() + timedelta(days=4)
+
+    _pub(ana, dia1, fr_m, dia4, fr_m)
+    _pub(pedro, dia2, fr_t, dia1, fr_m)
+    _pub(maria, dia3, fr_n, dia2, fr_t)
+
+    client.post("/auth/login", data={"email": "luis@test.es", "password": "password123"})
+    client.post("/publicar", data={
+        "fecha_cedida_0": dia4.isoformat(),
+        "franja_cedida_0": fr_m.id,
+        "fecha_aceptada_0": dia3.isoformat(),
+        "franja_aceptada_0": fr_n.id,
+    })
+
+    match = MatchCambio.query.filter_by(tipo="cadena_4").first()
+    assert match is not None
+    assert match.estado == "propuesto"
+    assert MatchParticipacion.query.filter_by(match_id=match.id).count() == 4

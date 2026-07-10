@@ -10,10 +10,13 @@ mismo patrón que la cadena a 3 (B13). Paso 1 completado: motor puro
 servicio `buscar_cadenas_4_para`/`crear_match_cadena_4` (triple bucle
 anidado, ciclo completo, sin sintéticas todavía) en
 `app/matching/service.py` · 12 tests en `tests/test_cadena_4.py` mirroring
-`test_cadena_3.py`. Siguiente paso: enganchar `buscar_cadenas_4_para`/
-`crear_match_cadena_4` en las 3 rutas que ya disparan cadena_3
-(`/publicar`, editar, contraoferta — `app/routes/publicaciones.py`), con
-test de integración de ruta. Alcance completo de B19 (visto con el usuario):
+`test_cadena_3.py`. Paso 3 completado: `buscar_cadenas_4_para`/`crear_match_cadena_4` enganchados
+en las 3 rutas que ya disparan cadena_3 (`/publicar`, editar, contraoferta
+— `app/routes/publicaciones.py`) · 1 test de integración de ruta nuevo.
+Siguiente paso: generalizar el badge hardcodeado `match.tipo == 'cadena_3'`
+en `app/templates/main/dashboard.html` para reconocer también `cadena_4`
+("¡Cambio a 4 bandas!" + CSS `.match--cadena-4`). Alcance completo de B19
+(visto con el usuario):
 detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
 cadena a 3, y una preferencia de usuario para mostrar/ocultar oportunidades
