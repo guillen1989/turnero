@@ -124,20 +124,31 @@ def test_analytics_data_incluye_totals(client, db):
     data = json.loads(resp.data)
     assert "totals" in data
     for key in ("usuarios", "hospitales", "unidades", "categorias",
-                "publicaciones", "sinteticas", "matches", "confirmados", "eliminadas"):
+                "publicaciones", "oportunidades_3", "oportunidades_4",
+                "matches", "confirmados", "eliminadas"):
         assert key in data["totals"]
 
 
-def test_analytics_data_totals_cuenta_sinteticas(client, db):
+def test_analytics_data_totals_distingue_oportunidades_3_y_4(client, db):
+    """El contador de sintéticas se reparte entre oportunidades a 3 (sin banda
+    intermedia) y a 4 (con banda intermedia), sin mezclarlos."""
     from app.models import PublicacionCambio
     admin = _setup_admin(client)
+    intermedio = PublicacionCambio(usuario_id=admin.id, tipo="cambio")
+    _db.session.add(intermedio)
+    _db.session.flush()
     _db.session.add(PublicacionCambio(usuario_id=admin.id, tipo="cambio", es_sintetica=True))
     _db.session.add(PublicacionCambio(usuario_id=admin.id, tipo="cambio", es_sintetica=True))
+    _db.session.add(PublicacionCambio(
+        usuario_id=admin.id, tipo="cambio", es_sintetica=True,
+        sintetica_pub_intermedio_id=intermedio.id,
+    ))
     _db.session.commit()
 
     resp = client.get("/admin/analytics/data?granularity=month")
     data = json.loads(resp.data)
-    assert data["totals"]["sinteticas"] == 2
+    assert data["totals"]["oportunidades_3"] == 2
+    assert data["totals"]["oportunidades_4"] == 1
 
 
 def test_analytics_data_totals_cuenta_eliminadas(client, db):

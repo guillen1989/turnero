@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-10 23:47+0200\n"
+"POT-Creation-Date: 2026-07-10 23:57+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: es <LL@li.org>\n"
@@ -846,8 +846,8 @@ msgstr "Unidades"
 msgid "Categorías"
 msgstr "Categorías"
 
-#: app/templates/admin/analytics.html:41 app/templates/admin/analytics.html:95
-#: app/templates/admin/analytics.html:217
+#: app/templates/admin/analytics.html:41 app/templates/admin/analytics.html:99
+#: app/templates/admin/analytics.html:222
 msgid "Cambios publicados"
 msgstr "Cambios publicados"
 
@@ -855,75 +855,82 @@ msgstr "Cambios publicados"
 msgid "Cambios activos"
 msgstr "Cambios activos"
 
-#: app/templates/admin/analytics.html:49 app/templates/admin/analytics.html:96
-#: app/templates/admin/analytics.html:233
+#: app/templates/admin/analytics.html:49
+#: app/templates/admin/analytics.html:100
+#: app/templates/admin/analytics.html:238
 msgid "Matches"
 msgstr "Matches"
 
 #: app/templates/admin/analytics.html:53
-#: app/templates/admin/analytics.html:241 app/templates/main/dashboard.html:28
+#: app/templates/admin/analytics.html:246 app/templates/main/dashboard.html:28
 msgid "Confirmados"
 msgstr "Confirmados"
 
 #: app/templates/admin/analytics.html:57
-msgid "Cambios sintéticos"
-msgstr "Cambios sintéticos"
+msgid "Oportunidades a 3"
+msgstr "Oportunidades a 3"
 
-#: app/templates/admin/analytics.html:61 app/templates/admin/analytics.html:97
+#: app/templates/admin/analytics.html:61
+msgid "Oportunidades a 4"
+msgstr "Oportunidades a 4"
+
+#: app/templates/admin/analytics.html:65
+#: app/templates/admin/analytics.html:101
 msgid "Cambios eliminados"
 msgstr "Cambios eliminados"
 
-#: app/templates/admin/analytics.html:65
+#: app/templates/admin/analytics.html:69
 msgid "Usuarios con planilla publicada"
 msgstr "Usuarios con planilla publicada"
 
-#: app/templates/admin/analytics.html:69 app/templates/admin/analytics.html:99
-#: app/templates/admin/analytics.html:249
+#: app/templates/admin/analytics.html:73
+#: app/templates/admin/analytics.html:103
+#: app/templates/admin/analytics.html:254
 msgid "Clics «Me interesa»"
 msgstr "Clics «Me interesa»"
 
-#: app/templates/admin/analytics.html:74
-#: app/templates/admin/analytics.html:104
+#: app/templates/admin/analytics.html:78
+#: app/templates/admin/analytics.html:108
 msgid "Granularidad"
 msgstr "Granularidad"
 
-#: app/templates/admin/analytics.html:75
-#: app/templates/admin/analytics.html:105
+#: app/templates/admin/analytics.html:79
+#: app/templates/admin/analytics.html:109
 msgid "Días"
 msgstr "Días"
 
-#: app/templates/admin/analytics.html:76
-#: app/templates/admin/analytics.html:106
+#: app/templates/admin/analytics.html:80
+#: app/templates/admin/analytics.html:110
 msgid "Semanas"
 msgstr "Semanas"
 
-#: app/templates/admin/analytics.html:77
-#: app/templates/admin/analytics.html:107
+#: app/templates/admin/analytics.html:81
+#: app/templates/admin/analytics.html:111
 msgid "Meses"
 msgstr "Meses"
 
-#: app/templates/admin/analytics.html:89
+#: app/templates/admin/analytics.html:93
 msgid "Evolución de un indicador"
 msgstr "Evolución de un indicador"
 
-#: app/templates/admin/analytics.html:93
+#: app/templates/admin/analytics.html:97
 msgid "Indicador"
 msgstr "Indicador"
 
-#: app/templates/admin/analytics.html:98
+#: app/templates/admin/analytics.html:102
 msgid "Planillas publicadas"
 msgstr "Planillas publicadas"
 
-#: app/templates/admin/analytics.html:100
+#: app/templates/admin/analytics.html:104
 msgid "Cambios confirmados"
 msgstr "Cambios confirmados"
 
-#: app/templates/admin/analytics.html:101
-#: app/templates/admin/analytics.html:225
+#: app/templates/admin/analytics.html:105
+#: app/templates/admin/analytics.html:230
 msgid "Cambios activos (acumulado)"
 msgstr "Cambios activos (acumulado)"
 
-#: app/templates/admin/analytics.html:209
+#: app/templates/admin/analytics.html:214
 msgid "Nuevos usuarios"
 msgstr "Nuevos usuarios"
 
@@ -2681,11 +2688,11 @@ msgstr "Esperando al otro usuario"
 msgid "y"
 msgstr "y"
 
-#: app/templates/main/dashboard.html:68 app/templates/main/dashboard.html:110
+#: app/templates/main/dashboard.html:68
 msgid "Tú libras:"
 msgstr "Tú libras:"
 
-#: app/templates/main/dashboard.html:75 app/templates/main/dashboard.html:114
+#: app/templates/main/dashboard.html:75
 msgid "Tú trabajas:"
 msgstr "Tú trabajas:"
 
@@ -2696,11 +2703,13 @@ msgstr "Tú trabajas:"
 msgid "cualquier turno"
 msgstr "cualquier turno"
 
-#: app/templates/main/dashboard.html:82 app/templates/main/dashboard.html:118
+#: app/templates/main/dashboard.html:82 app/templates/main/dashboard.html:110
+#: app/templates/main/dashboard.html:118
 msgid "libra:"
 msgstr "libra:"
 
-#: app/templates/main/dashboard.html:89 app/templates/main/dashboard.html:122
+#: app/templates/main/dashboard.html:89 app/templates/main/dashboard.html:114
+#: app/templates/main/dashboard.html:122
 msgid "trabaja:"
 msgstr "trabaja:"
 
@@ -3880,3 +3889,6 @@ msgstr "Ir al inicio"
 #~ msgstr ""
 #~ "No fue posible cerrar el cambio a 3 bandas. Los turnos pueden haber "
 #~ "cambiado."
+
+#~ msgid "Cambios sintéticos"
+#~ msgstr "Cambios sintéticos"
