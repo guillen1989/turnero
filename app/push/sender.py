@@ -15,6 +15,7 @@ _PREF_ATTR = {
     "match": "notif_match",
     "match_parcial": "notif_match",
     "confirmacion_parcial": "notif_confirmacion_parcial",
+    "desconfirmacion": "notif_confirmacion_parcial",
     "confirmado_total": "notif_confirmado_total",
     "publicacion": "notif_publicacion",
     "contraoferta": "notif_match",
@@ -27,6 +28,7 @@ _URL_POR_TIPO = {
     "match": "/?estado=compatible",
     "match_parcial": "/?estado=compatible",
     "confirmacion_parcial": "/?estado=pendiente",
+    "desconfirmacion": "/?estado=pendiente",
     "confirmado_total": "/?estado=confirmada",
     "publicacion": "/avisos",
     "contraoferta": "/avisos",
@@ -50,6 +52,11 @@ _TEXTOS = {
         "Turnero",
         "Tienes 1 cambio pendiente de confirmar",
         "Tienes {} cambios pendientes de confirmar",
+    ),
+    "desconfirmacion": (
+        "Turnero",
+        "Un compañero ha retirado su confirmación de un cambio",
+        "Hay {} compañeros que han retirado su confirmación de un cambio",
     ),
     "confirmado_total": (
         "Turnero",

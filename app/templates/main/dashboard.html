@@ -117,6 +117,12 @@
         {% if match.tipo == 'cadena_3' %}{{ _('Has confirmado. Esperando a los demás.') }}
         {% else %}{{ _('Has confirmado. Esperando al otro usuario.') }}{% endif %}
       </p>
+      <div class="match-acciones">
+        <form method="post" action="{{ url_for('matches.desconfirmar', match_id=match.id) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-secondary btn-sm">{{ _('Desconfirmar') }}</button>
+        </form>
+      </div>
       {% endif %}
     </div>
     {% endfor %}
