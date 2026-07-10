@@ -6,11 +6,14 @@ Fase 9 — Mejoras post-MVP
 ## Paso actual / siguiente paso
 B19 en marcha: "ocasiones a 4" (cadena de intercambio A→B→C→D→A), siguiendo el
 mismo patrón que la cadena a 3 (B13). Paso 1 completado: motor puro
-`detectar_cadena_4` en `app/matching/engine.py`. Siguiente paso: capa de
-servicio `buscar_cadenas_4_para`/`crear_match_cadena_4` en
-`app/matching/service.py` (ciclo completo, sin sintéticas todavía), con
-tests de integración en `tests/test_cadena_4.py` mirroring
-`test_cadena_3.py`. Alcance completo de B19 (visto con el usuario):
+`detectar_cadena_4` en `app/matching/engine.py`. Paso 2 completado: capa de
+servicio `buscar_cadenas_4_para`/`crear_match_cadena_4` (triple bucle
+anidado, ciclo completo, sin sintéticas todavía) en
+`app/matching/service.py` · 12 tests en `tests/test_cadena_4.py` mirroring
+`test_cadena_3.py`. Siguiente paso: enganchar `buscar_cadenas_4_para`/
+`crear_match_cadena_4` en las 3 rutas que ya disparan cadena_3
+(`/publicar`, editar, contraoferta — `app/routes/publicaciones.py`), con
+test de integración de ruta. Alcance completo de B19 (visto con el usuario):
 detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
 cadena a 3, y una preferencia de usuario para mostrar/ocultar oportunidades

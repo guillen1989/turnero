@@ -17,7 +17,12 @@ from app.models import (
     Unidad,
     Usuario,
 )
-from app.matching.engine import detectar_cadena_3, detectar_match_directo, detectar_match_regalo
+from app.matching.engine import (
+    detectar_cadena_3,
+    detectar_cadena_4,
+    detectar_match_directo,
+    detectar_match_regalo,
+)
 from app.push.sender import enviar_push_condicional
 from app.services.busquedas_guardadas import notificar_busquedas_guardadas
 from app.services.eventos import registrar_evento
@@ -435,6 +440,159 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
     enviar_push_condicional(pub_c.usuario, "match")
 
     for pub in (pub_a, pub_b, pub_c):
+        registrar_evento(pub.usuario_id, "match_found", match.id)
+    db.session.commit()
+
+    return match
+
+
+def _cadenas_4_existentes(pub_id):
+    """Frozensets de pub_ids para cadena_4 matches activos que incluyen pub_id."""
+    from sqlalchemy import select as sa_select
+
+    match_ids = db.session.execute(
+        sa_select(MatchParticipacion.match_id)
+        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
+        .where(
+            MatchParticipacion.publicacion_id == pub_id,
+            MatchCambio.tipo == "cadena_4",
+            MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
+        )
+    ).scalars().all()
+
+    if not match_ids:
+        return set()
+
+    rows = db.session.execute(
+        sa_select(MatchParticipacion.match_id, MatchParticipacion.publicacion_id)
+        .where(MatchParticipacion.match_id.in_(match_ids))
+    ).all()
+
+    agrupado = {}
+    for mid, pid in rows:
+        agrupado.setdefault(mid, set()).add(pid)
+
+    return {frozenset(pubs) for pubs in agrupado.values()}
+
+
+def buscar_cadenas_4_para(publicacion):
+    """
+    Devuelve lista de tríos (pub_b, pub_c, pub_d) donde
+    publicacion→pub_b→pub_c→pub_d→publicacion forma un ciclo de intercambio
+    válido a 4 bandas.
+
+    Solo opera sobre publicaciones de tipo 'cambio'.
+    """
+    if publicacion.tipo != "cambio":
+        return []
+
+    propietario = db.session.get(Usuario, publicacion.usuario_id)
+    grupo_id = propietario.unidad.grupo_intercambio_id
+    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+    candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
+
+    cedidos_a = _cedidos_abiertos(publicacion)
+    aceptados_a = _aceptados(publicacion)
+
+    cedidos_por_pub = {c.id: _cedidos_abiertos(c) for c in candidatas_cambio}
+    aceptados_por_pub = {c.id: _aceptados(c) for c in candidatas_cambio}
+
+    existing = _cadenas_4_existentes(publicacion.id)
+    resultado = []
+
+    for pub_b in candidatas_cambio:
+        cedidos_b = cedidos_por_pub[pub_b.id]
+        aceptados_b = aceptados_por_pub[pub_b.id]
+
+        if not (cedidos_a & aceptados_b):
+            continue
+
+        for pub_c in candidatas_cambio:
+            if pub_c.id == pub_b.id or pub_c.usuario_id == pub_b.usuario_id:
+                continue
+
+            cedidos_c = cedidos_por_pub[pub_c.id]
+            aceptados_c = aceptados_por_pub[pub_c.id]
+
+            if not (cedidos_b & aceptados_c):
+                continue
+
+            for pub_d in candidatas_cambio:
+                if pub_d.id in (pub_b.id, pub_c.id):
+                    continue
+                if pub_d.usuario_id in (pub_b.usuario_id, pub_c.usuario_id):
+                    continue
+
+                cedidos_d = cedidos_por_pub[pub_d.id]
+                aceptados_d = aceptados_por_pub[pub_d.id]
+
+                if detectar_cadena_4(
+                    cedidos_a, aceptados_a,
+                    cedidos_b, aceptados_b,
+                    cedidos_c, aceptados_c,
+                    cedidos_d, aceptados_d,
+                ):
+                    key = frozenset({publicacion.id, pub_b.id, pub_c.id, pub_d.id})
+                    if key not in existing:
+                        resultado.append((pub_b, pub_c, pub_d))
+                        existing.add(key)
+
+    return resultado
+
+
+def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
+    """
+    Crea un MatchCambio a 4 bandas para el ciclo pub_a→pub_b→pub_c→pub_d→pub_a.
+
+    Cada participación registra el turno que ese usuario cede al siguiente
+    en el ciclo. Idempotente: si el cuarteto ya tiene un match activo, devuelve None.
+    """
+    if frozenset({pub_a.id, pub_b.id, pub_c.id, pub_d.id}) in _cadenas_4_existentes(pub_a.id):
+        return None
+
+    aceptados_a = _aceptados(pub_a)
+    aceptados_b = _aceptados(pub_b)
+    aceptados_c = _aceptados(pub_c)
+    aceptados_d = _aceptados(pub_d)
+
+    turno_a = _primer_cedido_que_acepta(pub_a, aceptados_b)  # A cede a B
+    turno_b = _primer_cedido_que_acepta(pub_b, aceptados_c)  # B cede a C
+    turno_c = _primer_cedido_que_acepta(pub_c, aceptados_d)  # C cede a D
+    turno_d = _primer_cedido_que_acepta(pub_d, aceptados_a)  # D cede a A
+
+    if not turno_a or not turno_b or not turno_c or not turno_d:
+        db.session.rollback()
+        return None
+
+    match = MatchCambio(tipo="cadena_4", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=turno_a.id
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=turno_b.id
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_c.id, turno_cedido_id=turno_c.id
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_d.id, turno_cedido_id=turno_d.id
+    ))
+
+    for pub in (pub_a, pub_b, pub_c, pub_d):
+        db.session.add(Notificacion(
+            usuario_id=pub.usuario_id, match_id=match.id, tipo="nuevo_match"
+        ))
+
+    db.session.commit()
+
+    enviar_push_condicional(pub_b.usuario, "match")
+    enviar_push_condicional(pub_c.usuario, "match")
+    enviar_push_condicional(pub_d.usuario, "match")
+
+    for pub in (pub_a, pub_b, pub_c, pub_d):
         registrar_evento(pub.usuario_id, "match_found", match.id)
     db.session.commit()
 
