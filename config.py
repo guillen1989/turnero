@@ -51,6 +51,12 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = _fix_db_url(os.environ.get("DATABASE_URL"))
+    # Railway cierra las conexiones ociosas a Postgres pasado un rato; sin esto
+    # el pool reutiliza conexiones muertas y salta "SSL SYSCALL error: EOF detected".
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+    }
 
 
 config = {
