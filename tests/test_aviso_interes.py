@@ -1,5 +1,5 @@
 """Tests del aviso de interés: cambio ↔ cambio con solapamiento unilateral."""
-from datetime import date
+from datetime import date, timedelta
 
 from app.extensions import db
 from app.models import (
@@ -154,16 +154,18 @@ def test_aviso_generado_al_publicar(client, db):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    # Ana cede 21/07, acepta 10/07
-    _pub_cambio(ana, franja, date(2026, 7, 21), date(2026, 7, 10))
+    hoy = date.today()
+    dia_a, dia_b = hoy + timedelta(days=10), hoy + timedelta(days=30)
+    # Ana cede dia_b, acepta dia_a
+    _pub_cambio(ana, franja, dia_b, dia_a)
 
-    # Pedro publica: cede 10/07, acepta 03/08 → Ana acepta 10/07 → solapamiento
+    # Pedro publica: cede dia_a, acepta dia_b+1 → Ana acepta dia_a → solapamiento
     client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
     client.post("/publicar", data={
         "tipo": "cambio",
-        "fecha_cedida_0": "2026-07-10",
+        "fecha_cedida_0": dia_a.isoformat(),
         "franja_cedida_0": str(franja.id),
-        "fecha_aceptada_0": "2026-08-03",
+        "fecha_aceptada_0": (dia_b + timedelta(days=1)).isoformat(),
         "franja_aceptada_0": str(franja.id),
     })
 
