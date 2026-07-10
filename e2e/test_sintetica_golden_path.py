@@ -17,6 +17,8 @@ necesite publicar su propio cambio.
 Ejecución (headed, con pausa visual):
   pytest e2e/test_sintetica_golden_path.py --headed --slowmo=600 -s
 """
+from datetime import date
+
 import pytest
 
 from app.extensions import db
@@ -36,12 +38,24 @@ def _login(page, base, email, password="pass1234"):
     page.wait_for_url(f"{base}/calendario/")
 
 
+def _tocar_turno(page, widget_id, franja_id, fecha_iso):
+    """Elige la franja (por id) y toca el día `fecha_iso` en el calendario
+    tap-to-select del widget `widget_id` ('cal-cedidos' o 'cal-aceptados')."""
+    widget = page.locator(f"#{widget_id}")
+    widget.locator(f'.cal-turnos-chip[data-franja-id="{franja_id}"]').click()
+
+    objetivo = date.fromisoformat(fecha_iso)
+    hoy = date.today()
+    for _ in range((objetivo.year - hoy.year) * 12 + (objetivo.month - hoy.month)):
+        widget.locator('[data-role="next"]').click()
+
+    widget.locator(f'button.cal-turnos-celda[data-fecha="{fecha_iso}"]').click()
+
+
 def _publicar(page, base, fecha_cede, franja_cede, fecha_acepta, franja_acepta):
     page.goto(f"{base}/publicar")
-    page.locator('input[name="fecha_cedida_0"]').fill(fecha_cede)
-    page.locator('select[name="franja_cedida_0"]').select_option(franja_cede)
-    page.locator('input[name="fecha_aceptada_0"]').fill(fecha_acepta)
-    page.locator('select[name="franja_aceptada_0"]').select_option(franja_acepta)
+    _tocar_turno(page, "cal-cedidos", franja_cede, fecha_cede)
+    _tocar_turno(page, "cal-aceptados", franja_acepta, fecha_acepta)
     page.locator('#publicar-form button[type="submit"]').click()
     page.wait_for_url(f"{base}/")
 

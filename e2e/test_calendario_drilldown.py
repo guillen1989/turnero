@@ -120,4 +120,8 @@ def test_dia_vacio_ofrece_publicar_cambio(page, live_server, escenario_oferta):
 
     enlace_publicar.click()
     page.wait_for_url(lambda url: "/publicar" in url)
-    assert page.locator(f'input[name="fecha_aceptada_0"][value="{fecha_iso}"]').count() == 1
+    # El día precargado ya no es un value="" en un <input> estático: el
+    # calendario tap-to-select abre directamente el mes de esa fecha y la
+    # marca como "sugerida" (aro naranja) en el widget de Ofertas (aceptados).
+    dia_sugerido = page.locator(f'#cal-aceptados button.cal-turnos-celda[data-fecha="{fecha_iso}"]')
+    assert dia_sugerido.get_attribute("data-sugerida") == "true"
