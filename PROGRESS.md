@@ -59,7 +59,20 @@ paso: ciclo de vida — `_cancelar_sinteticas_de`/`_eliminar_sinteticas_de`
 en `app/services/publicaciones.py` deben incluir
 `sintetica_pub_intermedio_id == pub_id` en el filtro OR, para que
 cancelar/eliminar la publicación intermedia también cascada a la
-sintética de cadena_4. Alcance completo de B19
+sintética de cadena_4.
+
+Paso 8 completado: `_cancelar_sinteticas_de`/`_eliminar_sinteticas_de`
+(`app/services/publicaciones.py`) incluyen ahora
+`sintetica_pub_intermedio_id == pub_id` en su filtro OR — antes, cancelar
+o eliminar la banda intermedia de un trío no tocaba la sintética
+dependiente (bug real confirmado por test: quedaba `abierta` al cancelar,
+y `ForeignKeyViolation` al eliminar). 4 tests nuevos (cancelar cada una de
+las 3 bandas reales, eliminar la intermedia sin error) · 64 tests
+relacionados passing. Siguiente paso: etiqueta "Oportunidad a 4" en
+calendario (`app/routes/calendario.py`, `app/services/calendario_mercado.py`)
+y buscador (`app/routes/main.py` — `_cargar_sint_info`,
+`app/templates/main/cambios.html`), distinguiendo por
+`sintetica_pub_intermedio_id`. Alcance completo de B19
 (visto con el usuario):
 detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la

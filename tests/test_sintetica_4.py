@@ -21,6 +21,7 @@ from app.matching.service import (
     crear_cadena_4_desde_sintetica,
     crear_pub_sintetica,
 )
+from app.services.publicaciones import cancelar_publicacion, eliminar_publicacion
 from app.services.registro import registrar_usuario
 
 
@@ -397,3 +398,52 @@ def test_me_interesa_sintetica_4_crea_cadena_4(client, db):
 
     db.session.refresh(sint)
     assert sint.estado == "cancelada"
+
+
+# ---------------------------------------------------------------------------
+# Ciclo de vida: cancelar/eliminar cualquiera de las 3 bandas reales
+# (incluida la intermedia) cancela/elimina la sintética de cadena_4
+# ---------------------------------------------------------------------------
+
+def test_cancelar_pub_a_cancela_sintetica_4(db):
+    pub_ana, pub_pedro, pub_maria, *_ = _setup_cadena_parcial(db)
+    sint = crear_pub_sintetica(pub_ana, pub_maria, pub_intermedio=pub_pedro)
+
+    cancelar_publicacion(pub_ana)
+
+    db.session.refresh(sint)
+    assert sint.estado == "cancelada"
+
+
+def test_cancelar_pub_intermedio_cancela_sintetica_4(db):
+    """La banda intermedia (Pedro) también debe cascadear: si cancela su
+    publicación, el trío ya no es válido y la sintética debe cancelarse."""
+    pub_ana, pub_pedro, pub_maria, *_ = _setup_cadena_parcial(db)
+    sint = crear_pub_sintetica(pub_ana, pub_maria, pub_intermedio=pub_pedro)
+
+    cancelar_publicacion(pub_pedro)
+
+    db.session.refresh(sint)
+    assert sint.estado == "cancelada"
+
+
+def test_cancelar_pub_c_cancela_sintetica_4(db):
+    pub_ana, pub_pedro, pub_maria, *_ = _setup_cadena_parcial(db)
+    sint = crear_pub_sintetica(pub_ana, pub_maria, pub_intermedio=pub_pedro)
+
+    cancelar_publicacion(pub_maria)
+
+    db.session.refresh(sint)
+    assert sint.estado == "cancelada"
+
+
+def test_eliminar_pub_intermedio_con_sintetica_4_dependiente_no_da_error(db):
+    """Regresión análoga a la de cadena_3: eliminar la banda intermedia no
+    debe lanzar ForeignKeyViolation por dejar la sintética huérfana."""
+    pub_ana, pub_pedro, pub_maria, *_ = _setup_cadena_parcial(db)
+    sint = crear_pub_sintetica(pub_ana, pub_maria, pub_intermedio=pub_pedro)
+    sint_id = sint.id
+
+    eliminar_publicacion(pub_pedro)
+
+    assert db.session.get(PublicacionCambio, sint_id) is None
