@@ -248,3 +248,35 @@ def test_push_condicional_mensaje_refleja_conteo(app, db):
             assert "2" in payload["body"]
     finally:
         _teardown_vapid(app, old_key, old_email)
+
+
+def test_limite_diario_avisos_oportunidad_corta_el_push(app, db):
+    """A partir de LIMITE_DIARIO_AVISOS_OPORTUNIDAD notificaciones de
+    oportunidad (a 3 + a 4) ya enviadas hoy, no se envía push adicional —
+    evita saturar al usuario cuando el matching de cadena_4 detecta muchas
+    oportunidades el mismo día. La Notificacion en la campana no se ve
+    afectada por este límite (solo el push)."""
+    from app.models import Notificacion, insertar_categorias_semilla
+    from app.push.sender import LIMITE_DIARIO_AVISOS_OPORTUNIDAD, enviar_push_condicional
+
+    insertar_categorias_semilla()
+    from app.models import Categoria
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    u1 = registrar_usuario("Ana", "ana_limite@test.es", "pass", "H1", "Urgencias", cat.id)
+    u1.push_subscription = json.dumps(SUBSCRIPTION)
+    db.session.commit()
+
+    # Ya se han enviado justo el límite de avisos de oportunidad hoy.
+    for i in range(LIMITE_DIARIO_AVISOS_OPORTUNIDAD):
+        tipo = "aviso_oportunidad_3" if i % 2 == 0 else "aviso_oportunidad_4"
+        db.session.add(Notificacion(usuario_id=u1.id, tipo=tipo))
+    db.session.commit()
+
+    old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
+    _setup_vapid(app)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push_condicional(u1, "aviso_oportunidad_4")
+            mock_wp.assert_not_called()
+    finally:
+        _teardown_vapid(app, old_key, old_email)

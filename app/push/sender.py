@@ -6,9 +6,38 @@ no debe depender de si la notificación llega o no.
 """
 import json
 import threading
+from datetime import datetime, timezone
 
 from flask import current_app
 from pywebpush import WebPushException, webpush
+
+# Tope diario de pushes de "oportunidad" (a 3 + a 4 combinadas) por usuario.
+# El matching de cadena_4 explora más combinaciones que el de cadena_3 (busca
+# el hueco desde 3 posiciones distintas por cada publicación nueva/editada),
+# así que en un grupo de intercambio activo puede generar muchas más
+# oportunidades de las que un usuario quiere recibir como push el mismo día.
+# La Notificacion en la campana se crea siempre; esto solo limita el aviso
+# al móvil.
+LIMITE_DIARIO_AVISOS_OPORTUNIDAD = 5
+_TIPOS_AVISO_OPORTUNIDAD = ("aviso_oportunidad_3", "aviso_oportunidad_4")
+
+
+def _limite_diario_superado(usuario, tipo):
+    if tipo not in _TIPOS_AVISO_OPORTUNIDAD:
+        return False
+
+    from app.models import Notificacion
+
+    hoy_inicio = datetime.now(timezone.utc).replace(
+        tzinfo=None, hour=0, minute=0, second=0, microsecond=0
+    )
+    enviados_hoy = Notificacion.query.filter(
+        Notificacion.usuario_id == usuario.id,
+        Notificacion.tipo.in_(_TIPOS_AVISO_OPORTUNIDAD),
+        Notificacion.fecha >= hoy_inicio,
+    ).count()
+    return enviados_hoy >= LIMITE_DIARIO_AVISOS_OPORTUNIDAD
+
 
 # Mapa de tipo de notificación → atributo de preferencia en Usuario
 _PREF_ATTR = {
@@ -236,6 +265,8 @@ def enviar_push_condicional(usuario, tipo):
         return
     attr = _PREF_ATTR.get(tipo)
     if attr and not getattr(usuario, attr, True):
+        return
+    if _limite_diario_superado(usuario, tipo):
         return
 
     n = _contar_pendientes(usuario, tipo)
