@@ -333,3 +333,9 @@ def test_cadena_4_aparece_en_tab_compatible(client, db):
 
     assert resp.status_code == 200
     assert "Cambio a 4 bandas".encode() in resp.data
+
+    # Botón para avisar por WhatsApp a los otros 3, con la cadena completa
+    # (los 4 tramos: libra/trabaja de cada participante) en el texto.
+    html = resp.data.decode()
+    assert "wa.me" in html
+    assert "Avisar por WhatsApp" in html
