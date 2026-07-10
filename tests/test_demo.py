@@ -129,6 +129,34 @@ def test_reset_demo_crea_turnos_planilla(db):
     assert TurnoPlanilla.query.count() > 0
 
 
+# ─── volumen de contenido ─────────────────────────────────────────────────────
+
+def test_reset_demo_crea_muchos_usuarios(db):
+    """La unidad demo debe sentirse poblada: cuentas demo + bots."""
+    reset_demo()
+    assert Usuario.query.count() >= 20
+
+
+def test_reset_demo_crea_muchas_publicaciones(db):
+    reset_demo()
+    assert PublicacionCambio.query.count() >= 40
+
+
+def test_reset_demo_crea_varios_matches_confirmados(db):
+    from app.models import MatchCambio
+    reset_demo()
+    confirmados = MatchCambio.query.filter_by(estado="confirmado_total").count()
+    assert confirmados >= 4
+
+
+def test_reset_demo_planillas_para_todos_los_usuarios(db):
+    """Cada usuario de la unidad demo (no solo los primeros 8) tiene planilla."""
+    from app.models import PlanillaMes
+    reset_demo()
+    n_usuarios = Usuario.query.count()
+    assert PlanillaMes.query.count() == n_usuarios * 2  # mes actual + siguiente
+
+
 # ─── onboarding demo ──────────────────────────────────────────────────────────
 
 def test_demo_usuario_onboarding_visto_false(db):

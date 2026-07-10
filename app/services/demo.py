@@ -58,12 +58,47 @@ DEMO_ACCOUNTS = [
     ("Elena Demo",   "demo3@turnero.com"),
 ]
 _BOT_ACCOUNTS = [
-    ("María García",    "bot.maria@demo.turnero.com"),
-    ("Javier López",    "bot.javier@demo.turnero.com"),
-    ("Sofía Ruiz",      "bot.sofia@demo.turnero.com"),
-    ("Pedro Martín",    "bot.pedro@demo.turnero.com"),
-    ("Laura Fernández", "bot.laura@demo.turnero.com"),
+    ("María García",     "bot.maria@demo.turnero.com"),
+    ("Javier López",     "bot.javier@demo.turnero.com"),
+    ("Sofía Ruiz",       "bot.sofia@demo.turnero.com"),
+    ("Pedro Martín",     "bot.pedro@demo.turnero.com"),
+    ("Laura Fernández",  "bot.laura@demo.turnero.com"),
+    ("Marta Sánchez",    "bot.marta@demo.turnero.com"),
+    ("Diego Torres",     "bot.diego@demo.turnero.com"),
+    ("Lucía Romero",     "bot.lucia@demo.turnero.com"),
+    ("Alejandro Díaz",   "bot.alejandro@demo.turnero.com"),
+    ("Carmen Molina",    "bot.carmen@demo.turnero.com"),
+    ("Raúl Ortega",      "bot.raul@demo.turnero.com"),
+    ("Isabel Navarro",   "bot.isabel@demo.turnero.com"),
+    ("Daniel Castro",    "bot.daniel@demo.turnero.com"),
+    ("Paula Iglesias",   "bot.paula@demo.turnero.com"),
+    ("Sergio Vega",      "bot.sergio@demo.turnero.com"),
+    ("Cristina Herrera", "bot.cristina@demo.turnero.com"),
+    ("Miguel Ramos",     "bot.miguel@demo.turnero.com"),
+    ("Beatriz Gil",      "bot.beatriz@demo.turnero.com"),
+    ("Alberto Serrano",  "bot.alberto@demo.turnero.com"),
+    ("Nuria Campos",     "bot.nuria@demo.turnero.com"),
 ]
+
+# Plantillas de publicación abierta que dan vida a la unidad. Se repiten
+# ciclando sobre todos los bots para generar varias rondas de contenido.
+_BOT_PUB_TEMPLATES = [
+    dict(tipo="cambio", mensaje="Cambio mi mañana por una tarde, necesito llevar al médico a mi madre",
+         cedido=("man", 18), aceptado=("tar", 22), created_offset=5),
+    dict(tipo="regalo", mensaje="Regalo mi nocturno, me surge un viaje",
+         cedido=("n12", 14), created_offset=3),
+    dict(tipo="peticion", mensaje="Busco alguien que me cubra la mañana del día 25",
+         aceptado=("man", 25), created_offset=2),
+    dict(tipo="junte", mensaje=None,
+         cedido=("noch", 30), aceptado=("noch", 37), created_offset=4),
+    dict(tipo="cambio_dia", mensaje="Cualquier turno me vale ese día",
+         cedido=("d12", 20), aceptado=(None, 27), created_offset=1),
+    dict(tipo="cambio", mensaje=None,
+         cedido=("tar", 35), aceptado=("man", 40), created_offset=7),
+    dict(tipo="regalo", mensaje=None,
+         cedido=("man", 45), created_offset=6),
+]
+_RONDAS_PUBLICACIONES_BOT = 4
 
 _DEMO_EMAILS = {email for _, email in DEMO_ACCOUNTS + _BOT_ACCOUNTS}
 
@@ -131,6 +166,70 @@ def _franja(grupo, nombre):
     return FranjaHoraria.query.filter_by(
         grupo_intercambio_id=grupo.id, nombre=nombre
     ).first()
+
+
+def _desplazar(par_franja_dia, dias):
+    """Suma `dias` al offset de un par (franja_key, dia) de una plantilla.
+
+    `franja_key` puede ser None (turno aceptado en cualquier franja); se
+    conserva tal cual para no alterar ese significado.
+    """
+    if par_franja_dia is None:
+        return None
+    franja_key, dia = par_franja_dia
+    return (franja_key, dia + dias)
+
+
+def _pub_bot_generica(bot, tipo, mensaje, franjas, cedido=None, aceptado=None, created_offset=0):
+    """Crea una publicación de bot a partir de una plantilla de `_BOT_PUB_TEMPLATES`."""
+    p = _pub(bot, tipo, mensaje=mensaje, created_at=_ahora(created_offset))
+    if cedido:
+        franja_key, dia = cedido
+        _tc(p, _hoy(dia), franjas[franja_key])
+    if aceptado:
+        franja_key, dia = aceptado
+        if franja_key is None:
+            _ta(p, _hoy(dia), cualquier_franja=True)
+        else:
+            _ta(p, _hoy(dia), franjas[franja_key])
+    return p
+
+
+def _sembrar_publicaciones_bot(bots, franjas):
+    """Genera varias rondas de publicaciones abiertas repartidas entre los bots."""
+    n_plantillas = len(_BOT_PUB_TEMPLATES)
+    for ronda in range(_RONDAS_PUBLICACIONES_BOT):
+        for i, tmpl in enumerate(_BOT_PUB_TEMPLATES):
+            bot = bots[(ronda * n_plantillas + i) % len(bots)]
+            _pub_bot_generica(
+                bot, tmpl["tipo"], tmpl["mensaje"], franjas,
+                cedido=_desplazar(tmpl.get("cedido"), ronda * 8),
+                aceptado=_desplazar(tmpl.get("aceptado"), ronda * 8),
+                created_offset=tmpl["created_offset"] + ronda,
+            )
+
+
+def _match_confirmado_total(bot_a, bot_b, dia_a, dia_b, franja_a, franja_b, base_offset):
+    """Crea un match ya resuelto entre dos bots (cierra el ciclo cedido/aceptado)."""
+    pub_created  = _ahora(base_offset + 6)
+    match_created = _ahora(base_offset)
+    conf_dt      = _ahora(base_offset - 1)
+
+    pub_a = _pub(bot_a, "cambio", estado="confirmada", created_at=pub_created)
+    tc_a  = _tc(pub_a, _hoy(dia_a), franja_a, estado="resuelto")
+    ta_a  = _ta(pub_a, _hoy(dia_b), franja_b, estado="resuelto")
+
+    pub_b = _pub(bot_b, "cambio", estado="confirmada", created_at=pub_created)
+    tc_b  = _tc(pub_b, _hoy(dia_b), franja_b, estado="resuelto")
+    ta_b  = _ta(pub_b, _hoy(dia_a), franja_a, estado="resuelto")
+    db.session.flush()
+
+    m = _match(estado="confirmado_total", created_at=match_created)
+    m.fecha_confirmacion_total = conf_dt
+    db.session.flush()
+    _part(m, pub_a, tc=tc_a, ta=ta_a, confirmado=True, confirmed_at=match_created)
+    _part(m, pub_b, tc=tc_b, ta=ta_b, confirmado=True, confirmed_at=conf_dt)
+    return m
 
 
 # ─── reset ───────────────────────────────────────────────────────────────────
@@ -232,33 +331,18 @@ def _sembrar_demo():
         for nombre, email in DEMO_ACCOUNTS
     ]
     # Bots
-    maria, javier, sofia, pedro, laura = [
+    bots = [
         _usuario(nombre, email, unidad, cat_enf)
         for nombre, email in _BOT_ACCOUNTS
     ]
+    maria, javier, sofia, pedro, laura = bots[:5]
+    marta, diego, lucia, alejandro, carmen, raul = bots[5:11]
     db.session.flush()
 
+    franjas = {"man": man, "tar": tar, "noch": noch, "d12": d12, "n12": n12}
+
     # ── Publicaciones abiertas de los bots (dan vida a la unidad) ──────────
-    pub_b1 = _pub(maria,  "cambio",    mensaje="Cambio mi mañana por una tarde, necesito llevar al médico a mi madre", created_at=_ahora(5))
-    _tc(pub_b1, _hoy(18), man);  _ta(pub_b1, _hoy(22), tar)
-
-    pub_b2 = _pub(javier, "regalo",    mensaje="Regalo mi nocturno, me surge un viaje", created_at=_ahora(3))
-    _tc(pub_b2, _hoy(14), n12)
-
-    pub_b3 = _pub(sofia,  "peticion",  mensaje="Busco alguien que me cubra la mañana del día 25", created_at=_ahora(2))
-    _ta(pub_b3, _hoy(25), man)
-
-    pub_b4 = _pub(pedro,  "junte",     created_at=_ahora(4))
-    _tc(pub_b4, _hoy(30), noch);  _ta(pub_b4, _hoy(37), noch)
-
-    pub_b5 = _pub(laura,  "cambio_dia", mensaje="Cualquier turno me vale ese día", created_at=_ahora(1))
-    _tc(pub_b5, _hoy(20), d12);  _ta(pub_b5, _hoy(27), cualquier_franja=True)
-
-    pub_b6 = _pub(maria,  "cambio",    created_at=_ahora(7))
-    _tc(pub_b6, _hoy(35), tar);  _ta(pub_b6, _hoy(40), man)
-
-    pub_b7 = _pub(pedro,  "regalo",    created_at=_ahora(6))
-    _tc(pub_b7, _hoy(45), man)
+    _sembrar_publicaciones_bot(bots, franjas)
 
     # ── demo1 (Ana): match propuesto con bot Javier — puede confirmar ──────
     pub_ana_m = _pub(ana, "cambio", mensaje="Cambio tarde del 12 por mañana, tengo cita", created_at=_ahora(8))
@@ -306,28 +390,15 @@ def _sembrar_demo():
     pub_ele2 = _pub(elena, "cambio", created_at=_ahora(1))
     _tc(pub_ele2, _hoy(55), man);  _ta(pub_ele2, _hoy(60), tar)
 
-    # ── Match confirmado_total entre bots (muestra el flujo completado) ────
-    conf_dt = _ahora(5)
-    pub_lau_c = _pub(laura, "cambio", estado="confirmada", created_at=_ahora(12))
-    tc_lau    = _tc(pub_lau_c, _hoy(7),  man, estado="resuelto")
-    ta_lau    = _ta(pub_lau_c, _hoy(10), tar, estado="resuelto")
-
-    pub_ped_c = _pub(pedro, "cambio", estado="confirmada", created_at=_ahora(12))
-    tc_ped    = _tc(pub_ped_c, _hoy(10), tar, estado="resuelto")
-    ta_ped    = _ta(pub_ped_c, _hoy(7),  man, estado="resuelto")
-    db.session.flush()
-
-    m3 = _match(estado="confirmado_total", created_at=_ahora(6))
-    m3.fecha_confirmacion_total = conf_dt
-    db.session.flush()
-    _part(m3, pub_lau_c, tc=tc_lau, ta=ta_lau,
-          confirmado=True, confirmed_at=_ahora(6))
-    _part(m3, pub_ped_c, tc=tc_ped, ta=ta_ped,
-          confirmado=True, confirmed_at=conf_dt)
+    # ── Matches confirmado_total entre bots (muestran el flujo completado) ──
+    _match_confirmado_total(laura, pedro,     7,  10, man, tar,  base_offset=6)
+    _match_confirmado_total(marta, diego,     8,  11, tar, noch, base_offset=7)
+    _match_confirmado_total(lucia, alejandro, 9,  12, noch, man, base_offset=8)
+    _match_confirmado_total(carmen, raul,     13, 16, d12, n12,  base_offset=9)
 
     _sembrar_planillas(
-        usuarios=[ana, carlos, elena, maria, javier, sofia, pedro, laura],
-        franjas={"man": man, "tar": tar, "noch": noch, "d12": d12, "n12": n12},
+        usuarios=[ana, carlos, elena] + bots,
+        franjas=franjas,
         grupo=g,
     )
 
@@ -343,16 +414,18 @@ def _sembrar_planillas(usuarios, franjas, grupo):
 
     # Patrones de turno por usuario (franja, días-de-semana con turno en ese mes)
     # weekday(): 0=lun, 1=mar, 2=mie, 3=jue, 4=vie, 5=sab, 6=dom
-    patrones = [
-        # (usuario, franja_principal, franja_alternativa, días de semana con turno)
-        (usuarios[0], man,  None, {0, 2, 4}),        # Ana:    lun/mie/vie → mañana
-        (usuarios[1], tar,  None, {1, 3, 5}),        # Carlos: mar/jue/sab → tarde
-        (usuarios[2], d12,  n12,  {0, 4}),           # Elena:  lun→diurno 12h, vie→nocturno 12h
-        (usuarios[3], man,  tar,  {0, 1, 2}),        # María:  lun/mar→mañana, mie→tarde
-        (usuarios[4], tar,  noch, {2, 3, 4}),        # Javier: mie/jue→tarde, vie→noche
-        (usuarios[5], man,  None, {1, 3}),           # Sofía:  mar/jue → mañana
-        (usuarios[6], noch, n12,  {5, 6}),           # Pedro:  sab→noche, dom→nocturno 12h
-        (usuarios[7], tar,  man,  {0, 2, 5}),        # Laura:  lun/mie→tarde, sab→mañana
+    # Ciclo de patrones (franja_principal, franja_alternativa, días de semana
+    # con turno) que se reparte entre todos los usuarios, en orden, repitiendo
+    # si hay más usuarios que patrones. weekday(): 0=lun ... 6=dom.
+    ciclo_patrones = [
+        (man,  None, {0, 2, 4}),   # lun/mie/vie → mañana
+        (tar,  None, {1, 3, 5}),   # mar/jue/sab → tarde
+        (d12,  n12,  {0, 4}),      # lun→diurno 12h, vie→nocturno 12h
+        (man,  tar,  {0, 1, 2}),   # lun/mar→mañana, mie→tarde
+        (tar,  noch, {2, 3, 4}),   # mie/jue→tarde, vie→noche
+        (man,  None, {1, 3}),      # mar/jue → mañana
+        (noch, n12,  {5, 6}),      # sab→noche, dom→nocturno 12h
+        (tar,  man,  {0, 2, 5}),   # lun/mie→tarde, sab→mañana
     ]
 
     for delta_mes in (0, 1):
@@ -360,7 +433,8 @@ def _sembrar_planillas(usuarios, franjas, grupo):
         mes  = (hoy.month + delta_mes - 1) % 12 + 1
         _, n_dias = calendar.monthrange(anyo, mes)
 
-        for usuario, franja_a, franja_b, dias_semana in patrones:
+        for idx, usuario in enumerate(usuarios):
+            franja_a, franja_b, dias_semana = ciclo_patrones[idx % len(ciclo_patrones)]
             db.session.add(PlanillaMes(
                 usuario=usuario, anyo=anyo, mes=mes, publicada=True,
             ))
