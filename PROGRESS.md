@@ -16,10 +16,16 @@ en las 3 rutas que ya disparan cadena_3 (`/publicar`, editar, contraoferta
 Paso 4 completado: badge "¡Cambio a 4 bandas!" en `dashboard.html`,
 generalizando los checks hardcodeados `match.tipo == 'cadena_3'` (ahora
 `es_cadena = match.tipo in ('cadena_3','cadena_4')`) · 1 test de ruta
-nuevo. Siguiente paso: columna `sintetica_pub_intermedio_id` en
+nuevo. Paso 5 completado: columna `sintetica_pub_intermedio_id` en
 `PublicacionCambio` (nullable, guarda la banda real intermedia "B" de un
-trío A→B→C ya cerrado cuando la sintética completa el hueco C→D→A) +
-migración `flask db migrate` (1 head). Alcance completo de B19
+trío A→B→C ya cerrado cuando la sintética completa el hueco C→D→A;
+siempre NULL en sintéticas de cadena_3) + migración `f182c4111872`
+(`flask db heads` → 1 head; downgrade con nombre de constraint explícito
+`fk_sintetica_pub_intermedio`, igual que `e8e3d3c815bd`). Siguiente paso:
+capa de servicio para cadenas parciales de 4 (3 bandas reales + 1 hueco):
+`buscar_cadenas_parciales_4_para`, extender `crear_pub_sintetica` con
+`pub_intermedio` opcional, `crear_aviso_oportunidad_4`,
+`crear_cadena_4_desde_sintetica`. Alcance completo de B19
 (visto con el usuario):
 detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
