@@ -267,17 +267,19 @@ def test_nuevo_feedback_tipo_error_envia_email_al_admin(client, db):
     assert mock_enviar.call_args[0][0] == "admin@test.es"
 
 
-def test_nuevo_feedback_tipo_sugerencia_envia_email_al_admin(client, db):
+def test_nuevo_feedback_email_incluye_descripcion(client, db):
     _crear_admin("admin@test.es")
 
     with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
         client.post("/feedback", data={
             "tipo": "sugerencia",
-            "descripcion": "Añadir filtro por fecha.",
+            "descripcion": "Sería genial poder exportar el calendario.",
             "email_contacto": "usuario@test.es",
         })
 
     mock_enviar.assert_called_once()
+    cuerpo_html = mock_enviar.call_args.args[2]
+    assert "Sería genial poder exportar el calendario." in cuerpo_html
 
 
 def test_nuevo_feedback_tipo_recuperacion_no_envia_email(client, db):
@@ -318,6 +320,28 @@ def test_feedback_sin_admins_no_envia_email_ni_falla(client, db):
 
     assert resp.status_code == 302
     mock_enviar.assert_not_called()
+
+
+def test_nuevo_feedback_email_usa_app_base_url_si_esta_configurada(app, client, db):
+    # El enlace del email debe apuntar siempre al dominio propio configurado,
+    # no al host de la petición entrante (p. ej. *.up.railway.app, que algunos
+    # filtros de correo corporativos bloquean).
+    _crear_admin("admin@test.es")
+
+    app.config["APP_BASE_URL"] = "https://app.turnero.xyz"
+    try:
+        with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+            client.post("/feedback", data={
+                "tipo": "error",
+                "descripcion": "La app no carga en Safari.",
+                "email_contacto": "usuario@test.es",
+            })
+    finally:
+        app.config["APP_BASE_URL"] = ""
+
+    cuerpo_html = mock_enviar.call_args.args[2]
+    assert "https://app.turnero.xyz/admin/feedback" in cuerpo_html
+    assert "usuario@test.es" in cuerpo_html
 
 
 def test_admin_restablecer_contrasena_cambia_password(client, db):

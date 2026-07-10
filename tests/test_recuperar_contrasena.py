@@ -46,6 +46,23 @@ def test_post_recuperar_contrasena_email_incluye_enlace_con_token(client, db):
     assert "/auth/restablecer-contrasena/" in cuerpo_html
 
 
+def test_post_recuperar_contrasena_email_usa_app_base_url_si_esta_configurada(app, client, db):
+    # Igual que en el email de feedback: el enlace debe usar el dominio propio
+    # configurado y no el host de la petición (evita bloqueos de filtros de correo
+    # con enlaces a *.up.railway.app).
+    _usuario()
+
+    app.config["APP_BASE_URL"] = "https://app.turnero.xyz"
+    try:
+        with patch("app.routes.auth.enviar_email", return_value=True) as mock_enviar:
+            client.post("/auth/recuperar-contrasena", data={"email": "victima@test.es"})
+    finally:
+        app.config["APP_BASE_URL"] = ""
+
+    cuerpo_html = mock_enviar.call_args[0][2]
+    assert "https://app.turnero.xyz/auth/restablecer-contrasena/" in cuerpo_html
+
+
 def test_post_recuperar_contrasena_email_inexistente_no_envia_ni_filtra(client, db):
     with patch("app.routes.auth.enviar_email") as mock_enviar:
         resp = client.post("/auth/recuperar-contrasena", data={"email": "noexiste@test.es"},

@@ -241,6 +241,47 @@ def test_analytics_data_incluye_activas_en_datasets(client, db):
     assert "activas" in data["datasets"]
 
 
+def test_analytics_data_incluye_eliminadas_en_datasets(client, db):
+    _setup_admin(client)
+    resp = client.get("/admin/analytics/data?granularity=day")
+    data = json.loads(resp.data)
+    assert "eliminadas" in data["datasets"]
+
+
+def test_analytics_eliminadas_dataset_cuenta_eliminaciones(client, db):
+    from app.models import PublicacionCambio
+    from app.services.publicaciones import eliminar_publicacion
+    admin = _setup_admin(client)
+    pub = PublicacionCambio(usuario_id=admin.id, tipo="cambio")
+    _db.session.add(pub)
+    _db.session.commit()
+    eliminar_publicacion(pub)
+
+    resp = client.get("/admin/analytics/data?granularity=month")
+    data = json.loads(resp.data)
+    assert sum(data["datasets"]["eliminadas"]) == 1
+
+
+def test_analytics_data_incluye_planillas_publicadas_en_datasets(client, db):
+    _setup_admin(client)
+    resp = client.get("/admin/analytics/data?granularity=day")
+    data = json.loads(resp.data)
+    assert "planillas_publicadas" in data["datasets"]
+    assert "planillas_publicadas" in data["totals"]
+
+
+def test_analytics_planillas_publicadas_dataset_cuenta_eventos(client, db):
+    from app.models import Event
+    admin = _setup_admin(client)
+    _db.session.add(Event(user_id=admin.id, event_type="planilla_publicada", entity_id=1))
+    _db.session.add(Event(user_id=admin.id, event_type="planilla_publicada", entity_id=2))
+    _db.session.commit()
+
+    resp = client.get("/admin/analytics/data?granularity=month")
+    data = json.loads(resp.data)
+    assert sum(data["datasets"]["planillas_publicadas"]) == 2
+
+
 def test_analytics_activas_crece_con_publicaciones(client, db):
     """El acumulado de activas sube cuando se publican cambios."""
     from app.models import PublicacionCambio

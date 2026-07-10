@@ -7,6 +7,12 @@
   <div class="btn-group">
     <a href="{{ url_for('auth.registro') }}" class="btn btn-primary">{{ _('Crear cuenta') }}</a>
     <a href="{{ url_for('auth.login') }}" class="btn btn-primary">{{ _('Entrar') }}</a>
+    {% if demo_login_enabled %}
+    <form method="POST" action="{{ url_for('auth.login_demo') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-secondary">{{ _('Probar con una cuenta demo') }}</button>
+    </form>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

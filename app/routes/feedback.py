@@ -5,7 +5,7 @@ from flask_login import current_user, login_required
 from app.extensions import db
 from app.models import Feedback, Usuario
 from app.push.sender import enviar_push
-from app.services.email import enviar_email
+from app.services.email import enviar_email, url_absoluta
 
 bp = Blueprint("feedback", __name__)
 
@@ -38,8 +38,15 @@ def _notificar_admins_nuevo_feedback(fb):
         enviar_push(admin, titulo, cuerpo, url="/admin/feedback", urgente=urgente)
 
     if fb.tipo != "recuperacion":
+        enlace = url_absoluta("admin.feedback")
+        cuerpo_html = render_template(
+            "email/nuevo_feedback.html",
+            tipo_label=TIPOS.get(fb.tipo, fb.tipo),
+            email_contacto=fb.email_contacto,
+            descripcion=fb.descripcion,
+            enlace=enlace,
+        )
         asunto = _("Nuevo feedback: %(tipo)s", tipo=TIPOS.get(fb.tipo, fb.tipo))
-        cuerpo_html = render_template("email/nuevo_feedback.html", fb=fb, tipo_legible=TIPOS.get(fb.tipo, fb.tipo))
         for admin in admins:
             enviar_email(admin.email, asunto, cuerpo_html)
 

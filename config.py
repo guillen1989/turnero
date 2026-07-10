@@ -24,6 +24,11 @@ class Config:
     # bloquea los puertos SMTP salientes en el plan Hobby).
     RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
     RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "noreply@turnero.xyz")
+    # Dominio propio para los enlaces incluidos en emails (p. ej. https://app.turnero.xyz).
+    # Si no está configurada, se usa el host de la petición entrante (comportamiento
+    # anterior). Necesaria porque algunos filtros de correo corporativos bloquean o
+    # rebotan enlaces al dominio compartido *.up.railway.app.
+    APP_BASE_URL = os.environ.get("APP_BASE_URL", "")
     # Botón "Entrar con cuenta demo" en el login: solo aparece si están configuradas
     # (p. ej. en staging, con el usuario creado por scripts/seed_staging.py).
     DEMO_LOGIN_EMAIL = os.environ.get("DEMO_LOGIN_EMAIL", "")

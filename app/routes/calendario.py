@@ -9,13 +9,15 @@ from app.models.franja_horaria import FranjaHoraria
 from app.services.calendario_mercado import (
     CUALQUIER_FRANJA,
     construir_calendario_mes,
+    construir_semanas_juntes,
     preparar_celdas_mes,
+    preparar_semanas_juntes,
     resumen_publicaciones,
 )
 
 bp = Blueprint("calendario", __name__, url_prefix="/calendario")
 
-MODOS_VALIDOS = ("ofertas", "peticiones")
+MODOS_VALIDOS = ("ofertas", "peticiones", "juntes")
 
 
 @bp.route("/")
@@ -27,6 +29,23 @@ def index():
     modo = request.args.get("modo", "ofertas")
     if modo not in MODOS_VALIDOS:
         modo = "ofertas"
+
+    prev_mes = mes - 1 if mes > 1 else 12
+    prev_anyo = anyo if mes > 1 else anyo - 1
+    next_mes = mes + 1 if mes < 12 else 1
+    next_anyo = anyo if mes < 12 else anyo + 1
+
+    contexto = dict(
+        anyo=anyo, mes=mes, modo=modo, hoy=hoy,
+        prev_anyo=prev_anyo, prev_mes=prev_mes,
+        next_anyo=next_anyo, next_mes=next_mes,
+    )
+
+    # Un junte de noches es un patrón semanal completo, no una noche suelta:
+    # se agrupa por semana en vez de con el grid día a día de ofertas/peticiones.
+    if modo == "juntes":
+        semanas = preparar_semanas_juntes(construir_semanas_juntes(current_user, anyo, mes), mes)
+        return render_template("calendario/calendario.html", semanas=semanas, **contexto)
 
     _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
     dias = [date(anyo, mes, d) for d in range(1, num_dias + 1)]
@@ -69,19 +88,12 @@ def index():
         for p in resumen_publicaciones(pub_ids)
     }
 
-    prev_mes = mes - 1 if mes > 1 else 12
-    prev_anyo = anyo if mes > 1 else anyo - 1
-    next_mes = mes + 1 if mes < 12 else 1
-    next_anyo = anyo if mes < 12 else anyo + 1
-
     return render_template(
         "calendario/calendario.html",
-        anyo=anyo, mes=mes, dias=dias, modo=modo,
+        dias=dias,
         celdas=celdas,
         nombre_franja_por_clave=nombre_franja_por_clave,
         datos_mes=datos_mes,
         datos_publicaciones=datos_publicaciones,
-        prev_anyo=prev_anyo, prev_mes=prev_mes,
-        next_anyo=next_anyo, next_mes=next_mes,
-        hoy=hoy,
+        **contexto,
     )

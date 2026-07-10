@@ -4,13 +4,56 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-Recuperación de contraseña self-service completa + email a admins por
-feedback nuevo (ver más abajo). Dominio `turnero.xyz` comprado en
-Hostinger, verificado en Resend (DNS propagado: DKIM + MX/SPF en
-`send.turnero.xyz`) y `RESEND_API_KEY`/`RESEND_FROM_EMAIL` ya
-configuradas en Railway — el envío de email funciona en producción.
-Rama `staging`, con push a origin. Siguiente: cuando se decida abordar
-B18 (modo "Juntes de noches"), retomar desde ahí.
+Fix de producción: `SQLALCHEMY_ENGINE_OPTIONS` con `pool_pre_ping=True` +
+`pool_recycle=280` en `ProductionConfig` — Railway cierra conexiones
+ociosas a Postgres y el pool por defecto reutilizaba conexiones muertas,
+provocando `SSL SYSCALL error: EOF detected` en `/auth/login` y otras
+rutas (visto en logs de Railway). 776 tests passing.
+
+B18 rediseñado: el modo "Juntes de noches" del calendario pasó de un grid
+día-a-día (como Ofertas/Peticiones) a filas por semana natural con la
+distribución trabaja/libra desplegable (ver más abajo, rama
+`feat/calendario-juntes-semanas` sobre `staging`, push directo pedido por
+el usuario). Motivo: un junte es un patrón semanal completo, no una noche
+suelta — un mockup (Artifact) se validó con el usuario antes de implementar.
+
+Botón "Probar con una cuenta demo" añadido también en la portada (`/`,
+`main.index`), junto a "Crear cuenta"/"Entrar" (antes solo estaba en
+`/auth/login`) — mismo flag `demo_login_enabled` (`DEMO_LOGIN_EMAIL`
+configurada), mismo endpoint `auth.login_demo`.
+
+`APP_BASE_URL` en staging: al probar el feedback en staging tras el fix de
+producción, el email volvió a rebotar — el enlace usaba
+`turnero-staging.up.railway.app` (mismo problema que producción, staging
+nunca tuvo dominio propio). Corregido igual que producción: dominio
+`staging.turnero.xyz` añadido en Railway (servicio `turnero`, entorno
+`staging`) y `APP_BASE_URL=https://staging.turnero.xyz` configurada en ese
+servicio. Importante: NO apuntar `APP_BASE_URL` de staging a
+`app.turnero.xyz` (el de producción) — el email quedaría enlazando a la
+app de producción con tokens/datos de la BD de staging, rota. Pendiente
+de acción manual del usuario (no lo puede hacer el agente): añadir en el
+DNS de `turnero.xyz` el `CNAME staging → ezh8vdkw.up.railway.app` y el
+`TXT _railway-verify.staging → railway-verify=03ea54e3d41023334f9b4de5d77f467d20e0c8a4f159b483a68e7b28b8f7ab79`.
+
+Añadido `APP_BASE_URL` + dominio propio `app.turnero.xyz` (ver más abajo).
+Pendiente de acción manual del usuario (no lo puede hacer el agente): crear
+en el DNS de `turnero.xyz` el registro `CNAME app → hfdey1z5.up.railway.app`
+y el `TXT _railway-verify.app → railway-verify=4bcf313781d937050c193da1180bb73a1f3c44d36b20420277a63d57e1817b98`
+(dado por `railway domain app.turnero.xyz`), y una vez verificado el dominio
+en Railway, configurar `APP_BASE_URL=https://app.turnero.xyz` como variable
+de entorno en production. Hasta entonces `url_absoluta()` usa el host de la
+petición entrante como antes (sin romper nada).
+
+Pendiente de acción manual del usuario (no lo puede hacer el agente):
+crear cuenta en resend.com, verificar un dominio propio en
+resend.com/domains, generar una API key, y configurar `RESEND_API_KEY` y
+`RESEND_FROM_EMAIL` como variables de entorno en Railway (production y
+staging). Hasta entonces, `enviar_email()` detecta la ausencia de
+`RESEND_API_KEY`, no intenta conectar, registra un warning y devuelve
+`False` sin romper el flujo — el fallback manual de admin
+(`/admin/feedback/<id>/restablecer-contrasena`) sigue disponible.
+
+Siguiente: decidir el próximo punto del backlog.
 
 Nota: `e2e/test_sintetica_staging.py` apunta a la app real de Railway
 (STAGING_URL) y no se ejecuta salvo necesidad explícita, para no seguir
@@ -33,7 +76,7 @@ resolvía es poco frecuente y el aviso a terceros ya cubre el hueco real,
 así que añadir esa lógica era sobre-ingeniería para el problema real.
 
 ## Backlog (fuente: .backlog)
-- [ ] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones). Diseño ya contempla el hueco para un tercer `modo`; implementar más adelante.
+- [x] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones) ✓
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
 - [x] B0b: «Me interesa» en Buscar cambios: match manual desde cualquier publicación ajena (Regalo/Petición/Junte/Cambio con modal de selección) ✓
 - [x] B1: Mensaje opcional (≤200 chars) al publicar un cambio ✓
@@ -155,6 +198,14 @@ así que añadir esa lógica era sobre-ingeniería para el problema real.
 - [x] feat(auth): recuperación de contraseña self-service — sustituye el flujo manual (el usuario pedía por un ticket de feedback y el admin generaba una contraseña temporal a mano) por `/auth/recuperar-contrasena` + `/auth/restablecer-contrasena/<token>`, con el mismo mensaje de éxito exista o no el email (anti-enumeración) y envío del enlace por email vía Resend · el reseteo manual de admin (`/admin/feedback/<id>/restablecer-contrasena`) se mantiene como fallback si el email no llega · 12 tests · 758 tests passing
 - [x] feat(feedback): email a todos los admins (además del push ya existente) cuando llega un feedback nuevo de tipo error/sugerencia · excluye a propósito el tipo `recuperacion`, que ya está cubierto por el flujo self-service y solo queda como fallback manual poco frecuente · reutiliza la misma consulta de admins que ya usaba el push · 5 tests
 - [x] feat(demo): amplía el contenido de la unidad de demostración (`app/services/demo.py`), que se notó demasiado escasa en producción · bots 5→20 · publicaciones abiertas de bots generadas a partir de plantillas cicladas en 4 rondas (7→28) · matches `confirmado_total` entre bots 1→4 (nuevo helper `_match_confirmado_total`) · `_sembrar_planillas` generalizado para dar planilla a todos los usuarios (antes hardcodeado a 8) en vez de dejar sin planilla a los bots nuevos · cuentas demo (Ana/Carlos/Elena) y sus escenarios de match sin cambios · 4 tests nuevos · 776 tests passing
+- [x] fix(db): `SQLALCHEMY_ENGINE_OPTIONS` con `pool_pre_ping=True` + `pool_recycle=280` en `ProductionConfig` — Railway cierra conexiones ociosas a Postgres, el pool por defecto (sin ping) reutilizaba conexiones muertas y causaba `SSL SYSCALL error: EOF detected` en `/auth/login` y otras rutas (visto en logs de producción) · sin test dedicado (config de infraestructura, no lógica de negocio) · 776 tests passing
+- [x] feat(admin): panel de Analytics — scroll horizontal en el gráfico de líneas existente (contenedor con ancho fijo `nº puntos × 44px` dentro de `overflow-x:auto`, sin forzar scroll si el contenido cabe) + segundo gráfico de barras con desplegable de un único indicador (cambios publicados, matches, cambios eliminados, planillas publicadas, clics «Me interesa», confirmados, activos acumulados) y su propia granularidad día/semana/mes · nuevas series temporales `eliminadas` (`AuditEliminacion.fecha`) y `planillas_publicadas` (nuevo `Event` `planilla_publicada`, registrado en `POST /planilla/<a>/<m>/publicar`) añadidas a `/admin/analytics/data` · paleta de las 2 series nuevas validada con el script de la skill dataviz (teal `#0d9488` / dorado `#a16207`, 8 colores categóricos, todos los checks en PASS) · bug real de layout encontrado y corregido de paso: `.admin-layout { align-items: flex-start }` en el breakpoint móvil (`flex-direction: column`) hacía que `.admin-content` se dimensionara por su contenido en vez de por el contenedor, rompiendo cualquier `overflow-x` de un descendiente — corregido con `align-items: stretch` solo dentro de esa media query · verificado con Playwright headless (móvil 500px con scroll contenido + escritorio 1280px sin overflow, selector de métrica e granularidad probados con datos reales insertados y luego limpiados de la BD de desarrollo local) · 6 tests nuevos · 763 tests passing
+- [x] fix(datos): columna `notificacion.mensaje` ausente en la BD de `staging` pese a que `alembic_version` ya marcaba el head correcto — la migración `9310c6bbcb55` (main) se insertó en el historial *después* de que `staging` ya hubiera llegado a la revisión siguiente (`6085c41640ba`, password reset), así que al fusionar ambas ramas Alembic vio "ya estoy en head" y nunca ejecutó su `ALTER TABLE` en staging, aunque el código (y producción, desplegada en otro orden) ya esperaban la columna — causaba un 500 en cualquier página que tocara `Notificacion` (detectado por el usuario en GlitchTip tras una prueba manual de feedback). Diagnosticado comparando `alembic_version` y el esquema completo (`information_schema.columns`) de ambas bases vía `railway` CLI + `psql` de solo lectura; corregido aplicando en staging el mismo `ALTER TABLE notificacion ADD COLUMN mensaje TEXT` que la migración habría ejecutado (columna nullable, sin tocar `alembic_version` porque ya apuntaba al head correcto) · esquemas de producción y staging verificados idénticos tras el fix
+- [x] feat(feedback): email a todos los admins cuando llega un feedback nuevo (`/feedback`), complementando el aviso push existente — el push depende de que el admin tenga la suscripción activa en ese navegador/dispositivo, el email siempre llega · reutiliza `enviar_email` (Resend) y el patrón de plantilla HTML de `email/recuperar_password.html` · nueva plantilla `email/nuevo_feedback.html` (tipo, contacto si lo hay, descripción, enlace a `/admin/feedback`) · 2 tests nuevos
+- [x] feat(calendario): B18 — tercer modo "Juntes de noches" en el calendario visual, junto a Ofertas/Peticiones · a diferencia de esos dos modos (donde cedido/aceptado son direccionales y `construir_calendario_mes` elige un único modelo), en un junte cedido y aceptado son las dos caras de la misma permuta semanal, así que el modo `juntes` combina ambas tablas en vez de elegir una · nueva entrada `"juntes": ("junte",)` en `_TIPOS_POR_MODO` · añadida la etiqueta `junte` que faltaba en `tipo_labels` de la ruta (antes se colaba el tipo crudo en el drill-down) · tercer botón morado en el selector (`--juntes`, a juego con el `#9333ea` que ya usa "cualquier franja") · JS `_urlPublicacion` no fija `tipo_fecha` en modo juntes (no direccional; `/cambios` ya hace el OR correcto) · catálogo i18n actualizado (pybabel extract/update/compile) · 7 tests nuevos (servicio + ruta) · 779 tests passing · rama `feat/calendario-juntes-noches` sobre `staging`
+- [x] fix(email): los avisos de feedback a `guillen@delbarrioblanco.net` rebotaban en producción (`last_event: bounced` en Resend) — diagnosticado enviando pruebas directas a la API de Resend: un email con enlace a `*.up.railway.app` rebota siempre (con o sin HTTPS), uno sin ese enlace se entrega bien, así que el filtro de correo del destinatario bloquea específicamente los enlaces al dominio compartido de Railway, no el envío en sí. Añadido `url_absoluta()` en `app/services/email.py` (usa `APP_BASE_URL` si está configurada, si no cae al `url_for(_external=True)` de siempre) y aplicado a los dos enlaces salientes existentes (aviso de feedback y recuperación de contraseña). Se añade el dominio propio `app.turnero.xyz` como custom domain en Railway (`web-production-0f001.up.railway.app` se deja intacto y sigue sirviendo el mismo servicio sin redirección: los usuarios que ya instalaron la PWA desde ese origen no pueden "migrarse" a otro origen, es una limitación del propio modelo de PWA) · 2 tests nuevos
+- [x] feat(calendario): rediseño del modo "Juntes de noches" — de grid día-a-día a filas por semana con distribución trabaja/libra desplegable, tras validar un mockup (Artifact) con el usuario · nuevo módulo `app/services/junte_semanal.py` (`calcular_distribucion`, `resumen_textual`, `lista_es`, `DIAS_CORTOS`), compartido entre `main.py::_junte_info` (WA/resumen en /cambios y /dashboard) y el calendario — elimina la duplicación de la lógica LMVD/MJS que antes vivía solo en `main.py` · el cálculo del lunes de la semana pasa de "primer turno_cedido insertado" a `min()` de todas las fechas del junte (más robusto, mismo resultado en todos los casos reales) · revertido el soporte de `construir_calendario_mes`/`_TIPOS_POR_MODO` para `modo="juntes"` (quedaba como código muerto tras el rediseño: ya no lo llama la ruta) · nuevas `construir_semanas_juntes`/`preparar_semanas_juntes` en `calendario_mercado.py`: agregan por lunes natural en vez de por día, generan la tira de 7 días (trabaja=verde/libra=naranja, mismos colores que Ofertas/Peticiones) y marcan semanas parciales (a caballo entre meses) · plantilla con `<details>/<summary>` nativo (sin JS) para el desplegable por semana; el grid+JS de drill-down de ofertas/peticiones queda intacto, solo se salta para `modo=juntes` · enlace "Ver publicación" usa `/cambios?pub_id=` (ya soportado) en vez del flujo día+franja+usuario de ofertas/peticiones · catálogo i18n actualizado · 10 tests nuevos (`test_junte_semanal.py`, `test_calendario_semanas_juntes.py`) + 2 tests de ruta reescritos · verificación afectada por sesiones concurrentes compartiendo la BD Postgres local de test (deadlocks/errores de sesión ajenos a este cambio); los ficheros de test relevantes (junte_semanal, calendario_mercado, calendario_ruta, calendario_semanas_juntes, combinaciones_match, cambios, dashboard, publicar_junte) pasan limpios en ventanas sin contención · rama `feat/calendario-juntes-semanas` sobre `staging`, push directo pedido por el usuario
+- [x] feat(auth): botón "Probar con una cuenta demo" también en la portada (`main.index`, `/`), junto a "Crear cuenta"/"Entrar" — antes solo estaba en `/auth/login`. `main.index` calcula `demo_login_enabled` igual que la vista de login (`bool(DEMO_LOGIN_EMAIL)`) y la plantilla añade el mismo `<form>`/botón dentro del `.btn-group` existente, sin bloque nuevo (verificado visualmente con Playwright en 420px y 1200px: el botón queda alineado junto a los otros dos, con estilo `btn-secondary` para distinguirlo como acción alternativa) · 2 tests nuevos
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

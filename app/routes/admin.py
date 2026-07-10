@@ -1006,15 +1006,39 @@ def analytics_data():
         )
     rows_mi = q_mi.group_by("periodo").order_by("periodo").all()
 
+    # ── publicaciones eliminadas ─────────────────────────────────────────────
+    q_e = db.session.query(
+        func.date_trunc(granularity, AuditEliminacion.fecha).label("periodo"),
+        func.count(AuditEliminacion.id).label("total"),
+    )
+    if unidad_id:
+        q_e = q_e.filter(AuditEliminacion.unidad_id == unidad_id)
+    rows_e = q_e.group_by("periodo").order_by("periodo").all()
+
+    # ── planillas publicadas ─────────────────────────────────────────────────
+    q_pp = db.session.query(
+        func.date_trunc(granularity, Event.created_at).label("periodo"),
+        func.count(Event.id).label("total"),
+    ).filter(Event.event_type == "planilla_publicada")
+    if unidad_id:
+        q_pp = q_pp.join(Usuario, Usuario.id == Event.user_id).filter(
+            Usuario.unidad_id == unidad_id
+        )
+    rows_pp = q_pp.group_by("periodo").order_by("periodo").all()
+
     d_u  = to_dict(rows_u)
     d_p  = to_dict(rows_p)
     d_pc = to_dict(rows_pc)
     d_m  = to_dict(rows_m)
     d_c  = to_dict(rows_c)
     d_mi = to_dict(rows_mi)
+    d_e  = to_dict(rows_e)
+    d_pp = to_dict(rows_pp)
 
     # Unión de todas las fechas con actividad
-    all_dates = sorted(set(d_u) | set(d_p) | set(d_pc) | set(d_m) | set(d_c) | set(d_mi))
+    all_dates = sorted(
+        set(d_u) | set(d_p) | set(d_pc) | set(d_m) | set(d_c) | set(d_mi) | set(d_e) | set(d_pp)
+    )
 
     # Activas acumuladas: suma corriente de (creadas - cerradas) por bucket
     all_delta_dates = sorted(set(d_p) | set(d_pc))
@@ -1121,6 +1145,8 @@ def analytics_data():
             "matches": [d_m.get(d, 0) for d in all_dates],
             "confirmados": [d_c.get(d, 0) for d in all_dates],
             "me_interesa": [d_mi.get(d, 0) for d in all_dates],
+            "eliminadas": [d_e.get(d, 0) for d in all_dates],
+            "planillas_publicadas": [d_pp.get(d, 0) for d in all_dates],
         },
         "totals": {
             "usuarios": t_usuarios,

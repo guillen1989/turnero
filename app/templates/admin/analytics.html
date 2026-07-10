@@ -79,7 +79,41 @@
 </div>
 
 <div class="analytics-chart-wrapper">
-  <canvas id="analyticsChart"></canvas>
+  <div class="analytics-chart-scroll">
+    <div class="analytics-chart-inner" id="analyticsChartInner">
+      <canvas id="analyticsChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<h2 class="analytics-section-title">{{ _('Evolución de un indicador') }}</h2>
+
+<div class="analytics-controls">
+  <div class="analytics-metric-filter">
+    <label for="metric-select">{{ _('Indicador') }}</label>
+    <select id="metric-select" class="analytics-select">
+      <option value="publicaciones">{{ _('Cambios publicados') }}</option>
+      <option value="matches">{{ _('Matches') }}</option>
+      <option value="eliminadas">{{ _('Cambios eliminados') }}</option>
+      <option value="planillas_publicadas">{{ _('Planillas publicadas') }}</option>
+      <option value="me_interesa">{{ _('Clics «Me interesa»') }}</option>
+      <option value="confirmados">{{ _('Cambios confirmados') }}</option>
+      <option value="activas">{{ _('Cambios activos (acumulado)') }}</option>
+    </select>
+  </div>
+  <div class="analytics-granularity" role="group" aria-label="{{ _('Granularidad') }}">
+    <button class="btn btn-sm metric-granularity-btn active" data-value="day">{{ _('Días') }}</button>
+    <button class="btn btn-sm metric-granularity-btn" data-value="week">{{ _('Semanas') }}</button>
+    <button class="btn btn-sm metric-granularity-btn" data-value="month">{{ _('Meses') }}</button>
+  </div>
+</div>
+
+<div class="analytics-chart-wrapper">
+  <div class="analytics-chart-scroll">
+    <div class="analytics-chart-inner" id="metricChartInner">
+      <canvas id="metricChart"></canvas>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -126,6 +160,18 @@
     }
   }
 
+  // Ancho mínimo por punto para que el scroll horizontal aparezca cuando
+  // hay más puntos de los que caben en el ancho disponible, en vez de
+  // aplastar el gráfico.
+  const PX_PER_POINT = 44;
+
+  function resizeChartInner(innerId, pointCount) {
+    const inner = document.getElementById(innerId);
+    const scrollEl = inner.parentElement;
+    const minWidth = scrollEl.clientWidth;
+    inner.style.width = Math.max(minWidth, pointCount * PX_PER_POINT) + "px";
+  }
+
   async function loadChart() {
     const params = new URLSearchParams({ granularity: currentGranularity });
     if (currentUnidad) params.set("unidad_id", currentUnidad);
@@ -138,6 +184,8 @@
     const labels = json.labels.map(l => formatLabel(l, currentGranularity));
     const ds = json.datasets;
 
+    resizeChartInner("analyticsChartInner", labels.length);
+
     if (chart) {
       chart.data.labels = labels;
       chart.data.datasets[0].data = ds.usuarios;
@@ -146,6 +194,7 @@
       chart.data.datasets[3].data = ds.matches;
       chart.data.datasets[4].data = ds.confirmados;
       chart.data.datasets[5].data = ds.me_interesa;
+      chart.resize();
       chart.update();
       return;
     }
@@ -208,9 +257,75 @@
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         plugins: {
           legend: { position: "top" },
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } },
+        },
+      },
+    });
+  }
+
+  // ── Segundo gráfico: barras de un único indicador ─────────────────────────
+  const METRIC_COLORS = {
+    publicaciones: "#16a34a",
+    matches: "#d97706",
+    eliminadas: "#0d9488",
+    planillas_publicadas: "#a16207",
+    me_interesa: "#e11d48",
+    confirmados: "#7c3aed",
+    activas: "#0891b2",
+  };
+
+  let metricChart = null;
+  let currentMetric = "publicaciones";
+  let currentMetricGranularity = "day";
+
+  async function loadMetricChart() {
+    const params = new URLSearchParams({ granularity: currentMetricGranularity });
+    if (currentUnidad) params.set("unidad_id", currentUnidad);
+
+    const resp = await fetch(dataUrl + "?" + params.toString());
+    const json = await resp.json();
+
+    const labels = json.labels.map(l => formatLabel(l, currentMetricGranularity));
+    const data = json.datasets[currentMetric] || [];
+    const color = METRIC_COLORS[currentMetric];
+
+    resizeChartInner("metricChartInner", labels.length);
+
+    if (metricChart) {
+      metricChart.data.labels = labels;
+      metricChart.data.datasets[0].data = data;
+      metricChart.data.datasets[0].label = document.getElementById("metric-select").selectedOptions[0].text;
+      metricChart.data.datasets[0].backgroundColor = color;
+      metricChart.resize();
+      metricChart.update();
+      return;
+    }
+
+    const ctx = document.getElementById("metricChart").getContext("2d");
+    metricChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: document.getElementById("metric-select").selectedOptions[0].text,
+            data,
+            backgroundColor: color,
+            borderRadius: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
         },
         scales: {
           y: { beginAtZero: true, ticks: { precision: 0 } },
@@ -235,10 +350,29 @@
   document.getElementById("unidad-select").addEventListener("change", e => {
     currentUnidad = e.target.value;
     loadChart();
+    loadMetricChart();
+  });
+
+  document.getElementById("metric-select").addEventListener("change", e => {
+    currentMetric = e.target.value;
+    loadMetricChart();
+  });
+
+  document.querySelectorAll(".metric-granularity-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".metric-granularity-btn").forEach(b => {
+        b.classList.remove("active", "btn-primary");
+        b.classList.add("btn-secondary");
+      });
+      btn.classList.add("active", "btn-primary");
+      btn.classList.remove("btn-secondary");
+      currentMetricGranularity = btn.dataset.value;
+      loadMetricChart();
+    });
   });
 
   // Inicializar estilos de los botones
-  document.querySelectorAll(".granularity-btn").forEach(btn => {
+  document.querySelectorAll(".granularity-btn, .metric-granularity-btn").forEach(btn => {
     if (btn.classList.contains("active")) {
       btn.classList.add("btn-primary");
     } else {
@@ -247,6 +381,7 @@
   });
 
   loadChart();
+  loadMetricChart();
 })();
 </script>
 {% endblock %}
