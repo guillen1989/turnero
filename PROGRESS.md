@@ -13,9 +13,13 @@ anidado, ciclo completo, sin sintéticas todavía) en
 `test_cadena_3.py`. Paso 3 completado: `buscar_cadenas_4_para`/`crear_match_cadena_4` enganchados
 en las 3 rutas que ya disparan cadena_3 (`/publicar`, editar, contraoferta
 — `app/routes/publicaciones.py`) · 1 test de integración de ruta nuevo.
-Siguiente paso: generalizar el badge hardcodeado `match.tipo == 'cadena_3'`
-en `app/templates/main/dashboard.html` para reconocer también `cadena_4`
-("¡Cambio a 4 bandas!" + CSS `.match--cadena-4`). Alcance completo de B19
+Paso 4 completado: badge "¡Cambio a 4 bandas!" en `dashboard.html`,
+generalizando los checks hardcodeados `match.tipo == 'cadena_3'` (ahora
+`es_cadena = match.tipo in ('cadena_3','cadena_4')`) · 1 test de ruta
+nuevo. Siguiente paso: columna `sintetica_pub_intermedio_id` en
+`PublicacionCambio` (nullable, guarda la banda real intermedia "B" de un
+trío A→B→C ya cerrado cuando la sintética completa el hueco C→D→A) +
+migración `flask db migrate` (1 head). Alcance completo de B19
 (visto con el usuario):
 detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la

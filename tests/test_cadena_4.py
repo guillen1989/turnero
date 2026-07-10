@@ -305,3 +305,31 @@ def test_publicar_crea_match_cadena_4_cuando_hay_ciclo(client, db):
     assert match is not None
     assert match.estado == "propuesto"
     assert MatchParticipacion.query.filter_by(match_id=match.id).count() == 4
+
+
+def test_cadena_4_aparece_en_tab_compatible(client, db):
+    """Un cadena_4 match propuesto aparece en el tab 'Compatibles' del dashboard
+    con su propio badge, distinto del de cadena_3."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "H1", "Urgencias", cat.id)
+    maria = registrar_usuario("María", "maria@test.es", "password123", "H1", "Urgencias", cat.id)
+    luis = registrar_usuario("Luis", "luis@test.es", "password123", "H1", "Urgencias", cat.id)
+
+    gid = ana.unidad.grupo_intercambio_id
+    fr_m = FranjaHoraria.query.filter_by(grupo_intercambio_id=gid, nombre="Mañana").first()
+    fr_t = FranjaHoraria.query.filter_by(grupo_intercambio_id=gid, nombre="Tarde").first()
+    fr_n = FranjaHoraria.query.filter_by(grupo_intercambio_id=gid, nombre="Noche").first()
+
+    pub_ana = _pub(ana, date(2026, 7, 1), fr_m, date(2026, 7, 4), fr_m)
+    pub_pedro = _pub(pedro, date(2026, 7, 2), fr_t, date(2026, 7, 1), fr_m)
+    pub_maria = _pub(maria, date(2026, 7, 3), fr_n, date(2026, 7, 2), fr_t)
+    pub_luis = _pub(luis, date(2026, 7, 4), fr_m, date(2026, 7, 3), fr_n)
+    crear_match_cadena_4(pub_ana, pub_pedro, pub_maria, pub_luis)
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/?estado=compatible")
+
+    assert resp.status_code == 200
+    assert "Cambio a 4 bandas".encode() in resp.data
