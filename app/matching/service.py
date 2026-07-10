@@ -17,7 +17,12 @@ from app.models import (
     Unidad,
     Usuario,
 )
-from app.matching.engine import detectar_cadena_3, detectar_match_directo, detectar_match_regalo
+from app.matching.engine import (
+    detectar_cadena_3,
+    detectar_cadena_4,
+    detectar_match_directo,
+    detectar_match_regalo,
+)
 from app.push.sender import enviar_push_condicional
 from app.services.busquedas_guardadas import notificar_busquedas_guardadas
 from app.services.eventos import registrar_evento
@@ -441,6 +446,236 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
     return match
 
 
+def _cadenas_4_existentes(pub_id):
+    """Frozensets de pub_ids para cadena_4 matches activos que incluyen pub_id."""
+    from sqlalchemy import select as sa_select
+
+    match_ids = db.session.execute(
+        sa_select(MatchParticipacion.match_id)
+        .join(MatchCambio, MatchParticipacion.match_id == MatchCambio.id)
+        .where(
+            MatchParticipacion.publicacion_id == pub_id,
+            MatchCambio.tipo == "cadena_4",
+            MatchCambio.estado.in_(["propuesto", "confirmado_parcial"]),
+        )
+    ).scalars().all()
+
+    if not match_ids:
+        return set()
+
+    rows = db.session.execute(
+        sa_select(MatchParticipacion.match_id, MatchParticipacion.publicacion_id)
+        .where(MatchParticipacion.match_id.in_(match_ids))
+    ).all()
+
+    agrupado = {}
+    for mid, pid in rows:
+        agrupado.setdefault(mid, set()).add(pid)
+
+    return {frozenset(pubs) for pubs in agrupado.values()}
+
+
+def buscar_cadenas_4_para(publicacion):
+    """
+    Devuelve lista de tríos (pub_b, pub_c, pub_d) donde
+    publicacion→pub_b→pub_c→pub_d→publicacion forma un ciclo de intercambio
+    válido a 4 bandas.
+
+    Solo opera sobre publicaciones de tipo 'cambio'.
+    """
+    if publicacion.tipo != "cambio":
+        return []
+
+    propietario = db.session.get(Usuario, publicacion.usuario_id)
+    grupo_id = propietario.unidad.grupo_intercambio_id
+    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+    candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
+
+    cedidos_a = _cedidos_abiertos(publicacion)
+    aceptados_a = _aceptados(publicacion)
+
+    cedidos_por_pub = {c.id: _cedidos_abiertos(c) for c in candidatas_cambio}
+    aceptados_por_pub = {c.id: _aceptados(c) for c in candidatas_cambio}
+
+    existing = _cadenas_4_existentes(publicacion.id)
+    resultado = []
+
+    for pub_b in candidatas_cambio:
+        cedidos_b = cedidos_por_pub[pub_b.id]
+        aceptados_b = aceptados_por_pub[pub_b.id]
+
+        if not (cedidos_a & aceptados_b):
+            continue
+
+        for pub_c in candidatas_cambio:
+            if pub_c.id == pub_b.id or pub_c.usuario_id == pub_b.usuario_id:
+                continue
+
+            cedidos_c = cedidos_por_pub[pub_c.id]
+            aceptados_c = aceptados_por_pub[pub_c.id]
+
+            if not (cedidos_b & aceptados_c):
+                continue
+
+            for pub_d in candidatas_cambio:
+                if pub_d.id in (pub_b.id, pub_c.id):
+                    continue
+                if pub_d.usuario_id in (pub_b.usuario_id, pub_c.usuario_id):
+                    continue
+
+                cedidos_d = cedidos_por_pub[pub_d.id]
+                aceptados_d = aceptados_por_pub[pub_d.id]
+
+                if detectar_cadena_4(
+                    cedidos_a, aceptados_a,
+                    cedidos_b, aceptados_b,
+                    cedidos_c, aceptados_c,
+                    cedidos_d, aceptados_d,
+                ):
+                    key = frozenset({publicacion.id, pub_b.id, pub_c.id, pub_d.id})
+                    if key not in existing:
+                        resultado.append((pub_b, pub_c, pub_d))
+                        existing.add(key)
+
+    return resultado
+
+
+def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
+    """
+    Crea un MatchCambio a 4 bandas para el ciclo pub_a→pub_b→pub_c→pub_d→pub_a.
+
+    Cada participación registra el turno que ese usuario cede al siguiente
+    en el ciclo. Idempotente: si el cuarteto ya tiene un match activo, devuelve None.
+    """
+    if frozenset({pub_a.id, pub_b.id, pub_c.id, pub_d.id}) in _cadenas_4_existentes(pub_a.id):
+        return None
+
+    aceptados_a = _aceptados(pub_a)
+    aceptados_b = _aceptados(pub_b)
+    aceptados_c = _aceptados(pub_c)
+    aceptados_d = _aceptados(pub_d)
+
+    turno_a = _primer_cedido_que_acepta(pub_a, aceptados_b)  # A cede a B
+    turno_b = _primer_cedido_que_acepta(pub_b, aceptados_c)  # B cede a C
+    turno_c = _primer_cedido_que_acepta(pub_c, aceptados_d)  # C cede a D
+    turno_d = _primer_cedido_que_acepta(pub_d, aceptados_a)  # D cede a A
+
+    if not turno_a or not turno_b or not turno_c or not turno_d:
+        db.session.rollback()
+        return None
+
+    match = MatchCambio(tipo="cadena_4", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=turno_a.id
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=turno_b.id
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_c.id, turno_cedido_id=turno_c.id
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_d.id, turno_cedido_id=turno_d.id
+    ))
+
+    for pub in (pub_a, pub_b, pub_c, pub_d):
+        db.session.add(Notificacion(
+            usuario_id=pub.usuario_id, match_id=match.id, tipo="nuevo_match"
+        ))
+
+    db.session.commit()
+
+    enviar_push_condicional(pub_b.usuario, "match")
+    enviar_push_condicional(pub_c.usuario, "match")
+    enviar_push_condicional(pub_d.usuario, "match")
+
+    for pub in (pub_a, pub_b, pub_c, pub_d):
+        registrar_evento(pub.usuario_id, "match_found", match.id)
+    db.session.commit()
+
+    return match
+
+
+def buscar_cadenas_parciales_4_para(publicacion):
+    """
+    Devuelve lista de tríos (pub_a, pub_b, pub_c) donde pub_a→pub_b→pub_c
+    cierra 2 de los 3 eslabones de un ciclo sin cerrar el tercero (pub_c→pub_a):
+    si cerrara sería ya una cadena_3 completa, no un hueco de cadena_4.
+    `publicacion` participa en el trío, pero no necesariamente como pub_a:
+    a diferencia de un ciclo cerrado (con simetría rotacional), un camino
+    abierto A→B→C no es simétrico, así que hay que buscar `publicacion` en
+    sus 3 posibles posiciones (primera, intermedia o última) para que el
+    hueco se detecte sin importar qué banda del trío publique o edite la
+    última.
+
+    Estos tríos son la base para generar una publicación sintética que
+    represente al cuarto usuario que falta. Solo opera sobre publicaciones
+    de tipo 'cambio'.
+    """
+    if publicacion.tipo != "cambio":
+        return []
+
+    propietario = db.session.get(Usuario, publicacion.usuario_id)
+    grupo_id = propietario.unidad.grupo_intercambio_id
+    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+    candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
+
+    cedidos_pub = _cedidos_abiertos(publicacion)
+    aceptados_pub = _aceptados(publicacion)
+
+    cedidos_por_pub = {c.id: _cedidos_abiertos(c) for c in candidatas_cambio}
+    aceptados_por_pub = {c.id: _aceptados(c) for c in candidatas_cambio}
+
+    def _distintos(pub_x, pub_y):
+        return pub_x.id != pub_y.id and pub_x.usuario_id != pub_y.usuario_id
+
+    resultado = []
+
+    # Rol A: publicacion→x→y, sin que y cierre de vuelta con publicacion.
+    for pub_x in candidatas_cambio:
+        if not (cedidos_pub & aceptados_por_pub[pub_x.id]):
+            continue
+        for pub_y in candidatas_cambio:
+            if not _distintos(pub_x, pub_y):
+                continue
+            if not (cedidos_por_pub[pub_x.id] & aceptados_por_pub[pub_y.id]):
+                continue
+            if cedidos_por_pub[pub_y.id] & aceptados_pub:
+                continue
+            resultado.append((publicacion, pub_x, pub_y))
+
+    # Rol B (intermedio): x→publicacion→y, sin que y cierre de vuelta con x.
+    for pub_x in candidatas_cambio:
+        if not (cedidos_por_pub[pub_x.id] & aceptados_pub):
+            continue
+        for pub_y in candidatas_cambio:
+            if not _distintos(pub_x, pub_y):
+                continue
+            if not (cedidos_pub & aceptados_por_pub[pub_y.id]):
+                continue
+            if cedidos_por_pub[pub_y.id] & aceptados_por_pub[pub_x.id]:
+                continue
+            resultado.append((pub_x, publicacion, pub_y))
+
+    # Rol C (última): x→y→publicacion, sin que publicacion cierre de vuelta con x.
+    for pub_x in candidatas_cambio:
+        for pub_y in candidatas_cambio:
+            if not _distintos(pub_x, pub_y):
+                continue
+            if not (cedidos_por_pub[pub_x.id] & aceptados_por_pub[pub_y.id]):
+                continue
+            if not (cedidos_por_pub[pub_y.id] & aceptados_pub):
+                continue
+            if cedidos_pub & aceptados_por_pub[pub_x.id]:
+                continue
+            resultado.append((pub_x, pub_y, publicacion))
+
+    return resultado
+
+
 def buscar_avisos_interes_para(publicacion):
     """
     Devuelve publicaciones cambio con solapamiento unilateral respecto a `publicacion`.
@@ -500,6 +735,48 @@ def crear_aviso_oportunidad_3(pub_a, pub_b):
     enviar_push_condicional(pub_b.usuario, "aviso_oportunidad_3")
 
 
+def crear_aviso_oportunidad_4(pub_a, pub_b, pub_c):
+    """
+    Crea una Notificacion combinada de tipo 'aviso_oportunidad_4' para cada
+    uno de los 3 usuarios reales del trío A→B→C (falta un cuarto para
+    cerrar el ciclo). Cada destinatario referencia al siguiente en el
+    ciclo, igual que crear_aviso_oportunidad_3 hace con el par.
+    Idempotente: no duplica si ya existe para el mismo trío.
+    """
+    for destinatario_id, pub_ref in (
+        (pub_a.usuario_id, pub_b),
+        (pub_b.usuario_id, pub_c),
+        (pub_c.usuario_id, pub_a),
+    ):
+        existe = Notificacion.query.filter_by(
+            usuario_id=destinatario_id,
+            publicacion_id=pub_ref.id,
+            tipo="aviso_oportunidad_4",
+        ).first()
+        if not existe:
+            db.session.add(Notificacion(
+                usuario_id=destinatario_id,
+                publicacion_id=pub_ref.id,
+                tipo="aviso_oportunidad_4",
+            ))
+    db.session.commit()
+
+    enviar_push_condicional(pub_a.usuario, "aviso_oportunidad_4")
+    enviar_push_condicional(pub_b.usuario, "aviso_oportunidad_4")
+    enviar_push_condicional(pub_c.usuario, "aviso_oportunidad_4")
+
+
+def procesar_cadena_parcial_4(pub_a, pub_b, pub_c):
+    """
+    Crea la pub sintética (con pub_b como intermedio) y el aviso combinado
+    para un trío pub_a→pub_b→pub_c que cierra 2 de los 3 eslabones de un
+    hueco de cadena_4. La dirección ya viene resuelta por
+    buscar_cadenas_parciales_4_para, a diferencia de procesar_aviso_y_sintetica.
+    """
+    crear_pub_sintetica(pub_a, pub_c, pub_intermedio=pub_b)
+    crear_aviso_oportunidad_4(pub_a, pub_b, pub_c)
+
+
 def procesar_aviso_y_sintetica(pub, candidata):
     """
     Crea la pub sintética y el aviso combinado para un par (pub, candidata)
@@ -516,22 +793,31 @@ def procesar_aviso_y_sintetica(pub, candidata):
     crear_aviso_oportunidad_3(pub, candidata)
 
 
-def crear_pub_sintetica(pub_a, pub_b):
+def crear_pub_sintetica(pub_a, pub_b, pub_intermedio=None):
     """
-    Crea una PublicacionCambio sintética que cierra el triángulo entre pub_a y pub_b.
+    Crea una PublicacionCambio sintética que cierra el hueco entre pub_a y pub_b.
 
-    Regla de construcción:
+    Regla de construcción (misma para cadena_3 y cadena_4, solo depende de
+    los dos extremos del hueco):
       cedido_sintética  = aceptados abiertos de pub_a  (A cubriría esos turnos para C)
       acepta_sintética  = cedidos  abiertos de pub_b  (C cubriría esos turnos para B)
 
+    pub_intermedio: solo para cadena_4. Es la banda real "B" del trío
+    A→B→C ya cerrado; se guarda para poder reconstruir el ciclo completo
+    cuando un cuarto usuario cierre la sintética. None (por defecto) para
+    sintéticas de cadena_3.
+
     Propietario = usuario de pub_a.
-    Idempotente: si ya existe una sintética para este par, la devuelve sin crear otra.
+    Idempotente: si ya existe una sintética activa para este trío (mismos
+    pub_a, pub_b y pub_intermedio), la devuelve sin crear otra.
     """
     from app.models import TurnoCedido as TC, TurnoAceptado as TA
 
+    intermedio_id = pub_intermedio.id if pub_intermedio else None
     existente = PublicacionCambio.query.filter(
         PublicacionCambio.sintetica_pub_a_id == pub_a.id,
         PublicacionCambio.sintetica_pub_b_id == pub_b.id,
+        PublicacionCambio.sintetica_pub_intermedio_id == intermedio_id,
         PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
     ).first()
     if existente:
@@ -543,6 +829,7 @@ def crear_pub_sintetica(pub_a, pub_b):
         es_sintetica=True,
         sintetica_pub_a_id=pub_a.id,
         sintetica_pub_b_id=pub_b.id,
+        sintetica_pub_intermedio_id=intermedio_id,
     )
     db.session.add(sint)
     db.session.flush()
@@ -640,6 +927,28 @@ def crear_cadena_3_desde_sintetica(pub_c, pub_sintetica):
         return None
 
     match = crear_match_cadena_3(pub_a, pub_b, pub_c)
+    if match:
+        pub_sintetica.estado = "cancelada"
+        db.session.commit()
+    return match
+
+
+def crear_cadena_4_desde_sintetica(pub_d, pub_sintetica):
+    """
+    Crea un MatchCambio cadena_4 entre pub_a, pub_b (intermedio), pub_c y
+    pub_d usando la pub_sintetica como puente para recuperar el trío real
+    A→B→C. Cancela la pub_sintetica al finalizar.
+    """
+    pub_a = db.session.get(PublicacionCambio, pub_sintetica.sintetica_pub_a_id)
+    pub_b = db.session.get(PublicacionCambio, pub_sintetica.sintetica_pub_intermedio_id)
+    pub_c = db.session.get(PublicacionCambio, pub_sintetica.sintetica_pub_b_id)
+
+    if not pub_a or not pub_b or not pub_c:
+        return None
+    if not pub_a.esta_activa() or not pub_b.esta_activa() or not pub_c.esta_activa():
+        return None
+
+    match = crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d)
     if match:
         pub_sintetica.estado = "cancelada"
         db.session.commit()

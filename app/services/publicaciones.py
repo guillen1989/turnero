@@ -102,7 +102,12 @@ def _rechazar_matches_activos_de_publicacion(pub):
 
 
 def _cancelar_sinteticas_de(pub_id):
-    """Cancela todas las pubs sintéticas que dependen de pub_id."""
+    """Cancela todas las pubs sintéticas que dependen de pub_id.
+
+    Incluye sintetica_pub_intermedio_id: en una sintética de cadena_4 esa
+    columna guarda la banda real intermedia del trío (B), que también debe
+    invalidar la sintética si cancela su publicación.
+    """
     from sqlalchemy import or_
     dependientes = PublicacionCambio.query.filter(
         PublicacionCambio.es_sintetica.is_(True),
@@ -110,6 +115,7 @@ def _cancelar_sinteticas_de(pub_id):
         or_(
             PublicacionCambio.sintetica_pub_a_id == pub_id,
             PublicacionCambio.sintetica_pub_b_id == pub_id,
+            PublicacionCambio.sintetica_pub_intermedio_id == pub_id,
         ),
     ).all()
     for sint in dependientes:
@@ -189,6 +195,7 @@ def _eliminar_sinteticas_de(pub_id):
         or_(
             PublicacionCambio.sintetica_pub_a_id == pub_id,
             PublicacionCambio.sintetica_pub_b_id == pub_id,
+            PublicacionCambio.sintetica_pub_intermedio_id == pub_id,
         ),
     ).all()
     for sint in dependientes:

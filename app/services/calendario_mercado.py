@@ -24,15 +24,17 @@ _TIPOS_POR_MODO = {
 _TIPOS_JUNTE = ("junte",)
 
 
-def _candidatas(usuario, tipos):
+def _candidatas(usuario, tipos, mostrar_oportunidad_3=True, mostrar_oportunidad_4=True):
     """Publicaciones candidatas, visibles y activas para el usuario.
 
-    Incluye las sintéticas (oportunidades a 3 bandas): tienen tipo 'cambio' y
-    son justo el tipo de match más difícil de descubrir, así que también se
-    muestran en el calendario (etiquetadas aparte, ver resumen_publicaciones).
+    Incluye las sintéticas (oportunidades a 3 y 4 bandas): tienen tipo
+    'cambio' y son justo el tipo de match más difícil de descubrir, así que
+    también se muestran en el calendario (etiquetadas aparte, ver
+    resumen_publicaciones), salvo que el usuario haya desactivado ese tipo
+    de oportunidad en sus preferencias (mostrar_oportunidad_3/4).
     """
     grupo_id = usuario.unidad.grupo_intercambio_id
-    return (
+    pubs = (
         PublicacionCambio.query
         .join(Usuario, PublicacionCambio.usuario_id == Usuario.id)
         .join(Unidad, Usuario.unidad_id == Unidad.id)
@@ -45,16 +47,28 @@ def _candidatas(usuario, tipos):
         )
         .all()
     )
+    if mostrar_oportunidad_3 and mostrar_oportunidad_4:
+        return pubs
+    return [
+        p for p in pubs
+        if not p.es_sintetica or (
+            mostrar_oportunidad_4 if p.sintetica_pub_intermedio_id is not None
+            else mostrar_oportunidad_3
+        )
+    ]
 
 
-def construir_calendario_mes(usuario, anio, mes, modo):
+def construir_calendario_mes(
+    usuario, anio, mes, modo, mostrar_oportunidad_3=True, mostrar_oportunidad_4=True,
+):
     """
     Devuelve {fecha: {clave_franja: [publicacion_id, ...]}} para el mes dado.
 
     modo: 'ofertas' (turnos que otros trabajarían) o 'peticiones' (turnos que
     otros quieren librar). clave_franja es el id de FranjaHoraria, o la
     constante CUALQUIER_FRANJA si el turno aceptado admite cualquier franja
-    ese día.
+    ese día. mostrar_oportunidad_3/4: preferencia del usuario para incluir o
+    no las sintéticas de cadena_3/cadena_4 (ver _candidatas).
 
     Los juntes de noches no encajan en este modelo día a día (cedido/aceptado
     no son direccionales: son las dos caras de la misma permuta semanal), así
@@ -66,7 +80,9 @@ def construir_calendario_mes(usuario, anio, mes, modo):
     primer_dia = date(anio, mes, 1)
     ultimo_dia = date(anio, mes, calendar.monthrange(anio, mes)[1])
 
-    candidatas = _candidatas(usuario, _TIPOS_POR_MODO[modo])
+    candidatas = _candidatas(
+        usuario, _TIPOS_POR_MODO[modo], mostrar_oportunidad_3, mostrar_oportunidad_4,
+    )
     if not candidatas:
         return {}
 
@@ -217,7 +233,9 @@ def preparar_celdas_mes(dias, calendario_mes, franjas):
 def resumen_publicaciones(pub_ids):
     """Datos mínimos de cada publicación (autor + tipo + si es sintética) para
     el drill-down. es_sintetica permite etiquetarla como "Oportunidad a 3"
-    en vez de con la etiqueta genérica de su tipo."""
+    en vez de con la etiqueta genérica de su tipo; es_sintetica_4 distingue
+    dentro de las sintéticas las que representan un hueco de cadena_4 (con
+    banda intermedia) para etiquetarlas como "Oportunidad a 4"."""
     if not pub_ids:
         return []
     pubs = (
@@ -227,7 +245,13 @@ def resumen_publicaciones(pub_ids):
         .all()
     )
     return [
-        {"id": p.id, "usuario_nombre": p.usuario.nombre, "tipo": p.tipo, "es_sintetica": p.es_sintetica}
+        {
+            "id": p.id,
+            "usuario_nombre": p.usuario.nombre,
+            "tipo": p.tipo,
+            "es_sintetica": p.es_sintetica,
+            "es_sintetica_4": p.sintetica_pub_intermedio_id is not None,
+        }
         for p in pubs
     ]
 

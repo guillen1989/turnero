@@ -37,13 +37,18 @@
   {% if matches %}
   <section class="matches-section">
     {% for match, mi_part, otras_parts, trabajas in matches %}
-    {% set es_parcial = (match.tipo != 'cadena_3') and (mi_part.publicacion.tipo == 'cambio') and (otras_parts[0].publicacion.tipo in ('regalo', 'peticion')) %}
-    <div class="match-card match--{{ match.estado }}{% if match.tipo == 'cadena_3' %} match--cadena-3{% endif %}">
+    {% set es_cadena = match.tipo in ('cadena_3', 'cadena_4') %}
+    {% set es_parcial = (not es_cadena) and (mi_part.publicacion.tipo == 'cambio') and (otras_parts[0].publicacion.tipo in ('regalo', 'peticion')) %}
+    <div class="match-card match--{{ match.estado }}{% if match.tipo == 'cadena_3' %} match--cadena-3{% elif match.tipo == 'cadena_4' %} match--cadena-4{% endif %}">
       <div class="match-header">
         <span class="match-badge match-badge--{{ match.estado }}{% if es_parcial and match.estado == 'propuesto' %} match-badge--parcial{% endif %}">
           {% if match.estado == 'confirmado_total' %}{{ _('¡Confirmado!') }}
           {% elif match.tipo == 'cadena_3' %}
             {% if match.estado == 'propuesto' %}{{ _('¡Cambio a 3 bandas!') }}
+            {% elif mi_part.confirmado %}{{ _('Esperando a los demás') }}
+            {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
+          {% elif match.tipo == 'cadena_4' %}
+            {% if match.estado == 'propuesto' %}{{ _('¡Cambio a 4 bandas!') }}
             {% elif mi_part.confirmado %}{{ _('Esperando a los demás') }}
             {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
           {% else %}
@@ -96,7 +101,7 @@
         {% endif %}
       </p>
       {% endif %}
-      {% if match.tipo != 'cadena_3' and otras_parts[0].publicacion.mensaje %}
+      {% if not es_cadena and otras_parts[0].publicacion.mensaje %}
       <p class="match-mensaje">"{{ otras_parts[0].publicacion.mensaje }}"</p>
       {% endif %}
       {% if match.estado == 'confirmado_total' %}

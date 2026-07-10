@@ -198,6 +198,17 @@
       {% set si = sint_info.get(pub.id, {}) %}
       {% set pub_a_user = si.pub_a.usuario if si.pub_a else none %}
       {% set pub_b_user = si.pub_b.usuario if si.pub_b else none %}
+      {% set pub_intermedio_user = si.pub_intermedio.usuario if si.pub_intermedio else none %}
+      {% if pub_intermedio_user %}
+      <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 4') }}</span>
+      {% if pub_a_user and pub_b_user %}
+      <p class="sintetica-nota">
+        {{ _('Cambio a 4 con %(a)s, %(i)s y %(b)s.', a=pub_a_user.nombre, i=pub_intermedio_user.nombre, b=pub_b_user.nombre) }}
+      </p>
+      {% else %}
+      <p class="sintetica-nota">{{ _('Oportunidad de cambio a 4 bandas.') }}</p>
+      {% endif %}
+      {% else %}
       <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3') }}</span>
       {% if pub_a_user and pub_b_user %}
       <p class="sintetica-nota">
@@ -205,6 +216,7 @@
       </p>
       {% else %}
       <p class="sintetica-nota">{{ _('Oportunidad de cambio a 3 bandas.') }}</p>
+      {% endif %}
       {% endif %}
       <div class="turnos-aceptados">
         <strong>{% if pub_b_user %}{{ _('Le trabajarías a %(nombre)s:', nombre=pub_b_user.nombre) }}{% else %}{{ _('Trabajarías:') }}{% endif %}</strong>

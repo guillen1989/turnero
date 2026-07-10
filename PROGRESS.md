@@ -21,6 +21,106 @@ actualizado (pybabel extract/update/compile). 11 tests nuevos (servicio +
 ruta + caso de cadena a 3). 816 tests passing. Implementado en un
 worktree sobre `staging`.
 
+B19 en marcha: "ocasiones a 4" (cadena de intercambio A→B→C→D→A), siguiendo el
+mismo patrón que la cadena a 3 (B13). Paso 1 completado: motor puro
+`detectar_cadena_4` en `app/matching/engine.py`. Paso 2 completado: capa de
+servicio `buscar_cadenas_4_para`/`crear_match_cadena_4` (triple bucle
+anidado, ciclo completo, sin sintéticas todavía) en
+`app/matching/service.py` · 12 tests en `tests/test_cadena_4.py` mirroring
+`test_cadena_3.py`. Paso 3 completado: `buscar_cadenas_4_para`/`crear_match_cadena_4` enganchados
+en las 3 rutas que ya disparan cadena_3 (`/publicar`, editar, contraoferta
+— `app/routes/publicaciones.py`) · 1 test de integración de ruta nuevo.
+Paso 4 completado: badge "¡Cambio a 4 bandas!" en `dashboard.html`,
+generalizando los checks hardcodeados `match.tipo == 'cadena_3'` (ahora
+`es_cadena = match.tipo in ('cadena_3','cadena_4')`) · 1 test de ruta
+nuevo. Paso 5 completado: columna `sintetica_pub_intermedio_id` en
+`PublicacionCambio` (nullable, guarda la banda real intermedia "B" de un
+trío A→B→C ya cerrado cuando la sintética completa el hueco C→D→A;
+siempre NULL en sintéticas de cadena_3) + migración `f182c4111872`
+(`flask db heads` → 1 head; downgrade con nombre de constraint explícito
+`fk_sintetica_pub_intermedio`, igual que `e8e3d3c815bd`). Paso 6
+completado: capa de servicio para cadenas parciales de 4 (3 bandas reales
++ 1 hueco) en `app/matching/service.py` — `buscar_cadenas_parciales_4_para`
+(mismo bucle que `buscar_cadenas_3_para` pero exige que el 3er eslabón NO
+cierre, si no sería ya una cadena_3 completa), `crear_pub_sintetica`
+extendida con `pub_intermedio` opcional (mismo cálculo cedido/aceptado que
+cadena_3, solo depende de los 2 extremos del hueco), `crear_aviso_oportunidad_4`
+(3 destinatarios, cada uno referencia al siguiente del ciclo),
+`procesar_cadena_parcial_4` (combinador) y `crear_cadena_4_desde_sintetica`
+· textos/prefs de push añadidos en `app/push/sender.py` · 12 tests en
+`tests/test_sintetica_4.py` mirroring `test_pub_sintetica.py`. Nota de
+entorno: la BD de test compartida (`turnero_test`) puede tener el esquema
+desactualizado si hay otro job/worktree corriendo tests en paralelo con un
+modelo distinto (create_all() no altera columnas en tablas ya existentes);
+si aparecen errores "UndefinedColumn", usar una BD de test privada vía
+`TEST_DATABASE_URL` para verificar antes de sospechar de un bug real.
+Fix aplicado tras el paso 6: `buscar_cadenas_parciales_4_para` asumía que
+la publicación consultada era siempre la primera banda (A); un camino
+abierto A→B→C no tiene la simetría rotacional de un ciclo cerrado, así
+que si publicaba último el intermedio o el final del trío, no se
+detectaba. Ahora busca las 3 posiciones y devuelve el trío completo
+`(pub_a, pub_b, pub_c)` en vez de asumir el rol de la publicación
+consultada · 2 tests nuevos (detección desde el intermedio y desde el
+final). Paso 7 completado: enganchado todo en `app/routes/publicaciones.py`
+— `buscar_cadenas_parciales_4_para`/`procesar_cadena_parcial_4` en las 3
+rutas que ya disparan cadena_3 (`/publicar`, editar, contraoferta); nuevo
+helper `_resolver_sintetica(pub, sint)` que branchea entre
+`crear_cadena_3_desde_sintetica`/`crear_cadena_4_desde_sintetica` según
+`sint.sintetica_pub_intermedio_id`, usado en esas 3 rutas y en
+`me_interesa` (que también generaliza el flash de éxito según
+`match.tipo`) · 4 tests de integración nuevos (publicar cierra el hueco
+generando la sintética, publicar el 4º cierra la cadena, «Me interesa»
+sobre una sintética de cadena_4). 199 tests relacionados (sintética,
+cadena, matching, publicar, contraoferta, me_interesa) passing. Siguiente
+paso: ciclo de vida — `_cancelar_sinteticas_de`/`_eliminar_sinteticas_de`
+en `app/services/publicaciones.py` deben incluir
+`sintetica_pub_intermedio_id == pub_id` en el filtro OR, para que
+cancelar/eliminar la publicación intermedia también cascada a la
+sintética de cadena_4.
+
+Paso 8 completado: `_cancelar_sinteticas_de`/`_eliminar_sinteticas_de`
+(`app/services/publicaciones.py`) incluyen ahora
+`sintetica_pub_intermedio_id == pub_id` en su filtro OR — antes, cancelar
+o eliminar la banda intermedia de un trío no tocaba la sintética
+dependiente (bug real confirmado por test: quedaba `abierta` al cancelar,
+y `ForeignKeyViolation` al eliminar). 4 tests nuevos (cancelar cada una de
+las 3 bandas reales, eliminar la intermedia sin error) · 64 tests
+relacionados passing.
+
+Paso 9 completado: etiqueta "Oportunidad a 4" distinguida de "Oportunidad
+a 3" en calendario y buscador, según `sintetica_pub_intermedio_id` —
+`resumen_publicaciones` (`app/services/calendario_mercado.py`) añade
+`es_sintetica_4`; `app/routes/calendario.py` elige la etiqueta con ese
+campo; `_cargar_sint_info` (`app/routes/main.py`) añade `pub_intermedio`;
+`app/templates/main/cambios.html` branchea badge + mensaje ("Cambio a 4
+con X, Y y Z") cuando hay banda intermedia. Catálogo i18n actualizado
+(pybabel extract/update/compile). 6 tests nuevos (2 servicio, 2 ruta
+calendario, 1 ruta cambios) · 106 tests relacionados passing. Siguiente
+paso: preferencia de usuario para mostrar/ocultar oportunidades a 3 y a 4
+por separado en el calendario (Ofertas/Peticiones).
+
+Paso 10 completado: columnas `mostrar_oportunidad_3`/`mostrar_oportunidad_4`
+en `Usuario` (booleanas, default True, server_default — mismo patrón de
+un solo paso que `notif_*`) + migración `fe34f9af4a2b`. `_candidatas`/
+`construir_calendario_mes` (`app/services/calendario_mercado.py`) aceptan
+esos dos flags y excluyen las sintéticas del tipo correspondiente.
+`app/routes/calendario.py` los lee de `current_user` al construir el
+calendario, y expone `POST /calendario/preferencias` (checkboxes con
+auto-submit `onchange`, sin página de ajustes separada — el control vive
+directamente en la vista del calendario, junto al selector Ofertas/
+Peticiones, tal y como pidió el usuario). Catálogo i18n actualizado. 6
+tests nuevos (2 servicio, 3 ruta calendario, con `#, fuzzy` corregido a
+mano tras `pybabel update` porque emparejó mal 2 msgid nuevos con una
+traducción existente). **B19 completo: 854 tests unitarios passing.**
+Nota: `.backlog` no está versionado en git (archivo local sin trackear
+solo en el checkout original del usuario) — no se puede actualizar desde
+este worktree; queda pendiente que el usuario tache a mano la línea
+"cambios a 4". Alcance completo de B19 (visto con el usuario):
+detección + confirmación de ciclos completos de 4, sintéticas/avisos para
+cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
+cadena a 3, y una preferencia de usuario para mostrar/ocultar oportunidades
+a 3 y a 4 por separado en el calendario (Ofertas/Peticiones).
+
 Fix: regenerar la unidad de demo fallaba con `ForeignKeyViolation` en
 `match_cambio` (`notificacion_match_id_fkey`) porque `_borrar_demo()`
 (`app/services/demo.py`) borraba `match_cambio` antes que `notificacion`,
@@ -106,6 +206,7 @@ resolvía es poco frecuente y el aviso a terceros ya cubre el hueco real,
 así que añadir esa lógica era sobre-ingeniería para el problema real.
 
 ## Backlog (fuente: .backlog)
+- [x] B19: "Cambios a 4" — cadena de intercambio a 4 bandas (ciclos completos, sintéticas/avisos para huecos parciales, badges, preferencia de visualización en calendario) ✓
 - [x] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones) ✓
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
 - [x] B0b: «Me interesa» en Buscar cambios: match manual desde cualquier publicación ajena (Regalo/Petición/Junte/Cambio con modal de selección) ✓

@@ -14,7 +14,7 @@ class MatchCambio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tipo = db.Column(db.String(20), nullable=False, default="directo_2")
     estado = db.Column(db.String(30), nullable=False, default="propuesto")
-    # tipo:  directo_2 | cadena_3 | cadena_n
+    # tipo:  directo_2 | cadena_3 | cadena_4 | cadena_n
     # estado: propuesto | confirmado_parcial | confirmado_total | rechazado
     fecha_creacion = db.Column(
         db.DateTime, nullable=True, default=lambda: datetime.now(timezone.utc)

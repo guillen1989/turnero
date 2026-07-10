@@ -28,6 +28,12 @@ class PublicacionCambio(db.Model):
     sintetica_pub_b_id = db.Column(
         db.Integer, db.ForeignKey("publicacion_cambio.id"), nullable=True
     )
+    sintetica_pub_intermedio_id = db.Column(
+        db.Integer, db.ForeignKey("publicacion_cambio.id"), nullable=True
+    )
+    # sintetica_pub_intermedio_id solo se usa en sintéticas de cadena_4: es la
+    # banda real "B" del trío A→B→C ya cerrado, que la sintética completa
+    # haciendo de "D" (C→D→A). En sintéticas de cadena_3 queda NULL.
 
     usuario = db.relationship("Usuario", back_populates="publicaciones")
     turnos_cedidos = db.relationship(
