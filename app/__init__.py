@@ -94,6 +94,7 @@ def create_app(config_name=None):
                         "nueva_publicacion_seguido",
                         "alerta_busqueda_guardada",
                         "aviso_oportunidad_3",
+                        "aviso_oportunidad_4",
                         "contrasena_restablecida",
                     ]),
                     Notificacion.leida.is_(False),

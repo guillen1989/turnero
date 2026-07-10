@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-10 23:27+0200\n"
+"POT-Creation-Date: 2026-07-10 23:31+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -382,6 +382,7 @@ msgstr ""
 
 #: app/routes/calendario.py:87 app/templates/main/cambios.html:103
 #: app/templates/main/cambios.html:204
+#: app/templates/notificaciones/avisos.html:41
 msgid "Oportunidad a 4"
 msgstr ""
 
@@ -1639,8 +1640,9 @@ msgstr ""
 
 #: app/templates/calendario/calendario.html:135
 #: app/templates/main/dashboard.html:301
-#: app/templates/notificaciones/avisos.html:65
-#: app/templates/notificaciones/avisos.html:67
+#: app/templates/notificaciones/avisos.html:70
+#: app/templates/notificaciones/avisos.html:72
+#: app/templates/notificaciones/avisos.html:74
 msgid "Ver publicación"
 msgstr ""
 
@@ -2799,8 +2801,8 @@ msgid "Borrar todos"
 msgstr ""
 
 #: app/templates/notificaciones/avisos.html:28
-#: app/templates/notificaciones/avisos.html:74
-#: app/templates/notificaciones/avisos.html:85
+#: app/templates/notificaciones/avisos.html:81
+#: app/templates/notificaciones/avisos.html:92
 msgid "Borrar aviso"
 msgstr ""
 
@@ -2808,7 +2810,7 @@ msgstr ""
 msgid "Alerta"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:49
+#: app/templates/notificaciones/avisos.html:51
 #, python-format
 msgid ""
 "%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran del "
@@ -2818,33 +2820,41 @@ msgstr ""
 
 #: app/templates/notificaciones/avisos.html:54
 #, python-format
+msgid ""
+"%(nombre)s forma parte de una cadena de cambio a 4 bandas que casi "
+"cuadra. El sistema ha generado una publicación puente: si un cuarto "
+"compañero la acepta, el cambio a 4 se cerrará automáticamente."
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:59
+#, python-format
 msgid "Alerta: %(nombre)s"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:56
+#: app/templates/notificaciones/avisos.html:61
 msgid "Alerta de búsqueda guardada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:63
+#: app/templates/notificaciones/avisos.html:68
 msgid "Ver resultados"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:70
+#: app/templates/notificaciones/avisos.html:77
 msgid "Publicación ya cerrada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:82
+#: app/templates/notificaciones/avisos.html:89
 msgid "Publicación eliminada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:93
+#: app/templates/notificaciones/avisos.html:100
 msgid ""
 "No tienes avisos todavía. Sigue a compañeros desde el panel de "
 "Notificaciones para recibir avisos cuando publiquen, o recibe "
 "contraofertas a tus publicaciones de cambio."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:97
+#: app/templates/notificaciones/avisos.html:104
 msgid "Gestionar notificaciones y seguimientos"
 msgstr ""
 

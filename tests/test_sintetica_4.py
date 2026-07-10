@@ -447,3 +447,16 @@ def test_eliminar_pub_intermedio_con_sintetica_4_dependiente_no_da_error(db):
     eliminar_publicacion(pub_pedro)
 
     assert db.session.get(PublicacionCambio, sint_id) is None
+
+
+def test_aviso_oportunidad_4_aparece_en_pantalla_de_avisos(client, db):
+    """Regresión: aviso_oportunidad_4 generaba push pero no aparecía en
+    /avisos (la pantalla de la campana) porque esa ruta solo filtraba
+    aviso_oportunidad_3."""
+    pub_ana, pub_pedro, pub_maria, ana, pedro, maria = _setup_cadena_parcial(db)
+    crear_aviso_oportunidad_4(pub_ana, pub_pedro, pub_maria)
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/avisos")
+
+    assert "Oportunidad a 4" in resp.data.decode()
