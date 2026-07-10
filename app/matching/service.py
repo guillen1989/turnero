@@ -601,13 +601,19 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
 
 def buscar_cadenas_parciales_4_para(publicacion):
     """
-    Devuelve lista de pares (pub_b, pub_c) donde publicacion→pub_b→pub_c
-    cierra 2 de los 3 eslabones de un ciclo, pero pub_c no cierra de vuelta
-    con publicacion (si cerrara, sería una cadena_3 completa, no un hueco
-    de cadena_4). Estos tríos son la base para generar una publicación
-    sintética que represente al cuarto usuario que falta.
+    Devuelve lista de tríos (pub_a, pub_b, pub_c) donde pub_a→pub_b→pub_c
+    cierra 2 de los 3 eslabones de un ciclo sin cerrar el tercero (pub_c→pub_a):
+    si cerrara sería ya una cadena_3 completa, no un hueco de cadena_4.
+    `publicacion` participa en el trío, pero no necesariamente como pub_a:
+    a diferencia de un ciclo cerrado (con simetría rotacional), un camino
+    abierto A→B→C no es simétrico, así que hay que buscar `publicacion` en
+    sus 3 posibles posiciones (primera, intermedia o última) para que el
+    hueco se detecte sin importar qué banda del trío publique o edite la
+    última.
 
-    Solo opera sobre publicaciones de tipo 'cambio'.
+    Estos tríos son la base para generar una publicación sintética que
+    represente al cuarto usuario que falta. Solo opera sobre publicaciones
+    de tipo 'cambio'.
     """
     if publicacion.tipo != "cambio":
         return []
@@ -617,34 +623,55 @@ def buscar_cadenas_parciales_4_para(publicacion):
     candidatas = _candidatas_base(publicacion, propietario, grupo_id)
     candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
 
-    cedidos_a = _cedidos_abiertos(publicacion)
-    aceptados_a = _aceptados(publicacion)
+    cedidos_pub = _cedidos_abiertos(publicacion)
+    aceptados_pub = _aceptados(publicacion)
 
     cedidos_por_pub = {c.id: _cedidos_abiertos(c) for c in candidatas_cambio}
     aceptados_por_pub = {c.id: _aceptados(c) for c in candidatas_cambio}
 
+    def _distintos(pub_x, pub_y):
+        return pub_x.id != pub_y.id and pub_x.usuario_id != pub_y.usuario_id
+
     resultado = []
 
-    for pub_b in candidatas_cambio:
-        cedidos_b = cedidos_por_pub[pub_b.id]
-        aceptados_b = aceptados_por_pub[pub_b.id]
-
-        if not (cedidos_a & aceptados_b):
+    # Rol A: publicacion→x→y, sin que y cierre de vuelta con publicacion.
+    for pub_x in candidatas_cambio:
+        if not (cedidos_pub & aceptados_por_pub[pub_x.id]):
             continue
-
-        for pub_c in candidatas_cambio:
-            if pub_c.id == pub_b.id or pub_c.usuario_id == pub_b.usuario_id:
+        for pub_y in candidatas_cambio:
+            if not _distintos(pub_x, pub_y):
                 continue
-
-            cedidos_c = cedidos_por_pub[pub_c.id]
-            aceptados_c = aceptados_por_pub[pub_c.id]
-
-            if not (cedidos_b & aceptados_c):
+            if not (cedidos_por_pub[pub_x.id] & aceptados_por_pub[pub_y.id]):
                 continue
-            if cedidos_c & aceptados_a:
-                continue  # ya cierra un ciclo de 3 completo, no es un hueco de 4
+            if cedidos_por_pub[pub_y.id] & aceptados_pub:
+                continue
+            resultado.append((publicacion, pub_x, pub_y))
 
-            resultado.append((pub_b, pub_c))
+    # Rol B (intermedio): x→publicacion→y, sin que y cierre de vuelta con x.
+    for pub_x in candidatas_cambio:
+        if not (cedidos_por_pub[pub_x.id] & aceptados_pub):
+            continue
+        for pub_y in candidatas_cambio:
+            if not _distintos(pub_x, pub_y):
+                continue
+            if not (cedidos_pub & aceptados_por_pub[pub_y.id]):
+                continue
+            if cedidos_por_pub[pub_y.id] & aceptados_por_pub[pub_x.id]:
+                continue
+            resultado.append((pub_x, publicacion, pub_y))
+
+    # Rol C (última): x→y→publicacion, sin que publicacion cierre de vuelta con x.
+    for pub_x in candidatas_cambio:
+        for pub_y in candidatas_cambio:
+            if not _distintos(pub_x, pub_y):
+                continue
+            if not (cedidos_por_pub[pub_x.id] & aceptados_por_pub[pub_y.id]):
+                continue
+            if not (cedidos_por_pub[pub_y.id] & aceptados_pub):
+                continue
+            if cedidos_pub & aceptados_por_pub[pub_x.id]:
+                continue
+            resultado.append((pub_x, pub_y, publicacion))
 
     return resultado
 

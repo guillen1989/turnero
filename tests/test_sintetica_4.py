@@ -86,8 +86,34 @@ def test_detecta_cadena_parcial_de_4(db):
     parciales = buscar_cadenas_parciales_4_para(pub_ana)
 
     assert len(parciales) == 1
-    assert parciales[0][0].id == pub_pedro.id
-    assert parciales[0][1].id == pub_maria.id
+    a, b, c = parciales[0]
+    assert (a.id, b.id, c.id) == (pub_ana.id, pub_pedro.id, pub_maria.id)
+
+
+def test_detecta_cadena_parcial_de_4_consultando_desde_el_intermedio(db):
+    """
+    Un camino abierto A→B→C no tiene simetría rotacional (a diferencia de un
+    ciclo cerrado): hay que encontrar el trío igual si quien publica/edita el
+    último es la banda intermedia (Pedro), no solo la primera (Ana).
+    """
+    pub_ana, pub_pedro, pub_maria, *_ = _setup_cadena_parcial(db)
+
+    parciales = buscar_cadenas_parciales_4_para(pub_pedro)
+
+    assert len(parciales) == 1
+    a, b, c = parciales[0]
+    assert (a.id, b.id, c.id) == (pub_ana.id, pub_pedro.id, pub_maria.id)
+
+
+def test_detecta_cadena_parcial_de_4_consultando_desde_el_final(db):
+    """Igual que arriba, pero consultando desde la última banda del camino (María)."""
+    pub_ana, pub_pedro, pub_maria, *_ = _setup_cadena_parcial(db)
+
+    parciales = buscar_cadenas_parciales_4_para(pub_maria)
+
+    assert len(parciales) == 1
+    a, b, c = parciales[0]
+    assert (a.id, b.id, c.id) == (pub_ana.id, pub_pedro.id, pub_maria.id)
 
 
 def test_no_detecta_parcial_si_el_ciclo_de_3_ya_cierra(db):
