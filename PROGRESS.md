@@ -120,6 +120,69 @@ detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
 cadena a 3, y una preferencia de usuario para mostrar/ocultar oportunidades
 a 3 y a 4 por separado en el calendario (Ofertas/Peticiones).
+feat(publicar): calendario tap-to-select para turnos cedidos/aceptados —
+una usuaria pidió un modo más ágil de ofrecer/pedir muchos turnos en vez de
+añadirlos uno a uno. Se validó primero un mockup interactivo (Artifact) con
+el usuario antes de implementar. Sustituye las filas manuales "fecha + tipo
+de turno" de `/publicar` por: elegir la franja (chip) y tocar los días de
+un calendario mensual; se puede repetir el ciclo con otra franja para
+mezclar tipos de turno en la misma publicación. Reutiliza `.planilla-cal`/
+`.cal-celda`/`.cal-bandas-row`/`.cal-banda` (mismo patrón visual que
+`/calendario` y `/planilla`) en vez de inventar un componente nuevo.
+
+- El backend no cambia: el widget (`app/static/js/calendario-turnos.js`,
+  clase `CalendarioTurnos`) genera los mismos inputs ocultos
+  `fecha_{prefix}_N`/`franja_{prefix}_N` (renumerados de forma contigua en
+  cada render) que ya parseaba `_extraer_turnos` en
+  `app/routes/publicaciones.py`.
+- Las franjas del selector son las mismas que ya devolvía la ruta
+  (`FranjaHoraria` scoped por `grupo_intercambio_id`), así que las franjas
+  personalizadas que un usuario crea desde "¿No encuentras tu tipo de
+  turno?" aparecen como chip igual que Mañana/Tarde/Noche/Diurno 12h/
+  Nocturno 12h — requisito explícito del usuario, cubierto sin lógica
+  nueva, solo pasando los datos ya existentes al JS
+  (`_franjas_a_json`, nuevo helper en `publicaciones.py`).
+- Un día tocado con 2+ franjas se pinta con el mismo patrón de "bandas"
+  que ya usa el calendario de mercado (`.cal-bandas-row`/`.cal-banda`),
+  en vez de inventar un tratamiento visual nuevo para el caso multi-franja.
+- Prefill desde `/calendario?fecha=&modo=` (Ronda 2, Paso 2): ya no es un
+  `value=""` en un `<input>` estático (no existe tal input ahora); el mes
+  correcto se abre solo y el día se marca con un aro naranja
+  (`data-sugerida="true"`) hasta que el usuario confirma tocando una franja
+  y ese día. Los 4 tests de integración de prefill (`tests/test_publicar.py`)
+  se reescribieron para comprobar las constantes JS embebidas
+  (`PREFILL_FECHA`/`PREFILL_MODO`) en vez del `value=""` que ya no existe;
+  el test e2e de drill-down (`test_dia_vacio_ofrece_publicar_cambio`) se
+  actualizó a la nueva aserción `data-sugerida="true"`.
+- e2e reescritos para tocar franja+día en vez de `fill()`/`select_option()`
+  sobre inputs que ya no existen: `e2e/test_publicar.py` (+1 test nuevo,
+  `test_publicar_varios_turnos_de_una_franja_de_un_tap`, el caso de uso que
+  motivó el cambio), `e2e/test_sintetica_golden_path.py` y
+  `e2e/test_sintetica_staging.py` (este último no se ejecuta en local,
+  actualizado igualmente por consistencia).
+- Catálogo i18n actualizado (`pybabel extract/update/compile`); de paso
+  puso al día ~26 strings pendientes de commits anteriores que nunca habían
+  pasado por `pybabel update` (no relacionados con este cambio, solo
+  arrastre de deuda técnica de i18n detectado al ejecutar el comando).
+- 815 tests unitarios/integración + 29 tests e2e relevantes (backend
+  `test_publicar.py` + los 4 e2e de publicar + drill-down + golden path 3
+  bandas + auth) passing en ventanas sin contención. Nota: la BD Postgres
+  local de test (`turnero_test`) es compartida entre sesiones/worktrees
+  concurrentes de este entorno — se observaron `UndefinedTable`/
+  `ObjectDeletedError`/deadlocks en `tests/test_turnos_unidad.py`,
+  `tests/test_push.py`, `tests/test_publicar_junte.py` etc. al correr la
+  suite completa mientras otra sesión ejecutaba pytest en paralelo contra
+  la misma BD; confirmado no relacionado con este cambio (esos ficheros no
+  se tocaron y las mismas pruebas pasan limpias en solitario). Mismo
+  fenómeno ya documentado en una entrada anterior de este fichero.
+- Trabajo hecho en worktree `worktree-calendario-multi-select` sobre
+  `staging` (pedido explícito del usuario), pendiente de revisión/push.
+
+Siguiente: decidir si este mismo widget se reutiliza en `editar.html` y
+`contraoferta.html` (mismo patrón turno-row hoy) — fuera de alcance de
+este paso, el usuario solo pidió el flujo de publicar.
+
+---
 
 Fix: regenerar la unidad de demo fallaba con `ForeignKeyViolation` en
 `match_cambio` (`notificacion_match_id_fkey`) porque `_borrar_demo()`
@@ -338,6 +401,7 @@ así que añadir esa lógica era sobre-ingeniería para el problema real.
 - [x] feat(calendario): rediseño del modo "Juntes de noches" — de grid día-a-día a filas por semana con distribución trabaja/libra desplegable, tras validar un mockup (Artifact) con el usuario · nuevo módulo `app/services/junte_semanal.py` (`calcular_distribucion`, `resumen_textual`, `lista_es`, `DIAS_CORTOS`), compartido entre `main.py::_junte_info` (WA/resumen en /cambios y /dashboard) y el calendario — elimina la duplicación de la lógica LMVD/MJS que antes vivía solo en `main.py` · el cálculo del lunes de la semana pasa de "primer turno_cedido insertado" a `min()` de todas las fechas del junte (más robusto, mismo resultado en todos los casos reales) · revertido el soporte de `construir_calendario_mes`/`_TIPOS_POR_MODO` para `modo="juntes"` (quedaba como código muerto tras el rediseño: ya no lo llama la ruta) · nuevas `construir_semanas_juntes`/`preparar_semanas_juntes` en `calendario_mercado.py`: agregan por lunes natural en vez de por día, generan la tira de 7 días (trabaja=verde/libra=naranja, mismos colores que Ofertas/Peticiones) y marcan semanas parciales (a caballo entre meses) · plantilla con `<details>/<summary>` nativo (sin JS) para el desplegable por semana; el grid+JS de drill-down de ofertas/peticiones queda intacto, solo se salta para `modo=juntes` · enlace "Ver publicación" usa `/cambios?pub_id=` (ya soportado) en vez del flujo día+franja+usuario de ofertas/peticiones · catálogo i18n actualizado · 10 tests nuevos (`test_junte_semanal.py`, `test_calendario_semanas_juntes.py`) + 2 tests de ruta reescritos · verificación afectada por sesiones concurrentes compartiendo la BD Postgres local de test (deadlocks/errores de sesión ajenos a este cambio); los ficheros de test relevantes (junte_semanal, calendario_mercado, calendario_ruta, calendario_semanas_juntes, combinaciones_match, cambios, dashboard, publicar_junte) pasan limpios en ventanas sin contención · rama `feat/calendario-juntes-semanas` sobre `staging`, push directo pedido por el usuario
 - [x] feat(auth): botón "Probar con una cuenta demo" también en la portada (`main.index`, `/`), junto a "Crear cuenta"/"Entrar" — antes solo estaba en `/auth/login`. `main.index` calcula `demo_login_enabled` igual que la vista de login (`bool(DEMO_LOGIN_EMAIL)`) y la plantilla añade el mismo `<form>`/botón dentro del `.btn-group` existente, sin bloque nuevo (verificado visualmente con Playwright en 420px y 1200px: el botón queda alineado junto a los otros dos, con estilo `btn-secondary` para distinguirlo como acción alternativa) · 2 tests nuevos
 - [x] feat(matches): desconfirmar un match ya confirmado por el propio usuario, por si cambia de idea antes de que el cambio quede cerrado del todo · `POST /matches/<id>/desconfirmar` + `desconfirmar_participacion()` reutiliza `_get_match_validado` (409 si el match ya está `confirmado_total`/`rechazado`, o si el usuario no había confirmado) · recalcula el estado del match a `confirmado_parcial` si otra parte sigue confirmada (cadenas de 3+) o a `propuesto` si no · notifica a las demás partes (`Notificacion` tipo `desconfirmacion` + push) · botón "Desconfirmar" en el dashboard · catálogo i18n actualizado · 11 tests nuevos · 816 tests passing
+- [x] feat(publicar): calendario tap-to-select (elegir franja + tocar días) sustituye las filas manuales de `/publicar` · mockup Artifact validado con el usuario antes de implementar · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · franjas dinámicas por grupo, incluidas las personalizadas por el usuario (chip automático) · multi-franja el mismo día con `.cal-bandas-row` reutilizado de `/calendario` · prefill desde `/calendario` pasa de `value=""` a resaltado `data-sugerida` · `app/static/js/calendario-turnos.js` nuevo · e2e reescritos (4+1 test nuevo en `test_publicar.py`, golden path, drill-down) · 18 tests backend + 11 e2e relevantes passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

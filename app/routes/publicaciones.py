@@ -182,6 +182,25 @@ def _asegurar_franjas(grupo_intercambio_id):
     db.session.commit()
 
 
+def _franjas_a_json(franjas):
+    """Serializa las franjas para el widget de calendario tap-to-select.
+
+    Incluye tanto las franjas de serie como las que hayan creado los propios
+    usuarios de la unidad (misma consulta `franjas` de siempre, ya scoped
+    por grupo_intercambio_id): el JS no distingue el origen, solo pinta chips.
+    """
+    return [
+        {
+            "id": f.id,
+            "nombre": f.nombre,
+            "horario": f"{f.hora_inicio.strftime('%H:%M')}–{f.hora_fin.strftime('%H:%M')}",
+            "color": f.color or "#3B82F6",
+            "colorTexto": f.color_texto,
+        }
+        for f in franjas
+    ]
+
+
 
 @bp.route("/publicar", methods=["GET", "POST"])
 @login_required
@@ -225,7 +244,10 @@ def nueva():
             .order_by(FranjaHoraria.hora_inicio)
             .all()
         )
-        return render_template("publicaciones/publicar.html", franjas=franjas)
+        return render_template(
+            "publicaciones/publicar.html", franjas=franjas,
+            franjas_json=_franjas_a_json(franjas), today=date.today().isoformat(),
+        )
 
     if request.method == "POST":
         tipo = request.form.get("tipo", "cambio")
@@ -238,12 +260,18 @@ def nueva():
             cedidos, aceptados, error = _extraer_turnos_junte()
             if error:
                 flash(error, "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
+                return render_template(
+                    "publicaciones/publicar.html", franjas=franjas,
+                    franjas_json=_franjas_a_json(franjas), today=hoy.isoformat(),
+                )
         elif tipo == "cambio_dia":
             cedidos, aceptados, error = _extraer_turnos_cambio_dia(hoy)
             if error:
                 flash(error, "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
+                return render_template(
+                    "publicaciones/publicar.html", franjas=franjas,
+                    franjas_json=_franjas_a_json(franjas), today=hoy.isoformat(),
+                )
         else:
             cedidos  = _extraer_turnos("cedida")
             aceptados = _extraer_turnos("aceptada")
@@ -252,7 +280,10 @@ def nueva():
             error = _validar_turnos(tipo, cedidos, aceptados, hoy)
             if error:
                 flash(error, "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
+                return render_template(
+                    "publicaciones/publicar.html", franjas=franjas,
+                    franjas_json=_franjas_a_json(franjas), today=hoy.isoformat(),
+                )
 
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
         pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
@@ -274,7 +305,8 @@ def nueva():
 
     prefill_fecha, prefill_modo = _leer_prefill_calendario()
     return render_template(
-        "publicaciones/publicar.html", franjas=franjas, today=date.today().isoformat(),
+        "publicaciones/publicar.html", franjas=franjas,
+        franjas_json=_franjas_a_json(franjas), today=date.today().isoformat(),
         prefill_fecha=prefill_fecha, prefill_modo=prefill_modo,
     )
 
