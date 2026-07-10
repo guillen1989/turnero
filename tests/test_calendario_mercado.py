@@ -223,6 +223,43 @@ def test_incluye_sinteticas_en_peticiones(db):
     assert construir_calendario_mes(ana, 2026, 7, "peticiones") == {date(2026, 7, 5): {tarde.id: [pub.id]}}
 
 
+def test_excluye_sinteticas_de_cadena_3_si_mostrar_oportunidad_3_es_false(db):
+    """Preferencia de usuario: mostrar_oportunidad_3=False oculta las
+    sintéticas de cadena_3 (sin banda intermedia) del calendario."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    _pub(pedro, "cambio", cedidos=[(date(2026, 7, 3), manana)], es_sintetica=True)
+
+    assert construir_calendario_mes(
+        ana, 2026, 7, "ofertas", mostrar_oportunidad_3=False,
+    ) == {}
+
+
+def test_excluye_sinteticas_de_cadena_4_si_mostrar_oportunidad_4_es_false(db):
+    """Preferencia de usuario: mostrar_oportunidad_4=False oculta las
+    sintéticas de cadena_4 (con banda intermedia) del calendario, sin
+    afectar a las de cadena_3."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    intermedio_usuario = _usuario("Luis", "luis@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+
+    intermedio = _pub(intermedio_usuario, "cambio")
+    pub_3 = _pub(pedro, "cambio", cedidos=[(date(2026, 7, 3), manana)], es_sintetica=True)
+    pub_4 = _pub(pedro, "cambio", cedidos=[(date(2026, 7, 4), tarde)], es_sintetica=True)
+    pub_4.sintetica_pub_intermedio_id = intermedio.id
+    db.session.commit()
+
+    resultado = construir_calendario_mes(ana, 2026, 7, "ofertas", mostrar_oportunidad_4=False)
+
+    assert resultado == {date(2026, 7, 3): {manana.id: [pub_3.id]}}
+
+
 def test_sintetica_generada_por_crear_pub_sintetica_muestra_peticion_de_b_en_peticiones(db):
     """Regresión: caso real de una oportunidad a 3 (issue del calendario
     'al revés'). Victoria (pub_b) publica un cambio pidiendo cobertura para

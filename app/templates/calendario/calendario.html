@@ -46,6 +46,25 @@
         {{ _('Noches de compañeros buscando complementar su junte. Toca un día para ver el detalle.') }}
       {% endif %}
     </p>
+
+    {% if modo in ('ofertas', 'peticiones') %}
+    <form method="post" action="{{ url_for('calendario.guardar_preferencias') }}" class="calendario-oportunidades-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="anyo" value="{{ anyo }}">
+      <input type="hidden" name="mes" value="{{ mes }}">
+      <input type="hidden" name="modo" value="{{ modo }}">
+      <label class="calendario-oportunidad-check">
+        <input type="checkbox" name="mostrar_oportunidad_3" onchange="this.form.submit()"
+               {% if current_user.mostrar_oportunidad_3 %}checked{% endif %}>
+        {{ _('Mostrar oportunidades a 3 bandas') }}
+      </label>
+      <label class="calendario-oportunidad-check">
+        <input type="checkbox" name="mostrar_oportunidad_4" onchange="this.form.submit()"
+               {% if current_user.mostrar_oportunidad_4 %}checked{% endif %}>
+        {{ _('Mostrar oportunidades a 4 bandas') }}
+      </label>
+    </form>
+    {% endif %}
   </div>
 
   {# ── Banner de bienvenida (primera visita, controlado por localStorage) ── #}

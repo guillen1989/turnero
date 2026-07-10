@@ -1,10 +1,11 @@
 import calendar
 from datetime import date
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import login_required, current_user
 
+from app.extensions import db
 from app.models.franja_horaria import FranjaHoraria
 from app.services.calendario_mercado import (
     CUALQUIER_FRANJA,
@@ -50,7 +51,10 @@ def index():
     _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
     dias = [date(anyo, mes, d) for d in range(1, num_dias + 1)]
 
-    calendario_mes = construir_calendario_mes(current_user, anyo, mes, modo)
+    calendario_mes = construir_calendario_mes(
+        current_user, anyo, mes, modo,
+        current_user.mostrar_oportunidad_3, current_user.mostrar_oportunidad_4,
+    )
 
     franjas = (
         FranjaHoraria.query
@@ -104,3 +108,20 @@ def index():
         datos_publicaciones=datos_publicaciones,
         **contexto,
     )
+
+
+@bp.post("/preferencias")
+@login_required
+def guardar_preferencias():
+    """Guarda la preferencia de mostrar/ocultar oportunidades a 3 y a 4 bandas
+    en el calendario. Checkboxes ausentes en el form == desactivado."""
+    current_user.mostrar_oportunidad_3 = "mostrar_oportunidad_3" in request.form
+    current_user.mostrar_oportunidad_4 = "mostrar_oportunidad_4" in request.form
+    db.session.commit()
+
+    anyo = request.form.get("anyo", type=int)
+    mes = request.form.get("mes", type=int)
+    modo = request.form.get("modo", "ofertas")
+    if modo not in MODOS_VALIDOS:
+        modo = "ofertas"
+    return redirect(url_for("calendario.index", anyo=anyo, mes=mes, modo=modo))

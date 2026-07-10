@@ -80,11 +80,25 @@ con X, Y y Z") cuando hay banda intermedia. Catálogo i18n actualizado
 (pybabel extract/update/compile). 6 tests nuevos (2 servicio, 2 ruta
 calendario, 1 ruta cambios) · 106 tests relacionados passing. Siguiente
 paso: preferencia de usuario para mostrar/ocultar oportunidades a 3 y a 4
-por separado en el calendario (Ofertas/Peticiones) — columnas
-`mostrar_oportunidad_3`/`mostrar_oportunidad_4` en `Usuario` + migración,
-checkboxes en `/auth/perfil`, filtro en
-`app/services/calendario_mercado.py`/`app/routes/calendario.py`. Alcance
-completo de B19 (visto con el usuario):
+por separado en el calendario (Ofertas/Peticiones).
+
+Paso 10 completado: columnas `mostrar_oportunidad_3`/`mostrar_oportunidad_4`
+en `Usuario` (booleanas, default True, server_default — mismo patrón de
+un solo paso que `notif_*`) + migración `fe34f9af4a2b`. `_candidatas`/
+`construir_calendario_mes` (`app/services/calendario_mercado.py`) aceptan
+esos dos flags y excluyen las sintéticas del tipo correspondiente.
+`app/routes/calendario.py` los lee de `current_user` al construir el
+calendario, y expone `POST /calendario/preferencias` (checkboxes con
+auto-submit `onchange`, sin página de ajustes separada — el control vive
+directamente en la vista del calendario, junto al selector Ofertas/
+Peticiones, tal y como pidió el usuario). Catálogo i18n actualizado. 6
+tests nuevos (2 servicio, 3 ruta calendario, con `#, fuzzy` corregido a
+mano tras `pybabel update` porque emparejó mal 2 msgid nuevos con una
+traducción existente). **B19 completo: 854 tests unitarios passing.**
+Nota: `.backlog` no está versionado en git (archivo local sin trackear
+solo en el checkout original del usuario) — no se puede actualizar desde
+este worktree; queda pendiente que el usuario tache a mano la línea
+"cambios a 4". Alcance completo de B19 (visto con el usuario):
 detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
 cadena a 3, y una preferencia de usuario para mostrar/ocultar oportunidades
@@ -175,6 +189,7 @@ resolvía es poco frecuente y el aviso a terceros ya cubre el hueco real,
 así que añadir esa lógica era sobre-ingeniería para el problema real.
 
 ## Backlog (fuente: .backlog)
+- [x] B19: "Cambios a 4" — cadena de intercambio a 4 bandas (ciclos completos, sintéticas/avisos para huecos parciales, badges, preferencia de visualización en calendario) ✓
 - [x] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones) ✓
 - [x] B0: Panel Notificaciones: toggle global push, prefs individuales (match/confirmación/total), suscripciones a compañeros ✓
 - [x] B0b: «Me interesa» en Buscar cambios: match manual desde cualquier publicación ajena (Regalo/Petición/Junte/Cambio con modal de selección) ✓

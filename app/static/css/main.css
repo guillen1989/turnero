@@ -865,6 +865,8 @@ body {
 .calendario-modo-btn--juntes { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
 .calendario-modo-btn--juntes.is-active { background: #9333ea; color: #ffffff; border-color: #7e22ce; }
 .calendario-ayuda-texto { font-size: 0.85rem; color: #6b7280; margin: 0.25rem 0 0.75rem; }
+.calendario-oportunidades-form { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0 0 0.75rem; }
+.calendario-oportunidad-check { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #4b5563; cursor: pointer; }
 .calendario-panel[hidden] { display: none; }
 .calendario-panel { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex; align-items: flex-end; z-index: 50; }
 .calendario-panel-contenido { background: #fff; width: 100%; max-height: 80vh; overflow-y: auto; border-radius: 12px 12px 0 0; padding: 1rem; }

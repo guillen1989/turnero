@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-10 22:06+0200\n"
+"POT-Creation-Date: 2026-07-10 22:15+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -339,11 +339,11 @@ msgstr ""
 msgid "Tu cuenta ha sido eliminada. Hasta pronto."
 msgstr ""
 
-#: app/routes/calendario.py:66
+#: app/routes/calendario.py:70
 msgid "Cualquiera"
 msgstr ""
 
-#: app/routes/calendario.py:77 app/templates/main/cambios.html:97
+#: app/routes/calendario.py:81 app/templates/main/cambios.html:97
 #: app/templates/main/cambios.html:236 app/templates/main/como_funciona.html:54
 #: app/templates/main/dashboard.html:175
 #: app/templates/publicaciones/editar.html:23
@@ -351,7 +351,7 @@ msgstr ""
 msgid "Cambio"
 msgstr ""
 
-#: app/routes/calendario.py:78 app/templates/main/cambios.html:98
+#: app/routes/calendario.py:82 app/templates/main/cambios.html:98
 #: app/templates/main/cambios.html:145 app/templates/main/como_funciona.html:58
 #: app/templates/main/dashboard.html:137
 #: app/templates/publicaciones/editar.html:28
@@ -359,7 +359,7 @@ msgstr ""
 msgid "Regalo"
 msgstr ""
 
-#: app/routes/calendario.py:79 app/templates/main/cambios.html:99
+#: app/routes/calendario.py:83 app/templates/main/cambios.html:99
 #: app/templates/main/cambios.html:154 app/templates/main/como_funciona.html:62
 #: app/templates/main/dashboard.html:145
 #: app/templates/publicaciones/editar.html:33
@@ -367,7 +367,7 @@ msgstr ""
 msgid "Petición"
 msgstr ""
 
-#: app/routes/calendario.py:80 app/templates/main/cambios.html:101
+#: app/routes/calendario.py:84 app/templates/main/cambios.html:101
 #: app/templates/main/cambios.html:187 app/templates/main/como_funciona.html:70
 #: app/templates/main/dashboard.html:167
 #: app/templates/publicaciones/editar.html:38
@@ -375,13 +375,13 @@ msgstr ""
 msgid "Cambio de turno en el día"
 msgstr ""
 
-#: app/routes/calendario.py:82 app/templates/main/cambios.html:102
+#: app/routes/calendario.py:86 app/templates/main/cambios.html:102
 #: app/templates/main/cambios.html:212 app/templates/main/dashboard.html:291
 #: app/templates/notificaciones/avisos.html:39
 msgid "Oportunidad a 3"
 msgstr ""
 
-#: app/routes/calendario.py:83 app/templates/main/cambios.html:203
+#: app/routes/calendario.py:87 app/templates/main/cambios.html:203
 msgid "Oportunidad a 4"
 msgstr "Oportunidad a 4"
 
@@ -684,7 +684,7 @@ msgstr ""
 
 #: app/templates/base.html:29 app/templates/calendario/calendario.html:3
 #: app/templates/calendario/calendario.html:13
-#: app/templates/calendario/calendario.html:135
+#: app/templates/calendario/calendario.html:154
 msgid "Calendario"
 msgstr ""
 
@@ -754,7 +754,7 @@ msgid "Instalar"
 msgstr ""
 
 #: app/templates/base.html:62 app/templates/base.html:77
-#: app/templates/calendario/calendario.html:181
+#: app/templates/calendario/calendario.html:200
 msgid "Cerrar"
 msgstr ""
 
@@ -1546,11 +1546,19 @@ msgid ""
 " el detalle."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:53
+#: app/templates/calendario/calendario.html:59
+msgid "Mostrar oportunidades a 3 bandas"
+msgstr "Mostrar oportunidades a 3 bandas"
+
+#: app/templates/calendario/calendario.html:64
+msgid "Mostrar oportunidades a 4 bandas"
+msgstr "Mostrar oportunidades a 4 bandas"
+
+#: app/templates/calendario/calendario.html:72
 msgid "¿Cómo funciona el calendario?"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:55
+#: app/templates/calendario/calendario.html:74
 msgid ""
 "Elige si quieres ver los turnos que otros compañeros ofrecen trabajar "
 "(Ofertas), los que quieren librar (Peticiones) o las noches de quienes "
@@ -1558,98 +1566,98 @@ msgid ""
 " de un vistazo qué franjas hay disponibles."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:59
+#: app/templates/calendario/calendario.html:78
 msgid "Toca un día"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:60
+#: app/templates/calendario/calendario.html:79
 msgid ""
 "verás el detalle de las franjas disponibles ese día y podrás acceder a la"
 " publicación completa. Si el día está vacío, puedes publicar tu propio "
 "cambio directamente desde ahí."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:63
-#: app/templates/calendario/calendario.html:168
+#: app/templates/calendario/calendario.html:82
+#: app/templates/calendario/calendario.html:187
 #: app/templates/main/como_funciona.html:75
 #: app/templates/main/dashboard.html:10
 #: app/templates/publicaciones/publicar.html:3
 msgid "Publicar cambio"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:64
+#: app/templates/calendario/calendario.html:83
 msgid ""
 "el botón bajo el calendario te lleva al formulario de publicación en "
 "cualquier momento."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:69
+#: app/templates/calendario/calendario.html:88
 #: app/templates/planilla/planilla.html:65
 msgid "Ver explicación completa →"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:72
+#: app/templates/calendario/calendario.html:91
 #: app/templates/planilla/planilla.html:68
 msgid "Entendido"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:82
+#: app/templates/calendario/calendario.html:101
 msgid "Trabajarías esa noche"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:83
+#: app/templates/calendario/calendario.html:102
 msgid "La librarías"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:96
+#: app/templates/calendario/calendario.html:115
 msgid "semana parcial"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:100
+#: app/templates/calendario/calendario.html:119
 #, python-format
 msgid "%(num)d junte disponible"
 msgid_plural "%(num)d juntes disponibles"
 msgstr[0] ""
 msgstr[1] ""
 
-#: app/templates/calendario/calendario.html:103
+#: app/templates/calendario/calendario.html:122
 msgid "Sin juntes"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:114
-#: app/templates/calendario/calendario.html:122
+#: app/templates/calendario/calendario.html:133
+#: app/templates/calendario/calendario.html:141
 msgid "Trabaja"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:114
+#: app/templates/calendario/calendario.html:133
 msgid "libra"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:116
+#: app/templates/calendario/calendario.html:135
 #: app/templates/main/dashboard.html:295
 #: app/templates/notificaciones/avisos.html:65
 #: app/templates/notificaciones/avisos.html:67
 msgid "Ver publicación"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:122
+#: app/templates/calendario/calendario.html:141
 msgid "Libra"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:149
-#: app/templates/calendario/calendario.html:150
+#: app/templates/calendario/calendario.html:168
+#: app/templates/calendario/calendario.html:169
 msgid "Sin ofertas"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:178
+#: app/templates/calendario/calendario.html:197
 msgid "Volver"
 msgstr ""
 
-#: app/templates/calendario/calendario.html:204
+#: app/templates/calendario/calendario.html:223
 msgid "Nadie ha publicado nada este día todavía."
 msgstr ""
 
-#: app/templates/calendario/calendario.html:205
+#: app/templates/calendario/calendario.html:224
 msgid "Publicar un cambio para este día"
 msgstr ""
 
