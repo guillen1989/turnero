@@ -21,11 +21,26 @@ nuevo. Paso 5 completado: columna `sintetica_pub_intermedio_id` en
 trío A→B→C ya cerrado cuando la sintética completa el hueco C→D→A;
 siempre NULL en sintéticas de cadena_3) + migración `f182c4111872`
 (`flask db heads` → 1 head; downgrade con nombre de constraint explícito
-`fk_sintetica_pub_intermedio`, igual que `e8e3d3c815bd`). Siguiente paso:
-capa de servicio para cadenas parciales de 4 (3 bandas reales + 1 hueco):
-`buscar_cadenas_parciales_4_para`, extender `crear_pub_sintetica` con
-`pub_intermedio` opcional, `crear_aviso_oportunidad_4`,
-`crear_cadena_4_desde_sintetica`. Alcance completo de B19
+`fk_sintetica_pub_intermedio`, igual que `e8e3d3c815bd`). Paso 6
+completado: capa de servicio para cadenas parciales de 4 (3 bandas reales
++ 1 hueco) en `app/matching/service.py` — `buscar_cadenas_parciales_4_para`
+(mismo bucle que `buscar_cadenas_3_para` pero exige que el 3er eslabón NO
+cierre, si no sería ya una cadena_3 completa), `crear_pub_sintetica`
+extendida con `pub_intermedio` opcional (mismo cálculo cedido/aceptado que
+cadena_3, solo depende de los 2 extremos del hueco), `crear_aviso_oportunidad_4`
+(3 destinatarios, cada uno referencia al siguiente del ciclo),
+`procesar_cadena_parcial_4` (combinador) y `crear_cadena_4_desde_sintetica`
+· textos/prefs de push añadidos en `app/push/sender.py` · 12 tests en
+`tests/test_sintetica_4.py` mirroring `test_pub_sintetica.py`. Nota de
+entorno: la BD de test compartida (`turnero_test`) puede tener el esquema
+desactualizado si hay otro job/worktree corriendo tests en paralelo con un
+modelo distinto (create_all() no altera columnas en tablas ya existentes);
+si aparecen errores "UndefinedColumn", usar una BD de test privada vía
+`TEST_DATABASE_URL` para verificar antes de sospechar de un bug real.
+Siguiente paso: enganchar todo lo de este paso en las rutas
+(`/publicar`, editar, contraoferta, y `me_interesa` para el caso
+`es_sintetica` con `sintetica_pub_intermedio_id` no nulo) —
+`app/routes/publicaciones.py`. Alcance completo de B19
 (visto con el usuario):
 detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
