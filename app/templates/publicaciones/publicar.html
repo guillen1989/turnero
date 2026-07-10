@@ -120,51 +120,14 @@
 
     <section class="turnos-section turnos-section--ceder" id="section-cedidos">
       <h2>{{ _('Turnos que quiero librar') }}</h2>
-      <div id="cedidos-list">
-        <div class="turno-row">
-          <div class="turno-row-campo">
-            <label>{{ _('Fecha') }}</label>
-            <input type="date" name="fecha_cedida_0" min="{{ today }}"{% if prefill_modo == 'peticiones' %} value="{{ prefill_fecha }}"{% endif %}>
-          </div>
-          <div class="turno-row-campo">
-            <label>{{ _('Tipo de turno') }}</label>
-            <select name="franja_cedida_0">
-              <option value="">{{ _('— Selecciona —') }}</option>
-              {% for f in franjas %}
-              <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-      </div>
-      <button type="button" class="btn btn-secondary btn-sm" id="btn-add-cedida">
-        {{ _('+ Añadir otro turno a librar') }}
-      </button>
+      <p class="cal-turnos-ayuda">{{ _('Elige el tipo de turno y toca los días para añadirlos.') }}</p>
+      <div class="cal-turnos" id="cal-cedidos"></div>
     </section>
 
     <section class="turnos-section turnos-section--aceptar" id="section-aceptados">
       <h2>{{ _('Turnos que quiero trabajar') }}</h2>
-      <div id="aceptados-list">
-        <div class="turno-row">
-          <div class="turno-row-campo">
-            <label>{{ _('Fecha') }}</label>
-            <input type="date" name="fecha_aceptada_0" min="{{ today }}"{% if prefill_modo == 'ofertas' %} value="{{ prefill_fecha }}"{% endif %}>
-          </div>
-          <div class="turno-row-campo">
-            <label>{{ _('Tipo de turno') }}</label>
-            <select name="franja_aceptada_0">
-              <option value="">{{ _('— Selecciona —') }}</option>
-              <option value="0">{{ _('✦ Cualquier turno de ese día') }}</option>
-              {% for f in franjas %}
-              <option value="{{ f.id }}">{{ f.nombre }} ({{ f.hora_inicio.strftime('%H:%M') }}–{{ f.hora_fin.strftime('%H:%M') }})</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-      </div>
-      <button type="button" class="btn btn-secondary btn-sm" id="btn-add-aceptada">
-        {{ _('+ Añadir otro turno que puedo trabajar') }}
-      </button>
+      <p class="cal-turnos-ayuda">{{ _('Elige el tipo de turno y toca los días para añadirlos.') }}</p>
+      <div class="cal-turnos" id="cal-aceptados"></div>
     </section>
 
     <section class="turnos-section">
@@ -205,36 +168,36 @@
   </section>
 </div>
 
+<script type="application/json" id="franjas-data">{{ franjas_json | tojson }}</script>
+<script src="{{ url_for('static', filename='js/calendario-turnos.js') }}"></script>
 <script>
 (function () {
-  var franjaOptions = `<option value="0">{{ _('✦ Cualquier turno de ese día') }}</option>{% for f in franjas %}<option value="{{ f.id }}">{{ f.nombre }}</option>{% endfor %}`;
+  var FRANJAS = JSON.parse(document.getElementById('franjas-data').textContent);
+  var TODAY = "{{ today }}";
+  var PREFILL_FECHA = "{{ prefill_fecha or '' }}";
+  var PREFILL_MODO = "{{ prefill_modo or '' }}";
+  var TEXTOS_CALENDARIO = {
+    turnoSing: {{ _('turno seleccionado') | tojson }},
+    turnoPlur: {{ _('turnos seleccionados') | tojson }},
+  };
+  var TEXTO_CUALQUIERA = {{ _('✦ Cualquier turno de ese día') | tojson }};
 
-  function addRow(listId, prefix) {
-    var list = document.getElementById(listId);
-    var idx = list.children.length;
-    var div = document.createElement('div');
-    div.className = 'turno-row';
-    div.innerHTML =
-      '<div class="turno-row-campo">' +
-        '<label>{{ _("Fecha") }}</label>' +
-        '<input type="date" name="fecha_' + prefix + '_' + idx + '" min="{{ today }}">' +
-      '</div>' +
-      '<div class="turno-row-campo">' +
-        '<label>{{ _("Tipo de turno") }}</label>' +
-        '<select name="franja_' + prefix + '_' + idx + '">' +
-          '<option value="">{{ _("— Selecciona —") }}</option>' +
-          franjaOptions +
-        '</select>' +
-      '</div>' +
-      '<button type="button" class="btn-remove" onclick="this.parentElement.remove()">✕</button>';
-    list.appendChild(div);
-  }
-
-  document.getElementById('btn-add-cedida').addEventListener('click', function () {
-    addRow('cedidos-list', 'cedida');
+  new CalendarioTurnos(document.getElementById('cal-cedidos'), {
+    prefix: 'cedida',
+    franjas: FRANJAS,
+    incluirCualquiera: false,
+    today: TODAY,
+    prefillFecha: PREFILL_MODO === 'peticiones' ? PREFILL_FECHA : null,
+    textos: TEXTOS_CALENDARIO,
   });
-  document.getElementById('btn-add-aceptada').addEventListener('click', function () {
-    addRow('aceptados-list', 'aceptada');
+  new CalendarioTurnos(document.getElementById('cal-aceptados'), {
+    prefix: 'aceptada',
+    franjas: FRANJAS,
+    incluirCualquiera: true,
+    textoCualquiera: TEXTO_CUALQUIERA,
+    today: TODAY,
+    prefillFecha: PREFILL_MODO === 'ofertas' ? PREFILL_FECHA : null,
+    textos: TEXTOS_CALENDARIO,
   });
 
   // Mostrar/ocultar secciones según tipo de publicación

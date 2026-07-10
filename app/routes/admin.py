@@ -893,7 +893,14 @@ def analytics():
         "unidades": Unidad.query.count(),
         "categorias": Categoria.query.count(),
         "publicaciones": PublicacionCambio.query.filter_by(es_sintetica=False).count(),
-        "sinteticas": PublicacionCambio.query.filter_by(es_sintetica=True).count(),
+        "oportunidades_3": PublicacionCambio.query.filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.sintetica_pub_intermedio_id.is_(None),
+        ).count(),
+        "oportunidades_4": PublicacionCambio.query.filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.sintetica_pub_intermedio_id.isnot(None),
+        ).count(),
         "activas": PublicacionCambio.query.filter(
             PublicacionCambio.es_sintetica.is_(False),
             PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
@@ -1065,8 +1072,20 @@ def analytics_data():
             .filter(Usuario.unidad_id == unidad_id)
             .count()
         )
-        t_sinteticas = (
-            PublicacionCambio.query.filter_by(es_sintetica=True)
+        t_oportunidades_3 = (
+            PublicacionCambio.query.filter(
+                PublicacionCambio.es_sintetica.is_(True),
+                PublicacionCambio.sintetica_pub_intermedio_id.is_(None),
+            )
+            .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
+            .filter(Usuario.unidad_id == unidad_id)
+            .count()
+        )
+        t_oportunidades_4 = (
+            PublicacionCambio.query.filter(
+                PublicacionCambio.es_sintetica.is_(True),
+                PublicacionCambio.sintetica_pub_intermedio_id.isnot(None),
+            )
             .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
             .filter(Usuario.unidad_id == unidad_id)
             .count()
@@ -1117,7 +1136,14 @@ def analytics_data():
         t_unidades = Unidad.query.count()
         t_categorias = Categoria.query.count()
         t_publicaciones = PublicacionCambio.query.filter_by(es_sintetica=False).count()
-        t_sinteticas = PublicacionCambio.query.filter_by(es_sintetica=True).count()
+        t_oportunidades_3 = PublicacionCambio.query.filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.sintetica_pub_intermedio_id.is_(None),
+        ).count()
+        t_oportunidades_4 = PublicacionCambio.query.filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.sintetica_pub_intermedio_id.isnot(None),
+        ).count()
         t_activas = PublicacionCambio.query.filter(
             PublicacionCambio.es_sintetica.is_(False),
             PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
@@ -1154,7 +1180,8 @@ def analytics_data():
             "unidades": t_unidades,
             "categorias": t_categorias,
             "publicaciones": t_publicaciones,
-            "sinteticas": t_sinteticas,
+            "oportunidades_3": t_oportunidades_3,
+            "oportunidades_4": t_oportunidades_4,
             "activas": t_activas,
             "matches": t_matches,
             "confirmados": t_confirmados,

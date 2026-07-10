@@ -42,6 +42,39 @@ def test_get_publicar_devuelve_formulario(client, db):
     assert b"Publicar cambio" in resp.data
 
 
+def test_get_publicar_incluye_franjas_de_serie_en_datos_del_calendario(client, db):
+    usuario = _usuario_y_login(client)
+    _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.get("/publicar")
+    assert resp.status_code == 200
+    assert b'id="franjas-data"' in resp.data
+    assert b'"nombre": "Ma\\u00f1ana"' in resp.data
+    assert b'"nombre": "Tarde"' in resp.data
+
+
+def test_get_publicar_incluye_franja_personalizada_en_datos_del_calendario(client, db):
+    """El calendario tap-to-select no puede limitarse a Mañana/Tarde/Noche:
+    una unidad puede tener más franjas, incluidas las creadas por sus propios
+    usuarios (B4), así que deben llegar al JS igual que las de serie."""
+    usuario = _usuario_y_login(client)
+    grupo_id = usuario.unidad.grupo_intercambio_id
+    _franja(db, grupo_id)
+    franja_custom = FranjaHoraria(
+        nombre="Guardia 24h",
+        hora_inicio=time(8, 0),
+        hora_fin=time(8, 0),
+        grupo_intercambio_id=grupo_id,
+        color="#8B5CF6",
+    )
+    db.session.add(franja_custom)
+    db.session.commit()
+
+    resp = client.get("/publicar")
+    assert resp.status_code == 200
+    assert b'"nombre": "Guardia 24h"' in resp.data
+    assert b'"color": "#8B5CF6"' in resp.data
+
+
 # --- Creación de la publicación ---
 
 def test_publicar_crea_publicacion_en_bd(client, db):
@@ -197,14 +230,20 @@ def test_publicar_rechaza_turno_aceptado_con_fecha_pasada(client, db):
 
 
 # --- Prefill de fecha/modo vía query params (Ronda 2, Paso 2) ---
+#
+# El formulario ya no tiene inputs de fecha estáticos (el calendario
+# tap-to-select los genera por JS al tocar un día), así que el prefill se
+# entrega al JS como constantes en el <script> inline en vez de un
+# value="" en un <input>. El widget usa esas constantes para abrir el mes
+# correcto y resaltar el día sugerido (comportamiento verificado en e2e).
 
 def test_publicar_prefill_modo_ofertas_precarga_fecha_aceptada(client, db):
     usuario = _usuario_y_login(client)
     _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.get("/publicar?fecha=2026-07-15&modo=ofertas")
     assert resp.status_code == 200
-    assert b'name="fecha_aceptada_0" min="' in resp.data
-    assert b'value="2026-07-15"' in resp.data
+    assert b'var PREFILL_FECHA = "2026-07-15";' in resp.data
+    assert b'var PREFILL_MODO = "ofertas";' in resp.data
 
 
 def test_publicar_prefill_modo_peticiones_precarga_fecha_cedida(client, db):
@@ -212,8 +251,8 @@ def test_publicar_prefill_modo_peticiones_precarga_fecha_cedida(client, db):
     _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.get("/publicar?fecha=2026-08-02&modo=peticiones")
     assert resp.status_code == 200
-    assert b'name="fecha_cedida_0" min="' in resp.data
-    assert b'value="2026-08-02"' in resp.data
+    assert b'var PREFILL_FECHA = "2026-08-02";' in resp.data
+    assert b'var PREFILL_MODO = "peticiones";' in resp.data
 
 
 def test_publicar_sin_prefill_no_precarga_nada(client, db):
@@ -221,7 +260,8 @@ def test_publicar_sin_prefill_no_precarga_nada(client, db):
     _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.get("/publicar")
     assert resp.status_code == 200
-    assert b'value="2026-' not in resp.data
+    assert b'var PREFILL_FECHA = "";' in resp.data
+    assert b'var PREFILL_MODO = "";' in resp.data
 
 
 def test_publicar_prefill_fecha_invalida_se_ignora(client, db):
@@ -229,4 +269,5 @@ def test_publicar_prefill_fecha_invalida_se_ignora(client, db):
     _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.get("/publicar?fecha=no-es-una-fecha&modo=ofertas")
     assert resp.status_code == 200
-    assert b'value="no-es-una-fecha"' not in resp.data
+    assert b'var PREFILL_FECHA = "";' in resp.data
+    assert b'var PREFILL_MODO = "";' in resp.data

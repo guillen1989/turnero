@@ -13,15 +13,29 @@ from app.services.compat_planilla_persistente import calcular_y_guardar_compatib
 from app.matching.service import (
     buscar_avisos_interes_para,
     buscar_cadenas_3_para,
+    buscar_cadenas_4_para,
+    buscar_cadenas_parciales_4_para,
     buscar_sinteticas_que_coinciden_con,
     buscar_matches_para,
     crear_cadena_3_desde_sintetica,
+    crear_cadena_4_desde_sintetica,
     crear_match_cadena_3,
+    crear_match_cadena_4,
     crear_match_directo,
     procesar_aviso_y_sintetica,
+    procesar_cadena_parcial_4,
 )
 
 bp = Blueprint("publicaciones", __name__)
+
+
+def _resolver_sintetica(pub, sint):
+    """Cierra la cadena que corresponda (3 o 4 bandas) al coincidir con una
+    sintética, según si tiene banda intermedia registrada."""
+    if sint.sintetica_pub_intermedio_id:
+        return crear_cadena_4_desde_sintetica(pub, sint)
+    return crear_cadena_3_desde_sintetica(pub, sint)
+
 
 _CADENCIA_DIAS = {
     'LMVD': [0, 2, 4, 6],  # Lun, Mié, Vie, Dom
@@ -168,6 +182,25 @@ def _asegurar_franjas(grupo_intercambio_id):
     db.session.commit()
 
 
+def _franjas_a_json(franjas):
+    """Serializa las franjas para el widget de calendario tap-to-select.
+
+    Incluye tanto las franjas de serie como las que hayan creado los propios
+    usuarios de la unidad (misma consulta `franjas` de siempre, ya scoped
+    por grupo_intercambio_id): el JS no distingue el origen, solo pinta chips.
+    """
+    return [
+        {
+            "id": f.id,
+            "nombre": f.nombre,
+            "horario": f"{f.hora_inicio.strftime('%H:%M')}–{f.hora_fin.strftime('%H:%M')}",
+            "color": f.color or "#3B82F6",
+            "colorTexto": f.color_texto,
+        }
+        for f in franjas
+    ]
+
+
 
 @bp.route("/publicar", methods=["GET", "POST"])
 @login_required
@@ -211,7 +244,10 @@ def nueva():
             .order_by(FranjaHoraria.hora_inicio)
             .all()
         )
-        return render_template("publicaciones/publicar.html", franjas=franjas)
+        return render_template(
+            "publicaciones/publicar.html", franjas=franjas,
+            franjas_json=_franjas_a_json(franjas), today=date.today().isoformat(),
+        )
 
     if request.method == "POST":
         tipo = request.form.get("tipo", "cambio")
@@ -224,12 +260,18 @@ def nueva():
             cedidos, aceptados, error = _extraer_turnos_junte()
             if error:
                 flash(error, "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
+                return render_template(
+                    "publicaciones/publicar.html", franjas=franjas,
+                    franjas_json=_franjas_a_json(franjas), today=hoy.isoformat(),
+                )
         elif tipo == "cambio_dia":
             cedidos, aceptados, error = _extraer_turnos_cambio_dia(hoy)
             if error:
                 flash(error, "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
+                return render_template(
+                    "publicaciones/publicar.html", franjas=franjas,
+                    franjas_json=_franjas_a_json(franjas), today=hoy.isoformat(),
+                )
         else:
             cedidos  = _extraer_turnos("cedida")
             aceptados = _extraer_turnos("aceptada")
@@ -238,7 +280,10 @@ def nueva():
             error = _validar_turnos(tipo, cedidos, aceptados, hoy)
             if error:
                 flash(error, "danger")
-                return render_template("publicaciones/publicar.html", franjas=franjas, today=hoy.isoformat())
+                return render_template(
+                    "publicaciones/publicar.html", franjas=franjas,
+                    franjas_json=_franjas_a_json(franjas), today=hoy.isoformat(),
+                )
 
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
         pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
@@ -246,8 +291,12 @@ def nueva():
             crear_match_directo(pub, candidata)
         for pub_b, pub_c in buscar_cadenas_3_para(pub):
             crear_match_cadena_3(pub, pub_b, pub_c)
+        for pub_b, pub_c, pub_d in buscar_cadenas_4_para(pub):
+            crear_match_cadena_4(pub, pub_b, pub_c, pub_d)
+        for pub_a, pub_b, pub_c in buscar_cadenas_parciales_4_para(pub):
+            procesar_cadena_parcial_4(pub_a, pub_b, pub_c)
         for sint in buscar_sinteticas_que_coinciden_con(pub):
-            crear_cadena_3_desde_sintetica(pub, sint)
+            _resolver_sintetica(pub, sint)
         for candidata in buscar_avisos_interes_para(pub):
             procesar_aviso_y_sintetica(pub, candidata)
         flash(_("Publicación creada correctamente."), "success")
@@ -256,7 +305,8 @@ def nueva():
 
     prefill_fecha, prefill_modo = _leer_prefill_calendario()
     return render_template(
-        "publicaciones/publicar.html", franjas=franjas, today=date.today().isoformat(),
+        "publicaciones/publicar.html", franjas=franjas,
+        franjas_json=_franjas_a_json(franjas), today=date.today().isoformat(),
         prefill_fecha=prefill_fecha, prefill_modo=prefill_modo,
     )
 
@@ -330,8 +380,12 @@ def editar(pub_id):
             crear_match_directo(pub, candidata)
         for pub_b, pub_c in buscar_cadenas_3_para(pub):
             crear_match_cadena_3(pub, pub_b, pub_c)
+        for pub_b, pub_c, pub_d in buscar_cadenas_4_para(pub):
+            crear_match_cadena_4(pub, pub_b, pub_c, pub_d)
+        for pub_a, pub_b, pub_c in buscar_cadenas_parciales_4_para(pub):
+            procesar_cadena_parcial_4(pub_a, pub_b, pub_c)
         for sint in buscar_sinteticas_que_coinciden_con(pub):
-            crear_cadena_3_desde_sintetica(pub, sint)
+            _resolver_sintetica(pub, sint)
         for candidata in buscar_avisos_interes_para(pub):
             procesar_aviso_y_sintetica(pub, candidata)
         flash(_("Publicación actualizada."), "success")
@@ -374,25 +428,29 @@ def me_interesa(pub_id):
 
     if pub_a.es_sintetica:
         # La pub sintética ya tiene los cedidos/aceptados desde la perspectiva del
-        # tercer usuario: copiarlos directamente (sin invertir) y cerrar la cadena_3.
-        cedidos_c = [
+        # usuario que le falta al ciclo: copiarlos directamente (sin invertir) y
+        # cerrar la cadena (3 o 4 bandas según tenga banda intermedia o no).
+        cedidos_nuevo = [
             (tc.fecha, tc.franja_horaria_id)
             for tc in pub_a.turnos_cedidos if tc.estado == "abierto"
         ]
-        aceptados_c = [
+        aceptados_nuevo = [
             (ta.fecha, ta.franja_horaria_id)
             for ta in pub_a.turnos_aceptados
         ]
-        if not cedidos_c or not aceptados_c:
+        if not cedidos_nuevo or not aceptados_nuevo:
             flash(_("Esta oportunidad ya no está disponible."), "warning")
             return redirect(url_for("main.cambios"))
-        pub_c = publicar_cambio(current_user.id, cedidos_c, aceptados_c)
-        match = crear_cadena_3_desde_sintetica(pub_c, pub_a)
+        pub_nuevo = publicar_cambio(current_user.id, cedidos_nuevo, aceptados_nuevo)
+        match = _resolver_sintetica(pub_nuevo, pub_a)
         if match is None:
-            eliminar_publicacion(pub_c)
-            flash(_("No fue posible cerrar el cambio a 3 bandas. Los turnos pueden haber cambiado."), "warning")
+            eliminar_publicacion(pub_nuevo)
+            flash(_("No fue posible cerrar el cambio. Los turnos pueden haber cambiado."), "warning")
             return redirect(url_for("main.cambios"))
-        flash(_("¡Cambio a 3 bandas iniciado! Ve a «Mis cambios» para confirmar."), "success")
+        if match.tipo == "cadena_4":
+            flash(_("¡Cambio a 4 bandas iniciado! Ve a «Mis cambios» para confirmar."), "success")
+        else:
+            flash(_("¡Cambio a 3 bandas iniciado! Ve a «Mis cambios» para confirmar."), "success")
         return redirect(url_for("main.index"))
 
     try:
@@ -539,8 +597,12 @@ def contraoferta(pub_id):
             crear_match_directo(pub_nueva, candidata)
         for pub_b, pub_c in buscar_cadenas_3_para(pub_nueva):
             crear_match_cadena_3(pub_nueva, pub_b, pub_c)
+        for pub_b, pub_c, pub_d in buscar_cadenas_4_para(pub_nueva):
+            crear_match_cadena_4(pub_nueva, pub_b, pub_c, pub_d)
+        for pub_a, pub_b, pub_c in buscar_cadenas_parciales_4_para(pub_nueva):
+            procesar_cadena_parcial_4(pub_a, pub_b, pub_c)
         for sint in buscar_sinteticas_que_coinciden_con(pub_nueva):
-            crear_cadena_3_desde_sintetica(pub_nueva, sint)
+            _resolver_sintetica(pub_nueva, sint)
         for candidata in buscar_avisos_interes_para(pub_nueva):
             procesar_aviso_y_sintetica(pub_nueva, candidata)
 

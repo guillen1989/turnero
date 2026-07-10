@@ -37,13 +37,18 @@
   {% if matches %}
   <section class="matches-section">
     {% for match, mi_part, otras_parts, trabajas in matches %}
-    {% set es_parcial = (match.tipo != 'cadena_3') and (mi_part.publicacion.tipo == 'cambio') and (otras_parts[0].publicacion.tipo in ('regalo', 'peticion')) %}
-    <div class="match-card match--{{ match.estado }}{% if match.tipo == 'cadena_3' %} match--cadena-3{% endif %}">
+    {% set es_cadena = match.tipo in ('cadena_3', 'cadena_4') %}
+    {% set es_parcial = (not es_cadena) and (mi_part.publicacion.tipo == 'cambio') and (otras_parts[0].publicacion.tipo in ('regalo', 'peticion')) %}
+    <div class="match-card match--{{ match.estado }}{% if match.tipo == 'cadena_3' %} match--cadena-3{% elif match.tipo == 'cadena_4' %} match--cadena-4{% endif %}">
       <div class="match-header">
         <span class="match-badge match-badge--{{ match.estado }}{% if es_parcial and match.estado == 'propuesto' %} match-badge--parcial{% endif %}">
           {% if match.estado == 'confirmado_total' %}{{ _('¡Confirmado!') }}
           {% elif match.tipo == 'cadena_3' %}
             {% if match.estado == 'propuesto' %}{{ _('¡Cambio a 3 bandas!') }}
+            {% elif mi_part.confirmado %}{{ _('Esperando a los demás') }}
+            {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
+          {% elif match.tipo == 'cadena_4' %}
+            {% if match.estado == 'propuesto' %}{{ _('¡Cambio a 4 bandas!') }}
             {% elif mi_part.confirmado %}{{ _('Esperando a los demás') }}
             {% else %}{{ _('Pendiente de tu confirmación') }}{% endif %}
           {% else %}
@@ -96,8 +101,33 @@
         {% endif %}
       </p>
       {% endif %}
-      {% if match.tipo != 'cadena_3' and otras_parts[0].publicacion.mensaje %}
+      {% if not es_cadena and otras_parts[0].publicacion.mensaje %}
       <p class="match-mensaje">"{{ otras_parts[0].publicacion.mensaje }}"</p>
+      {% endif %}
+      {% if match.tipo == 'cadena_4' and match.estado != 'confirmado_total' %}
+      {% set ns = namespace(wa_texto=_('¡Cambio a 4 bandas listo para cerrar entre los 4!') + '\n') %}
+      {% if mi_part.turno_cedido %}
+        {% set ns.wa_texto = ns.wa_texto + mi_part.publicacion.usuario.nombre + ' ' + _('libra:') + ' ' + mi_part.turno_cedido.fecha.strftime('%d/%m/%Y') + ' (' + mi_part.turno_cedido.franja_horaria.nombre + ')\n' %}
+      {% endif %}
+      {% set mi_trabaja = trabajas[mi_part.id] %}
+      {% if mi_trabaja %}
+        {% set ns.wa_texto = ns.wa_texto + mi_part.publicacion.usuario.nombre + ' ' + _('trabaja:') + ' ' + mi_trabaja.fecha + ' (' + (mi_trabaja.franja or _('cualquier turno')) + ')\n' %}
+      {% endif %}
+      {% for otra in otras_parts %}
+        {% if otra.turno_cedido %}
+          {% set ns.wa_texto = ns.wa_texto + otra.publicacion.usuario.nombre + ' ' + _('libra:') + ' ' + otra.turno_cedido.fecha.strftime('%d/%m/%Y') + ' (' + otra.turno_cedido.franja_horaria.nombre + ')\n' %}
+        {% endif %}
+        {% set otra_trabaja = trabajas[otra.id] %}
+        {% if otra_trabaja %}
+          {% set ns.wa_texto = ns.wa_texto + otra.publicacion.usuario.nombre + ' ' + _('trabaja:') + ' ' + otra_trabaja.fecha + ' (' + (otra_trabaja.franja or _('cualquier turno')) + ')\n' %}
+        {% endif %}
+      {% endfor %}
+      {% set ns.wa_texto = ns.wa_texto + '\n' + _('Entra en Turnero para confirmarlo:') + ' ' + url_for('main.index', _external=True) %}
+      <div class="match-acciones">
+        <a href="https://wa.me/?text={{ ns.wa_texto | urlquote }}"
+           class="btn btn-whatsapp btn-sm"
+           target="_blank" rel="noopener">{{ _('Avisar por WhatsApp') }}</a>
+      </div>
       {% endif %}
       {% if match.estado == 'confirmado_total' %}
       <p class="match-esperando">{{ _('Cambio confirmado por todas las partes.') }}</p>
@@ -117,6 +147,12 @@
         {% if match.tipo == 'cadena_3' %}{{ _('Has confirmado. Esperando a los demás.') }}
         {% else %}{{ _('Has confirmado. Esperando al otro usuario.') }}{% endif %}
       </p>
+      <div class="match-acciones">
+        <form method="post" action="{{ url_for('matches.desconfirmar', match_id=match.id) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-secondary btn-sm">{{ _('Desconfirmar') }}</button>
+        </form>
+      </div>
       {% endif %}
     </div>
     {% endfor %}

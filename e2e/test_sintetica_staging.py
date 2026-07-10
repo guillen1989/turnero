@@ -17,6 +17,7 @@ Ejecución:
 """
 import os
 import time
+from datetime import date
 
 import pytest
 from dotenv import load_dotenv
@@ -43,24 +44,27 @@ def _login(page, email, password="TestPass2026!"):
         page.wait_for_load_state("networkidle")
 
 
+def _tocar_turno(page, widget_id, franja_nombre, fecha_iso):
+    """Elige la franja (por nombre exacto del chip) y toca el día `fecha_iso`
+    en el calendario tap-to-select del widget `widget_id`."""
+    widget = page.locator(f"#{widget_id}")
+    widget.locator(f'.cal-turnos-chip[data-franja-nombre="{franja_nombre}"]').click()
+
+    objetivo = date.fromisoformat(fecha_iso)
+    hoy = date.today()
+    for _ in range((objetivo.year - hoy.year) * 12 + (objetivo.month - hoy.month)):
+        widget.locator('[data-role="next"]').click()
+
+    widget.locator(f'button.cal-turnos-celda[data-fecha="{fecha_iso}"]').click()
+
+
 def _publicar(page, fecha_cede, franja_cede_nombre, fecha_acepta, franja_acepta_nombre):
-    """Publica un cambio (tipo por defecto) eligiendo franjas por nombre parcial."""
+    """Publica un cambio (tipo por defecto) tocando franja + día en el calendario."""
     page.goto(f"{_BASE}/publicar")
-    page.wait_for_selector('input[name="fecha_cedida_0"]')
+    page.wait_for_selector('#cal-cedidos .cal-turnos-chip')
 
-    # Los options de franja incluyen el horario: «Mañana (07:00–15:00)»
-    # Usamos evaluate para buscar por texto parcial en lugar de por value/label exacto.
-    def _sel_franja(select_name, nombre_franja):
-        valor = page.locator(f'select[name="{select_name}"]').evaluate(
-            "(sel, n) => { const o = [...sel.options].find(x => x.text.includes(n)); return o ? o.value : ''; }",
-            nombre_franja,
-        )
-        page.locator(f'select[name="{select_name}"]').select_option(value=valor)
-
-    page.locator('input[name="fecha_cedida_0"]').fill(fecha_cede)
-    _sel_franja("franja_cedida_0", franja_cede_nombre)
-    page.locator('input[name="fecha_aceptada_0"]').fill(fecha_acepta)
-    _sel_franja("franja_aceptada_0", franja_acepta_nombre)
+    _tocar_turno(page, "cal-cedidos", franja_cede_nombre, fecha_cede)
+    _tocar_turno(page, "cal-aceptados", franja_acepta_nombre, fecha_acepta)
     page.locator('#publicar-form button[type="submit"]').click()
     page.wait_for_load_state("networkidle")
 

@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 
 from app.extensions import db
 from app.models import MatchCambio
-from app.services.matches import confirmar_participacion, rechazar_match
+from app.services.matches import confirmar_participacion, desconfirmar_participacion, rechazar_match
 
 bp = Blueprint("matches", __name__)
 
@@ -28,6 +28,21 @@ def confirmar(match_id):
     match = _get_match_validado(match_id)
     confirmar_participacion(match, current_user.id)
     flash(_("Has confirmado tu parte del cambio."), "success")
+    return redirect(url_for("main.index"))
+
+
+@bp.post("/matches/<int:match_id>/desconfirmar")
+@login_required
+def desconfirmar(match_id):
+    match = _get_match_validado(match_id)
+    participacion = next(
+        (p for p in match.participaciones if p.publicacion.usuario_id == current_user.id),
+        None,
+    )
+    if participacion is None or not participacion.confirmado:
+        abort(409)
+    desconfirmar_participacion(match, current_user.id)
+    flash(_("Has retirado tu confirmación del cambio."), "info")
     return redirect(url_for("main.index"))
 
 

@@ -227,3 +227,101 @@ def test_cadena_3_con_multiples_turnos():
         cedidos_b={Y}, aceptados_b={X},
         cedidos_c={Z}, aceptados_c={Y},
     )
+
+
+# --- Matching a 4 bandas ---
+
+from app.matching.engine import detectar_cadena_4
+
+
+def test_cadena_4_ciclo_completo():
+    """A cede W (B acepta), B cede X (C acepta), C cede Y (D acepta), D cede Z (A acepta)."""
+    W = (date(2026, 7, 1), 1)
+    X = (date(2026, 7, 2), 2)
+    Y = (date(2026, 7, 3), 3)
+    Z = (date(2026, 7, 4), 1)
+
+    assert detectar_cadena_4(
+        cedidos_a={W}, aceptados_a={Z},
+        cedidos_b={X}, aceptados_b={W},
+        cedidos_c={Y}, aceptados_c={X},
+        cedidos_d={Z}, aceptados_d={Y},
+    )
+
+
+def test_cadena_4_falla_si_ultimo_eslabon_roto():
+    """El ciclo no se cierra porque D ofrece algo que A no acepta."""
+    W = (date(2026, 7, 1), 1)
+    X = (date(2026, 7, 2), 2)
+    Y = (date(2026, 7, 3), 3)
+    Z = (date(2026, 7, 4), 1)
+    V = (date(2026, 7, 5), 1)
+
+    assert not detectar_cadena_4(
+        cedidos_a={W}, aceptados_a={Z},
+        cedidos_b={X}, aceptados_b={W},
+        cedidos_c={Y}, aceptados_c={X},
+        cedidos_d={V}, aceptados_d={Y},  # D cede V, A acepta Z — ciclo roto
+    )
+
+
+def test_cadena_4_falla_si_eslabon_intermedio_roto():
+    """B→C no se satisface porque C no acepta lo que B cede."""
+    W = (date(2026, 7, 1), 1)
+    X = (date(2026, 7, 2), 2)
+    Y = (date(2026, 7, 3), 3)
+    Z = (date(2026, 7, 4), 1)
+    V = (date(2026, 7, 5), 1)
+
+    assert not detectar_cadena_4(
+        cedidos_a={W}, aceptados_a={Z},
+        cedidos_b={X}, aceptados_b={W},
+        cedidos_c={Y}, aceptados_c={V},  # C acepta V, no X
+        cedidos_d={Z}, aceptados_d={Y},
+    )
+
+
+def test_cadena_4_falla_si_primer_eslabon_roto():
+    """A→B no se satisface porque B no acepta lo que A cede."""
+    W = (date(2026, 7, 1), 1)
+    X = (date(2026, 7, 2), 2)
+    Y = (date(2026, 7, 3), 3)
+    Z = (date(2026, 7, 4), 1)
+    V = (date(2026, 7, 5), 1)
+
+    assert not detectar_cadena_4(
+        cedidos_a={W}, aceptados_a={Z},
+        cedidos_b={X}, aceptados_b={V},  # B acepta V, no W
+        cedidos_c={Y}, aceptados_c={X},
+        cedidos_d={Z}, aceptados_d={Y},
+    )
+
+
+def test_cadena_4_no_confunde_cadena_3_con_cadena_4():
+    """Un ciclo cerrado de 3 (C→A directo) no constituye cadena de 4."""
+    W = (date(2026, 7, 1), 1)
+    X = (date(2026, 7, 2), 2)
+    Z = (date(2026, 7, 4), 1)
+
+    assert not detectar_cadena_4(
+        cedidos_a={W}, aceptados_a={Z},
+        cedidos_b={X}, aceptados_b={W},
+        cedidos_c={Z}, aceptados_c={X},  # C→A ya cierra un ciclo de 3
+        cedidos_d=set(), aceptados_d=set(),
+    )
+
+
+def test_cadena_4_con_multiples_turnos():
+    """La cadena se detecta aunque haya más turnos por publicación."""
+    W = (date(2026, 7, 1), 1)
+    W2 = (date(2026, 7, 6), 1)
+    X = (date(2026, 7, 2), 2)
+    Y = (date(2026, 7, 3), 3)
+    Z = (date(2026, 7, 4), 1)
+
+    assert detectar_cadena_4(
+        cedidos_a={W, W2}, aceptados_a={Z},
+        cedidos_b={X}, aceptados_b={W},
+        cedidos_c={Y}, aceptados_c={X},
+        cedidos_d={Z}, aceptados_d={Y},
+    )

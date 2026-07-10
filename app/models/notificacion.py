@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from app.extensions import db
 
-TIPOS_NOTIFICACION = ("nuevo_match", "confirmacion_parcial", "rechazo", "caducidad", "nueva_publicacion_seguido", "contraoferta", "alerta_busqueda_guardada", "aviso_oportunidad_3", "contrasena_restablecida")
+TIPOS_NOTIFICACION = ("nuevo_match", "confirmacion_parcial", "desconfirmacion", "rechazo", "caducidad", "nueva_publicacion_seguido", "contraoferta", "alerta_busqueda_guardada", "aviso_oportunidad_3", "aviso_oportunidad_4", "contrasena_restablecida")
 
 
 class Notificacion(db.Model):

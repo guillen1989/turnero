@@ -336,6 +336,25 @@ def test_cadena_3_publicacion_se_confirma_cuando_todos_confirman(db):
     assert pub_maria.estado == "confirmada"
 
 
+def test_cadena_3_desconfirmar_mantiene_parcial_si_otro_sigue_confirmado(db):
+    """Si Ana desconfirma pero Pedro sigue confirmado, el match sigue 'confirmado_parcial'."""
+    from app.services.matches import confirmar_participacion, desconfirmar_participacion
+
+    pub_ana, pub_pedro, pub_maria, ana, pedro, maria = _setup_ciclo(db)
+    match = crear_match_cadena_3(pub_ana, pub_pedro, pub_maria)
+
+    confirmar_participacion(match, ana.id)
+    confirmar_participacion(match, pedro.id)
+
+    desconfirmar_participacion(match, ana.id)
+
+    assert match.estado == "confirmado_parcial"
+    part_ana = next(p for p in match.participaciones if p.publicacion_id == pub_ana.id)
+    part_pedro = next(p for p in match.participaciones if p.publicacion_id == pub_pedro.id)
+    assert part_ana.confirmado is False
+    assert part_pedro.confirmado is True
+
+
 # --- Integración con la ruta de publicar ---
 
 def test_publicar_crea_match_cadena_3_cuando_hay_ciclo(client, db):

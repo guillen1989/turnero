@@ -86,6 +86,7 @@ def avisos():
                 "contraoferta",
                 "alerta_busqueda_guardada",
                 "aviso_oportunidad_3",
+                "aviso_oportunidad_4",
                 "contrasena_restablecida",
             )),
         )
@@ -119,6 +120,7 @@ def borrar_todos_avisos():
             "contraoferta",
             "alerta_busqueda_guardada",
             "aviso_oportunidad_3",
+            "aviso_oportunidad_4",
             "contrasena_restablecida",
         )),
     ).delete()

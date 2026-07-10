@@ -383,7 +383,7 @@ def cambios():
     franja_id = request.args.get("franja", type=int)
     tipo = request.args.get("tipo", "").strip()
     tipo_fecha = request.args.get("tipo_fecha", "").strip()
-    _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte", "cambio_dia", "sintetica"}
+    _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte", "cambio_dia", "sintetica", "sintetica_4"}
     if tipo not in _TIPOS_VALIDOS:
         tipo = ""
     if tipo_fecha not in {"cedido", "aceptado"}:
@@ -444,7 +444,15 @@ def cambios():
     if nombre:
         q = q.filter(Usuario.nombre.ilike(f"%{nombre}%"))
     if tipo == "sintetica":
-        q = q.filter(PublicacionCambio.es_sintetica.is_(True))
+        q = q.filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.sintetica_pub_intermedio_id.is_(None),
+        )
+    elif tipo == "sintetica_4":
+        q = q.filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.sintetica_pub_intermedio_id.isnot(None),
+        )
     elif tipo:
         q = q.filter(PublicacionCambio.tipo == tipo, PublicacionCambio.es_sintetica.is_(False))
 
@@ -473,7 +481,10 @@ def cambios():
 
 
 def _cargar_sint_info(sinteticas):
-    """Devuelve {sint_id: {'pub_a': pub_a_obj, 'pub_b': pub_b_obj}} para la lista dada."""
+    """Devuelve {sint_id: {'pub_a', 'pub_b', 'pub_intermedio'}} para la lista dada.
+
+    pub_intermedio solo está presente (no None) en sintéticas de cadena_4.
+    """
     if not sinteticas:
         return {}
     pub_ids = set()
@@ -482,6 +493,8 @@ def _cargar_sint_info(sinteticas):
             pub_ids.add(s.sintetica_pub_a_id)
         if s.sintetica_pub_b_id:
             pub_ids.add(s.sintetica_pub_b_id)
+        if s.sintetica_pub_intermedio_id:
+            pub_ids.add(s.sintetica_pub_intermedio_id)
     pubs_by_id = {
         p.id: p
         for p in PublicacionCambio.query
@@ -493,6 +506,7 @@ def _cargar_sint_info(sinteticas):
         s.id: {
             "pub_a": pubs_by_id.get(s.sintetica_pub_a_id),
             "pub_b": pubs_by_id.get(s.sintetica_pub_b_id),
+            "pub_intermedio": pubs_by_id.get(s.sintetica_pub_intermedio_id),
         }
         for s in sinteticas
     }

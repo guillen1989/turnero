@@ -6,20 +6,51 @@ no debe depender de si la notificación llega o no.
 """
 import json
 import threading
+from datetime import datetime, timezone
 
 from flask import current_app
 from pywebpush import WebPushException, webpush
+
+# Tope diario de pushes de "oportunidad" (a 3 + a 4 combinadas) por usuario.
+# El matching de cadena_4 explora más combinaciones que el de cadena_3 (busca
+# el hueco desde 3 posiciones distintas por cada publicación nueva/editada),
+# así que en un grupo de intercambio activo puede generar muchas más
+# oportunidades de las que un usuario quiere recibir como push el mismo día.
+# La Notificacion en la campana se crea siempre; esto solo limita el aviso
+# al móvil.
+LIMITE_DIARIO_AVISOS_OPORTUNIDAD = 5
+_TIPOS_AVISO_OPORTUNIDAD = ("aviso_oportunidad_3", "aviso_oportunidad_4")
+
+
+def _limite_diario_superado(usuario, tipo):
+    if tipo not in _TIPOS_AVISO_OPORTUNIDAD:
+        return False
+
+    from app.models import Notificacion
+
+    hoy_inicio = datetime.now(timezone.utc).replace(
+        tzinfo=None, hour=0, minute=0, second=0, microsecond=0
+    )
+    enviados_hoy = Notificacion.query.filter(
+        Notificacion.usuario_id == usuario.id,
+        Notificacion.tipo.in_(_TIPOS_AVISO_OPORTUNIDAD),
+        Notificacion.fecha >= hoy_inicio,
+    ).count()
+    return enviados_hoy >= LIMITE_DIARIO_AVISOS_OPORTUNIDAD
+
 
 # Mapa de tipo de notificación → atributo de preferencia en Usuario
 _PREF_ATTR = {
     "match": "notif_match",
     "match_parcial": "notif_match",
     "confirmacion_parcial": "notif_confirmacion_parcial",
+    "desconfirmacion": "notif_confirmacion_parcial",
     "confirmado_total": "notif_confirmado_total",
     "publicacion": "notif_publicacion",
     "contraoferta": "notif_match",
     "busqueda_guardada": "notif_busqueda_guardada",
     "aviso_oportunidad_3": "notif_match",
+    "aviso_oportunidad_4": "notif_match",
 }
 
 # Mapa de tipo de notificación → URL de destino al tocar la push
@@ -27,11 +58,13 @@ _URL_POR_TIPO = {
     "match": "/?estado=compatible",
     "match_parcial": "/?estado=compatible",
     "confirmacion_parcial": "/?estado=pendiente",
+    "desconfirmacion": "/?estado=pendiente",
     "confirmado_total": "/?estado=confirmada",
     "publicacion": "/avisos",
     "contraoferta": "/avisos",
     "busqueda_guardada": "/avisos",
     "aviso_oportunidad_3": "/avisos",
+    "aviso_oportunidad_4": "/avisos",
 }
 
 # Textos por tipo: (título, cuerpo_singular, cuerpo_plural)
@@ -50,6 +83,11 @@ _TEXTOS = {
         "Turnero",
         "Tienes 1 cambio pendiente de confirmar",
         "Tienes {} cambios pendientes de confirmar",
+    ),
+    "desconfirmacion": (
+        "Turnero",
+        "Un compañero ha retirado su confirmación de un cambio",
+        "Hay {} compañeros que han retirado su confirmación de un cambio",
     ),
     "confirmado_total": (
         "Turnero",
@@ -75,6 +113,11 @@ _TEXTOS = {
         "Turnero",
         "Se ha generado 1 oportunidad de cambio a 3 con tu publicación",
         "Se han generado {} oportunidades de cambio a 3 con tus publicaciones",
+    ),
+    "aviso_oportunidad_4": (
+        "Turnero",
+        "Se ha generado 1 oportunidad de cambio a 4 con tu publicación",
+        "Se han generado {} oportunidades de cambio a 4 con tus publicaciones",
     ),
 }
 
@@ -141,6 +184,15 @@ def _contar_pendientes(usuario, tipo):
             sa_select(func.count(Notificacion.id)).where(
                 Notificacion.usuario_id == usuario.id,
                 Notificacion.tipo == "aviso_oportunidad_3",
+                Notificacion.leida.is_(False),
+            )
+        )
+
+    if tipo == "aviso_oportunidad_4":
+        return db.session.scalar(
+            sa_select(func.count(Notificacion.id)).where(
+                Notificacion.usuario_id == usuario.id,
+                Notificacion.tipo == "aviso_oportunidad_4",
                 Notificacion.leida.is_(False),
             )
         )
@@ -213,6 +265,8 @@ def enviar_push_condicional(usuario, tipo):
         return
     attr = _PREF_ATTR.get(tipo)
     if attr and not getattr(usuario, attr, True):
+        return
+    if _limite_diario_superado(usuario, tipo):
         return
 
     n = _contar_pendientes(usuario, tipo)
