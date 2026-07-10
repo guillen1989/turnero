@@ -68,12 +68,23 @@ o eliminar la banda intermedia de un trío no tocaba la sintética
 dependiente (bug real confirmado por test: quedaba `abierta` al cancelar,
 y `ForeignKeyViolation` al eliminar). 4 tests nuevos (cancelar cada una de
 las 3 bandas reales, eliminar la intermedia sin error) · 64 tests
-relacionados passing. Siguiente paso: etiqueta "Oportunidad a 4" en
-calendario (`app/routes/calendario.py`, `app/services/calendario_mercado.py`)
-y buscador (`app/routes/main.py` — `_cargar_sint_info`,
-`app/templates/main/cambios.html`), distinguiendo por
-`sintetica_pub_intermedio_id`. Alcance completo de B19
-(visto con el usuario):
+relacionados passing.
+
+Paso 9 completado: etiqueta "Oportunidad a 4" distinguida de "Oportunidad
+a 3" en calendario y buscador, según `sintetica_pub_intermedio_id` —
+`resumen_publicaciones` (`app/services/calendario_mercado.py`) añade
+`es_sintetica_4`; `app/routes/calendario.py` elige la etiqueta con ese
+campo; `_cargar_sint_info` (`app/routes/main.py`) añade `pub_intermedio`;
+`app/templates/main/cambios.html` branchea badge + mensaje ("Cambio a 4
+con X, Y y Z") cuando hay banda intermedia. Catálogo i18n actualizado
+(pybabel extract/update/compile). 6 tests nuevos (2 servicio, 2 ruta
+calendario, 1 ruta cambios) · 106 tests relacionados passing. Siguiente
+paso: preferencia de usuario para mostrar/ocultar oportunidades a 3 y a 4
+por separado en el calendario (Ofertas/Peticiones) — columnas
+`mostrar_oportunidad_3`/`mostrar_oportunidad_4` en `Usuario` + migración,
+checkboxes en `/auth/perfil`, filtro en
+`app/services/calendario_mercado.py`/`app/routes/calendario.py`. Alcance
+completo de B19 (visto con el usuario):
 detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
 cadena a 3, y una preferencia de usuario para mostrar/ocultar oportunidades

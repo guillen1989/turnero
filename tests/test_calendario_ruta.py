@@ -251,3 +251,40 @@ def test_calendario_muestra_oportunidad_a_3_para_sintetica(client, db):
     )
     datos_pubs = json.loads(m_pubs.group(1))
     assert datos_pubs[str(sint.id)]["tipo_label"] == "Oportunidad a 3"
+
+
+def test_calendario_muestra_oportunidad_a_4_para_sintetica_con_intermedio(client, db):
+    """Una sintética de cadena_4 (con banda intermedia) se etiqueta distinto
+    de una de cadena_3, sin banda intermedia."""
+    import json
+    import re
+
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    maria = _usuario("María", "maria@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    intermedio = PublicacionCambio(usuario_id=pedro.id, tipo="cambio")
+    db.session.add(intermedio)
+    db.session.flush()
+
+    sint = PublicacionCambio(
+        usuario_id=maria.id, tipo="cambio", es_sintetica=True,
+        sintetica_pub_intermedio_id=intermedio.id,
+    )
+    db.session.add(sint)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=sint.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
+    db.session.commit()
+
+    _login(client, ana.email)
+    resp = client.get("/calendario/?anyo=2026&mes=7&modo=ofertas")
+    assert resp.status_code == 200
+
+    html = resp.data.decode("utf-8")
+    m_pubs = re.search(
+        r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
+    )
+    datos_pubs = json.loads(m_pubs.group(1))
+    assert datos_pubs[str(sint.id)]["tipo_label"] == "Oportunidad a 4"

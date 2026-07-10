@@ -473,7 +473,10 @@ def cambios():
 
 
 def _cargar_sint_info(sinteticas):
-    """Devuelve {sint_id: {'pub_a': pub_a_obj, 'pub_b': pub_b_obj}} para la lista dada."""
+    """Devuelve {sint_id: {'pub_a', 'pub_b', 'pub_intermedio'}} para la lista dada.
+
+    pub_intermedio solo está presente (no None) en sintéticas de cadena_4.
+    """
     if not sinteticas:
         return {}
     pub_ids = set()
@@ -482,6 +485,8 @@ def _cargar_sint_info(sinteticas):
             pub_ids.add(s.sintetica_pub_a_id)
         if s.sintetica_pub_b_id:
             pub_ids.add(s.sintetica_pub_b_id)
+        if s.sintetica_pub_intermedio_id:
+            pub_ids.add(s.sintetica_pub_intermedio_id)
     pubs_by_id = {
         p.id: p
         for p in PublicacionCambio.query
@@ -493,6 +498,7 @@ def _cargar_sint_info(sinteticas):
         s.id: {
             "pub_a": pubs_by_id.get(s.sintetica_pub_a_id),
             "pub_b": pubs_by_id.get(s.sintetica_pub_b_id),
+            "pub_intermedio": pubs_by_id.get(s.sintetica_pub_intermedio_id),
         }
         for s in sinteticas
     }

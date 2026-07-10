@@ -486,7 +486,10 @@ def test_resumen_publicaciones_devuelve_usuario_y_tipo(db):
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([pub.id])
 
-    assert resumen == [{"id": pub.id, "usuario_nombre": "Pedro", "tipo": "regalo", "es_sintetica": False}]
+    assert resumen == [{
+        "id": pub.id, "usuario_nombre": "Pedro", "tipo": "regalo",
+        "es_sintetica": False, "es_sintetica_4": False,
+    }]
 
 
 def test_resumen_publicaciones_indica_si_es_sintetica(db):
@@ -498,7 +501,30 @@ def test_resumen_publicaciones_indica_si_es_sintetica(db):
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([pub.id])
 
-    assert resumen == [{"id": pub.id, "usuario_nombre": "Pedro", "tipo": "cambio", "es_sintetica": True}]
+    assert resumen == [{
+        "id": pub.id, "usuario_nombre": "Pedro", "tipo": "cambio",
+        "es_sintetica": True, "es_sintetica_4": False,
+    }]
+
+
+def test_resumen_publicaciones_indica_si_es_sintetica_de_cadena_4(db):
+    """Una sintética con banda intermedia (cadena_4) se distingue de una de cadena_3."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    intermedio = _pub(ana, "cambio")
+    pub = _pub(pedro, "cambio", aceptados=[(date(2026, 7, 3), manana)], es_sintetica=True)
+    pub.sintetica_pub_intermedio_id = intermedio.id
+    db.session.commit()
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([pub.id])
+
+    assert resumen == [{
+        "id": pub.id, "usuario_nombre": "Pedro", "tipo": "cambio",
+        "es_sintetica": True, "es_sintetica_4": True,
+    }]
 
 
 def test_resumen_publicaciones_lista_vacia_sin_ids(db):

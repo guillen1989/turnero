@@ -217,7 +217,9 @@ def preparar_celdas_mes(dias, calendario_mes, franjas):
 def resumen_publicaciones(pub_ids):
     """Datos mínimos de cada publicación (autor + tipo + si es sintética) para
     el drill-down. es_sintetica permite etiquetarla como "Oportunidad a 3"
-    en vez de con la etiqueta genérica de su tipo."""
+    en vez de con la etiqueta genérica de su tipo; es_sintetica_4 distingue
+    dentro de las sintéticas las que representan un hueco de cadena_4 (con
+    banda intermedia) para etiquetarlas como "Oportunidad a 4"."""
     if not pub_ids:
         return []
     pubs = (
@@ -227,7 +229,13 @@ def resumen_publicaciones(pub_ids):
         .all()
     )
     return [
-        {"id": p.id, "usuario_nombre": p.usuario.nombre, "tipo": p.tipo, "es_sintetica": p.es_sintetica}
+        {
+            "id": p.id,
+            "usuario_nombre": p.usuario.nombre,
+            "tipo": p.tipo,
+            "es_sintetica": p.es_sintetica,
+            "es_sintetica_4": p.sintetica_pub_intermedio_id is not None,
+        }
         for p in pubs
     ]
 
