@@ -63,6 +63,26 @@ def test_reset_idempotente(db):
     assert PublicacionCambio.query.count() == pubs_1
 
 
+def test_reset_demo_con_notificaciones_de_match_pendientes(db):
+    """Regresión: una notificación con match_id de un match resuelto no debe
+    impedir el borrado de match_cambio al regenerar la demo (FK violation)."""
+    from app.models import MatchCambio, Notificacion
+
+    reset_demo()
+    match = MatchCambio.query.first()
+    assert match is not None
+    notif = Notificacion(
+        usuario_id=match.participaciones[0].publicacion.usuario_id,
+        match_id=match.id,
+        tipo="nuevo_match",
+    )
+    _db.session.add(notif)
+    _db.session.commit()
+
+    reset_demo()  # no debe lanzar ForeignKeyViolation
+    assert Usuario.query.filter_by(email=DEMO_ACCOUNTS[0][1]).first() is not None
+
+
 # ─── endpoint admin ───────────────────────────────────────────────────────────
 
 def test_admin_demo_reset_requiere_login(client, db):

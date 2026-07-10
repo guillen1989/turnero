@@ -4,6 +4,19 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+Fix: regenerar la unidad de demo fallaba con `ForeignKeyViolation` en
+`match_cambio` (`notificacion_match_id_fkey`) porque `_borrar_demo()`
+(`app/services/demo.py`) borraba `match_cambio` antes que `notificacion`,
+y `notificacion.match_id` tiene FK a `match_cambio.id`. En producción, los
+matches reales de la unidad demo generan notificaciones (`nuevo_match`,
+etc. — `app/matching/service.py`) que sobreviven al primer reset; al
+regenerar de nuevo, esas notificaciones huérfanas bloqueaban el borrado.
+Corregido el orden: `notificacion` se borra antes que
+`match_participacion`/`match_cambio`. Test de regresión añadido en
+`tests/test_demo.py::test_reset_demo_con_notificaciones_de_match_pendientes`
+(crea una notificación con `match_id` tras el primer `reset_demo()` y
+verifica que el segundo no lanza la excepción). 805 tests passing.
+
 Fix de producción: `SQLALCHEMY_ENGINE_OPTIONS` con `pool_pre_ping=True` +
 `pool_recycle=280` en `ProductionConfig` — Railway cierra conexiones
 ociosas a Postgres y el pool por defecto reutilizaba conexiones muertas,

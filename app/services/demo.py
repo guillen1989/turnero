@@ -270,13 +270,14 @@ def _borrar_demo():
         if ids:
             db.session.execute(text(f"DELETE FROM {tabla} WHERE {columna} = ANY(:ids)"), {"ids": ids})
 
-    # Borrar en orden respetando FK (hijos antes que padres)
+    # Borrar en orden respetando FK (hijos antes que padres).
+    # notificacion.match_id referencia match_cambio.id: debe borrarse antes.
+    _del_in("notificacion",        "usuario_id",      user_ids)
     _del_in("match_participacion", "match_id",       match_ids)
     _del_in("match_cambio",        "id",              match_ids)
     _del_in("turno_cedido",        "publicacion_id",  pub_ids)
     _del_in("turno_aceptado",      "publicacion_id",  pub_ids)
     _del_in("publicacion_cambio",  "id",              pub_ids)
-    _del_in("notificacion",        "usuario_id",      user_ids)
     _del_in("busqueda_guardada",   "usuario_id",      user_ids)
     if user_ids:
         db.session.execute(text(
