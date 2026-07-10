@@ -60,6 +60,36 @@ def confirmar_participacion(match, usuario_id):
     db.session.commit()
 
 
+def desconfirmar_participacion(match, usuario_id):
+    """
+    Revierte la confirmación propia de un match aún no cerrado, por si el
+    usuario cambia de idea. No toca turnos ni publicaciones: solo pudieron
+    resolverse cuando el match llegó a 'confirmado_total', estado ya
+    excluido por _get_match_validado antes de llegar aquí.
+    Si alguna otra parte sigue confirmada (cadenas de 3+), el match
+    permanece en 'confirmado_parcial'; si no, vuelve a 'propuesto'.
+    """
+    participacion = _participacion_del_usuario(match, usuario_id)
+    participacion.confirmado = False
+    participacion.fecha_confirmacion = None
+
+    match.estado = "confirmado_parcial" if any(
+        p.confirmado for p in match.participaciones
+    ) else "propuesto"
+
+    for p in match.participaciones:
+        if p.publicacion.usuario_id != usuario_id:
+            db.session.add(Notificacion(
+                usuario_id=p.publicacion.usuario_id,
+                match_id=match.id,
+                tipo="desconfirmacion",
+            ))
+            enviar_push_condicional(p.publicacion.usuario, "desconfirmacion")
+        registrar_evento(p.publicacion.usuario_id, "match_unconfirmed", match.id)
+
+    db.session.commit()
+
+
 def rechazar_match(match, usuario_id):
     """
     Rechaza el match y notifica a los demás participantes.

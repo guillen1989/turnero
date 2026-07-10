@@ -183,3 +183,104 @@ def test_rechazar_redirige_al_dashboard(client, db):
     resp = client.post(f"/matches/{match.id}/rechazar", follow_redirects=False)
     assert resp.status_code == 302
     assert resp.headers["Location"].endswith("/")
+
+
+# --- Desconfirmación ---
+
+def test_desconfirmar_requiere_login(client, db):
+    resp = client.post("/matches/1/desconfirmar", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
+def test_desconfirmar_match_no_propio_devuelve_403(client, db):
+    ana, pedro, match = _setup_match(db)
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    registrar_usuario("Intruso", "intruso@test.es", "password123", "H1", "Urgencias", cat.id)
+    client.post("/auth/login", data={"email": "intruso@test.es", "password": "password123"})
+    resp = client.post(f"/matches/{match.id}/desconfirmar")
+    assert resp.status_code == 403
+
+
+def test_desconfirmar_sin_haber_confirmado_devuelve_409(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.post(f"/matches/{match.id}/desconfirmar")
+    assert resp.status_code == 409
+
+
+def test_desconfirmar_match_cerrado_devuelve_409(client, db):
+    ana, pedro, match = _setup_match(db)
+    match.estado = "rechazado"
+    db.session.commit()
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.post(f"/matches/{match.id}/desconfirmar")
+    assert resp.status_code == 409
+
+
+def test_desconfirmar_revierte_confirmacion_propia(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/desconfirmar")
+    db.session.refresh(match)
+    part_ana = next(p for p in match.participaciones if p.publicacion.usuario_id == ana.id)
+    assert part_ana.confirmado is False
+    assert part_ana.fecha_confirmacion is None
+
+
+def test_desconfirmar_devuelve_match_a_propuesto_si_nadie_mas_confirmo(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/desconfirmar")
+    db.session.refresh(match)
+    assert match.estado == "propuesto"
+
+
+def test_desconfirmar_no_afecta_turnos_ni_publicaciones(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/desconfirmar")
+    part_ana = next(p for p in match.participaciones if p.publicacion.usuario_id == ana.id)
+    db.session.refresh(part_ana.turno_cedido)
+    db.session.refresh(part_ana.publicacion)
+    assert part_ana.turno_cedido.estado == "abierto"
+    assert part_ana.publicacion.estado == "abierta"
+
+
+def test_desconfirmar_notifica_a_la_otra_parte(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/desconfirmar")
+    n = Notificacion.query.filter_by(usuario_id=pedro.id, tipo="desconfirmacion").first()
+    assert n is not None
+    assert n.match_id == match.id
+
+
+def test_desconfirmar_redirige_al_dashboard(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    resp = client.post(f"/matches/{match.id}/desconfirmar", follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/")
+
+
+def test_desconfirmar_no_desconfirma_al_otro_usuario(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    client.get("/auth/logout")
+    client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    db.session.refresh(match)
+    assert match.estado == "confirmado_total"
+
+    resp = client.post(f"/matches/{match.id}/desconfirmar")
+    assert resp.status_code == 409
+    db.session.refresh(match)
+    assert match.estado == "confirmado_total"
