@@ -37,10 +37,29 @@ desactualizado si hay otro job/worktree corriendo tests en paralelo con un
 modelo distinto (create_all() no altera columnas en tablas ya existentes);
 si aparecen errores "UndefinedColumn", usar una BD de test privada vía
 `TEST_DATABASE_URL` para verificar antes de sospechar de un bug real.
-Siguiente paso: enganchar todo lo de este paso en las rutas
-(`/publicar`, editar, contraoferta, y `me_interesa` para el caso
-`es_sintetica` con `sintetica_pub_intermedio_id` no nulo) —
-`app/routes/publicaciones.py`. Alcance completo de B19
+Fix aplicado tras el paso 6: `buscar_cadenas_parciales_4_para` asumía que
+la publicación consultada era siempre la primera banda (A); un camino
+abierto A→B→C no tiene la simetría rotacional de un ciclo cerrado, así
+que si publicaba último el intermedio o el final del trío, no se
+detectaba. Ahora busca las 3 posiciones y devuelve el trío completo
+`(pub_a, pub_b, pub_c)` en vez de asumir el rol de la publicación
+consultada · 2 tests nuevos (detección desde el intermedio y desde el
+final). Paso 7 completado: enganchado todo en `app/routes/publicaciones.py`
+— `buscar_cadenas_parciales_4_para`/`procesar_cadena_parcial_4` en las 3
+rutas que ya disparan cadena_3 (`/publicar`, editar, contraoferta); nuevo
+helper `_resolver_sintetica(pub, sint)` que branchea entre
+`crear_cadena_3_desde_sintetica`/`crear_cadena_4_desde_sintetica` según
+`sint.sintetica_pub_intermedio_id`, usado en esas 3 rutas y en
+`me_interesa` (que también generaliza el flash de éxito según
+`match.tipo`) · 4 tests de integración nuevos (publicar cierra el hueco
+generando la sintética, publicar el 4º cierra la cadena, «Me interesa»
+sobre una sintética de cadena_4). 199 tests relacionados (sintética,
+cadena, matching, publicar, contraoferta, me_interesa) passing. Siguiente
+paso: ciclo de vida — `_cancelar_sinteticas_de`/`_eliminar_sinteticas_de`
+en `app/services/publicaciones.py` deben incluir
+`sintetica_pub_intermedio_id == pub_id` en el filtro OR, para que
+cancelar/eliminar la publicación intermedia también cascada a la
+sintética de cadena_4. Alcance completo de B19
 (visto con el usuario):
 detección + confirmación de ciclos completos de 4, sintéticas/avisos para
 cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la

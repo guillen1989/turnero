@@ -1,6 +1,6 @@
 """Tests de publicaciones sintéticas para ocasiones a 4 bandas (cadena parcial
 de 3 bandas reales A→B→C con un hueco C→D→A, cerrado por una sintética "D")."""
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -68,9 +68,12 @@ def _setup_cadena_parcial(db):
     fr_t = _franja(gid, "Tarde")
     fr_n = _franja(gid, "Noche")
 
-    pub_ana = _pub_cambio(ana, [(date(2026, 7, 1), fr_m)], [(date(2026, 7, 4), fr_n)])
-    pub_pedro = _pub_cambio(pedro, [(date(2026, 7, 2), fr_t)], [(date(2026, 7, 1), fr_m)])
-    pub_maria = _pub_cambio(maria, [(date(2026, 7, 3), fr_n)], [(date(2026, 7, 2), fr_t)])
+    hoy = date.today()
+    d1, d2, d3, d4 = [hoy + timedelta(days=i) for i in (1, 2, 3, 4)]
+
+    pub_ana = _pub_cambio(ana, [(d1, fr_m)], [(d4, fr_n)])
+    pub_pedro = _pub_cambio(pedro, [(d2, fr_t)], [(d1, fr_m)])
+    pub_maria = _pub_cambio(maria, [(d3, fr_n)], [(d2, fr_t)])
 
     return pub_ana, pub_pedro, pub_maria, ana, pedro, maria
 
@@ -286,6 +289,111 @@ def test_sintetica_se_cancela_tras_cadena_4(db):
     )
 
     crear_cadena_4_desde_sintetica(pub_luis, sint)
+
+    db.session.refresh(sint)
+    assert sint.estado == "cancelada"
+
+
+# ---------------------------------------------------------------------------
+# Integración con la ruta de publicar
+# ---------------------------------------------------------------------------
+
+def test_publicar_maria_genera_sintetica_4(client, db):
+    """
+    Al publicar María (última banda del trío) vía la ruta /publicar, se
+    genera la sintética de cadena_4 con Pedro como intermedio.
+    """
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    maria = _usuario("María", "maria@test.es")
+
+    gid = ana.unidad.grupo_intercambio_id
+    fr_m = _franja(gid, "Mañana")
+    fr_t = _franja(gid, "Tarde")
+    fr_n = _franja(gid, "Noche")
+
+    hoy = date.today()
+    d1, d2, d3, d4 = [hoy + timedelta(days=i) for i in (1, 2, 3, 4)]
+
+    pub_ana = _pub_cambio(ana, [(d1, fr_m)], [(d4, fr_n)])
+    pub_pedro = _pub_cambio(pedro, [(d2, fr_t)], [(d1, fr_m)])
+
+    client.post("/auth/login", data={"email": "maria@test.es", "password": "password123"})
+    client.post("/publicar", data={
+        "fecha_cedida_0": d3.isoformat(),
+        "franja_cedida_0": fr_n.id,
+        "fecha_aceptada_0": d2.isoformat(),
+        "franja_aceptada_0": fr_t.id,
+    })
+
+    pub_maria = PublicacionCambio.query.filter_by(usuario_id=maria.id).first()
+    assert pub_maria is not None
+
+    sint = PublicacionCambio.query.filter_by(
+        es_sintetica=True,
+        sintetica_pub_a_id=pub_ana.id,
+        sintetica_pub_b_id=pub_maria.id,
+        sintetica_pub_intermedio_id=pub_pedro.id,
+    ).first()
+    assert sint is not None
+
+
+def test_publicar_luis_cierra_cadena_4_via_sintetica(client, db):
+    """Al publicar el cuarto usuario (Luis) que coincide con la sintética, se
+    crea el match cadena_4 con los 4 reales."""
+    pub_ana, pub_pedro, pub_maria, ana, pedro, maria = _setup_cadena_parcial(db)
+    sint = crear_pub_sintetica(pub_ana, pub_maria, pub_intermedio=pub_pedro)
+
+    luis = _usuario("Luis", "luis@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+
+    tc = sint.turnos_cedidos[0]
+    ta = sint.turnos_aceptados[0]
+
+    client.post("/auth/login", data={"email": "luis@test.es", "password": "password123"})
+    client.post("/publicar", data={
+        "fecha_cedida_0": tc.fecha.isoformat(),
+        "franja_cedida_0": tc.franja_horaria_id,
+        "fecha_aceptada_0": ta.fecha.isoformat(),
+        "franja_aceptada_0": ta.franja_horaria_id,
+    })
+
+    match = MatchCambio.query.filter_by(tipo="cadena_4").first()
+    assert match is not None
+    pub_ids = {p.publicacion_id for p in match.participaciones}
+    assert pub_ana.id in pub_ids
+    assert pub_pedro.id in pub_ids
+    assert pub_maria.id in pub_ids
+
+
+# ---------------------------------------------------------------------------
+# me_interesa sobre pub sintética de cadena_4
+# ---------------------------------------------------------------------------
+
+def test_me_interesa_sintetica_4_crea_cadena_4(client, db):
+    """Cuando Luis hace «Me interesa» sobre una sintética de cadena_4, el
+    backend crea un MatchCambio cadena_4 (no cadena_3 ni directo_2)."""
+    pub_ana, pub_pedro, pub_maria, ana, pedro, maria = _setup_cadena_parcial(db)
+    sint = crear_pub_sintetica(pub_ana, pub_maria, pub_intermedio=pub_pedro)
+
+    luis = _usuario("Luis", "luis@test.es")
+    client.post("/auth/login", data={"email": "luis@test.es", "password": "password123"})
+
+    tc = sint.turnos_cedidos[0]
+    ta = sint.turnos_aceptados[0]
+    resp = client.post(f"/cambios/{sint.id}/me-interesa", data={
+        "turno_cedido_id": tc.id,
+        "turno_aceptado_id": ta.id,
+    })
+
+    assert resp.status_code in (200, 302)
+
+    match = MatchCambio.query.filter_by(tipo="cadena_4").first()
+    assert match is not None, "Debe haberse creado un match cadena_4"
+    pub_ids = {p.publicacion_id for p in match.participaciones}
+    assert pub_ana.id in pub_ids
+    assert pub_pedro.id in pub_ids
+    assert pub_maria.id in pub_ids
 
     db.session.refresh(sint)
     assert sint.estado == "cancelada"
