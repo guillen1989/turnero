@@ -4,6 +4,18 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+B19 en marcha: "ocasiones a 4" (cadena de intercambio A→B→C→D→A), siguiendo el
+mismo patrón que la cadena a 3 (B13). Paso 1 completado: motor puro
+`detectar_cadena_4` en `app/matching/engine.py`. Siguiente paso: capa de
+servicio `buscar_cadenas_4_para`/`crear_match_cadena_4` en
+`app/matching/service.py` (ciclo completo, sin sintéticas todavía), con
+tests de integración en `tests/test_cadena_4.py` mirroring
+`test_cadena_3.py`. Alcance completo de B19 (visto con el usuario):
+detección + confirmación de ciclos completos de 4, sintéticas/avisos para
+cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
+cadena a 3, y una preferencia de usuario para mostrar/ocultar oportunidades
+a 3 y a 4 por separado en el calendario (Ofertas/Peticiones).
+
 Fix: regenerar la unidad de demo fallaba con `ForeignKeyViolation` en
 `match_cambio` (`notificacion_match_id_fkey`) porque `_borrar_demo()`
 (`app/services/demo.py`) borraba `match_cambio` antes que `notificacion`,
