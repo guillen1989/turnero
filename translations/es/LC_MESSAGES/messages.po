@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-10 23:31+0200\n"
+"POT-Creation-Date: 2026-07-10 23:39+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: es <LL@li.org>\n"
@@ -356,7 +356,7 @@ msgid "Cualquiera"
 msgstr "Cualquiera"
 
 #: app/routes/calendario.py:81 app/templates/main/cambios.html:97
-#: app/templates/main/cambios.html:237
+#: app/templates/main/cambios.html:258
 #: app/templates/main/como_funciona.html:54
 #: app/templates/main/dashboard.html:181
 #: app/templates/publicaciones/editar.html:23
@@ -1027,7 +1027,7 @@ msgstr "No hay categorías."
 #: app/templates/admin/unidad_form.html:27
 #: app/templates/admin/usuario_eliminar_confirm.html:26
 #: app/templates/admin/usuario_form.html:144
-#: app/templates/feedback/nuevo.html:49 app/templates/main/cambios.html:292
+#: app/templates/feedback/nuevo.html:49 app/templates/main/cambios.html:313
 #: app/templates/main/contraoferta.html:99
 #: app/templates/main/dashboard.html:394
 #: app/templates/planilla/planilla.html:392
@@ -2025,108 +2025,122 @@ msgstr "A cambio, %(nombre)s te trabajaría:"
 msgid "Librarías:"
 msgstr "Librarías:"
 
-#: app/templates/main/cambios.html:239 app/templates/main/contraoferta.html:19
+#: app/templates/main/cambios.html:237
+msgid "Resto de la cadena, para que puedas explicársela a los demás:"
+msgstr "Resto de la cadena, para que puedas explicársela a los demás:"
+
+#: app/templates/main/cambios.html:240
+#, python-format
+msgid "%(a)s libra, %(b)s se lo trabaja:"
+msgstr "%(a)s libra, %(b)s se lo trabaja:"
+
+#: app/templates/main/cambios.html:249
+#, python-format
+msgid "%(b)s libra, %(c)s se lo trabaja:"
+msgstr "%(b)s libra, %(c)s se lo trabaja:"
+
+#: app/templates/main/cambios.html:260 app/templates/main/contraoferta.html:19
 msgid "Quiere librar:"
 msgstr "Quiere librar:"
 
-#: app/templates/main/cambios.html:246 app/templates/main/contraoferta.html:25
+#: app/templates/main/cambios.html:267 app/templates/main/contraoferta.html:25
 msgid "Se ofrece a trabajar:"
 msgstr "Se ofrece a trabajar:"
 
-#: app/templates/main/cambios.html:259
+#: app/templates/main/cambios.html:280
 msgid "Me interesa"
 msgstr "Me interesa"
 
-#: app/templates/main/cambios.html:262
+#: app/templates/main/cambios.html:283
 #: app/templates/notificaciones/avisos.html:35
 msgid "Contraoferta"
 msgstr "Contraoferta"
 
-#: app/templates/main/cambios.html:271
+#: app/templates/main/cambios.html:292
 msgid "No hay cambios publicados con ese filtro."
 msgstr "No hay cambios publicados con ese filtro."
 
-#: app/templates/main/cambios.html:273
+#: app/templates/main/cambios.html:294
 msgid "No hay cambios publicados por otros compañeros en este momento."
 msgstr "No hay cambios publicados por otros compañeros en este momento."
 
-#: app/templates/main/cambios.html:293
+#: app/templates/main/cambios.html:314
 msgid "Aceptar"
 msgstr "Aceptar"
 
-#: app/templates/main/cambios.html:391
+#: app/templates/main/cambios.html:412
 msgid "¿Quieres cubrir un turno de"
 msgstr "¿Quieres cubrir un turno de"
 
-#: app/templates/main/cambios.html:392
+#: app/templates/main/cambios.html:413
 msgid "Junte de noches con"
 msgstr "Junte de noches con"
 
-#: app/templates/main/cambios.html:393
+#: app/templates/main/cambios.html:414
 msgid "Cambio de turno en el día con"
 msgstr "Cambio de turno en el día con"
 
-#: app/templates/main/cambios.html:394
+#: app/templates/main/cambios.html:415
 msgid "Cambio con"
 msgstr "Cambio con"
 
-#: app/templates/main/cambios.html:402
+#: app/templates/main/cambios.html:423
 msgid "Selecciona el turno que te ofreces a cubrir:"
 msgstr "Selecciona el turno que te ofreces a cubrir:"
 
-#: app/templates/main/cambios.html:403
+#: app/templates/main/cambios.html:424
 msgid "Turno a cubrir"
 msgstr "Turno a cubrir"
 
-#: app/templates/main/cambios.html:407
+#: app/templates/main/cambios.html:428
 msgid "Noches que cede:"
 msgstr "Noches que cede:"
 
-#: app/templates/main/cambios.html:409
+#: app/templates/main/cambios.html:430
 msgid "Noches que busca:"
 msgstr "Noches que busca:"
 
-#: app/templates/main/cambios.html:411
+#: app/templates/main/cambios.html:432
 msgid "Aceptarás las noches que él/ella cede y le cederás las que busca."
 msgstr "Aceptarás las noches que él/ella cede y le cederás las que busca."
 
-#: app/templates/main/cambios.html:416
+#: app/templates/main/cambios.html:437
 msgid "Tiene el turno de:"
 msgstr "Tiene el turno de:"
 
-#: app/templates/main/cambios.html:417
+#: app/templates/main/cambios.html:438
 msgid "Quiere el turno de:"
 msgstr "Quiere el turno de:"
 
-#: app/templates/main/cambios.html:418
+#: app/templates/main/cambios.html:439
 msgid "Si aceptas, le das tu turno de"
 msgstr "Si aceptas, le das tu turno de"
 
-#: app/templates/main/cambios.html:418
+#: app/templates/main/cambios.html:439
 msgid "y él/ella te da el de"
 msgstr "y él/ella te da el de"
 
-#: app/templates/main/cambios.html:421
+#: app/templates/main/cambios.html:442
 msgid "Elige el turno que cubrirás y el que quieres que te cubran:"
 msgstr "Elige el turno que cubrirás y el que quieres que te cubran:"
 
-#: app/templates/main/cambios.html:422
+#: app/templates/main/cambios.html:443
 msgid "Turno de"
 msgstr "Turno de"
 
-#: app/templates/main/cambios.html:422
+#: app/templates/main/cambios.html:443
 msgid "que cubrirás"
 msgstr "que cubrirás"
 
-#: app/templates/main/cambios.html:424
+#: app/templates/main/cambios.html:445
 msgid "Turno tuyo que"
 msgstr "Turno tuyo que"
 
-#: app/templates/main/cambios.html:424
+#: app/templates/main/cambios.html:445
 msgid "te cubrirá"
 msgstr "te cubrirá"
 
-#: app/templates/main/cambios.html:428
+#: app/templates/main/cambios.html:449
 msgid "¿Qué turno quieres librar?"
 msgstr "¿Qué turno quieres librar?"
 

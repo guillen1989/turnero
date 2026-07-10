@@ -233,6 +233,27 @@
            href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
         {% endfor %}
       </div>
+      {% if pub_intermedio_user %}
+      <p class="sintetica-nota">{{ _('Resto de la cadena, para que puedas explicársela a los demás:') }}</p>
+      {% if si.pub_a %}
+      <div class="turnos-cedidos">
+        <strong>{{ _('%(a)s libra, %(b)s se lo trabaja:', a=pub_a_user.nombre, b=pub_intermedio_user.nombre) }}</strong>
+        {% for turno in si.pub_a.turnos_cedidos if turno.estado == 'abierto' %}
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if si.pub_intermedio %}
+      <div class="turnos-cedidos">
+        <strong>{{ _('%(b)s libra, %(c)s se lo trabaja:', b=pub_intermedio_user.nombre, c=pub_b_user.nombre if pub_b_user else '?') }}</strong>
+        {% for turno in si.pub_intermedio.turnos_cedidos if turno.estado == 'abierto' %}
+        <a class="turno turno--link"
+           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endif %}
       {% else %}
       <span class="tipo-badge tipo-badge--cambio">{{ _('Cambio') }}</span>
       <div class="turnos-cedidos">

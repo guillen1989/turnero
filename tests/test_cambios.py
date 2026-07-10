@@ -470,6 +470,11 @@ def test_cambios_muestra_oportunidad_a_4_para_sintetica_con_intermedio(client, d
     html = resp.data.decode()
     assert "Oportunidad a 4" in html
 
+    # El resto de la cadena (A cede a B, B cede a C) también debe verse,
+    # no solo los dos extremos (lo que el viewer trabajaría/le trabajarían).
+    assert "01/09/2026" in html  # turno cedido de pub_a (A libra, B trabaja)
+    assert "05/09/2026" in html  # turno cedido de pub_intermedio (B libra, C trabaja)
+
 
 def test_cambios_filtro_tipo_sintetica_4(client, db):
     """tipo=sintetica_4 muestra solo sintéticas de cadena_4 (con banda
