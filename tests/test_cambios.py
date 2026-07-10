@@ -466,6 +466,39 @@ def test_cambios_muestra_oportunidad_a_4_para_sintetica_con_intermedio(client, d
     db.session.add(TurnoAceptado(publicacion_id=pub_sint.id, fecha=date(2026, 9, 20), franja_horaria_id=franja.id))
     db.session.commit()
 
-    resp = client.get("/cambios?tipo=sintetica")
+    resp = client.get("/cambios?tipo=sintetica_4")
     html = resp.data.decode()
     assert "Oportunidad a 4" in html
+
+
+def test_cambios_filtro_tipo_sintetica_4(client, db):
+    """tipo=sintetica_4 muestra solo sintéticas de cadena_4 (con banda
+    intermedia) y excluye las de cadena_3."""
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    u3 = _usuario(email="u3@test.es")
+    _login(client, u1.email)
+
+    intermedio = _publicar(u3, date(2026, 9, 3), date(2026, 9, 4))
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u2.unidad.grupo_intercambio_id
+    ).first()
+
+    sint_3 = PublicacionCambio(usuario_id=u2.id, es_sintetica=True)
+    db.session.add(sint_3)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=sint_3.id, fecha=date(2026, 9, 11), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=sint_3.id, fecha=date(2026, 9, 21), franja_horaria_id=franja.id))
+
+    sint_4 = PublicacionCambio(usuario_id=u2.id, es_sintetica=True, sintetica_pub_intermedio_id=intermedio.id)
+    db.session.add(sint_4)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=sint_4.id, fecha=date(2026, 9, 12), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=sint_4.id, fecha=date(2026, 9, 22), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    resp = client.get("/cambios?tipo=sintetica_4")
+    html = resp.data.decode()
+    assert "12/09/2026" in html
+    assert "11/09/2026" not in html

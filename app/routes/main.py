@@ -383,7 +383,7 @@ def cambios():
     franja_id = request.args.get("franja", type=int)
     tipo = request.args.get("tipo", "").strip()
     tipo_fecha = request.args.get("tipo_fecha", "").strip()
-    _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte", "cambio_dia", "sintetica"}
+    _TIPOS_VALIDOS = {"cambio", "regalo", "peticion", "junte", "cambio_dia", "sintetica", "sintetica_4"}
     if tipo not in _TIPOS_VALIDOS:
         tipo = ""
     if tipo_fecha not in {"cedido", "aceptado"}:
@@ -444,7 +444,15 @@ def cambios():
     if nombre:
         q = q.filter(Usuario.nombre.ilike(f"%{nombre}%"))
     if tipo == "sintetica":
-        q = q.filter(PublicacionCambio.es_sintetica.is_(True))
+        q = q.filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.sintetica_pub_intermedio_id.is_(None),
+        )
+    elif tipo == "sintetica_4":
+        q = q.filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            PublicacionCambio.sintetica_pub_intermedio_id.isnot(None),
+        )
     elif tipo:
         q = q.filter(PublicacionCambio.tipo == tipo, PublicacionCambio.es_sintetica.is_(False))
 
