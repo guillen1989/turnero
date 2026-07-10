@@ -339,3 +339,15 @@ def test_cadena_4_aparece_en_tab_compatible(client, db):
     html = resp.data.decode()
     assert "wa.me" in html
     assert "Avisar por WhatsApp" in html
+
+    # El texto debe usar el nombre de cada usuario, no "Tú libras"/"Tú trabajas"
+    # (ambiguo al reenviarlo por WhatsApp a los demás).
+    import re
+    from urllib.parse import unquote
+
+    match_href = re.search(r'href="https://wa\.me/\?text=([^"]+)"', html)
+    assert match_href is not None
+    wa_texto = unquote(match_href.group(1))
+    assert "Tú libra" not in wa_texto
+    assert "Tú trabaja" not in wa_texto
+    assert "Ana libra:" in wa_texto or "Ana trabaja:" in wa_texto

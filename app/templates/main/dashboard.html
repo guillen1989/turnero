@@ -107,11 +107,11 @@
       {% if match.tipo == 'cadena_4' and match.estado != 'confirmado_total' %}
       {% set ns = namespace(wa_texto=_('¡Cambio a 4 bandas listo para cerrar entre los 4!') + '\n') %}
       {% if mi_part.turno_cedido %}
-        {% set ns.wa_texto = ns.wa_texto + _('Tú libras:') + ' ' + mi_part.turno_cedido.fecha.strftime('%d/%m/%Y') + ' (' + mi_part.turno_cedido.franja_horaria.nombre + ')\n' %}
+        {% set ns.wa_texto = ns.wa_texto + mi_part.publicacion.usuario.nombre + ' ' + _('libra:') + ' ' + mi_part.turno_cedido.fecha.strftime('%d/%m/%Y') + ' (' + mi_part.turno_cedido.franja_horaria.nombre + ')\n' %}
       {% endif %}
       {% set mi_trabaja = trabajas[mi_part.id] %}
       {% if mi_trabaja %}
-        {% set ns.wa_texto = ns.wa_texto + _('Tú trabajas:') + ' ' + mi_trabaja.fecha + ' (' + (mi_trabaja.franja or _('cualquier turno')) + ')\n' %}
+        {% set ns.wa_texto = ns.wa_texto + mi_part.publicacion.usuario.nombre + ' ' + _('trabaja:') + ' ' + mi_trabaja.fecha + ' (' + (mi_trabaja.franja or _('cualquier turno')) + ')\n' %}
       {% endif %}
       {% for otra in otras_parts %}
         {% if otra.turno_cedido %}
