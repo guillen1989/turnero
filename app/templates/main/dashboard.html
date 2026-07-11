@@ -317,12 +317,17 @@
   <section class="alertas-activos-section">
     {% for aviso in avisos_interes %}
     {% if aviso.publicacion %}
+    {% set es_aviso_4 = aviso.tipo == 'aviso_oportunidad_4' %}
     <div class="aviso-interes-card">
       <div class="aviso-interes-header">
-        <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3') }}</span>
+        <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 4') if es_aviso_4 else _('Oportunidad a 3') }}</span>
         <strong class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</strong>
       </div>
+      {% if es_aviso_4 %}
+      <p class="aviso-interes-desc">{{ _('%(nombre)s forma parte de una cadena de 4 personas con turnos tuyos, pero falta cerrar un hueco. El sistema ha generado una publicación puente: si un compañero la acepta, el cambio a 4 se cerrará automáticamente.', nombre=aviso.publicacion.usuario.nombre) }}</p>
+      {% else %}
       <p class="aviso-interes-desc">{{ _('%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran del todo. El sistema ha generado una publicación puente: si un compañero la acepta, el cambio a 3 se cerrará automáticamente.', nombre=aviso.publicacion.usuario.nombre) }}</p>
+      {% endif %}
       <a href="{{ url_for('main.cambios', usuario=aviso.publicacion.usuario.nombre) }}" class="btn btn-sm btn-secondary">{{ _('Ver publicación') }}</a>
     </div>
     {% endif %}
@@ -336,11 +341,15 @@
     {% set si = sint_info.get(sint.id, {}) %}
     {% set pub_a_user = si.pub_a.usuario if si.pub_a else none %}
     {% set pub_b_user = si.pub_b.usuario if si.pub_b else none %}
+    {% set pub_intermedio_user = si.pub_intermedio.usuario if si.pub_intermedio else none %}
+    {% set es_cadena_4 = pub_intermedio_user is not none %}
     {% set viewer_is_a = si.pub_a and si.pub_a.usuario_id == current_user.id %}
     <div class="oportunidad-3-card">
       <div class="oportunidad-3-header">
-        <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3 bandas') }}</span>
-        {% if pub_a_user and pub_b_user %}
+        <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 4 bandas') if es_cadena_4 else _('Oportunidad a 3 bandas') }}</span>
+        {% if pub_a_user and pub_b_user and es_cadena_4 %}
+        <strong class="oportunidad-3-users">{{ _('con %(a)s, %(i)s y %(b)s', a=pub_a_user.nombre, i=pub_intermedio_user.nombre, b=pub_b_user.nombre) }}</strong>
+        {% elif pub_a_user and pub_b_user %}
         <strong class="oportunidad-3-users">{{ _('con %(a)s y %(b)s', a=pub_a_user.nombre, b=pub_b_user.nombre) }}</strong>
         {% endif %}
       </div>
@@ -350,6 +359,8 @@
         {% else %}
       <p class="oportunidad-3-desc">{{ _('Si un tercero acepta, te libraría %(trabajas)s y %(a)s le trabajaría al tercero sus turnos.', trabajas=_('los turnos indicados'), a=pub_a_user.nombre) }}</p>
         {% endif %}
+      {% elif es_cadena_4 %}
+      <p class="oportunidad-3-desc">{{ _('El sistema ha generado una publicación puente con tu turno. Cualquier compañero que la acepte cerrará el cambio a 4 con un solo clic en «Me interesa».') }}</p>
       {% else %}
       <p class="oportunidad-3-desc">{{ _('El sistema ha generado una publicación puente con tu turno. Cualquier compañero que la acepte cerrará el cambio a 3 con un solo clic en «Me interesa».') }}</p>
       {% endif %}
@@ -388,7 +399,8 @@
       {% for t in sint.turnos_aceptados %}
         {% set ns3.trabaja = ns3.trabaja + '\n  ' + t.fecha.strftime('%d/%m/%Y') + ' (' + t.franja_horaria.nombre + ')' %}
       {% endfor %}
-      {% set wa_sint = _('¿Puedes completar este cambio a 3 personas?') + '\n' + _('Librarías:') + ns3.libra + '\n' + _('Trabajarías:') + ns3.trabaja + '\n' + sint_url %}
+      {% set wa_pregunta = _('¿Puedes completar este cambio a 4 personas?') if es_cadena_4 else _('¿Puedes completar este cambio a 3 personas?') %}
+      {% set wa_sint = wa_pregunta + '\n' + _('Librarías:') + ns3.libra + '\n' + _('Trabajarías:') + ns3.trabaja + '\n' + sint_url %}
       <div class="oportunidad-3-acciones">
         <a href="https://wa.me/?text={{ wa_sint | urlquote }}"
            class="btn btn-whatsapp btn-sm"

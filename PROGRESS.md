@@ -268,6 +268,46 @@ existentes contra sintéticas nuevas de forma retroactiva): el caso que
 resolvía es poco frecuente y el aviso a terceros ya cubre el hueco real,
 así que añadir esa lógica era sobre-ingeniería para el problema real.
 
+fix(dashboard): las oportunidades a 4 no aparecían en la pestaña Activos
+(reportado por el usuario, investigado conectando a la BD de producción).
+Dos bugs de código confirmados y corregidos:
+- `avisos_interes` en `app/routes/main.py` (sección de avisos de Activos)
+  solo filtraba `tipo="aviso_oportunidad_3"`, a diferencia de la ruta
+  `/avisos` que ya incluía ambos tipos — nunca mostraba un
+  `aviso_oportunidad_4` aunque existiera. Añadido `aviso_oportunidad_4` al
+  filtro.
+- La tarjeta de publicación puente (`oportunidades_3` en el dashboard)
+  incluye en su query tanto sintéticas de cadena_3 como de cadena_4 (no
+  filtra por `sintetica_pub_intermedio_id`), pero la plantilla
+  (`dashboard.html`) etiquetaba siempre "Oportunidad a 3 bandas" y solo
+  mencionaba a los dos extremos, nunca al intermediario — una oportunidad
+  a 4 era indistinguible de una a 3. Ahora la plantilla distingue
+  `es_cadena_4` (vía `sint_info[...].pub_intermedio`), cambia badge/texto/
+  mensaje de WhatsApp a "a 4" y menciona al intermediario en el header.
+- 3 tests de regresión nuevos en `tests/test_sintetica_4.py`. 872 tests
+  passing.
+
+Investigada además una anomalía real en producción, sin causa confirmada:
+la edición de la publicación 818 (usuario 7) generó 24 oportunidades a 4 y
+12 a 3, pero ninguna de las 36 generó una `Notificacion` para el propio
+usuario 7 (0 de 20 pares únicos esperados en el rol "C" del trío — el
+usuario que hace la edición), mientras que los otros dos roles del mismo
+lote sí se comportaron perfectamente (22/22 y 10/10 pares únicos
+esperados, con deduplicación correcta). Se intentó reproducir con 5
+variantes de fidelidad creciente contra una BD de test privada — llamada
+directa a `crear_aviso_oportunidad_4`, ruta `/publicar` con varios tríos,
+ruta `/editar` con sintéticas previas canceladas, y una réplica a escala
+1:1 de los 24 tríos de producción (mismo patrón de repetición de
+`pub_a`/intermedio) — y en los 5 casos el código funcionó correctamente
+(100% de las notificaciones esperadas). No se ha podido determinar la
+causa raíz; no se ha aplicado ningún cambio especulativo para no
+enmascarar un problema real. Hipótesis más plausible sin confirmar: un
+posible doble envío del formulario de edición (no hay protección contra
+doble clic en `/publicaciones/<id>/editar`). Pendiente: decidir con el
+usuario si se añade logging de diagnóstico temporal para capturar la
+próxima ocurrencia, y/o protección anti-doble-envío en el formulario como
+mitigación preventiva independiente de la causa.
+
 ## Backlog (fuente: .backlog)
 - [x] B19: "Cambios a 4" — cadena de intercambio a 4 bandas (ciclos completos, sintéticas/avisos para huecos parciales, badges, preferencia de visualización en calendario) ✓
 - [x] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones) ✓
