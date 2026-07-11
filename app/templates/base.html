@@ -287,6 +287,19 @@
         if (btn) btn.setAttribute('aria-expanded', 'false');
       }
     });
+
+    // Deshabilita el botón de envío en cuanto se dispara el submit: en
+    // formularios lentos (publicar/editar, que disparan varias búsquedas de
+    // matching) un doble clic o una conexión lenta puede mandar la misma
+    // publicación dos veces. Disabled tras el evento no cancela el envío en
+    // curso.
+    document.addEventListener('submit', function(e) {
+      var form = e.target;
+      if (!(form instanceof HTMLFormElement) || form.method.toLowerCase() !== 'post') return;
+      form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function(btn) {
+        btn.disabled = true;
+      });
+    });
   </script>
   {% block scripts %}{% endblock %}
 </body>
