@@ -342,6 +342,59 @@ def test_login_demo_usuario_inexistente_muestra_error(client, db, app, monkeypat
     assert "no se pudo iniciar sesión con la cuenta demo".encode() in resp.data.lower()
 
 
+# --- Sesión persistente ("remember me") ---
+# El login debe comportarse como el de una app: el usuario permanece
+# autenticado aunque se cierre el navegador/PWA, hasta que él mismo
+# cierre sesión explícitamente.
+
+def test_login_establece_cookie_remember_me(client, db):
+    resp = client.post(
+        "/auth/login",
+        data={"email": "no-existe@test.es", "password": "x"},
+    )
+    # Sin login exitoso no debe fijarse la cookie de "recuérdame".
+    assert client.get_cookie("remember_token") is None
+
+    client.post("/auth/registro", data=_datos_registro(db))
+    assert client.get_cookie("remember_token") is not None
+
+
+def test_login_demo_establece_cookie_remember_me(client, db, app, monkeypatch):
+    client.post("/auth/registro", data=_datos_registro(db, email="ana.garcia@test.es", password="Staging2026!", password2="Staging2026!"))
+    client.get("/auth/logout")
+
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    client.post("/auth/login/demo")
+    assert client.get_cookie("remember_token") is not None
+
+
+def test_sesion_persiste_sin_cookie_de_sesion_activa(client, db):
+    """Simula cerrar y reabrir la app: se pierde la cookie de sesión (no
+    permanente) pero se conserva la de "recuérdame". El usuario debe seguir
+    autenticado gracias a esa cookie."""
+    client.post("/auth/registro", data=_datos_registro(db))
+    assert client.get_cookie("remember_token") is not None
+
+    client.delete_cookie("session")
+
+    resp = client.get("/auth/perfil", follow_redirects=False)
+    assert resp.status_code == 200
+
+
+def test_logout_borra_cookie_remember_me(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    assert client.get_cookie("remember_token") is not None
+
+    client.get("/auth/logout")
+    assert client.get_cookie("remember_token") is None
+
+    client.delete_cookie("session")
+    resp = client.get("/auth/perfil", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
 def test_login_demo_ya_autenticado_redirige_a_calendario(client, db, app, monkeypatch):
     client.post("/auth/registro", data=_datos_registro(db, email="ana.garcia@test.es", password="Staging2026!", password2="Staging2026!"))
 

@@ -17,6 +17,12 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     BABEL_DEFAULT_LOCALE = "es"
     BABEL_DEFAULT_TIMEZONE = "Europe/Madrid"
+    # Login persistente ("recuérdame" siempre activo, como una app): la cookie
+    # de sesión sobrevive al cierre del navegador/PWA gracias a la cookie
+    # "remember me" de Flask-Login (dura 365 días por defecto). La única forma
+    # de cerrar sesión es la acción explícita del usuario (auth.logout).
+    SESSION_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_SAMESITE = "Lax"
     VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
     VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
     VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "")
@@ -56,6 +62,10 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = _fix_db_url(os.environ.get("DATABASE_URL"))
+    # Railway sirve siempre sobre HTTPS: las cookies de sesión y de
+    # "recuérdame" solo deben viajar cifradas.
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
     # Railway cierra las conexiones ociosas a Postgres pasado un rato; sin esto
     # el pool reutiliza conexiones muertas y salta "SSL SYSCALL error: EOF detected".
     SQLALCHEMY_ENGINE_OPTIONS = {

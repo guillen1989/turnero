@@ -129,7 +129,7 @@ def registro():
                     provincia_nombre=provincia_nombre,
                     ciudad_nombre=ciudad_nombre,
                 )
-                login_user(usuario)
+                login_user(usuario, remember=True)
                 flash(_("¡Bienvenido/a, %(nombre)s!", nombre=usuario.nombre), "success")
                 if getattr(usuario, "_es_nueva_unidad", False):
                     flash(_("Tu unidad es nueva. Configura los turnos disponibles en tu servicio."), "info")
@@ -156,7 +156,7 @@ def login():
     if form.validate_on_submit():
         usuario = Usuario.query.filter_by(email=form.email.data.strip().lower()).first()
         if usuario and usuario.check_password(form.password.data):
-            login_user(usuario)
+            login_user(usuario, remember=True)
             siguiente = request.args.get("next")
             if siguiente:
                 return redirect(siguiente)
@@ -181,7 +181,7 @@ def login_demo():
 
     usuario = Usuario.query.filter_by(email=demo_email).first()
     if usuario and usuario.check_password(demo_password):
-        login_user(usuario)
+        login_user(usuario, remember=True)
         if not usuario.onboarding_visto:
             return redirect(url_for("main.como_funciona"))
         return redirect(url_for("calendario.index"))
