@@ -290,7 +290,10 @@ def index():
                 )
             avisos_interes = (
                 Notificacion.query
-                .filter_by(usuario_id=current_user.id, tipo="aviso_oportunidad_3")
+                .filter(
+                    Notificacion.usuario_id == current_user.id,
+                    Notificacion.tipo.in_(("aviso_oportunidad_3", "aviso_oportunidad_4")),
+                )
                 .options(db.joinedload(Notificacion.publicacion).joinedload(PublicacionCambio.usuario))
                 .order_by(Notificacion.fecha.desc())
                 .all()

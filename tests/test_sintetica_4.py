@@ -460,3 +460,33 @@ def test_aviso_oportunidad_4_aparece_en_pantalla_de_avisos(client, db):
     resp = client.get("/avisos")
 
     assert "Oportunidad a 4" in resp.data.decode()
+
+
+def test_aviso_oportunidad_4_aparece_en_dashboard_activos(client, db):
+    """Regresión: la pestaña Activos del dashboard (sección de avisos) solo
+    filtraba tipo='aviso_oportunidad_3', así que un aviso_oportunidad_4 nunca
+    aparecía ahí (aunque sí en /avisos)."""
+    pub_ana, pub_pedro, pub_maria, ana, pedro, maria = _setup_cadena_parcial(db)
+    crear_aviso_oportunidad_4(pub_ana, pub_pedro, pub_maria)
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/")
+
+    assert "Oportunidad a 4" in resp.data.decode()
+
+
+def test_oportunidad_4_bridge_card_se_distingue_de_oportunidad_3_en_dashboard(client, db):
+    """Regresión: la tarjeta de publicación puente en Activos etiquetaba
+    SIEMPRE «Oportunidad a 3 bandas», incluso cuando la sintética tenía banda
+    intermedia (cadena_4) y mencionaba solo a los 2 extremos, nunca al
+    intermediario."""
+    pub_ana, pub_pedro, pub_maria, ana, pedro, maria = _setup_cadena_parcial(db)
+    crear_pub_sintetica(pub_ana, pub_maria, pub_intermedio=pub_pedro)
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/")
+    body = resp.data.decode()
+
+    assert "Oportunidad a 4 bandas" in body
+    assert "Oportunidad a 3 bandas" not in body
+    assert pedro.nombre in body
