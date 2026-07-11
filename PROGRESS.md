@@ -4,6 +4,25 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+feat(auth): login persistente ("recuérdame" siempre activo, como una app) —
+`login_user(usuario, remember=True)` en los tres puntos de entrada
+(`registro`, `login`, `login/demo`) en vez del `login_user(usuario)` sin
+"remember" que había. Flask-Login guarda entonces una cookie
+`remember_token` independiente de la cookie de sesión (dura 365 días por
+defecto), así que aunque el navegador/PWA se cierre y la cookie de sesión
+(no permanente) desaparezca, la siguiente petición se re-autentica sola a
+partir de la cookie "remember me" — sin tocar `user_loader` ni el modelo
+`Usuario`. La única forma de perder la sesión sigue siendo la acción
+explícita del usuario (`auth.logout`, que ya limpiaba la cookie vía
+`session["_remember"]="clear"` de Flask-Login). Añadido también
+`SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE = "Lax"` (base
+`Config`) y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE = True` en
+`ProductionConfig` (Railway sirve siempre sobre HTTPS). 4 tests nuevos en
+`tests/test_auth_routes.py` (cookie se fija en login/login-demo/registro,
+sesión sobrevive a perder la cookie de sesión simulando cierre de la app,
+logout limpia la cookie) · 874 tests passing. Implementado en un worktree
+sobre `staging`.
+
 feat(matches): desconfirmar un match ya confirmado por el propio usuario,
 por si cambia de idea antes de que el cambio quede cerrado del todo.
 Nuevo `POST /matches/<id>/desconfirmar` + `desconfirmar_participacion()`
@@ -268,6 +287,46 @@ existentes contra sintéticas nuevas de forma retroactiva): el caso que
 resolvía es poco frecuente y el aviso a terceros ya cubre el hueco real,
 así que añadir esa lógica era sobre-ingeniería para el problema real.
 
+fix(dashboard): las oportunidades a 4 no aparecían en la pestaña Activos
+(reportado por el usuario, investigado conectando a la BD de producción).
+Dos bugs de código confirmados y corregidos:
+- `avisos_interes` en `app/routes/main.py` (sección de avisos de Activos)
+  solo filtraba `tipo="aviso_oportunidad_3"`, a diferencia de la ruta
+  `/avisos` que ya incluía ambos tipos — nunca mostraba un
+  `aviso_oportunidad_4` aunque existiera. Añadido `aviso_oportunidad_4` al
+  filtro.
+- La tarjeta de publicación puente (`oportunidades_3` en el dashboard)
+  incluye en su query tanto sintéticas de cadena_3 como de cadena_4 (no
+  filtra por `sintetica_pub_intermedio_id`), pero la plantilla
+  (`dashboard.html`) etiquetaba siempre "Oportunidad a 3 bandas" y solo
+  mencionaba a los dos extremos, nunca al intermediario — una oportunidad
+  a 4 era indistinguible de una a 3. Ahora la plantilla distingue
+  `es_cadena_4` (vía `sint_info[...].pub_intermedio`), cambia badge/texto/
+  mensaje de WhatsApp a "a 4" y menciona al intermediario en el header.
+- 3 tests de regresión nuevos en `tests/test_sintetica_4.py`. 872 tests
+  passing.
+
+Investigada además una anomalía real en producción, sin causa confirmada:
+la edición de la publicación 818 (usuario 7) generó 24 oportunidades a 4 y
+12 a 3, pero ninguna de las 36 generó una `Notificacion` para el propio
+usuario 7 (0 de 20 pares únicos esperados en el rol "C" del trío — el
+usuario que hace la edición), mientras que los otros dos roles del mismo
+lote sí se comportaron perfectamente (22/22 y 10/10 pares únicos
+esperados, con deduplicación correcta). Se intentó reproducir con 5
+variantes de fidelidad creciente contra una BD de test privada — llamada
+directa a `crear_aviso_oportunidad_4`, ruta `/publicar` con varios tríos,
+ruta `/editar` con sintéticas previas canceladas, y una réplica a escala
+1:1 de los 24 tríos de producción (mismo patrón de repetición de
+`pub_a`/intermedio) — y en los 5 casos el código funcionó correctamente
+(100% de las notificaciones esperadas). No se ha podido determinar la
+causa raíz; no se ha aplicado ningún cambio especulativo para no
+enmascarar un problema real. Hipótesis más plausible sin confirmar: un
+posible doble envío del formulario de edición (no hay protección contra
+doble clic en `/publicaciones/<id>/editar`). Pendiente: decidir con el
+usuario si se añade logging de diagnóstico temporal para capturar la
+próxima ocurrencia, y/o protección anti-doble-envío en el formulario como
+mitigación preventiva independiente de la causa.
+
 ## Backlog (fuente: .backlog)
 - [x] B19: "Cambios a 4" — cadena de intercambio a 4 bandas (ciclos completos, sintéticas/avisos para huecos parciales, badges, preferencia de visualización en calendario) ✓
 - [x] B18: Calendario visual — modo visor "Juntes de noches" (además de Ofertas/Peticiones) ✓
@@ -402,6 +461,7 @@ así que añadir esa lógica era sobre-ingeniería para el problema real.
 - [x] feat(auth): botón "Probar con una cuenta demo" también en la portada (`main.index`, `/`), junto a "Crear cuenta"/"Entrar" — antes solo estaba en `/auth/login`. `main.index` calcula `demo_login_enabled` igual que la vista de login (`bool(DEMO_LOGIN_EMAIL)`) y la plantilla añade el mismo `<form>`/botón dentro del `.btn-group` existente, sin bloque nuevo (verificado visualmente con Playwright en 420px y 1200px: el botón queda alineado junto a los otros dos, con estilo `btn-secondary` para distinguirlo como acción alternativa) · 2 tests nuevos
 - [x] feat(matches): desconfirmar un match ya confirmado por el propio usuario, por si cambia de idea antes de que el cambio quede cerrado del todo · `POST /matches/<id>/desconfirmar` + `desconfirmar_participacion()` reutiliza `_get_match_validado` (409 si el match ya está `confirmado_total`/`rechazado`, o si el usuario no había confirmado) · recalcula el estado del match a `confirmado_parcial` si otra parte sigue confirmada (cadenas de 3+) o a `propuesto` si no · notifica a las demás partes (`Notificacion` tipo `desconfirmacion` + push) · botón "Desconfirmar" en el dashboard · catálogo i18n actualizado · 11 tests nuevos · 816 tests passing
 - [x] feat(publicar): calendario tap-to-select (elegir franja + tocar días) sustituye las filas manuales de `/publicar` · mockup Artifact validado con el usuario antes de implementar · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · franjas dinámicas por grupo, incluidas las personalizadas por el usuario (chip automático) · multi-franja el mismo día con `.cal-bandas-row` reutilizado de `/calendario` · prefill desde `/calendario` pasa de `value=""` a resaltado `data-sugerida` · `app/static/js/calendario-turnos.js` nuevo · e2e reescritos (4+1 test nuevo en `test_publicar.py`, golden path, drill-down) · 18 tests backend + 11 e2e relevantes passing
+- [x] feat(auth): login persistente ("recuérdame" siempre activo) — `login_user(..., remember=True)` en registro/login/login-demo + `SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE="Lax"` y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE=True` en producción · el usuario ya no pierde la sesión al cerrar el navegador/PWA, solo con logout explícito · 4 tests nuevos · 874 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
