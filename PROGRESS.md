@@ -4,6 +4,25 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+feat(auth): login persistente ("recuérdame" siempre activo, como una app) —
+`login_user(usuario, remember=True)` en los tres puntos de entrada
+(`registro`, `login`, `login/demo`) en vez del `login_user(usuario)` sin
+"remember" que había. Flask-Login guarda entonces una cookie
+`remember_token` independiente de la cookie de sesión (dura 365 días por
+defecto), así que aunque el navegador/PWA se cierre y la cookie de sesión
+(no permanente) desaparezca, la siguiente petición se re-autentica sola a
+partir de la cookie "remember me" — sin tocar `user_loader` ni el modelo
+`Usuario`. La única forma de perder la sesión sigue siendo la acción
+explícita del usuario (`auth.logout`, que ya limpiaba la cookie vía
+`session["_remember"]="clear"` de Flask-Login). Añadido también
+`SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE = "Lax"` (base
+`Config`) y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE = True` en
+`ProductionConfig` (Railway sirve siempre sobre HTTPS). 4 tests nuevos en
+`tests/test_auth_routes.py` (cookie se fija en login/login-demo/registro,
+sesión sobrevive a perder la cookie de sesión simulando cierre de la app,
+logout limpia la cookie) · 874 tests passing. Implementado en un worktree
+sobre `staging`.
+
 feat(matches): desconfirmar un match ya confirmado por el propio usuario,
 por si cambia de idea antes de que el cambio quede cerrado del todo.
 Nuevo `POST /matches/<id>/desconfirmar` + `desconfirmar_participacion()`
@@ -442,6 +461,7 @@ mitigación preventiva independiente de la causa.
 - [x] feat(auth): botón "Probar con una cuenta demo" también en la portada (`main.index`, `/`), junto a "Crear cuenta"/"Entrar" — antes solo estaba en `/auth/login`. `main.index` calcula `demo_login_enabled` igual que la vista de login (`bool(DEMO_LOGIN_EMAIL)`) y la plantilla añade el mismo `<form>`/botón dentro del `.btn-group` existente, sin bloque nuevo (verificado visualmente con Playwright en 420px y 1200px: el botón queda alineado junto a los otros dos, con estilo `btn-secondary` para distinguirlo como acción alternativa) · 2 tests nuevos
 - [x] feat(matches): desconfirmar un match ya confirmado por el propio usuario, por si cambia de idea antes de que el cambio quede cerrado del todo · `POST /matches/<id>/desconfirmar` + `desconfirmar_participacion()` reutiliza `_get_match_validado` (409 si el match ya está `confirmado_total`/`rechazado`, o si el usuario no había confirmado) · recalcula el estado del match a `confirmado_parcial` si otra parte sigue confirmada (cadenas de 3+) o a `propuesto` si no · notifica a las demás partes (`Notificacion` tipo `desconfirmacion` + push) · botón "Desconfirmar" en el dashboard · catálogo i18n actualizado · 11 tests nuevos · 816 tests passing
 - [x] feat(publicar): calendario tap-to-select (elegir franja + tocar días) sustituye las filas manuales de `/publicar` · mockup Artifact validado con el usuario antes de implementar · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · franjas dinámicas por grupo, incluidas las personalizadas por el usuario (chip automático) · multi-franja el mismo día con `.cal-bandas-row` reutilizado de `/calendario` · prefill desde `/calendario` pasa de `value=""` a resaltado `data-sugerida` · `app/static/js/calendario-turnos.js` nuevo · e2e reescritos (4+1 test nuevo en `test_publicar.py`, golden path, drill-down) · 18 tests backend + 11 e2e relevantes passing
+- [x] feat(auth): login persistente ("recuérdame" siempre activo) — `login_user(..., remember=True)` en registro/login/login-demo + `SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE="Lax"` y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE=True` en producción · el usuario ya no pierde la sesión al cerrar el navegador/PWA, solo con logout explícito · 4 tests nuevos · 874 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
