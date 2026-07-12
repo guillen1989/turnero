@@ -328,6 +328,68 @@ def test_cadena_4_muestra_quien_confirmo_en_tab_pendiente(client, db):
     assert "○ Luis" in html
 
 
+def test_cadena_4_refleja_segunda_confirmacion_al_recargar(client, db):
+    """Tras una segunda confirmación (Ana y Pedro ya confirmados), recargar
+    la página debe mostrar ambos ✓, no solo el primero."""
+    from app.services.matches import confirmar_participacion
+
+    pub_ana, pub_pedro, pub_maria, pub_luis, ana, pedro, maria, luis = _setup_ciclo(db)
+    match = crear_match_cadena_4(pub_ana, pub_pedro, pub_maria, pub_luis)
+
+    confirmar_participacion(match, ana.id)
+    confirmar_participacion(match, pedro.id)
+
+    client.post("/auth/login", data={"email": "maria@test.es", "password": "password123"})
+    resp = client.get("/?estado=pendiente")
+    html = resp.data.decode()
+
+    assert resp.status_code == 200
+    assert "✓ Ana" in html
+    assert "✓ Pedro" in html
+    assert "○ Tú" in html
+    assert "○ Luis" in html
+
+
+def test_cadena_4_el_primer_confirmador_ve_la_segunda_confirmacion(client, db):
+    """Ana confirmó primero; cuando Pedro confirma después, Ana debe ver
+    el ✓ de Pedro al recargar su propia pestaña de Pendientes."""
+    from app.services.matches import confirmar_participacion
+
+    pub_ana, pub_pedro, pub_maria, pub_luis, ana, pedro, maria, luis = _setup_ciclo(db)
+    match = crear_match_cadena_4(pub_ana, pub_pedro, pub_maria, pub_luis)
+
+    confirmar_participacion(match, ana.id)
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    html_antes = client.get("/?estado=pendiente").data.decode()
+    assert "✓ Tú" in html_antes
+    assert "○ Pedro" in html_antes
+
+    confirmar_participacion(match, pedro.id)
+
+    html_despues = client.get("/?estado=pendiente").data.decode()
+    assert "✓ Tú" in html_despues
+    assert "✓ Pedro" in html_despues
+    assert "○ María" in html_despues
+    assert "○ Luis" in html_despues
+
+
+def test_dashboard_pendiente_no_se_cachea(client, db):
+    """El dashboard es dinámico y personal (estado de confirmaciones ajenas):
+    debe llevar Cache-Control: no-store para que un navegador o proxy
+    intermedio nunca sirva una versión desfasada al recargar."""
+    from app.services.matches import confirmar_participacion
+
+    pub_ana, pub_pedro, pub_maria, pub_luis, ana, pedro, maria, luis = _setup_ciclo(db)
+    match = crear_match_cadena_4(pub_ana, pub_pedro, pub_maria, pub_luis)
+    confirmar_participacion(match, ana.id)
+
+    client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
+    resp = client.get("/?estado=pendiente")
+
+    assert resp.headers.get("Cache-Control") == "no-store"
+
+
 def test_cadena_4_aparece_en_tab_compatible(client, db):
     """Un cadena_4 match propuesto aparece en el tab 'Compatibles' del dashboard
     con su propio badge, distinto del de cadena_3."""
