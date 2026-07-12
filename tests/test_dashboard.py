@@ -284,8 +284,9 @@ def test_dashboard_match_confirmado_parcial_permite_editar_la_publicacion(client
     assert f'/publicaciones/{pub_a.id}/editar'.encode() in resp.data
 
 
-def test_dashboard_activos_excluye_pubs_con_match_activo(client, db):
-    """La pestaña Activos no muestra publicaciones que ya tienen un match activo (cualquier estado)."""
+def test_dashboard_activos_excluye_pubs_con_match_confirmado_parcial(client, db):
+    """La pestaña Activos no muestra la tarjeta de publicación de una pub con
+    match confirmado_parcial: ese caso vive solo en Pendientes, sin cambios."""
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
     ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
@@ -301,8 +302,50 @@ def test_dashboard_activos_excluye_pubs_con_match_activo(client, db):
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     resp_activos = client.get("/?estado=abierta")
     # Las pub cards usan <span class="turno">; las match cards no.
-    assert b'class="turno">01/10/2026' not in resp_activos.data   # tiene match → fuera de activos
+    assert b'class="turno">01/10/2026' not in resp_activos.data   # confirmado_parcial → fuera de activos
     assert b'class="turno">01/12/2026' in resp_activos.data        # sin match → en activos
+
+
+def test_dashboard_activos_muestra_pub_original_y_tarjeta_de_match_propuesto(client, db):
+    """Con un match propuesto (aún sin confirmar por nadie), Activos debe
+    mostrar DOS tarjetas distintas: la publicación original (editable, con
+    todos sus turnos abiertos) y, además, la tarjeta del match propuesto
+    (sin botón Editar — solo Confirmar/Rechazar)."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    db.session.commit()
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_a = PublicacionCambio(usuario_id=ana.id)
+    pub_b = PublicacionCambio(usuario_id=pedro.id)
+    db.session.add_all([pub_a, pub_b])
+    db.session.flush()
+    tc_a = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 10, 1), franja_horaria_id=franja.id)
+    tc_b = TurnoCedido(publicacion_id=pub_b.id, fecha=date(2026, 10, 2), franja_horaria_id=franja.id)
+    db.session.add_all([tc_a, tc_b])
+    db.session.flush()
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc_a.id, confirmado=False))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc_b.id, confirmado=False))
+    db.session.commit()
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/")
+    html = resp.data.decode()
+
+    # Tarjeta original de la publicación, con su turno y el botón Editar.
+    assert 'class="turno">01/10/2026' in html
+    editar_url = f"/publicaciones/{pub_a.id}/editar"
+    assert editar_url in html
+    # El botón Editar aparece una sola vez: solo en la tarjeta original,
+    # no en la tarjeta de match.
+    assert html.count(editar_url) == 1
+    # La tarjeta de match sigue mostrando Confirmar/Rechazar.
+    assert "Confirmar" in html and "Rechazar" in html
 
 
 def test_dashboard_tab_activos_conteo_con_match_propuesto(client, db):
@@ -333,7 +376,9 @@ def test_dashboard_tab_activos_conteo_con_match_propuesto(client, db):
     resp = client.get("/")
     html = resp.data.decode()
     assert "Activos" in html
-    assert "(1)" in html  # 1 compatible, 0 abierta = 1 activo
+    # La publicación original (editable) y su match propuesto se muestran
+    # como dos tarjetas distintas en Activos, así que el contador cuenta 2.
+    assert "(2)" in html
 
 
 def test_dashboard_no_muestra_publicaciones_ajenas(client, db):
