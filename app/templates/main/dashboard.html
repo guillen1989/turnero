@@ -141,6 +141,7 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-danger btn-sm">{{ _('Rechazar') }}</button>
         </form>
+        <a href="{{ url_for('publicaciones.editar', pub_id=mi_part.publicacion_id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>
       </div>
       {% else %}
       <p class="match-esperando">
@@ -152,6 +153,7 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-secondary btn-sm">{{ _('Desconfirmar') }}</button>
         </form>
+        <a href="{{ url_for('publicaciones.editar', pub_id=mi_part.publicacion_id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>
       </div>
       {% endif %}
     </div>

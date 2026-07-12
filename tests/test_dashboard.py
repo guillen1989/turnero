@@ -234,6 +234,56 @@ def test_dashboard_tab_pendiente_no_muestra_match_propuesto(client, db):
     assert b"01/10/2026" not in resp_pend.data
 
 
+def test_dashboard_match_propuesto_permite_editar_la_publicacion(client, db):
+    """Aunque una publicación tenga un match propuesto (incluso parcial: solo
+    uno de varios turnos cedidos coincide), el usuario debe poder seguir
+    editándola desde su match card, ya que otros turnos de la misma
+    publicación pueden seguir sin resolver."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    db.session.commit()
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_a = PublicacionCambio(usuario_id=ana.id)
+    pub_b = PublicacionCambio(usuario_id=pedro.id)
+    db.session.add_all([pub_a, pub_b])
+    db.session.flush()
+    tc_a = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 10, 1), franja_horaria_id=franja.id)
+    tc_b = TurnoCedido(publicacion_id=pub_b.id, fecha=date(2026, 10, 2), franja_horaria_id=franja.id)
+    db.session.add_all([tc_a, tc_b])
+    db.session.flush()
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=tc_a.id, confirmado=False))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=tc_b.id, confirmado=False))
+    db.session.commit()
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/")
+    assert f'/publicaciones/{pub_a.id}/editar'.encode() in resp.data
+
+
+def test_dashboard_match_confirmado_parcial_permite_editar_la_publicacion(client, db):
+    """Igual que con un match propuesto: mientras el match no esté
+    confirmado_total (aquí confirmado por una parte, pendiente por la otra),
+    ambas partes deben poder editar su publicación desde la pestaña
+    Pendientes."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    db.session.commit()
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+    pub_a = _setup_match_parcial(ana, pedro, franja)
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/?estado=pendiente")
+    assert f'/publicaciones/{pub_a.id}/editar'.encode() in resp.data
+
+
 def test_dashboard_activos_excluye_pubs_con_match_activo(client, db):
     """La pestaña Activos no muestra publicaciones que ya tienen un match activo (cualquier estado)."""
     insertar_categorias_semilla()
