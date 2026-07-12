@@ -4,6 +4,36 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+refactor(dashboard): rediseño de cómo Activos muestra las publicaciones con
+match — sustituye el enfoque anterior (botón "Editar" metido en la
+match-card) por tarjetas separadas, a petición del usuario: la tarjeta de
+la publicación original (editable, con sus turnos aún `abierto`) se sigue
+mostrando en Activos aunque tenga un match `propuesto`, y junto a ella
+aparece la tarjeta de ese match (sin botón "Editar" — solo
+Confirmar/Rechazar). Pendientes (matches `confirmado_parcial`) mantiene su
+comportamiento anterior sin cambios: sigue sin tarjeta de publicación
+propia y conserva el botón "Editar" en la match-card, que era la única vía
+de edición para ese caso.
+
+En `app/routes/main.py`: eliminada `_query_con_match_activo` (excluía de
+Activos toda pub con match `propuesto` o `confirmado_parcial`); tanto el
+filtro de la pestaña Activos como el recuento de `_conteos_tabs` pasan a
+excluir solo por `_query_pendientes` (`confirmado_parcial`), dejando que las
+pubs con match `propuesto` se cuenten y muestren también como tarjeta
+propia. En `dashboard.html`, el enlace "Editar" de la match-card en la rama
+"pendiente de confirmar" ahora solo aparece si `match.estado ==
+'confirmado_parcial'` (la rama "ya confirmado, esperando a los demás" es
+exclusiva de Pendientes, así que mantiene su Editar sin condición).
+
+Tests actualizados/nuevos en `test_dashboard.py`: renombrado el test que
+verificaba la exclusión (ahora deja claro que es solo por
+`confirmado_parcial`), nuevo test que comprueba que Activos muestra ambas
+tarjetas para un match `propuesto` y que el botón Editar aparece una sola
+vez (en la original, no en la de match), y ajustado el contador esperado
+de la pestaña Activos (pasa de 1 a 2, ya que ahora son dos tarjetas).
+Catálogo i18n actualizado (pybabel extract/update/compile) · 879 tests
+passing.
+
 fix(dashboard): una publicación con un match activo (`propuesto` o
 `confirmado_parcial`), aunque sea parcial — por ejemplo, pedía varios días y
 solo uno hizo match —, desaparecía por completo de "Mis cambios > Activos"

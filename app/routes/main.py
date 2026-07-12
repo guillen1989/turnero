@@ -126,10 +126,6 @@ def _query_publicaciones_con_match(usuario_id, estados_match):
     )
 
 
-def _query_con_match_activo(usuario_id):
-    return _query_publicaciones_con_match(usuario_id, ["propuesto", "confirmado_parcial"])
-
-
 def _query_compatibles(usuario_id):
     return _query_publicaciones_con_match(usuario_id, ["propuesto"])
 
@@ -178,18 +174,21 @@ _ALIASES_ESTADO = {"compatible": "activos", "abierta": "activos"}
 
 def _conteos_tabs(usuario_id):
     from sqlalchemy import func, select as sa_select
-    activos_subq = (
-        _query_con_match_activo(usuario_id)
+    pendientes_subq = (
+        _query_pendientes(usuario_id)
         .with_entities(PublicacionCambio.id)
         .subquery()
     )
-    activos_select = sa_select(activos_subq)
+    pendientes_select = sa_select(pendientes_subq)
 
+    # Se excluyen las que tienen match confirmado_parcial: esas viven solo en
+    # Pendientes. Las que tienen match propuesto se cuentan aquí porque su
+    # tarjeta de publicación original se sigue mostrando en Activos.
     abiertas = (
         PublicacionCambio.query
         .filter_by(usuario_id=usuario_id)
         .filter(PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]))
-        .filter(~PublicacionCambio.id.in_(activos_select))
+        .filter(~PublicacionCambio.id.in_(pendientes_select))
         .count()
     )
 
@@ -242,8 +241,13 @@ def index():
 
         if estado_filtro == "activos":
             from sqlalchemy import select as sa_select
-            activos_subq = (
-                _query_con_match_activo(current_user.id)
+            # Las pubs con match confirmado_parcial se excluyen: viven solo en
+            # Pendientes. Las que solo tienen matches propuestos SÍ se
+            # muestran aquí (su tarjeta original, editable, junto a la
+            # tarjeta del match), ya que otros turnos de la publicación
+            # pueden seguir sin resolver.
+            pendientes_subq = (
+                _query_pendientes(current_user.id)
                 .with_entities(PublicacionCambio.id)
                 .subquery()
             )
@@ -252,7 +256,7 @@ def index():
                 .filter_by(usuario_id=current_user.id)
                 .filter(PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]))
                 .filter(PublicacionCambio.es_sintetica.is_(False))
-                .filter(~PublicacionCambio.id.in_(sa_select(activos_subq)))
+                .filter(~PublicacionCambio.id.in_(sa_select(pendientes_subq)))
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
             )
