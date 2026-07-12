@@ -201,6 +201,20 @@ def _franjas_a_json(franjas):
     ]
 
 
+def _turnos_cedidos_a_json(turnos_cedidos):
+    """Serializa los turnos cedidos existentes como [fecha_iso, franja_id] para
+    precargar la selección del widget de calendario al editar."""
+    return [[tc.fecha.isoformat(), tc.franja_horaria_id] for tc in turnos_cedidos]
+
+
+def _turnos_aceptados_a_json(turnos_aceptados):
+    """Igual que _turnos_cedidos_a_json pero usa '0' para "cualquier turno"."""
+    return [
+        [ta.fecha.isoformat(), 0 if ta.cualquier_franja else ta.franja_horaria_id]
+        for ta in turnos_aceptados
+    ]
+
+
 
 @bp.route("/publicar", methods=["GET", "POST"])
 @login_required
@@ -372,7 +386,12 @@ def editar(pub_id):
         error = _validar_turnos(tipo, cedidos, aceptados, hoy)
         if error:
             flash(error, "danger")
-            return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=hoy.isoformat())
+            return render_template(
+                "publicaciones/editar.html", pub=pub, franjas=franjas,
+                franjas_json=_franjas_a_json(franjas), today=hoy.isoformat(),
+                cedidos_json=[[f.isoformat(), fid] for f, fid in cedidos],
+                aceptados_json=[[f.isoformat(), fid if fid is not None else 0] for f, fid in aceptados],
+            )
 
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
         editar_publicacion(pub, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
@@ -391,7 +410,12 @@ def editar(pub_id):
         flash(_("Publicación actualizada."), "success")
         return redirect(url_for("main.index"))
 
-    return render_template("publicaciones/editar.html", pub=pub, franjas=franjas, today=date.today().isoformat())
+    return render_template(
+        "publicaciones/editar.html", pub=pub, franjas=franjas,
+        franjas_json=_franjas_a_json(franjas), today=date.today().isoformat(),
+        cedidos_json=_turnos_cedidos_a_json(pub.turnos_cedidos),
+        aceptados_json=_turnos_aceptados_a_json(pub.turnos_aceptados),
+    )
 
 
 @bp.post("/publicaciones/<int:pub_id>/eliminar")

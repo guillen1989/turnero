@@ -4,6 +4,28 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+feat(editar): el calendario tap-to-select de `/publicar` (elegir franja +
+tocar días) se extiende a `/editar`, que hasta ahora seguía usando las
+filas manuales "fecha + tipo de turno" con un botón "+ Añadir otro turno" —
+inconsistente con el flujo de publicar y sin forma de tocar varios días de
+un tirón. `app/static/js/calendario-turnos.js` gana la opción
+`seleccionInicial` (array de `[fecha, franjaId]`) para precargar la
+selección del widget con los turnos ya guardados de la publicación (usa
+`'0'` para "cualquier turno" en aceptados); si no hay `prefillFecha`
+explícito, el mes inicial visible pasa a ser el de la fecha más temprana
+de esa selección en vez de siempre el mes actual. `editar.html` pasa de
+las filas manuales a los mismos `<div id="cal-cedidos">`/`cal-aceptados`
+que `publicar.html`, con los datos de precarga embebidos como JSON
+(`<script type="application/json">`) — el backend no cambia: sigue
+generando los mismos inputs ocultos `fecha_/franja_{prefix}_N` que ya
+consumía `_extraer_turnos`, así que `editar_publicacion()` y su reemplazo
+íntegro de turnos_cedidos/turnos_aceptados quedan intactos (mismo
+comportamiento de siempre ante ediciones de publicaciones parcialmente
+resueltas). Nuevo `e2e/test_editar_publicacion.py` (2 tests, mismo patrón
+de `test_publicar.py`: precarga visible + varios días de un tirón).
+Catálogo i18n actualizado (pybabel extract/update/compile). 876 tests
+unitarios passing.
+
 feat(auth): login persistente ("recuérdame" siempre activo, como una app) —
 `login_user(usuario, remember=True)` en los tres puntos de entrada
 (`registro`, `login`, `login/demo`) en vez del `login_user(usuario)` sin
@@ -462,6 +484,7 @@ mitigación preventiva independiente de la causa.
 - [x] feat(matches): desconfirmar un match ya confirmado por el propio usuario, por si cambia de idea antes de que el cambio quede cerrado del todo · `POST /matches/<id>/desconfirmar` + `desconfirmar_participacion()` reutiliza `_get_match_validado` (409 si el match ya está `confirmado_total`/`rechazado`, o si el usuario no había confirmado) · recalcula el estado del match a `confirmado_parcial` si otra parte sigue confirmada (cadenas de 3+) o a `propuesto` si no · notifica a las demás partes (`Notificacion` tipo `desconfirmacion` + push) · botón "Desconfirmar" en el dashboard · catálogo i18n actualizado · 11 tests nuevos · 816 tests passing
 - [x] feat(publicar): calendario tap-to-select (elegir franja + tocar días) sustituye las filas manuales de `/publicar` · mockup Artifact validado con el usuario antes de implementar · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · franjas dinámicas por grupo, incluidas las personalizadas por el usuario (chip automático) · multi-franja el mismo día con `.cal-bandas-row` reutilizado de `/calendario` · prefill desde `/calendario` pasa de `value=""` a resaltado `data-sugerida` · `app/static/js/calendario-turnos.js` nuevo · e2e reescritos (4+1 test nuevo en `test_publicar.py`, golden path, drill-down) · 18 tests backend + 11 e2e relevantes passing
 - [x] feat(auth): login persistente ("recuérdame" siempre activo) — `login_user(..., remember=True)` en registro/login/login-demo + `SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE="Lax"` y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE=True` en producción · el usuario ya no pierde la sesión al cerrar el navegador/PWA, solo con logout explícito · 4 tests nuevos · 874 tests passing
+- [x] feat(editar): el calendario tap-to-select de `/publicar` se extiende a `/editar`, sustituyendo las filas manuales "fecha + tipo de turno" · `calendario-turnos.js` gana la opción `seleccionInicial` para precargar la selección con los turnos ya guardados (mes inicial = el de la fecha más temprana precargada) · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · 2 tests e2e nuevos (`e2e/test_editar_publicacion.py`) · catálogo i18n actualizado · 876 tests unitarios passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
