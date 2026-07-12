@@ -307,6 +307,27 @@ def test_publicar_crea_match_cadena_4_cuando_hay_ciclo(client, db):
     assert MatchParticipacion.query.filter_by(match_id=match.id).count() == 4
 
 
+def test_cadena_4_muestra_quien_confirmo_en_tab_pendiente(client, db):
+    """Tras confirmar uno de los cuatro, la tarjeta de pendientes muestra
+    quién ya confirmó (✓) y quién falta (○), para que sepan a quién esperar."""
+    from app.services.matches import confirmar_participacion
+
+    pub_ana, pub_pedro, pub_maria, pub_luis, ana, pedro, maria, luis = _setup_ciclo(db)
+    match = crear_match_cadena_4(pub_ana, pub_pedro, pub_maria, pub_luis)
+
+    confirmar_participacion(match, ana.id)
+
+    client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
+    resp = client.get("/?estado=pendiente")
+    html = resp.data.decode()
+
+    assert resp.status_code == 200
+    assert "✓ Ana" in html
+    assert "○ Tú" in html
+    assert "○ María" in html
+    assert "○ Luis" in html
+
+
 def test_cadena_4_aparece_en_tab_compatible(client, db):
     """Un cadena_4 match propuesto aparece en el tab 'Compatibles' del dashboard
     con su propio badge, distinto del de cadena_3."""
