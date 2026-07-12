@@ -4,6 +4,27 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+feat(dashboard): en las tarjetas de match de cadenas de 3/4 bandas
+(`cadena_3`/`cadena_4`), se añade una fila de "chips" que muestra a cada
+participante con ✓ (confirmado, chip verde) u ○ (pendiente) — a petición
+del usuario: cuando una parte confirma, las demás reciben aviso y el
+cambio pasa a "Pendientes de confirmar", pero hasta ahora no se veía quién
+de los 3/4 ya había confirmado y a quién había que esperar. Los datos ya
+existían en el modelo (`MatchParticipacion.confirmado` por fila,
+`otras_parts`/`mi_part` ya se pasaban a la plantilla), así que es solo
+`dashboard.html` + CSS nuevo (`.match-confirmaciones`,
+`.match-confirmaciones-item[--ok]`), sin cambios de backend. Se muestra
+mientras el match no esté `confirmado_total` (en ese estado ya hay un
+mensaje de "confirmado por todas las partes" que lo deja claro). No se
+aplica a matches directos (2 bandas): ahí ya queda claro con el badge
+existente ("Pendiente de tu confirmación" / "Esperando al otro usuario").
+Verificado además del test HTTP con un smoke manual: servidor Flask real
+contra una base Postgres temporal, cadena de 4 con una confirmación ya
+hecha, `curl` autenticado a `/?estado=pendiente` confirma el HTML
+esperado (✓ Ana, ○ Tú/María/Luis). Catálogo i18n actualizado (nuevo
+`msgid "Tú"`, antes solo existía como parte de frases más largas como
+"Tú libras:"). 1 test nuevo (`test_cadena_4.py`) · 880 tests passing.
+
 refactor(dashboard): rediseño de cómo Activos muestra las publicaciones con
 match — sustituye el enfoque anterior (botón "Editar" metido en la
 match-card) por tarjetas separadas, a petición del usuario: la tarjeta de
@@ -545,6 +566,7 @@ mitigación preventiva independiente de la causa.
 - [x] feat(publicar): calendario tap-to-select (elegir franja + tocar días) sustituye las filas manuales de `/publicar` · mockup Artifact validado con el usuario antes de implementar · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · franjas dinámicas por grupo, incluidas las personalizadas por el usuario (chip automático) · multi-franja el mismo día con `.cal-bandas-row` reutilizado de `/calendario` · prefill desde `/calendario` pasa de `value=""` a resaltado `data-sugerida` · `app/static/js/calendario-turnos.js` nuevo · e2e reescritos (4+1 test nuevo en `test_publicar.py`, golden path, drill-down) · 18 tests backend + 11 e2e relevantes passing
 - [x] feat(auth): login persistente ("recuérdame" siempre activo) — `login_user(..., remember=True)` en registro/login/login-demo + `SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE="Lax"` y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE=True` en producción · el usuario ya no pierde la sesión al cerrar el navegador/PWA, solo con logout explícito · 4 tests nuevos · 874 tests passing
 - [x] feat(editar): el calendario tap-to-select de `/publicar` se extiende a `/editar`, sustituyendo las filas manuales "fecha + tipo de turno" · `calendario-turnos.js` gana la opción `seleccionInicial` para precargar la selección con los turnos ya guardados (mes inicial = el de la fecha más temprana precargada) · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · 2 tests e2e nuevos (`e2e/test_editar_publicacion.py`) · catálogo i18n actualizado · 876 tests unitarios passing
+- [x] feat(dashboard): las tarjetas de match de cadenas de 3/4 bandas muestran quién ya confirmó (✓, chip verde) y quién falta (○) — solo plantilla + CSS, el dato (`MatchParticipacion.confirmado`) ya existía · se muestra mientras el match no esté `confirmado_total` · catálogo i18n actualizado · 1 test nuevo · 880 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
