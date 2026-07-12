@@ -37,15 +37,29 @@
     this.hoyIso = opciones.today;
 
     this.prefillFecha = opciones.prefillFecha || null;
-    if (this.prefillFecha) {
-      var p = this.prefillFecha.split('-').map(Number);
+
+    this.selection = {}; // { 'YYYY-MM-DD': ['franjaId', ...] }
+    (opciones.seleccionInicial || []).forEach(function (par) {
+      var iso = par[0];
+      var fid = String(par[1]);
+      var arr = this.selection[iso] || [];
+      if (arr.indexOf(fid) < 0) arr = arr.concat([fid]);
+      this.selection[iso] = arr;
+    }, this);
+
+    var fechaVista = this.prefillFecha;
+    if (!fechaVista) {
+      var fechasSeleccion = Object.keys(this.selection).sort();
+      if (fechasSeleccion.length) fechaVista = fechasSeleccion[0];
+    }
+    if (fechaVista) {
+      var p = fechaVista.split('-').map(Number);
       this.viewY = p[0]; this.viewM = p[1] - 1;
     } else {
       this.viewY = this.hoyY; this.viewM = this.hoyM;
     }
 
     this.activeFranjaId = this.franjas.length ? this.franjas[0].id : null;
-    this.selection = {}; // { 'YYYY-MM-DD': ['franjaId', ...] }
 
     this._construir();
     this.render();

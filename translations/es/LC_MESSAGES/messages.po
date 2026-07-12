@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-11 10:04+0200\n"
+"POT-Creation-Date: 2026-07-12 12:36+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -198,11 +198,11 @@ msgstr "No se puede eliminar: la categoría tiene usuarios asociados."
 msgid "Categoría eliminada."
 msgstr "Categoría eliminada."
 
-#: app/routes/admin.py:674 app/routes/publicaciones.py:340
+#: app/routes/admin.py:674 app/routes/publicaciones.py:354
 msgid "Publicación cancelada."
 msgstr "Publicación cancelada."
 
-#: app/routes/admin.py:683 app/routes/publicaciones.py:404
+#: app/routes/admin.py:683 app/routes/publicaciones.py:428
 msgid "Publicación eliminada."
 msgstr "Publicación eliminada."
 
@@ -514,15 +514,15 @@ msgid "El turno que cedes y el que deseas deben ser diferentes."
 msgstr "El turno que cedes y el que deseas deben ser diferentes."
 
 #: app/routes/publicaciones.py:124 app/routes/publicaciones.py:174
-#: app/routes/publicaciones.py:582
+#: app/routes/publicaciones.py:606
 msgid "Las fechas de los turnos no pueden ser anteriores a hoy."
 msgstr "Las fechas de los turnos no pueden ser anteriores a hoy."
 
-#: app/routes/publicaciones.py:157 app/routes/publicaciones.py:576
+#: app/routes/publicaciones.py:157 app/routes/publicaciones.py:600
 msgid "Debes indicar al menos un turno que cedes."
 msgstr "Debes indicar al menos un turno que cedes."
 
-#: app/routes/publicaciones.py:159 app/routes/publicaciones.py:579
+#: app/routes/publicaciones.py:159 app/routes/publicaciones.py:603
 msgid "Debes indicar al menos un turno que aceptarías."
 msgstr "Debes indicar al menos un turno que aceptarías."
 
@@ -542,104 +542,104 @@ msgstr "Debes indicar el turno que cedes y el que deseas."
 msgid "El turno cedido y el deseado deben ser del mismo día."
 msgstr "El turno cedido y el deseado deben ser del mismo día."
 
-#: app/routes/publicaciones.py:236
+#: app/routes/publicaciones.py:250
 #, python-format
 msgid "Tipo de turno «%(n)s» creado."
 msgstr "Tipo de turno «%(n)s» creado."
 
-#: app/routes/publicaciones.py:238
+#: app/routes/publicaciones.py:252
 msgid "Ya existe un turno con ese nombre."
 msgstr "Ya existe un turno con ese nombre."
 
-#: app/routes/publicaciones.py:240
+#: app/routes/publicaciones.py:254
 msgid "Datos del turno incorrectos."
 msgstr "Datos del turno incorrectos."
 
-#: app/routes/publicaciones.py:302
+#: app/routes/publicaciones.py:316
 msgid "Publicación creada correctamente."
 msgstr "Publicación creada correctamente."
 
-#: app/routes/publicaciones.py:351
+#: app/routes/publicaciones.py:365
 msgid "Solo puedes editar publicaciones activas."
 msgstr "Solo puedes editar publicaciones activas."
 
-#: app/routes/publicaciones.py:391
+#: app/routes/publicaciones.py:410
 msgid "Publicación actualizada."
 msgstr "Publicación actualizada."
 
-#: app/routes/publicaciones.py:417
+#: app/routes/publicaciones.py:441
 msgid "No puedes aceptar tu propia publicación."
 msgstr "No puedes aceptar tu propia publicación."
 
-#: app/routes/publicaciones.py:421 app/routes/publicaciones.py:549
+#: app/routes/publicaciones.py:445 app/routes/publicaciones.py:573
 msgid "Esta publicación ya no está activa."
 msgstr "Esta publicación ya no está activa."
 
-#: app/routes/publicaciones.py:442
+#: app/routes/publicaciones.py:466
 msgid "Esta oportunidad ya no está disponible."
 msgstr "Esta oportunidad ya no está disponible."
 
-#: app/routes/publicaciones.py:448
+#: app/routes/publicaciones.py:472
 msgid "No fue posible cerrar el cambio. Los turnos pueden haber cambiado."
 msgstr "No fue posible cerrar el cambio. Los turnos pueden haber cambiado."
 
-#: app/routes/publicaciones.py:451
+#: app/routes/publicaciones.py:475
 msgid "¡Cambio a 4 bandas iniciado! Ve a «Mis cambios» para confirmar."
 msgstr "¡Cambio a 4 bandas iniciado! Ve a «Mis cambios» para confirmar."
 
-#: app/routes/publicaciones.py:453
+#: app/routes/publicaciones.py:477
 msgid "¡Cambio a 3 bandas iniciado! Ve a «Mis cambios» para confirmar."
 msgstr "¡Cambio a 3 bandas iniciado! Ve a «Mis cambios» para confirmar."
 
-#: app/routes/publicaciones.py:465
+#: app/routes/publicaciones.py:489
 msgid "No fue posible crear el match. Los turnos pueden haber cambiado."
 msgstr "No fue posible crear el match. Los turnos pueden haber cambiado."
 
-#: app/routes/publicaciones.py:467
+#: app/routes/publicaciones.py:491
 msgid "¡Match creado! Ve a «Mis cambios» para confirmar."
 msgstr "¡Match creado! Ve a «Mis cambios» para confirmar."
 
-#: app/routes/publicaciones.py:482
+#: app/routes/publicaciones.py:506
 msgid "Este regalo no tiene turnos disponibles."
 msgstr "Este regalo no tiene turnos disponibles."
 
-#: app/routes/publicaciones.py:492
+#: app/routes/publicaciones.py:516
 msgid "Selecciona el turno que quieres cubrir."
 msgstr "Selecciona el turno que quieres cubrir."
 
-#: app/routes/publicaciones.py:495
+#: app/routes/publicaciones.py:519
 msgid "Turno no encontrado o ya resuelto."
 msgstr "Turno no encontrado o ya resuelto."
 
-#: app/routes/publicaciones.py:502
+#: app/routes/publicaciones.py:526
 msgid "El junte ya no tiene turnos disponibles."
 msgstr "El junte ya no tiene turnos disponibles."
 
-#: app/routes/publicaciones.py:509
+#: app/routes/publicaciones.py:533
 msgid "Este cambio de turno ya no está disponible."
 msgstr "Este cambio de turno ya no está disponible."
 
-#: app/routes/publicaciones.py:516
+#: app/routes/publicaciones.py:540
 msgid "Selecciona los dos turnos."
 msgstr "Selecciona los dos turnos."
 
-#: app/routes/publicaciones.py:520
+#: app/routes/publicaciones.py:544
 msgid "Turnos no encontrados en esta publicación."
 msgstr "Turnos no encontrados en esta publicación."
 
-#: app/routes/publicaciones.py:524
+#: app/routes/publicaciones.py:548
 msgid "Especifica el turno que quieres librar."
 msgstr "Especifica el turno que quieres librar."
 
-#: app/routes/publicaciones.py:531
+#: app/routes/publicaciones.py:555
 msgid "Tipo de publicación no reconocido."
 msgstr "Tipo de publicación no reconocido."
 
-#: app/routes/publicaciones.py:553
+#: app/routes/publicaciones.py:577
 msgid "No puedes hacer una contraoferta a tu propia publicación."
 msgstr "No puedes hacer una contraoferta a tu propia publicación."
 
-#: app/routes/publicaciones.py:589
+#: app/routes/publicaciones.py:613
 msgid ""
 "La contraoferta debe coincidir con al menos una parte de la publicación "
 "original."
@@ -647,7 +647,7 @@ msgstr ""
 "La contraoferta debe coincidir con al menos una parte de la publicación "
 "original."
 
-#: app/routes/publicaciones.py:620
+#: app/routes/publicaciones.py:644
 msgid ""
 "Tu contraoferta ha sido enviada. El autor de la publicación recibirá un "
 "aviso."
@@ -1022,7 +1022,7 @@ msgstr "No hay categorías."
 #: app/templates/main/contraoferta.html:99
 #: app/templates/main/dashboard.html:431
 #: app/templates/planilla/planilla.html:392
-#: app/templates/publicaciones/editar.html:116
+#: app/templates/publicaciones/editar.html:65
 #: app/templates/publicaciones/publicar.html:142
 msgid "Cancelar"
 msgstr "Cancelar"
@@ -2554,34 +2554,24 @@ msgstr "Turnos que yo quiero librar"
 #: app/templates/main/contraoferta.html:47
 #: app/templates/main/contraoferta.html:71
 #: app/templates/main/contraoferta.html:115
-#: app/templates/publicaciones/editar.html:50
-#: app/templates/publicaciones/editar.html:81
-#: app/templates/publicaciones/editar.html:132
 msgid "Fecha"
 msgstr "Fecha"
 
 #: app/templates/main/contraoferta.html:51
 #: app/templates/main/contraoferta.html:75
 #: app/templates/main/contraoferta.html:119
-#: app/templates/publicaciones/editar.html:54
-#: app/templates/publicaciones/editar.html:85
-#: app/templates/publicaciones/editar.html:136
 msgid "Tipo de turno"
 msgstr "Tipo de turno"
 
 #: app/templates/main/contraoferta.html:53
 #: app/templates/main/contraoferta.html:77
 #: app/templates/main/contraoferta.html:121
-#: app/templates/publicaciones/editar.html:56
-#: app/templates/publicaciones/editar.html:87
-#: app/templates/publicaciones/editar.html:138
 #: app/templates/publicaciones/publicar.html:69
 #: app/templates/publicaciones/publicar.html:78
 msgid "— Selecciona —"
 msgstr "— Selecciona —"
 
 #: app/templates/main/contraoferta.html:62
-#: app/templates/publicaciones/editar.html:71
 msgid "+ Añadir otro turno a librar"
 msgstr "+ Añadir otro turno a librar"
 
@@ -2590,12 +2580,11 @@ msgid "Turnos que yo me ofrezco a trabajar"
 msgstr "Turnos que yo me ofrezco a trabajar"
 
 #: app/templates/main/contraoferta.html:86
-#: app/templates/publicaciones/editar.html:103
 msgid "+ Añadir otro turno que puedo trabajar"
 msgstr "+ Añadir otro turno que puedo trabajar"
 
 #: app/templates/main/contraoferta.html:91
-#: app/templates/publicaciones/editar.html:108
+#: app/templates/publicaciones/editar.html:57
 #: app/templates/publicaciones/publicar.html:134
 msgid "Mensaje (opcional)"
 msgstr "Mensaje (opcional)"
@@ -3436,18 +3425,19 @@ msgstr "Cambias tu turno de mañana a tarde (o viceversa) el mismo día"
 msgid "Turnos que quiero librar"
 msgstr "Turnos que quiero librar"
 
-#: app/templates/publicaciones/editar.html:76
+#: app/templates/publicaciones/editar.html:46
+#: app/templates/publicaciones/editar.html:52
+#: app/templates/publicaciones/publicar.html:123
+#: app/templates/publicaciones/publicar.html:129
+msgid "Elige el tipo de turno y toca los días para añadirlos."
+msgstr "Elige el tipo de turno y toca los días para añadirlos."
+
+#: app/templates/publicaciones/editar.html:51
 #: app/templates/publicaciones/publicar.html:128
 msgid "Turnos que quiero trabajar"
 msgstr "Turnos que quiero trabajar"
 
-#: app/templates/publicaciones/editar.html:88
-#: app/templates/publicaciones/editar.html:123
-#: app/templates/publicaciones/publicar.html:183
-msgid "✦ Cualquier turno de ese día"
-msgstr "✦ Cualquier turno de ese día"
-
-#: app/templates/publicaciones/editar.html:110
+#: app/templates/publicaciones/editar.html:59
 #: app/templates/publicaciones/publicar.html:136
 msgid ""
 "Escribe un mensaje para el usuario con el que hagas match (máx. 200 "
@@ -3456,9 +3446,24 @@ msgstr ""
 "Escribe un mensaje para el usuario con el que hagas match (máx. 200 "
 "caracteres)"
 
-#: app/templates/publicaciones/editar.html:115
+#: app/templates/publicaciones/editar.html:64
 msgid "Guardar cambios"
 msgstr "Guardar cambios"
+
+#: app/templates/publicaciones/editar.html:81
+#: app/templates/publicaciones/publicar.html:180
+msgid "turno seleccionado"
+msgstr "turno seleccionado"
+
+#: app/templates/publicaciones/editar.html:82
+#: app/templates/publicaciones/publicar.html:181
+msgid "turnos seleccionados"
+msgstr "turnos seleccionados"
+
+#: app/templates/publicaciones/editar.html:84
+#: app/templates/publicaciones/publicar.html:183
+msgid "✦ Cualquier turno de ese día"
+msgstr "✦ Cualquier turno de ese día"
 
 #: app/templates/publicaciones/publicar.html:7
 msgid "Publicar cambio de turno"
@@ -3524,11 +3529,6 @@ msgstr "Noches que trabajarás tú tras el junte"
 msgid "Selecciona exactamente las noches que quieres trabajar."
 msgstr "Selecciona exactamente las noches que quieres trabajar."
 
-#: app/templates/publicaciones/publicar.html:123
-#: app/templates/publicaciones/publicar.html:129
-msgid "Elige el tipo de turno y toca los días para añadirlos."
-msgstr "Elige el tipo de turno y toca los días para añadirlos."
-
 #: app/templates/publicaciones/publicar.html:141
 msgid "Publicar"
 msgstr "Publicar"
@@ -3552,14 +3552,6 @@ msgstr "Ej: Guardia 24h"
 #: app/templates/publicaciones/publicar.html:166
 msgid "Guardar tipo de turno"
 msgstr "Guardar tipo de turno"
-
-#: app/templates/publicaciones/publicar.html:180
-msgid "turno seleccionado"
-msgstr "turno seleccionado"
-
-#: app/templates/publicaciones/publicar.html:181
-msgid "turnos seleccionados"
-msgstr "turnos seleccionados"
 
 #: app/templates/publicaciones/publicar.html:238
 msgid "Selecciona exactamente"
