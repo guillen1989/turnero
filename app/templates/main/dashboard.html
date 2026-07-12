@@ -62,6 +62,18 @@
           {% for otra in otras_parts %}{{ otra.publicacion.usuario.nombre }}{% if not loop.last %} {{ _('y') }} {% endif %}{% endfor %}
         </span>
       </div>
+      {% if es_cadena and match.estado != 'confirmado_total' %}
+      <div class="match-confirmaciones">
+        <span class="match-confirmaciones-item{% if mi_part.confirmado %} match-confirmaciones-item--ok{% endif %}">
+          {% if mi_part.confirmado %}✓{% else %}○{% endif %} {{ _('Tú') }}
+        </span>
+        {% for otra in otras_parts %}
+        <span class="match-confirmaciones-item{% if otra.confirmado %} match-confirmaciones-item--ok{% endif %}">
+          {% if otra.confirmado %}✓{% else %}○{% endif %} {{ otra.publicacion.usuario.nombre }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
       <div class="match-turnos">
         {% if mi_part.turno_cedido %}
         <div class="match-turno">
