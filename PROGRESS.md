@@ -4,6 +4,23 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+fix(dashboard): investigado un reporte del usuario de que, en cadenas de
+3/4 bandas, la tarjeta de "Pendientes" no reflejaba nuevas confirmaciones
+de otros participantes al recargar. No se pudo reproducir ningún bug de
+datos/plantilla: se comprobó con varios órdenes de confirmación (segundo
+confirmador, el propio primer confirmador recargando tras la segunda
+confirmación de otro) tanto con el cliente de test de Flask como contra
+un servidor real (`flask run`) con sesiones HTTP independientes por
+usuario (cookies separadas) — en todos los casos el HTML recargado ya
+traía el ✓ correcto. Como la página del dashboard es dinámica y personal
+(depende de qué haya confirmado cada participante) y no llevaba ninguna
+cabecera anti-caché, se añade `Cache-Control: no-store` a la respuesta
+de `main.index` como medida defensiva: si la causa real era caché del
+navegador o de algún intermediario entre el usuario y Railway, queda
+eliminada; si vuelve a reportarse, ya no puede deberse a eso. 4 tests
+nuevos (2ª confirmación reflejada, primer confirmador ve la 2ª
+confirmación de otro, cabecera no-store) · 884 tests passing.
+
 feat(dashboard): en las tarjetas de match de cadenas de 3/4 bandas
 (`cadena_3`/`cadena_4`), se añade una fila de "chips" que muestra a cada
 participante con ✓ (confirmado, chip verde) u ○ (pendiente) — a petición
@@ -567,6 +584,7 @@ mitigación preventiva independiente de la causa.
 - [x] feat(auth): login persistente ("recuérdame" siempre activo) — `login_user(..., remember=True)` en registro/login/login-demo + `SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE="Lax"` y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE=True` en producción · el usuario ya no pierde la sesión al cerrar el navegador/PWA, solo con logout explícito · 4 tests nuevos · 874 tests passing
 - [x] feat(editar): el calendario tap-to-select de `/publicar` se extiende a `/editar`, sustituyendo las filas manuales "fecha + tipo de turno" · `calendario-turnos.js` gana la opción `seleccionInicial` para precargar la selección con los turnos ya guardados (mes inicial = el de la fecha más temprana precargada) · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · 2 tests e2e nuevos (`e2e/test_editar_publicacion.py`) · catálogo i18n actualizado · 876 tests unitarios passing
 - [x] feat(dashboard): las tarjetas de match de cadenas de 3/4 bandas muestran quién ya confirmó (✓, chip verde) y quién falta (○) — solo plantilla + CSS, el dato (`MatchParticipacion.confirmado`) ya existía · se muestra mientras el match no esté `confirmado_total` · catálogo i18n actualizado · 1 test nuevo · 880 tests passing
+- [x] fix(dashboard): investigado el reporte de que la tarjeta de Pendientes no reflejaba nuevas confirmaciones de otros al recargar — no se pudo reproducir ningún bug de datos/plantilla (verificado con test client y con servidor real + sesiones HTTP independientes); se añade `Cache-Control: no-store` a `main.index` como medida defensiva ante caché de navegador/proxy, ya que la página es dinámica y personal y no llevaba cabecera anti-caché · 4 tests nuevos · 884 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

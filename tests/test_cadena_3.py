@@ -433,3 +433,25 @@ def test_cadena_3_aparece_en_tab_compatible(client, db):
     assert "Tú libra" not in wa_texto
     assert "Tú trabaja" not in wa_texto
     assert "Ana libra:" in wa_texto or "Ana trabaja:" in wa_texto
+
+
+def test_cadena_3_refleja_segunda_confirmacion_al_recargar(client, db):
+    """Reproduce el reporte del usuario: tras una segunda confirmación,
+    la tarjeta de Pendientes debe reflejar el nuevo ✓ al recargar."""
+    from app.services.matches import confirmar_participacion
+
+    pub_ana, pub_pedro, pub_maria, ana, pedro, maria = _setup_ciclo(db)
+    match = crear_match_cadena_3(pub_ana, pub_pedro, pub_maria)
+
+    confirmar_participacion(match, ana.id)
+
+    client.post("/auth/login", data={"email": "maria@test.es", "password": "password123"})
+    html_antes = client.get("/?estado=pendiente").data.decode()
+    assert "✓ Ana" in html_antes
+    assert "○ Pedro" in html_antes
+
+    confirmar_participacion(match, pedro.id)
+
+    html_despues = client.get("/?estado=pendiente").data.decode()
+    assert "✓ Ana" in html_despues
+    assert "✓ Pedro" in html_despues
