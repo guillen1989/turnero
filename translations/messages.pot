@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 12:36+0200\n"
+"POT-Creation-Date: 2026-07-12 13:00+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2604,6 +2604,10 @@ msgstr ""
 
 #: app/templates/main/dashboard.html:108
 msgid "¡Cambio a 4 bandas listo para cerrar entre los 4!"
+msgstr ""
+
+#: app/templates/main/dashboard.html:108
+msgid "¡Cambio a 3 bandas listo para cerrar entre los 3!"
 msgstr ""
 
 #: app/templates/main/dashboard.html:125

@@ -4,6 +4,18 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+feat(dashboard): el botón "Avisar por WhatsApp" que ya existía para los
+matches `cadena_4` (con el texto completo de quién libra/trabaja cada día,
+para reenviar a los otros 3) se extiende a `cadena_3` — antes ese bloque en
+`dashboard.html` comprobaba `match.tipo == 'cadena_4'` explícitamente y
+dejaba fuera las cadenas de 3 bandas. Ahora comprueba `es_cadena` (ya
+definido arriba como `match.tipo in ('cadena_3', 'cadena_4')`) y el texto
+del mensaje se adapta según `match.tipo` ("listo para cerrar entre los 3/4").
+Nuevo test en `test_cadena_3.py` (mismo patrón que el ya existente en
+`test_cadena_4.py`: verifica que aparece el botón wa.me y que el texto usa
+el nombre de cada usuario en vez de "Tú libras/trabajas"). Catálogo i18n
+actualizado (pybabel extract/update/compile).
+
 feat(editar): el calendario tap-to-select de `/publicar` (elegir franja +
 tocar días) se extiende a `/editar`, que hasta ahora seguía usando las
 filas manuales "fecha + tipo de turno" con un botón "+ Añadir otro turno" —

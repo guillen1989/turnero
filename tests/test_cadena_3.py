@@ -417,3 +417,19 @@ def test_cadena_3_aparece_en_tab_compatible(client, db):
 
     assert resp.status_code == 200
     assert "Cambio a 3 bandas".encode() in resp.data
+
+    # Botón para avisar por WhatsApp a los otros 2, con la cadena completa
+    # (los 3 tramos: libra/trabaja de cada participante) en el texto.
+    html = resp.data.decode()
+    assert "wa.me" in html
+    assert "Avisar por WhatsApp" in html
+
+    import re
+    from urllib.parse import unquote
+
+    match_href = re.search(r'href="https://wa\.me/\?text=([^"]+)"', html)
+    assert match_href is not None
+    wa_texto = unquote(match_href.group(1))
+    assert "Tú libra" not in wa_texto
+    assert "Tú trabaja" not in wa_texto
+    assert "Ana libra:" in wa_texto or "Ana trabaja:" in wa_texto
