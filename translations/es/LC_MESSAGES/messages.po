@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 12:36+0200\n"
+"POT-Creation-Date: 2026-07-12 13:00+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -2706,6 +2706,10 @@ msgstr ""
 #: app/templates/main/dashboard.html:108
 msgid "¡Cambio a 4 bandas listo para cerrar entre los 4!"
 msgstr "¡Cambio a 4 bandas listo para cerrar entre los 4!"
+
+#: app/templates/main/dashboard.html:108
+msgid "¡Cambio a 3 bandas listo para cerrar entre los 3!"
+msgstr "¡Cambio a 3 bandas listo para cerrar entre los 3!"
 
 #: app/templates/main/dashboard.html:125
 msgid "Entra en Turnero para confirmarlo:"
