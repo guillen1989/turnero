@@ -1,6 +1,6 @@
 from urllib.parse import quote as _urlquote
 
-from flask import Blueprint, current_app, jsonify, render_template, request
+from flask import Blueprint, current_app, jsonify, make_response, render_template, request
 from flask_login import current_user, login_required
 from sqlalchemy import and_, exists, extract, or_
 from sqlalchemy.orm import contains_eager, joinedload, selectinload
@@ -363,7 +363,7 @@ def index():
         partners = _partners_confirmados(current_user.id) if estado_filtro == "confirmada" else {}
         junte_info = {pub.id: _junte_info(pub) for pub in publicaciones if pub.tipo == 'junte'}
         sint_info = _cargar_sint_info(oportunidades_3)
-        return render_template(
+        response = make_response(render_template(
             "main/dashboard.html",
             publicaciones=publicaciones,
             matches=matches,
@@ -376,7 +376,12 @@ def index():
             sint_info=sint_info,
             compat_por_pub=compat_por_pub,
             mostrar_nombres_por_pub=mostrar_nombres_por_pub,
-        )
+        ))
+        # Página dinámica y personal (estado de confirmaciones de matches):
+        # nunca debe servirse desde caché del navegador ni de un proxy
+        # intermedio, o un usuario vería confirmaciones de otros desfasadas.
+        response.headers["Cache-Control"] = "no-store"
+        return response
     demo_login_enabled = bool(current_app.config.get("DEMO_LOGIN_EMAIL"))
     return render_template("main/index.html", demo_login_enabled=demo_login_enabled)
 
