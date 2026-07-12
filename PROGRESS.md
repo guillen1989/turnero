@@ -4,6 +4,24 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+fix(dashboard): una publicación con un match activo (`propuesto` o
+`confirmado_parcial`), aunque sea parcial — por ejemplo, pedía varios días y
+solo uno hizo match —, desaparecía por completo de "Mis cambios > Activos"
+(y de "Pendientes"): la pestaña excluye la tarjeta de publicación editable
+en cuanto existe cualquier match activo, y en su lugar solo se mostraba la
+match-card, que no tenía botón "Editar". El usuario quedaba sin forma de
+modificar la publicación aunque otros turnos suyos siguieran sin resolver.
+Añadido enlace "Editar" (a `publicaciones.editar`, vía
+`mi_part.publicacion_id`) en ambas ramas de acciones de la match-card en
+`dashboard.html` (pendiente de confirmar y ya confirmada esperando a los
+demás) — cubre tanto Activos (`propuesto`) como Pendientes
+(`confirmado_parcial`). El backend (`editar_publicacion`) ya rechazaba y
+recreaba los matches activos de la publicación al guardar cambios, así que
+no hizo falta tocar la lógica de negocio. Dos tests nuevos en
+`test_dashboard.py` (uno por cada estado de match) que comprueban que el
+enlace de edición aparece en el HTML. Catálogo i18n actualizado (pybabel
+extract/update/compile) · 876 tests passing.
+
 feat(dashboard): el botón "Avisar por WhatsApp" que ya existía para los
 matches `cadena_4` (con el texto completo de quién libra/trabaja cada día,
 para reenviar a los otros 3) se extiende a `cadena_3` — antes ese bloque en
