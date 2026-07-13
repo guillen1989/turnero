@@ -4,6 +4,36 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+fix(matching): las cadenas de 3 y 4 bandas (`crear_match_cadena_3`,
+`crear_match_cadena_4` en `app/matching/service.py`) solo registraban en
+`MatchParticipacion` el `turno_cedido_id` que cada banda cede a la
+siguiente del ciclo, nunca el `turno_aceptado_id` que recibe de la
+anterior — a diferencia de `crear_match_directo`, que ya resolvía ambos
+lados con `_primer_aceptado_que_cubre`. Consecuencia: al confirmarse una
+cadena, `confirmar_participacion` marcaba `resuelto` el turno cedido pero
+nunca el aceptado, así que una publicación multi-turno que solo resolvía
+parcialmente por una cadena volvía a estar activa (`parcialmente_resuelta`,
+correcto) pero seguía mostrando como pendiente el día ya conseguido.
+Reportado por el usuario en producción tras confirmar un cambio a 4 bandas
+(publicación 818: recibió el 2026-08-07 de Blanca De la Calle vía el ciclo
+Alejandro Vilches→Victoria Hernández-Mansilla→Blanca→Guillén→Alejandro;
+`turno_aceptado` id 2104 seguía en `abierto` tras el cierre). Diagnosticado
+leyendo en solo lectura la BD de producción (Railway) antes de tocar
+código. Fix: ambas funciones calculan ahora también el `turno_aceptado`
+que cada banda recibe (mismo helper `_primer_aceptado_que_cubre` que ya
+usaba el match directo) y lo enlazan en la participación; no hace falta
+tocar `confirmar_participacion`, que ya comprobaba
+`turno_aceptado_id is not None`. 4 tests de regresión nuevos (2 por cadena:
+cada participación tiene `turno_aceptado_id`, y caso de extremo a extremo
+con publicación multi-turno que verifica que el turno conseguido queda
+`resuelto` y el resto de turnos intacto) · 887 tests passing.
+
+Pendiente: el `turno_aceptado` 2104 de la publicación 818 de producción
+sigue con el dato viejo (`abierto`) porque el fix no es retroactivo — el
+usuario no ha pedido corregirlo todavía, solo el fix de código. Si lo pide,
+es un `UPDATE` de una fila puntual, no una migración de esquema.
+
+## Paso anterior
 fix(dashboard): investigado un reporte del usuario de que, en cadenas de
 3/4 bandas, la tarjeta de "Pendientes" no reflejaba nuevas confirmaciones
 de otros participantes al recargar. No se pudo reproducir ningún bug de
@@ -583,8 +613,11 @@ mitigación preventiva independiente de la causa.
 - [x] feat(publicar): calendario tap-to-select (elegir franja + tocar días) sustituye las filas manuales de `/publicar` · mockup Artifact validado con el usuario antes de implementar · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · franjas dinámicas por grupo, incluidas las personalizadas por el usuario (chip automático) · multi-franja el mismo día con `.cal-bandas-row` reutilizado de `/calendario` · prefill desde `/calendario` pasa de `value=""` a resaltado `data-sugerida` · `app/static/js/calendario-turnos.js` nuevo · e2e reescritos (4+1 test nuevo en `test_publicar.py`, golden path, drill-down) · 18 tests backend + 11 e2e relevantes passing
 - [x] feat(auth): login persistente ("recuérdame" siempre activo) — `login_user(..., remember=True)` en registro/login/login-demo + `SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE="Lax"` y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE=True` en producción · el usuario ya no pierde la sesión al cerrar el navegador/PWA, solo con logout explícito · 4 tests nuevos · 874 tests passing
 - [x] feat(editar): el calendario tap-to-select de `/publicar` se extiende a `/editar`, sustituyendo las filas manuales "fecha + tipo de turno" · `calendario-turnos.js` gana la opción `seleccionInicial` para precargar la selección con los turnos ya guardados (mes inicial = el de la fecha más temprana precargada) · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · 2 tests e2e nuevos (`e2e/test_editar_publicacion.py`) · catálogo i18n actualizado · 876 tests unitarios passing
+- [x] fix(dashboard): una publicación con un match activo (`propuesto` o `confirmado_parcial`), aunque sea parcial, desaparecía por completo de "Mis cambios > Activos" y "Pendientes" en vez de seguir editable · añadido enlace "Editar" en la match-card para ese caso
+- [x] refactor(dashboard): tarjetas separadas para publicación original y match en Activos, a petición del usuario, en vez del botón "Editar" metido en la match-card · 879 tests passing
 - [x] feat(dashboard): las tarjetas de match de cadenas de 3/4 bandas muestran quién ya confirmó (✓, chip verde) y quién falta (○) — solo plantilla + CSS, el dato (`MatchParticipacion.confirmado`) ya existía · se muestra mientras el match no esté `confirmado_total` · catálogo i18n actualizado · 1 test nuevo · 880 tests passing
 - [x] fix(dashboard): investigado el reporte de que la tarjeta de Pendientes no reflejaba nuevas confirmaciones de otros al recargar — no se pudo reproducir ningún bug de datos/plantilla (verificado con test client y con servidor real + sesiones HTTP independientes); se añade `Cache-Control: no-store` a `main.index` como medida defensiva ante caché de navegador/proxy, ya que la página es dinámica y personal y no llevaba cabecera anti-caché · 4 tests nuevos · 884 tests passing
+- [x] fix(matching): `crear_match_cadena_3`/`crear_match_cadena_4` no registraban el `turno_aceptado_id` que cada banda recibe de la anterior en el ciclo (solo el `turno_cedido_id` que cede), así que al confirmarse una cadena el turno ya conseguido nunca se marcaba `resuelto` y seguía apareciendo como pendiente en la publicación reactivada · reportado por el usuario en producción (match cadena_4 confirmado, publicación 818) · fix reutiliza `_primer_aceptado_que_cubre` (ya usado por `crear_match_directo`) · 4 tests de regresión nuevos · 887 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

@@ -214,6 +214,81 @@ def test_crear_match_cadena_4_cada_participacion_tiene_turno_cedido(db):
         assert p.turno_cedido_id is not None
 
 
+def test_crear_match_cadena_4_cada_participacion_tiene_turno_aceptado(db):
+    """Cada participación también debe registrar qué turno_aceptado recibe
+    del anterior en el ciclo, para que confirmar_participacion pueda resolverlo.
+    """
+    pub_ana, pub_pedro, pub_maria, pub_luis, *_ = _setup_ciclo(db)
+
+    match = crear_match_cadena_4(pub_ana, pub_pedro, pub_maria, pub_luis)
+
+    for p in match.participaciones:
+        assert p.turno_aceptado_id is not None
+
+
+def _pub_listas(usuario, cedidos, aceptados):
+    pub = PublicacionCambio(usuario_id=usuario.id, tipo="cambio")
+    db.session.add(pub)
+    db.session.flush()
+    for fecha, franja in cedidos:
+        db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja.id))
+    for fecha, franja in aceptados:
+        db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=fecha, franja_horaria_id=franja.id))
+    db.session.commit()
+    return pub
+
+
+def test_cadena_4_resuelve_turno_aceptado_al_confirmar_con_publicacion_multiturno(db):
+    """Caso real: Guillén publica varios turnos cedidos/aceptados, se cierra un
+    cambio a 4 bandas que solo consume uno de cada, y su publicación debe
+    quedar 'parcialmente_resuelta' con el turno ya conseguido marcado
+    'resuelto' (no visible como pendiente) y el resto intacto.
+    """
+    from app.services.matches import confirmar_participacion
+
+    guillen = _usuario("Guillén", "guillen@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    maria = _usuario("María", "maria@test.es")
+    luis = _usuario("Luis", "luis@test.es")
+
+    gid = guillen.unidad.grupo_intercambio_id
+    fr_m = _franja(gid, "Mañana")
+    fr_t = _franja(gid, "Tarde")
+    fr_n = _franja(gid, "Noche")
+    otro_dia_cedido = date(2026, 8, 28)
+    otro_dia_aceptado = date(2026, 9, 30)
+
+    # Guillén (pub_luis en el ciclo) tiene otros turnos que la cadena no toca.
+    pub_guillen = _pub_listas(
+        guillen,
+        cedidos=[(date(2026, 7, 4), fr_m), (otro_dia_cedido, fr_n)],
+        aceptados=[(date(2026, 7, 3), fr_n), (otro_dia_aceptado, fr_t)],
+    )
+    pub_pedro = _pub(pedro, date(2026, 7, 1), fr_m, date(2026, 7, 4), fr_m)
+    pub_maria = _pub(maria, date(2026, 7, 2), fr_t, date(2026, 7, 1), fr_m)
+    pub_luis_cierre = _pub(luis, date(2026, 7, 3), fr_n, date(2026, 7, 2), fr_t)
+
+    # Ciclo: Guillén(pub_guillen)→Pedro→María→Luis→Guillén
+    match = crear_match_cadena_4(pub_guillen, pub_pedro, pub_maria, pub_luis_cierre)
+    confirmar_participacion(match, guillen.id)
+    confirmar_participacion(match, pedro.id)
+    confirmar_participacion(match, maria.id)
+    confirmar_participacion(match, luis.id)
+
+    db.session.refresh(pub_guillen)
+    assert pub_guillen.estado == "parcialmente_resuelta"
+
+    turno_conseguido = next(
+        t for t in pub_guillen.turnos_aceptados if t.fecha == date(2026, 7, 3)
+    )
+    assert turno_conseguido.estado == "resuelto"
+
+    turno_pendiente = next(
+        t for t in pub_guillen.turnos_aceptados if t.fecha == otro_dia_aceptado
+    )
+    assert turno_pendiente.estado == "abierto"
+
+
 def test_crear_match_cadena_4_genera_cuatro_notificaciones(db):
     pub_ana, pub_pedro, pub_maria, pub_luis, ana, pedro, maria, luis = _setup_ciclo(db)
 

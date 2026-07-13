@@ -288,6 +288,65 @@ def test_crear_match_cadena_3_cada_participacion_tiene_turno_cedido(db):
         assert p.turno_cedido_id is not None
 
 
+def test_crear_match_cadena_3_cada_participacion_tiene_turno_aceptado(db):
+    """Cada participación también debe registrar qué turno_aceptado recibe
+    del anterior en el ciclo, para que confirmar_participacion pueda resolverlo.
+    """
+    pub_ana, pub_pedro, pub_maria, *_ = _setup_ciclo(db)
+
+    match = crear_match_cadena_3(pub_ana, pub_pedro, pub_maria)
+
+    for p in match.participaciones:
+        assert p.turno_aceptado_id is not None
+
+
+def test_cadena_3_resuelve_turno_aceptado_al_confirmar_con_publicacion_multiturno(db):
+    """Reproduce el caso real: una publicación con varios cedidos/aceptados
+    que solo resuelve una cadena de 3 debe quedar 'parcialmente_resuelta' y
+    con el turno_aceptado ya conseguido marcado como 'resuelto' (no visible
+    como pendiente).
+    """
+    from app.services.matches import confirmar_participacion
+
+    guillen = _usuario("Guillén", "guillen@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    maria = _usuario("María", "maria@test.es")
+
+    gid = guillen.unidad.grupo_intercambio_id
+    fr_m = _franja(gid, "Mañana")
+    fr_t = _franja(gid, "Tarde")
+    fr_n = _franja(gid, "Noche")
+    otro_dia_cedido = date(2026, 8, 28)
+    otro_dia_aceptado = date(2026, 9, 30)
+
+    # Guillén tiene otros turnos cedidos/aceptados que la cadena de 3 no toca.
+    pub_guillen = _pub_listas(
+        guillen,
+        cedidos=[(date(2026, 7, 1), fr_m), (otro_dia_cedido, fr_n)],
+        aceptados=[(date(2026, 7, 3), fr_n), (otro_dia_aceptado, fr_t)],
+    )
+    pub_pedro = _pub(pedro, date(2026, 7, 2), fr_t, date(2026, 7, 1), fr_m)
+    pub_maria = _pub(maria, date(2026, 7, 3), fr_n, date(2026, 7, 2), fr_t)
+
+    match = crear_match_cadena_3(pub_guillen, pub_pedro, pub_maria)
+    confirmar_participacion(match, guillen.id)
+    confirmar_participacion(match, pedro.id)
+    confirmar_participacion(match, maria.id)
+
+    db.session.refresh(pub_guillen)
+    assert pub_guillen.estado == "parcialmente_resuelta"
+
+    turno_conseguido = next(
+        t for t in pub_guillen.turnos_aceptados if t.fecha == date(2026, 7, 3)
+    )
+    assert turno_conseguido.estado == "resuelto"
+
+    turno_pendiente = next(
+        t for t in pub_guillen.turnos_aceptados if t.fecha == otro_dia_aceptado
+    )
+    assert turno_pendiente.estado == "abierto"
+
+
 def test_crear_match_cadena_3_genera_tres_notificaciones(db):
     pub_ana, pub_pedro, pub_maria, ana, pedro, maria = _setup_ciclo(db)
 
