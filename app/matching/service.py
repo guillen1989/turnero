@@ -415,18 +415,31 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
         db.session.rollback()
         return None
 
+    # Turno que cada banda recibe de la anterior en el ciclo: hace falta
+    # registrarlo para que confirmar_participacion pueda marcarlo resuelto.
+    ta_b = _primer_aceptado_que_cubre(pub_b, frozenset({(turno_a.fecha, turno_a.franja_horaria_id)}))
+    ta_c = _primer_aceptado_que_cubre(pub_c, frozenset({(turno_b.fecha, turno_b.franja_horaria_id)}))
+    ta_a = _primer_aceptado_que_cubre(pub_a, frozenset({(turno_c.fecha, turno_c.franja_horaria_id)}))
+
+    if not ta_a or not ta_b or not ta_c:
+        db.session.rollback()
+        return None
+
     match = MatchCambio(tipo="cadena_3", estado="propuesto")
     db.session.add(match)
     db.session.flush()
 
     db.session.add(MatchParticipacion(
-        match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=turno_a.id
+        match_id=match.id, publicacion_id=pub_a.id,
+        turno_cedido_id=turno_a.id, turno_aceptado_id=ta_a.id,
     ))
     db.session.add(MatchParticipacion(
-        match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=turno_b.id
+        match_id=match.id, publicacion_id=pub_b.id,
+        turno_cedido_id=turno_b.id, turno_aceptado_id=ta_b.id,
     ))
     db.session.add(MatchParticipacion(
-        match_id=match.id, publicacion_id=pub_c.id, turno_cedido_id=turno_c.id
+        match_id=match.id, publicacion_id=pub_c.id,
+        turno_cedido_id=turno_c.id, turno_aceptado_id=ta_c.id,
     ))
 
     for pub in (pub_a, pub_b, pub_c):
@@ -564,21 +577,36 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
         db.session.rollback()
         return None
 
+    # Turno que cada banda recibe de la anterior en el ciclo: hace falta
+    # registrarlo para que confirmar_participacion pueda marcarlo resuelto.
+    ta_b = _primer_aceptado_que_cubre(pub_b, frozenset({(turno_a.fecha, turno_a.franja_horaria_id)}))
+    ta_c = _primer_aceptado_que_cubre(pub_c, frozenset({(turno_b.fecha, turno_b.franja_horaria_id)}))
+    ta_d = _primer_aceptado_que_cubre(pub_d, frozenset({(turno_c.fecha, turno_c.franja_horaria_id)}))
+    ta_a = _primer_aceptado_que_cubre(pub_a, frozenset({(turno_d.fecha, turno_d.franja_horaria_id)}))
+
+    if not ta_a or not ta_b or not ta_c or not ta_d:
+        db.session.rollback()
+        return None
+
     match = MatchCambio(tipo="cadena_4", estado="propuesto")
     db.session.add(match)
     db.session.flush()
 
     db.session.add(MatchParticipacion(
-        match_id=match.id, publicacion_id=pub_a.id, turno_cedido_id=turno_a.id
+        match_id=match.id, publicacion_id=pub_a.id,
+        turno_cedido_id=turno_a.id, turno_aceptado_id=ta_a.id,
     ))
     db.session.add(MatchParticipacion(
-        match_id=match.id, publicacion_id=pub_b.id, turno_cedido_id=turno_b.id
+        match_id=match.id, publicacion_id=pub_b.id,
+        turno_cedido_id=turno_b.id, turno_aceptado_id=ta_b.id,
     ))
     db.session.add(MatchParticipacion(
-        match_id=match.id, publicacion_id=pub_c.id, turno_cedido_id=turno_c.id
+        match_id=match.id, publicacion_id=pub_c.id,
+        turno_cedido_id=turno_c.id, turno_aceptado_id=ta_c.id,
     ))
     db.session.add(MatchParticipacion(
-        match_id=match.id, publicacion_id=pub_d.id, turno_cedido_id=turno_d.id
+        match_id=match.id, publicacion_id=pub_d.id,
+        turno_cedido_id=turno_d.id, turno_aceptado_id=ta_d.id,
     ))
 
     for pub in (pub_a, pub_b, pub_c, pub_d):
