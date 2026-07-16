@@ -8,14 +8,34 @@ Cola de pendientes que el usuario pidió abordar seguidos, en el orden
 que mejor convenga: (1) recomprobar factibilidad en la 2ª firma — HECHO,
 (2) firma cruzada entre cuentas reales — HECHO, (3) número de cambio
 junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (parcial, ver
-"Paso anterior"), (5) listado de "mis hojas de cambio" en la cuenta de
-cada usuario (guardar/consultar documentos, regenerar PDF cuando haga
-falta), (6) enviar los cambios por email a los implicados, (7) cuenta
-de supervisora con acceso a todos los cambios, (8) botón
-autorizar/denegar en la cuenta de supervisora que decide si se vuelca a
-las planillas, (9) cadenas a 3/4 bandas y juntes de noches, (10)
-enganche con el motor de matching vía `match_id`. Siguiente: (5)
-listado "mis hojas de cambio".
+paso anterior de esa fecha), (5) listado de "mis hojas de cambio" en la
+cuenta de cada usuario — HECHO, (6) enviar los cambios por email a los
+implicados, (7) cuenta de supervisora con acceso a todos los cambios,
+(8) botón autorizar/denegar en la cuenta de supervisora que decide si
+se vuelca a las planillas, (9) cadenas a 3/4 bandas y juntes de noches,
+(10) enganche con el motor de matching vía `match_id` — el usuario
+matizó este punto (2026-07-16): la acción de **confirmar un match**
+(o el "Me interesa" sobre una publicación sintética) debe **aparejarse
+con la firma** del documento de cambio en el mismo gesto, en vez de
+tener dos ciclos separados (uno de confirmaciones del motor de
+matching, otro de firmas del documento) — o sea, confirmar un match
+YA firma la parte de quien confirma. Tenerlo en cuenta al diseñar el
+paso 10. Siguiente: (6) envío por email.
+
+## Paso anterior
+feat(documento-cambio): listado "mis hojas de cambio" — nueva ruta
+`GET /documentos-cambio/` (`documento_cambio.lista`), muestra los
+documentos donde el usuario logueado es alguno de los dos participantes
+(join con `ParticipanteDocumentoCambio`), más recientes primero. Cada
+fila: número, fecha, nombre del compañero, badge de estado
+(completo/pendiente) y de factibilidad, enlace a "Ver" y, si está
+completo, enlace directo al PDF. Nuevo `lista.html`, botón "Nueva hoja
+de cambio" arriba. El enlace "Hoja de cambio" del menú ahora apunta
+aquí en vez de directo a "Nueva" (antes no había ninguna forma de
+volver a encontrar un documento salvo por el enlace de la notificación
+o adivinando la URL). 1 test nuevo (comprueba que cada usuario solo ve
+sus propios documentos) · 13 tests en rutas · catálogo i18n
+actualizado.
 
 ## Paso anterior
 fix(documento-cambio): mejoras de fidelidad del PDF — "Favorable"/

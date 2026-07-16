@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 14:15+0200\n"
+"POT-Creation-Date: 2026-07-16 14:31+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -398,27 +398,27 @@ msgstr "Oportunidad a 3"
 msgid "Oportunidad a 4"
 msgstr "Oportunidad a 4"
 
-#: app/routes/documento_cambio.py:76
+#: app/routes/documento_cambio.py:89
 msgid "Fechas incorrectas."
 msgstr "Fechas incorrectas."
 
-#: app/routes/documento_cambio.py:80
+#: app/routes/documento_cambio.py:93
 msgid "Selecciona un compañero válido."
 msgstr "Selecciona un compañero válido."
 
-#: app/routes/documento_cambio.py:82
+#: app/routes/documento_cambio.py:95
 msgid "Selecciona un turno válido."
 msgstr "Selecciona un turno válido."
 
-#: app/routes/documento_cambio.py:96
+#: app/routes/documento_cambio.py:109
 msgid "Hoja de cambio creada. Ahora recoge las dos firmas."
 msgstr "Hoja de cambio creada. Ahora recoge las dos firmas."
 
-#: app/routes/documento_cambio.py:140
+#: app/routes/documento_cambio.py:153
 msgid "Falta la firma. Dibújala en el recuadro antes de guardar."
 msgstr "Falta la firma. Dibújala en el recuadro antes de guardar."
 
-#: app/routes/documento_cambio.py:144
+#: app/routes/documento_cambio.py:157
 msgid "Firma guardada."
 msgstr "Firma guardada."
 
@@ -735,6 +735,7 @@ msgstr "Cambio de turnos"
 #: app/templates/auth/perfil_cuenta.html:3 app/templates/auth/recuperar.html:3
 #: app/templates/auth/registro.html:3 app/templates/auth/restablecer.html:3
 #: app/templates/base.html:14 app/templates/calendario/calendario.html:3
+#: app/templates/documento_cambio/lista.html:3
 #: app/templates/documento_cambio/nuevo.html:3
 #: app/templates/documento_cambio/ver.html:3
 #: app/templates/feedback/nuevo.html:3 app/templates/main/cambios.html:3
@@ -1786,10 +1787,56 @@ msgstr "Nadie ha publicado nada este día todavía."
 msgid "Publicar un cambio para este día"
 msgstr "Publicar un cambio para este día"
 
+#: app/templates/documento_cambio/lista.html:3
+#: app/templates/documento_cambio/lista.html:7
+msgid "Mis hojas de cambio"
+msgstr "Mis hojas de cambio"
+
+#: app/templates/documento_cambio/lista.html:15
 #: app/templates/documento_cambio/nuevo.html:3
 #: app/templates/documento_cambio/nuevo.html:7
 msgid "Nueva hoja de cambio"
 msgstr "Nueva hoja de cambio"
+
+#: app/templates/documento_cambio/lista.html:22
+#: app/templates/documento_cambio/ver.html:7
+#, python-format
+msgid "Nº %(numero)s"
+msgstr "Nº %(numero)s"
+
+#: app/templates/documento_cambio/lista.html:24
+#, python-format
+msgid "con %(nombre)s"
+msgstr "con %(nombre)s"
+
+#: app/templates/documento_cambio/lista.html:27
+msgid "Completo"
+msgstr "Completo"
+
+#: app/templates/documento_cambio/lista.html:29
+#: app/templates/documento_cambio/ver.html:13
+msgid "Pendiente de firma"
+msgstr "Pendiente de firma"
+
+#: app/templates/documento_cambio/lista.html:32
+msgid "Factible"
+msgstr "Factible"
+
+#: app/templates/documento_cambio/lista.html:34
+msgid "No factible"
+msgstr "No factible"
+
+#: app/templates/documento_cambio/lista.html:37
+msgid "Ver"
+msgstr "Ver"
+
+#: app/templates/documento_cambio/lista.html:39
+msgid "PDF"
+msgstr "PDF"
+
+#: app/templates/documento_cambio/lista.html:45
+msgid "Todavía no tienes ninguna hoja de cambio. Crea una nueva para empezar."
+msgstr "Todavía no tienes ninguna hoja de cambio. Crea una nueva para empezar."
 
 #: app/templates/documento_cambio/nuevo.html:8
 msgid ""
@@ -1842,11 +1889,6 @@ msgstr "El turno que recibes a cambio"
 msgid "Crear hoja de cambio"
 msgstr "Crear hoja de cambio"
 
-#: app/templates/documento_cambio/ver.html:7
-#, python-format
-msgid "Nº %(numero)s"
-msgstr "Nº %(numero)s"
-
 #: app/templates/documento_cambio/ver.html:10
 msgid "Las dos firmas están recogidas. La hoja de cambio está completa."
 msgstr "Las dos firmas están recogidas. La hoja de cambio está completa."
@@ -1854,10 +1896,6 @@ msgstr "Las dos firmas están recogidas. La hoja de cambio está completa."
 #: app/templates/documento_cambio/ver.html:11
 msgid "Generar PDF"
 msgstr "Generar PDF"
-
-#: app/templates/documento_cambio/ver.html:13
-msgid "Pendiente de firma"
-msgstr "Pendiente de firma"
 
 #: app/templates/documento_cambio/ver.html:17
 msgid "Verificado contra la planilla"

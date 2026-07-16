@@ -295,3 +295,35 @@ def test_ver_muestra_numero_de_documento(db, client):
 
     resp = client.get(f"/documentos-cambio/{documento_id}")
     assert f"Nº {documento_id}".encode("utf-8") in resp.data
+
+
+def test_lista_muestra_documentos_donde_soy_participante(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "hh")
+    claudia = crear_usuario("Claudia Pérez", "claudiahh@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanhh@h.es")
+    otro = crear_usuario("Otro Usuario", "otrohh@h.es")
+    _login(client, claudia.email)
+
+    client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+
+    resp = client.get("/documentos-cambio/")
+    assert resp.status_code == 200
+    assert b"Juan Rodr\xc3\xadguez" in resp.data
+    assert b"Otro Usuario" not in resp.data
+
+    client.get("/auth/logout")
+    _login(client, juan.email)
+    resp = client.get("/documentos-cambio/")
+    assert b"Claudia P\xc3\xa9rez" in resp.data
+
+    client.get("/auth/logout")
+    _login(client, otro.email)
+    resp = client.get("/documentos-cambio/")
+    assert b"Claudia P\xc3\xa9rez" not in resp.data
+    assert b"Juan Rodr\xc3\xadguez" not in resp.data

@@ -4,7 +4,7 @@ from flask import Blueprint, Response, abort, flash, redirect, render_template, 
 from flask_babel import _
 from flask_login import current_user, login_required
 
-from app.models import DocumentoCambio, FranjaHoraria, Unidad, Usuario
+from app.models import DocumentoCambio, FranjaHoraria, ParticipanteDocumentoCambio, Unidad, Usuario
 from app.extensions import db
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
@@ -45,6 +45,19 @@ def _get_documento_validado(documento_id):
     if current_user.id not in ids_participantes:
         abort(403)
     return documento
+
+
+@bp.get("/")
+@login_required
+def lista():
+    documentos = (
+        DocumentoCambio.query
+        .join(ParticipanteDocumentoCambio, ParticipanteDocumentoCambio.documento_id == DocumentoCambio.id)
+        .filter(ParticipanteDocumentoCambio.usuario_id == current_user.id)
+        .order_by(DocumentoCambio.id.desc())
+        .all()
+    )
+    return render_template("documento_cambio/lista.html", documentos=documentos)
 
 
 @bp.route("/nuevo", methods=["GET", "POST"])
