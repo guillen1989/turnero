@@ -85,7 +85,9 @@ def _calcular_trabajas(match):
 
 
 def _partners_confirmados(usuario_id):
-    """Devuelve dict {pub_id: nombres_partners} para publicaciones con match confirmado_total."""
+    """Devuelve dict {pub_id: {"nombres": str, "match_id": int|None}} para
+    publicaciones con match confirmado_total. match_id solo se rellena en
+    matches directo_2 (los únicos con hoja de cambio descargable)."""
     raw = (
         MatchCambio.query
         .join(MatchParticipacion, MatchCambio.id == MatchParticipacion.match_id)
@@ -108,7 +110,10 @@ def _partners_confirmados(usuario_id):
         otras = _otras_participaciones(match, usuario_id)
         if mi and otras:
             nombres = " y ".join(p.publicacion.usuario.nombre for p in otras)
-            result[mi.publicacion_id] = nombres
+            result[mi.publicacion_id] = {
+                "nombres": nombres,
+                "match_id": match.id if match.tipo == "directo_2" else None,
+            }
     return result
 
 

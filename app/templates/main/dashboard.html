@@ -143,6 +143,11 @@
       {% endif %}
       {% if match.estado == 'confirmado_total' %}
       <p class="match-esperando">{{ _('Cambio confirmado por todas las partes.') }}</p>
+      {% if not es_cadena %}
+      <div class="match-acciones">
+        <a href="{{ url_for('matches.hoja_cambio_pdf', match_id=match.id) }}" class="btn btn-secondary btn-sm" target="_blank">{{ _('Descargar hoja de cambio') }}</a>
+      </div>
+      {% endif %}
       {% elif not mi_part.confirmado %}
       <div class="match-acciones">
         <form method="post" action="{{ url_for('matches.confirmar', match_id=match.id) }}" style="display:inline">
@@ -242,7 +247,12 @@
         <p class="match-mensaje">"{{ pub.mensaje }}"</p>
         {% endif %}
         {% if estado_filtro == 'confirmada' and partners.get(pub.id) %}
-        <div class="pub-partner">{{ _('Con:') }} <strong>{{ partners[pub.id] }}</strong></div>
+        <div class="pub-partner">{{ _('Con:') }} <strong>{{ partners[pub.id].nombres }}</strong></div>
+        {% if partners[pub.id].match_id %}
+        <div class="pub-acciones">
+          <a href="{{ url_for('matches.hoja_cambio_pdf', match_id=partners[pub.id].match_id) }}" class="btn btn-secondary btn-sm" target="_blank">{{ _('Descargar hoja de cambio') }}</a>
+        </div>
+        {% endif %}
         {% endif %}
         {% set compat = compat_por_pub.get(pub.id) %}
         {% if compat %}

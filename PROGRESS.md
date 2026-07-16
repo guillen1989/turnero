@@ -72,10 +72,42 @@ el canvas y confirmar con éxito, e intentar confirmar sin dibujar nada
 (el aviso aparece y el modal no se cierra, no se envía el formulario).
 93 tests unitarios + 2 E2E relacionados passing.
 
-Siguiente paso: generar y descargar el PDF de la "hoja de cambio" (nuevo
-`app/services/hoja_cambio.py` con `reportlab`, ruta `GET
-/matches/<id>/hoja-cambio.pdf`, botón en el dashboard cuando el match
-`directo_2` está `confirmado_total`).
+Paso 5 completado: PDF de la hoja de cambio, generado bajo demanda (no al
+confirmar). Nuevo `app/services/hoja_cambio.py::generar_pdf_hoja_cambio(match)`
+(reportlab): réplica simplificada del impreso en papel del hospital
+("Solicitud de cambio de turno o guardia") — por cada participación:
+nombre, hospital/unidad/categoría, turno cedido y turno recibido (fecha +
+franja), fecha de firma y la imagen de la firma dibujada (decodificada
+del PNG en base64 de `firma_data`); al final, el hueco en blanco para el
+"Informe por parte de la supervisora de la unidad" que se sigue
+rellenando a mano tras imprimir. `reportlab` y `pypdf` (este último solo
+para verificar el contenido en tests, extrayendo texto del PDF) añadidos
+a `requirements.txt`.
+
+Ruta `GET /matches/<id>/hoja-cambio.pdf` (`app/routes/matches.py`): 403 si
+no eres participante, 409 si el match no es `directo_2` o no está
+`confirmado_total` (necesita las 2 firmas), si no devuelve el PDF como
+adjunto. Botón "Descargar hoja de cambio" en el dashboard en dos sitios
+según cómo se muestre el match ya confirmado: dentro de la match-card
+(`match.estado == 'confirmado_total'`, caso de publicación multi-turno
+solo parcialmente resuelta) y junto al partner en la pestaña Confirmados
+(caso más común, publicación totalmente resuelta que ya no aparece como
+match-card sino como tarjeta de publicación con "Con: <nombre>") — para
+esto último, `_partners_confirmados` (`app/routes/main.py`) cambia de
+devolver `{pub_id: nombres}` a `{pub_id: {"nombres":..., "match_id":...}}`
+(`match_id` solo en matches `directo_2`, únicos con hoja descargable); su
+único consumidor era esta misma plantilla, así que no rompe nada más.
+
+10 tests nuevos (`test_hoja_cambio.py`: contenido del PDF vía `pypdf`
+—nombres, hospital/unidad/categoría, fechas y franjas—; `test_hoja_cambio_route.py`:
+login, 403, 409 por estado/tipo, 200 con PDF válido para cualquiera de
+las 2 partes) + 2 tests de plantilla (`test_dashboard.py`, uno por cada
+sitio donde aparece el botón). 910 tests unitarios+integración passing
+(suite completa, verificada en una BD de test privada para evitar
+interferencias de otros jobs/worktrees en paralelo — ver nota del paso 3).
+
+Siguiente paso: catálogo i18n (`pybabel extract/update/compile`) para los
+textos nuevos, y verificación final end-to-end.
 
 ## Paso anterior
 perf(db): `publicacion_cambio`, `usuario` y `unidad` no tenían más índice

@@ -457,6 +457,35 @@ def test_dashboard_confirmados_muestra_nombre_partner(client, db):
     assert b"Pedro" in resp.data
 
 
+def test_dashboard_match_directo_confirmado_muestra_boton_hoja_cambio(client, db):
+    """Un match directo ya confirmado por todas las partes muestra el
+    enlace para descargar el PDF de la hoja de cambio."""
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "H1", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = PublicacionCambio(usuario_id=ana.id, estado="confirmada")
+    pub_pedro = PublicacionCambio(usuario_id=pedro.id, estado="confirmada")
+    db.session.add_all([pub_ana, pub_pedro])
+    db.session.flush()
+    tc_ana = TurnoCedido(publicacion_id=pub_ana.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id, estado="resuelto")
+    tc_pedro = TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id, estado="resuelto")
+    db.session.add_all([tc_ana, tc_pedro])
+    db.session.flush()
+    match = MatchCambio(tipo="directo_2", estado="confirmado_total")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_ana.id, turno_cedido_id=tc_ana.id, confirmado=True))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_pedro.id, turno_cedido_id=tc_pedro.id, confirmado=True))
+    db.session.commit()
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.get("/?estado=confirmada")
+    assert f'/matches/{match.id}/hoja-cambio.pdf'.encode() in resp.data
+
+
 def test_contador_activos_ignora_self_matches(client, db):
     """El contador de Activos no cuenta matches donde ambas publicaciones son del mismo usuario."""
     usuario = _usuario_y_login(client)

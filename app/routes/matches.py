@@ -1,9 +1,10 @@
-from flask import Blueprint, abort, flash, redirect, request, url_for
+from flask import Blueprint, Response, abort, flash, redirect, request, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 
 from app.extensions import db
 from app.models import MatchCambio
+from app.services.hoja_cambio import generar_pdf_hoja_cambio
 from app.services.matches import confirmar_participacion, desconfirmar_participacion, rechazar_match
 
 bp = Blueprint("matches", __name__)
@@ -57,3 +58,20 @@ def rechazar(match_id):
     rechazar_match(match, current_user.id)
     flash(_("Has rechazado el cambio."), "info")
     return redirect(url_for("main.index"))
+
+
+@bp.get("/matches/<int:match_id>/hoja-cambio.pdf")
+@login_required
+def hoja_cambio_pdf(match_id):
+    match = db.get_or_404(MatchCambio, match_id)
+    usuario_ids = {p.publicacion.usuario_id for p in match.participaciones}
+    if current_user.id not in usuario_ids:
+        abort(403)
+    if match.tipo != "directo_2" or match.estado != "confirmado_total":
+        abort(409)
+    pdf_bytes = generar_pdf_hoja_cambio(match)
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=hoja-cambio-{match.id}.pdf"},
+    )
