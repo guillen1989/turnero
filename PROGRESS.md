@@ -49,9 +49,33 @@ en paralelo (deadlocks / `UndefinedColumn` vistos en un intento) — se creó
 una BD privada (`turnero_test_firma_confirmacion`, `TEST_DATABASE_URL`)
 para verificar sin interferencias. 898 tests passing.
 
-Siguiente paso: canvas de firma en `dashboard.html` — modal con lienzo
-táctil/ratón que sustituye al submit directo del botón "Confirmar" en
-matches directos (las cadenas siguen con su botón normal, sin firma).
+Paso 4 completado: canvas de firma en `dashboard.html`. El botón
+"Confirmar" de un match `directo_2` deja de enviar el formulario
+directamente (`type="button" onclick="abrirModalFirma(...)"`); abre un
+modal (`#modal-firma`) con un `<canvas id="firma-canvas">` donde se
+dibuja con el dedo o el ratón (eventos `pointerdown/move/up`, unifica
+touch y ratón sin código duplicado). "Firmar y confirmar" exige haber
+dibujado algo (si no, aviso inline y no envía nada — red de seguridad
+real, no solo cosmética); si hay trazo, vuelca el canvas a PNG base64
+(`toDataURL`) en el input oculto `.firma-input` del formulario pendiente y
+lo envía. Las cadenas de 3/4 bandas mantienen el botón de submit normal
+sin modal (`es_cadena` en la plantilla). CSS nuevo (`.modal-box--firma`,
+`.firma-canvas`, `.firma-aviso`) reutilizando el patrón ya existente de
+`.modal-overlay`/`.modal-box` del modal de eliminar.
+
+Verificado con un test de plantilla (`test_dashboard.py`: el HTML de un
+match directo incluye el modal, el canvas y el input oculto) y, sobre
+todo, con 2 tests E2E nuevos (`e2e/test_confirmar_firma.py`) que SÍ
+ejecutan JS real en Chromium vía Playwright — cosa que un test con el
+cliente de Flask no puede comprobar: dibujar un trazo con `page.mouse` en
+el canvas y confirmar con éxito, e intentar confirmar sin dibujar nada
+(el aviso aparece y el modal no se cierra, no se envía el formulario).
+93 tests unitarios + 2 E2E relacionados passing.
+
+Siguiente paso: generar y descargar el PDF de la "hoja de cambio" (nuevo
+`app/services/hoja_cambio.py` con `reportlab`, ruta `GET
+/matches/<id>/hoja-cambio.pdf`, botón en el dashboard cuando el match
+`directo_2` está `confirmado_total`).
 
 ## Paso anterior
 perf(db): `publicacion_cambio`, `usuario` y `unidad` no tenían más índice

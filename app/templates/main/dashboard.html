@@ -147,7 +147,12 @@
       <div class="match-acciones">
         <form method="post" action="{{ url_for('matches.confirmar', match_id=match.id) }}" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% if es_cadena %}
           <button type="submit" class="btn btn-primary btn-sm">{{ _('Confirmar') }}</button>
+          {% else %}
+          <input type="hidden" name="firma" class="firma-input">
+          <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalFirma(this.closest('form'))">{{ _('Confirmar') }}</button>
+          {% endif %}
         </form>
         <form method="post" action="{{ url_for('matches.rechazar', match_id=match.id) }}" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -450,6 +455,20 @@
   </div>
 </div>
 
+<div id="modal-firma" class="modal-overlay modal-hidden" role="dialog" aria-modal="true">
+  <div class="modal-box modal-box--firma">
+    <p class="modal-title">{{ _('Firma para confirmar el cambio') }}</p>
+    <p class="modal-body">{{ _('Dibuja tu firma con el dedo o el ratón. Quedará guardada junto con la confirmación.') }}</p>
+    <canvas id="firma-canvas" class="firma-canvas"></canvas>
+    <p id="firma-aviso" class="firma-aviso" style="display:none">{{ _('Dibuja tu firma antes de continuar.') }}</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="limpiarFirma()">{{ _('Borrar') }}</button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalFirma()">{{ _('Cancelar') }}</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btn-firmar-confirmar">{{ _('Firmar y confirmar') }}</button>
+    </div>
+  </div>
+</div>
+
 <script>
 var _formPendiente = null;
 function abrirModalEliminar(form) {
@@ -470,8 +489,90 @@ document.getElementById('btn-modal-confirmar').addEventListener('click', functio
 document.getElementById('modal-eliminar').addEventListener('click', function (e) {
   if (e.target === this) cerrarModalEliminar();
 });
+
+var _formFirmaPendiente = null;
+var _firmaDibujada = false;
+var _firmaCtx = null;
+
+function _inicializarFirmaCanvas() {
+  var canvas = document.getElementById('firma-canvas');
+  var rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  _firmaCtx = canvas.getContext('2d');
+  _firmaCtx.lineWidth = 2;
+  _firmaCtx.lineCap = 'round';
+  _firmaCtx.strokeStyle = '#111827';
+}
+
+function abrirModalFirma(form) {
+  _formFirmaPendiente = form;
+  document.getElementById('firma-aviso').style.display = 'none';
+  document.getElementById('modal-firma').classList.remove('modal-hidden');
+  _inicializarFirmaCanvas();
+  _firmaDibujada = false;
+}
+
+function cerrarModalFirma() {
+  _formFirmaPendiente = null;
+  document.getElementById('modal-firma').classList.add('modal-hidden');
+}
+
+function limpiarFirma() {
+  if (_firmaCtx) {
+    var canvas = document.getElementById('firma-canvas');
+    _firmaCtx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  _firmaDibujada = false;
+  document.getElementById('firma-aviso').style.display = 'none';
+}
+
+(function () {
+  var canvas = document.getElementById('firma-canvas');
+  var dibujando = false;
+
+  function posicion(e) {
+    var rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    dibujando = true;
+    _firmaDibujada = true;
+    var p = posicion(e);
+    _firmaCtx.beginPath();
+    _firmaCtx.moveTo(p.x, p.y);
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!dibujando) return;
+    var p = posicion(e);
+    _firmaCtx.lineTo(p.x, p.y);
+    _firmaCtx.stroke();
+  });
+  window.addEventListener('pointerup', function () { dibujando = false; });
+})();
+
+document.getElementById('btn-firmar-confirmar').addEventListener('click', function () {
+  if (!_firmaDibujada) {
+    document.getElementById('firma-aviso').style.display = 'block';
+    return;
+  }
+  var canvas = document.getElementById('firma-canvas');
+  var dataUrl = canvas.toDataURL('image/png');
+  if (_formFirmaPendiente) {
+    _formFirmaPendiente.querySelector('.firma-input').value = dataUrl;
+    _formFirmaPendiente.submit();
+  }
+});
+document.getElementById('modal-firma').addEventListener('click', function (e) {
+  if (e.target === this) cerrarModalFirma();
+});
+
 document.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape') cerrarModalEliminar();
+  if (e.key === 'Escape') {
+    cerrarModalEliminar();
+    cerrarModalFirma();
+  }
 });
 </script>
 

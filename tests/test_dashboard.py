@@ -115,6 +115,36 @@ def test_dashboard_tab_compatible_muestra_match_propuesto(client, db):
     assert b"Rechazar" in resp.data
 
 
+def test_dashboard_match_directo_confirmar_abre_modal_de_firma(client, db):
+    """El botón Confirmar de un match directo no envía el form directamente:
+    abre el modal de firma (canvas) y es ese modal el que rellena el input
+    oculto `firma` y hace el submit."""
+    ana = _usuario_y_login(client, email="ana@test.es")
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = _publicacion(ana, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
+    pub_pedro = _publicacion(pedro, franja, fecha_cedida=date(2026, 9, 2), fecha_aceptada=date(2026, 9, 1))
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    tc_ana = pub_ana.turnos_cedidos[0]
+    tc_pedro = pub_pedro.turnos_cedidos[0]
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_ana.id, turno_cedido_id=tc_ana.id))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_pedro.id, turno_cedido_id=tc_pedro.id))
+    db.session.commit()
+
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert 'id="modal-firma"' in html
+    assert 'id="firma-canvas"' in html
+    assert 'onclick="abrirModalFirma(this.closest(\'form\'))"' in html
+    assert '<input type="hidden" name="firma" class="firma-input">' in html
+
+
 def test_dashboard_activos_muestra_pub_sin_match(client, db):
     """La pestaña por defecto (Activos) muestra publicaciones sin match junto con los compatibles."""
     usuario = _usuario_y_login(client)
