@@ -1111,3 +1111,4 @@ body {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
 }
+.documento-numero { font-size: 0.9rem; font-weight: normal; color: #6b7280; }

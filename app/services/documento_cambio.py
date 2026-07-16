@@ -202,6 +202,7 @@ def generar_pdf_documento(documento):
         participante_solicitante=participante_solicitante,
         companero=companero,
         fecha_documento=documento.fecha_creacion.date(),
+        numero_documento=documento.id,
         meses=_MESES,
         firma_solicitante=firmas_por_usuario.get(solicitante.id),
         firma_companero=firmas_por_usuario.get(companero.id),

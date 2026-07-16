@@ -4,17 +4,37 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-El usuario pidió abordar, en el orden que mejor convenga, todos estos
-pendientes seguidos: (1) recomprobar factibilidad en la 2ª firma — HECHO,
+Cola de pendientes que el usuario pidió abordar seguidos, en el orden
+que mejor convenga: (1) recomprobar factibilidad en la 2ª firma — HECHO,
 (2) firma cruzada entre cuentas reales — HECHO, (3) número de cambio
-junto a la fecha, (4) mejorar el PDF para que sea aún más fiel al
-original, (5) listado de "mis hojas de cambio" en la cuenta de cada
+junto a la fecha — HECHO, (4) mejorar el PDF para que sea aún más fiel
+al original, (5) listado de "mis hojas de cambio" en la cuenta de cada
 usuario (guardar/consultar documentos, regenerar PDF cuando haga falta),
 (6) enviar los cambios por email a los implicados, (7) cuenta de
 supervisora con acceso a todos los cambios, (8) botón autorizar/denegar
 en la cuenta de supervisora que decide si se vuelca a las planillas,
 (9) cadenas a 3/4 bandas y juntes de noches, (10) enganche con el motor
-de matching vía `match_id`. Siguiente: (3) número de cambio.
+de matching vía `match_id`. Siguiente: (4) mejorar el PDF.
+
+## Paso anterior
+feat(documento-cambio): número de cambio junto a la fecha — pedido
+explícito del usuario para que la ayudante pueda ordenar los cambios
+por orden cronológico exacto de creación, no solo por el día del cambio
+(varios documentos del mismo día quedan así desambiguados). No hizo
+falta ninguna columna nueva: `documento.id` (PK autoincremental de
+Postgres) ya crece en el mismo orden que `fecha_creacion`, así que solo
+se expone en la UI (`ver.html`, junto al título) y en el PDF (línea de
+fecha, "Nº X — Madrid, ...", tal y como pidió: junto a la fecha). 1 test
+nuevo · verificado visualmente con `pdftoppm`.
+
+Nota de depuración (no es un bug real, para no repetir la confusión):
+al probar `generar_pdf_documento` con un script suelto fuera de un
+request real, `gettext` lanzó `RuntimeError: Working outside of request
+context` porque `_get_locale` lee `request.accept_languages`. En
+producción esto nunca pasa: el servicio solo se llama desde las rutas
+de `documento_cambio.py`, siempre dentro de una request real. Para
+probar manualmente con un script hay que usar
+`app.test_request_context()`, no solo `app.app_context()`.
 
 ## Paso anterior
 feat(documento-cambio): firma cruzada entre cuentas reales — cada

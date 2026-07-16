@@ -276,3 +276,22 @@ def test_companero_ve_aviso_de_documento_pendiente(db, client):
     resp = client.get("/avisos")
     assert resp.status_code == 200
     assert b"Hoja de cambio" in resp.data
+
+
+def test_ver_muestra_numero_de_documento(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "gg")
+    claudia = crear_usuario("Claudia Pérez", "claudiagg@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juangg@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+
+    resp = client.get(f"/documentos-cambio/{documento_id}")
+    assert f"Nº {documento_id}".encode("utf-8") in resp.data

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 14:05+0200\n"
+"POT-Creation-Date: 2026-07-16 14:15+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1785,6 +1785,11 @@ msgstr ""
 
 #: app/templates/documento_cambio/nuevo.html:61
 msgid "Crear hoja de cambio"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:7
+#, python-format
+msgid "Nº %(numero)s"
 msgstr ""
 
 #: app/templates/documento_cambio/ver.html:10
