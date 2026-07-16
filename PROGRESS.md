@@ -4,11 +4,32 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Pendiente: comprobación de factibilidad contra planillas (de momento se
-genera el documento sin verificar, decisión consciente para tener un
-prototipo que enseñar a los jefes) y actualizar `ESPECIFICACION.md` (ver
-nota de varios pasos atrás). Sin siguiente paso concreto decidido más
-allá de eso — a definir con el usuario.
+Pendiente: confirmar con el usuario si el segundo intento de
+`nixpacks.toml` (con `aptPkgs` en vez de `nixPkgs`, ver "Paso anterior")
+resuelve el 500 en "Generar PDF" en Railway — no se puede verificar
+desde este entorno de desarrollo, solo con el deploy real. Además:
+comprobación de factibilidad contra planillas (de momento se genera el
+documento sin verificar) y actualizar `ESPECIFICACION.md` (ver nota de
+varios pasos atrás).
+
+## Paso anterior
+fix(documento-cambio): `nixpacks.toml` con `nixPkgs` no arregló el 500
+de "Generar PDF" — mismo `OSError: cannot load library
+'libgobject-2.0-0'` que antes de añadirlo (confirmado en los logs de
+Railway que pegó el usuario), pero esta vez el import perezoso funcionó
+tal y como se diseñó: la app arrancó bien (gunicorn con sus 3 workers
+arriba, sin crash-loop) y solo falló la petición a `/documentos-cambio/
+<id>/pdf` con un 500 — justo el comportamiento buscado. Causa probable
+de que `nixPkgs` no bastara: los paquetes Nix no quedan en el path que
+usa el linker dinámico (`dlopen`/cffi) del runtime de Railway, solo en
+el `PATH` de binarios. Cambiado `nixpacks.toml` a `aptPkgs` (instala en
+rutas de sistema estándar `/usr/lib/...`, que es donde `dlopen` ya busca
+sin configuración extra) con los mismos paquetes que recomienda la
+documentación oficial de WeasyPrint para Debian/Ubuntu
+(`libpango-1.0-0`, `libpangoft2-1.0-0`, `libpangocairo-1.0-0`,
+`libcairo2`, `libgdk-pixbuf2.0-0`, `libglib2.0-0`, `shared-mime-info`,
+`fonts-dejavu-core`). Pendiente confirmar en el próximo deploy si esto
+sí resuelve el problema.
 
 ## Paso anterior
 fix(documento-cambio): reintroducido el PDF (revertido el revert) con
