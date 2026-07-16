@@ -14,6 +14,38 @@ def _participacion_del_usuario(match, usuario_id):
     return None
 
 
+def calcular_trabajas(match):
+    """Para cada participación devuelve un dict {fecha, franja} del turno que trabaja,
+    o None si no trabaja nada (coincidencia parcial).
+
+    Regla: en el ciclo A→B→C→A cada participante trabaja el turno cedido del
+    participante anterior.  Para coincidencias parciales (regalo/petición), quien
+    tiene turno_aceptado ya lo trabaja explícitamente; quien no tiene ningún
+    'trabaja' recibe None.
+    """
+    partes = sorted(match.participaciones, key=lambda p: p.id)
+    n = len(partes)
+    trabajas = {}
+    for i, part in enumerate(partes):
+        if part.turno_aceptado:
+            ta = part.turno_aceptado
+            cualquier = ta.cualquier_franja
+            trabajas[part.id] = {
+                "fecha": ta.fecha.strftime("%d/%m/%Y"),
+                "franja": None if cualquier else ta.franja_horaria.nombre,
+            }
+        elif part.turno_cedido:
+            prev = partes[(i - 1) % n]
+            tc = prev.turno_cedido  # None para coincidencias parciales
+            trabajas[part.id] = (
+                {"fecha": tc.fecha.strftime("%d/%m/%Y"), "franja": tc.franja_horaria.nombre}
+                if tc else None
+            )
+        else:
+            trabajas[part.id] = None
+    return trabajas
+
+
 def confirmar_participacion(match, usuario_id):
     """
     Marca la participación del usuario como confirmada.

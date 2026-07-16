@@ -43,6 +43,35 @@
             <button type="submit" class="btn btn-sm btn-ghost aviso-btn-borrar" title="{{ _('Borrar aviso') }}">✕</button>
           </form>
         </div>
+      {% elif aviso.tipo in ('confirmado_total', 'rechazo') and aviso.match %}
+        <div class="aviso-info">
+          {% if aviso.tipo == 'confirmado_total' %}
+          <span class="aviso-tipo tipo-badge tipo-badge--confirmado_total">{{ _('Cambio confirmado') }}</span>
+          {% else %}
+          <span class="aviso-tipo tipo-badge tipo-badge--rechazo">{{ _('Cambio rechazado') }}</span>
+          {% endif %}
+          <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        <div class="aviso-cambio-detalle">
+          {% for p in aviso.match.participaciones|sort(attribute='id') %}
+          <p class="aviso-mensaje">
+            <strong>{{ p.publicacion.usuario.nombre }}</strong>
+            {% if p.turno_cedido %}
+            {{ _('libra:') }} {{ p.turno_cedido.fecha.strftime('%d/%m/%Y') }} ({{ p.turno_cedido.franja_horaria.nombre }})
+            {% endif %}
+            {% set trabaja = trabajas_por_match.get(aviso.match_id, {}).get(p.id) %}
+            {% if trabaja %}
+            — {{ _('trabaja:') }} {{ trabaja.fecha }} ({{ trabaja.franja or _('cualquier turno') }})
+            {% endif %}
+          </p>
+          {% endfor %}
+        </div>
+        <div class="aviso-actions">
+          <form method="post" action="{{ url_for('notificaciones.borrar_aviso', notif_id=aviso.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-ghost aviso-btn-borrar" title="{{ _('Borrar aviso') }}">✕</button>
+          </form>
+        </div>
       {% elif aviso.publicacion %}
         <div class="aviso-info">
           <span class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</span>

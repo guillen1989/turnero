@@ -32,6 +32,27 @@ def _url_documento(documento):
     return url_for("documento_cambio.ver", documento_id=documento.id)
 
 
+def _resumen_cambio(documento):
+    """
+    Resumen legible de quién hace el cambio y qué día/turno libra y trabaja
+    cada participante. Se incluye en los avisos de autorización/denegación
+    para que el destinatario vea los datos del cambio sin tener que entrar
+    a la hoja.
+    """
+    return " ".join(
+        _(
+            "%(nombre)s libra %(turno_cede)s del %(fecha_cede)s y trabaja "
+            "%(turno_recibe)s del %(fecha_recibe)s.",
+            nombre=p.usuario.nombre,
+            turno_cede=p.turno_cede_franja.nombre,
+            fecha_cede=p.turno_cede_fecha.strftime("%d/%m/%Y"),
+            turno_recibe=p.turno_recibe_franja.nombre,
+            fecha_recibe=p.turno_recibe_fecha.strftime("%d/%m/%Y"),
+        )
+        for p in documento.participantes
+    )
+
+
 def _notificar(usuario, documento, tipo, titulo, cuerpo):
     db.session.add(Notificacion(usuario=usuario, documento_cambio=documento, tipo=tipo, mensaje=cuerpo))
     if usuario.push_activo:
@@ -344,11 +365,13 @@ def autorizar_documento(documento, supervisora):
     documento.fecha_decision_supervisora = datetime.now(timezone.utc)
     volcar_documento_a_planillas(documento)
 
+    resumen = _resumen_cambio(documento)
     for p in documento.participantes:
         _notificar(
             p.usuario, documento, "documento_cambio_autorizado",
             _("Cambio autorizado"),
-            _("La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha aplicado a tu planilla.", numero=documento.numero_unidad),
+            _("La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha aplicado a tu planilla.", numero=documento.numero_unidad)
+            + " " + resumen,
         )
     db.session.commit()
     return documento
@@ -365,6 +388,7 @@ def denegar_documento(documento, supervisora, motivo):
     documento.fecha_decision_supervisora = datetime.now(timezone.utc)
     documento.motivo_denegacion = motivo
 
+    resumen = _resumen_cambio(documento)
     for p in documento.participantes:
         _notificar(
             p.usuario, documento, "documento_cambio_denegado",
@@ -372,7 +396,8 @@ def denegar_documento(documento, supervisora, motivo):
             _(
                 "La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: %(motivo)s",
                 numero=documento.numero_unidad, motivo=motivo,
-            ),
+            )
+            + " " + resumen,
         )
     db.session.commit()
     return documento

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 15:31+0200\n"
+"POT-Creation-Date: 2026-07-16 19:13+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -376,13 +376,13 @@ msgstr ""
 
 #: app/routes/calendario.py:86 app/templates/main/cambios.html:102
 #: app/templates/main/cambios.html:213 app/templates/main/dashboard.html:339
-#: app/templates/notificaciones/avisos.html:54
+#: app/templates/notificaciones/avisos.html:83
 msgid "Oportunidad a 3"
 msgstr ""
 
 #: app/routes/calendario.py:87 app/templates/main/cambios.html:103
 #: app/templates/main/cambios.html:204 app/templates/main/dashboard.html:339
-#: app/templates/notificaciones/avisos.html:56
+#: app/templates/notificaciones/avisos.html:85
 msgid "Oportunidad a 4"
 msgstr ""
 
@@ -402,23 +402,23 @@ msgstr ""
 msgid "Hoja de cambio creada. Ahora recoge las dos firmas."
 msgstr ""
 
-#: app/routes/documento_cambio.py:178
+#: app/routes/documento_cambio.py:182
 msgid "Falta la firma. Dibújala en el recuadro antes de guardar."
 msgstr ""
 
-#: app/routes/documento_cambio.py:182
+#: app/routes/documento_cambio.py:186
 msgid "Firma guardada."
 msgstr ""
 
-#: app/routes/documento_cambio.py:220
+#: app/routes/documento_cambio.py:224
 msgid "Cambio autorizado y aplicado a las planillas."
 msgstr ""
 
-#: app/routes/documento_cambio.py:230
+#: app/routes/documento_cambio.py:234
 msgid "Indica el motivo de la denegación."
 msgstr ""
 
-#: app/routes/documento_cambio.py:233
+#: app/routes/documento_cambio.py:237
 msgid "Cambio denegado."
 msgstr ""
 
@@ -476,11 +476,11 @@ msgstr ""
 msgid "Has rechazado el cambio."
 msgstr ""
 
-#: app/routes/notificaciones.py:45 app/routes/notificaciones.py:54
+#: app/routes/notificaciones.py:73 app/routes/notificaciones.py:82
 msgid "Preferencias de notificaciones guardadas."
 msgstr ""
 
-#: app/routes/notificaciones.py:62
+#: app/routes/notificaciones.py:90
 msgid "No puedes suscribirte a tus propias publicaciones."
 msgstr ""
 
@@ -692,51 +692,58 @@ msgstr ""
 msgid "Turno «%(nombre)s» añadido."
 msgstr ""
 
-#: app/services/documento_cambio.py:47 app/services/documento_cambio.py:134
+#: app/services/documento_cambio.py:44
+#, python-format
+msgid ""
+"%(nombre)s libra %(turno_cede)s del %(fecha_cede)s y trabaja "
+"%(turno_recibe)s del %(fecha_recibe)s."
+msgstr ""
+
+#: app/services/documento_cambio.py:68 app/services/documento_cambio.py:155
 #: app/templates/email/documento_cambio_completo.html:2
 msgid "Hoja de cambio completa"
 msgstr ""
 
-#: app/services/documento_cambio.py:81
+#: app/services/documento_cambio.py:102
 msgid "Hoja de cambio pendiente de firma"
 msgstr ""
 
-#: app/services/documento_cambio.py:82
+#: app/services/documento_cambio.py:103
 #, python-format
 msgid "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas."
 msgstr ""
 
-#: app/services/documento_cambio.py:135
+#: app/services/documento_cambio.py:156
 msgid "Las dos firmas están recogidas. La hoja de cambio ya está completa."
 msgstr ""
 
-#: app/services/documento_cambio.py:147
+#: app/services/documento_cambio.py:168
 msgid "Falta tu firma en la hoja de cambio"
 msgstr ""
 
-#: app/services/documento_cambio.py:148
+#: app/services/documento_cambio.py:169
 #, python-format
 msgid ""
 "%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
 "cambio."
 msgstr ""
 
-#: app/services/documento_cambio.py:267
+#: app/services/documento_cambio.py:289
 msgid "Cambio autorizado"
 msgstr ""
 
-#: app/services/documento_cambio.py:268
+#: app/services/documento_cambio.py:290
 #, python-format
 msgid ""
 "La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha "
 "aplicado a tu planilla."
 msgstr ""
 
-#: app/services/documento_cambio.py:288
+#: app/services/documento_cambio.py:312
 msgid "Cambio denegado"
 msgstr ""
 
-#: app/services/documento_cambio.py:290
+#: app/services/documento_cambio.py:314
 #, python-format
 msgid ""
 "La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: "
@@ -1753,9 +1760,9 @@ msgstr ""
 
 #: app/templates/calendario/calendario.html:135
 #: app/templates/main/dashboard.html:347
-#: app/templates/notificaciones/avisos.html:85
-#: app/templates/notificaciones/avisos.html:87
-#: app/templates/notificaciones/avisos.html:89
+#: app/templates/notificaciones/avisos.html:114
+#: app/templates/notificaciones/avisos.html:116
+#: app/templates/notificaciones/avisos.html:118
 msgid "Ver publicación"
 msgstr ""
 
@@ -2371,7 +2378,7 @@ msgid "Me interesa"
 msgstr ""
 
 #: app/templates/main/cambios.html:283
-#: app/templates/notificaciones/avisos.html:50
+#: app/templates/notificaciones/avisos.html:79
 msgid "Contraoferta"
 msgstr ""
 
@@ -2949,16 +2956,19 @@ msgstr ""
 #: app/templates/main/dashboard.html:126 app/templates/main/dashboard.html:134
 #: app/templates/main/dashboard.html:219 app/templates/main/dashboard.html:281
 #: app/templates/main/dashboard.html:297 app/templates/main/dashboard.html:305
+#: app/templates/notificaciones/avisos.html:64
 msgid "cualquier turno"
 msgstr ""
 
 #: app/templates/main/dashboard.html:94 app/templates/main/dashboard.html:122
 #: app/templates/main/dashboard.html:130
+#: app/templates/notificaciones/avisos.html:60
 msgid "libra:"
 msgstr ""
 
 #: app/templates/main/dashboard.html:101 app/templates/main/dashboard.html:126
 #: app/templates/main/dashboard.html:134
+#: app/templates/notificaciones/avisos.html:64
 msgid "trabaja:"
 msgstr ""
 
@@ -3228,8 +3238,9 @@ msgstr ""
 
 #: app/templates/notificaciones/avisos.html:28
 #: app/templates/notificaciones/avisos.html:43
-#: app/templates/notificaciones/avisos.html:96
-#: app/templates/notificaciones/avisos.html:107
+#: app/templates/notificaciones/avisos.html:72
+#: app/templates/notificaciones/avisos.html:125
+#: app/templates/notificaciones/avisos.html:136
 msgid "Borrar aviso"
 msgstr ""
 
@@ -3237,11 +3248,19 @@ msgstr ""
 msgid "Ver hoja de cambio"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:52
+#: app/templates/notificaciones/avisos.html:49
+msgid "Cambio confirmado"
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:51
+msgid "Cambio rechazado"
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:81
 msgid "Alerta"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:66
+#: app/templates/notificaciones/avisos.html:95
 #, python-format
 msgid ""
 "%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran del "
@@ -3249,7 +3268,7 @@ msgid ""
 "si un compañero la acepta, el cambio a 3 se cerrará automáticamente."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:69
+#: app/templates/notificaciones/avisos.html:98
 #, python-format
 msgid ""
 "%(nombre)s forma parte de una cadena de cambio a 4 bandas que casi "
@@ -3257,35 +3276,35 @@ msgid ""
 "compañero la acepta, el cambio a 4 se cerrará automáticamente."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:74
+#: app/templates/notificaciones/avisos.html:103
 #, python-format
 msgid "Alerta: %(nombre)s"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:76
+#: app/templates/notificaciones/avisos.html:105
 msgid "Alerta de búsqueda guardada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:83
+#: app/templates/notificaciones/avisos.html:112
 msgid "Ver resultados"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:92
+#: app/templates/notificaciones/avisos.html:121
 msgid "Publicación ya cerrada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:104
+#: app/templates/notificaciones/avisos.html:133
 msgid "Publicación eliminada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:115
+#: app/templates/notificaciones/avisos.html:144
 msgid ""
 "No tienes avisos todavía. Sigue a compañeros desde el panel de "
 "Notificaciones para recibir avisos cuando publiquen, o recibe "
 "contraofertas a tus publicaciones de cambio."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:119
+#: app/templates/notificaciones/avisos.html:148
 msgid "Gestionar notificaciones y seguimientos"
 msgstr ""
 
