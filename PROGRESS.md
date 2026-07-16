@@ -4,6 +4,36 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+perf(matching): las 5 búsquedas de matching que se lanzan en cada
+publish/editar/contraoferta (`buscar_matches_para`, `buscar_cadenas_3_para`,
+`buscar_cadenas_4_para`, `buscar_cadenas_parciales_4_para`,
+`buscar_avisos_interes_para`, en `app/matching/service.py`) repetían cada
+una su propia llamada a `_candidatas_base` (misma consulta + 2
+`selectinload`) en vez de compartir un único cálculo — 5x consultas
+redundantes por request. Segundo paso del plan de 4 para resolver los
+cuelgues de producción (ver paso anterior). Fix: nueva función pública
+`candidatas_activas_para(publicacion)` (antes lógica repetida al principio
+de cada búsqueda) y parámetro opcional `candidatas=None` en las 5
+funciones — si se pasa ya calculado se reutiliza, si no se calcula como
+antes (así los tests unitarios existentes, que llaman con un solo
+argumento, siguen funcionando sin cambios). Las 3 rutas que hacían este
+patrón (`nueva`, `editar` y `contraoferta` en `app/routes/publicaciones.py`)
+calculan ahora `candidatas` una vez y la pasan a las 5 búsquedas.
+`buscar_sinteticas_que_coinciden_con` queda fuera: consulta sintéticas,
+no candidatas normales. Nuevo test de regresión
+(`test_publicar_calcula_candidatas_una_sola_vez` en
+`test_integracion_matching.py`) que espía `_candidatas_base` con
+`unittest.mock.patch.object(..., wraps=...)` y comprueba `call_count == 1`
+tras un publish real vía el cliente HTTP — confirmado en rojo sin el fix
+(5 llamadas) y en verde con el fix aplicado · 890 tests passing.
+
+Quedan 2 pasos del plan: 3) gunicorn con varios workers en el `Procfile`
+(red de seguridad de infraestructura: que un request lento no bloquee
+toda la app, ya que solo hay 1 worker síncrono hoy) y 4) añadir los
+índices que faltan en `publicacion_cambio`/`usuario`/`unidad` (hoy solo
+tienen la PK).
+
+## Paso anterior
 perf(busquedas): corregido un N+1 en `notificar_busquedas_guardadas`
 (`app/services/busquedas_guardadas.py`) — por cada `BusquedaGuardada`
 candidata que coincidía con una publicación nueva, se hacía un
