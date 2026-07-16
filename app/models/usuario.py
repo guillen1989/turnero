@@ -21,6 +21,7 @@ class Usuario(UserMixin, db.Model):
     notif_confirmado_total = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     notif_publicacion = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     notif_busqueda_guardada = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
+    notif_email_documento_cambio = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     mostrar_oportunidad_3 = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     mostrar_oportunidad_4 = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     es_admin = db.Column(db.Boolean, nullable=False, default=False, server_default="false")

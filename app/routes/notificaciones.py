@@ -46,6 +46,15 @@ def guardar():
     return redirect(url_for("notificaciones.panel"))
 
 
+@bp.post("/notificaciones/guardar-email")
+@login_required
+def guardar_email():
+    current_user.notif_email_documento_cambio = "notif_email_documento_cambio" in request.form
+    db.session.commit()
+    flash(_("Preferencias de notificaciones guardadas."), "success")
+    return redirect(url_for("notificaciones.panel"))
+
+
 @bp.post("/notificaciones/suscribir/<int:uid>")
 @login_required
 def suscribir(uid):

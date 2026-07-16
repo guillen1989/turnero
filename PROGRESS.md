@@ -11,7 +11,11 @@ junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (parcial), (5)
 listado de "mis hojas de cambio" — HECHO, (6) enviar los cambios por
 email a los implicados — HECHO, (7) cuenta de supervisora con acceso a
 todos los cambios — HECHO, (8) botón autorizar/denegar en la cuenta de
-supervisora, con motivo obligatorio al denegar — HECHO. Pausado
+supervisora, con motivo obligatorio al denegar — HECHO. Además, dos
+peticiones sueltas del usuario ya resueltas: motivo obligatorio al
+denegar (visible para los implicados) y el email de hoja de cambio
+completa ahora es opcional por usuario (toggle en
+`/notificaciones`) — HECHO. Pausado
 explícitamente aquí a petición del usuario (2026-07-16): **(9) cadenas
 a 3/4 bandas y juntes de noches y (10) enganche con el motor de
 matching NO se implementan por ahora** — son bastante más grandes que
@@ -24,6 +28,20 @@ cadena a 3 a mano y qué campos necesita un junte de noches. La nota
 sobre "confirmar un match aparejado con firmar" (2026-07-16, ver el
 propio texto de la conversación si hace falta el detalle completo) sigue
 siendo válida para cuando se retome el paso 10.
+
+## Paso anterior
+feat(documento-cambio): el email de hoja de cambio completa es opcional
+por usuario — nuevo campo `Usuario.notif_email_documento_cambio`
+(Boolean, `server_default='true'`, migración `a18f63631b51`, seguro en
+un solo paso al llevar `server_default`). `firmar_documento` solo llama
+a `_enviar_email_completo` para los participantes que lo tengan
+activado. Nuevo toggle independiente en `/notificaciones` (fuera del
+bloque `{% if current_user.push_activo %}`, porque no depende del push:
+un usuario puede tener el push desactivado y aun así querer el email, o
+viceversa), con su propia ruta `POST /notificaciones/guardar-email` en
+vez de mezclarlo con el formulario de push. 4 tests nuevos (servicio:
+no se envía si está desactivado; rutas: activar/desactivar/no toca
+push) · 78 tests en la suite ampliada · catálogo i18n actualizado.
 
 ## Paso anterior
 feat(documento-cambio): motivo obligatorio al denegar — nuevo campo

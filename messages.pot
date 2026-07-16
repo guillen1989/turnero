@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 14:07+0200\n"
+"POT-Creation-Date: 2026-07-16 15:31+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,17 +25,17 @@ msgstr ""
 msgid "— Sin categoría —"
 msgstr ""
 
-#: app/routes/admin.py:138 app/routes/admin.py:205 app/routes/auth.py:90
+#: app/routes/admin.py:138 app/routes/admin.py:206 app/routes/auth.py:90
 #: app/routes/auth.py:346
 msgid "Selecciona un hospital o escribe el nombre de uno nuevo."
 msgstr ""
 
-#: app/routes/admin.py:141 app/routes/admin.py:208 app/routes/auth.py:93
+#: app/routes/admin.py:141 app/routes/admin.py:209 app/routes/auth.py:93
 #: app/routes/auth.py:349
 msgid "Selecciona una unidad o escribe el nombre de una nueva."
 msgstr ""
 
-#: app/routes/admin.py:144 app/routes/admin.py:211 app/routes/auth.py:96
+#: app/routes/admin.py:144 app/routes/admin.py:212 app/routes/auth.py:96
 #: app/routes/auth.py:352
 msgid "Indica una categoría o escribe una nueva."
 msgstr ""
@@ -44,212 +44,212 @@ msgstr ""
 msgid "La contraseña es obligatoria para usuarios nuevos."
 msgstr ""
 
-#: app/routes/admin.py:167
+#: app/routes/admin.py:168
 msgid "Usuario creado."
 msgstr ""
 
-#: app/routes/admin.py:172
+#: app/routes/admin.py:173
 msgid "Nuevo usuario"
 msgstr ""
 
-#: app/routes/admin.py:229
+#: app/routes/admin.py:231
 msgid "Usuario actualizado."
 msgstr ""
 
-#: app/routes/admin.py:258
+#: app/routes/admin.py:260
 msgid "Editar usuario"
 msgstr ""
 
-#: app/routes/admin.py:277
+#: app/routes/admin.py:279
 msgid "No puedes eliminarte a ti mismo."
 msgstr ""
 
-#: app/routes/admin.py:285
+#: app/routes/admin.py:287
 msgid "Usuario eliminado."
 msgstr ""
 
-#: app/routes/admin.py:300
+#: app/routes/admin.py:302
 msgid "País creado."
 msgstr ""
 
-#: app/routes/admin.py:314
+#: app/routes/admin.py:316
 msgid "País actualizado."
 msgstr ""
 
-#: app/routes/admin.py:316
+#: app/routes/admin.py:318
 msgid "Editar país"
 msgstr ""
 
-#: app/routes/admin.py:324
+#: app/routes/admin.py:326
 msgid "No se puede eliminar: el país tiene provincias asociadas."
 msgstr ""
 
-#: app/routes/admin.py:328
+#: app/routes/admin.py:330
 msgid "País eliminado."
 msgstr ""
 
-#: app/routes/admin.py:345
+#: app/routes/admin.py:347
 msgid "Provincia creada."
 msgstr ""
 
-#: app/routes/admin.py:361
+#: app/routes/admin.py:363
 msgid "Provincia actualizada."
 msgstr ""
 
-#: app/routes/admin.py:365
+#: app/routes/admin.py:367
 msgid "Editar provincia"
 msgstr ""
 
-#: app/routes/admin.py:373
+#: app/routes/admin.py:375
 msgid "No se puede eliminar: la provincia tiene ciudades asociadas."
 msgstr ""
 
-#: app/routes/admin.py:377
+#: app/routes/admin.py:379
 msgid "Provincia eliminada."
 msgstr ""
 
-#: app/routes/admin.py:394
+#: app/routes/admin.py:396
 msgid "Ciudad creada."
 msgstr ""
 
-#: app/routes/admin.py:410
+#: app/routes/admin.py:412
 msgid "Ciudad actualizada."
 msgstr ""
 
-#: app/routes/admin.py:414
+#: app/routes/admin.py:416
 msgid "Editar ciudad"
 msgstr ""
 
-#: app/routes/admin.py:422
+#: app/routes/admin.py:424
 msgid "No se puede eliminar: la ciudad tiene hospitales asociados."
 msgstr ""
 
-#: app/routes/admin.py:426
+#: app/routes/admin.py:428
 msgid "Ciudad eliminada."
 msgstr ""
 
-#: app/routes/admin.py:438 app/routes/admin.py:455
+#: app/routes/admin.py:440 app/routes/admin.py:457
 msgid "— Sin ciudad —"
 msgstr ""
 
-#: app/routes/admin.py:444
+#: app/routes/admin.py:446
 msgid "Hospital creado."
 msgstr ""
 
-#: app/routes/admin.py:461
+#: app/routes/admin.py:463
 msgid "Hospital actualizado."
 msgstr ""
 
-#: app/routes/admin.py:465
+#: app/routes/admin.py:467
 msgid "Editar hospital"
 msgstr ""
 
-#: app/routes/admin.py:475
+#: app/routes/admin.py:477
 msgid "No se puede eliminar: alguna de sus unidades tiene usuarios asociados."
 msgstr ""
 
-#: app/routes/admin.py:483
+#: app/routes/admin.py:485
 #, python-format
 msgid "Hospital eliminado junto con sus %(n)s unidades."
 msgstr ""
 
-#: app/routes/admin.py:485
+#: app/routes/admin.py:487
 msgid "Hospital eliminado."
 msgstr ""
 
-#: app/routes/admin.py:505
+#: app/routes/admin.py:507
 msgid "Unidad creada."
 msgstr ""
 
-#: app/routes/admin.py:524
+#: app/routes/admin.py:526
 msgid "Unidad actualizada."
 msgstr ""
 
-#: app/routes/admin.py:529
+#: app/routes/admin.py:531
 msgid "Editar unidad"
 msgstr ""
 
-#: app/routes/admin.py:537
+#: app/routes/admin.py:539
 msgid "No se puede eliminar: la unidad tiene usuarios asociados."
 msgstr ""
 
-#: app/routes/admin.py:541
+#: app/routes/admin.py:543
 msgid "Unidad eliminada."
 msgstr ""
 
-#: app/routes/admin.py:556
+#: app/routes/admin.py:558
 msgid "Categoría creada."
 msgstr ""
 
-#: app/routes/admin.py:570
+#: app/routes/admin.py:572
 msgid "Categoría actualizada."
 msgstr ""
 
-#: app/routes/admin.py:572
+#: app/routes/admin.py:574
 msgid "Editar categoría"
 msgstr ""
 
-#: app/routes/admin.py:580
+#: app/routes/admin.py:582
 msgid "No se puede eliminar: la categoría tiene usuarios asociados."
 msgstr ""
 
-#: app/routes/admin.py:584
+#: app/routes/admin.py:586
 msgid "Categoría eliminada."
 msgstr ""
 
-#: app/routes/admin.py:674 app/routes/publicaciones.py:354
+#: app/routes/admin.py:676 app/routes/publicaciones.py:356
 msgid "Publicación cancelada."
 msgstr ""
 
-#: app/routes/admin.py:683 app/routes/publicaciones.py:428
+#: app/routes/admin.py:685 app/routes/publicaciones.py:431
 msgid "Publicación eliminada."
 msgstr ""
 
-#: app/routes/admin.py:732
+#: app/routes/admin.py:734
 #, python-format
 msgid "No se encontró ningún usuario con el email %(email)s."
 msgstr ""
 
-#: app/routes/admin.py:741
+#: app/routes/admin.py:743
 #, python-format
 msgid ""
 "Un administrador te ha restablecido la contraseña. Nueva contraseña "
 "temporal: %(pwd)s"
 msgstr ""
 
-#: app/routes/admin.py:747
+#: app/routes/admin.py:749
 #, python-format
 msgid ""
 "Contraseña restablecida para %(email)s. Se le ha enviado un aviso con la "
 "nueva contraseña."
 msgstr ""
 
-#: app/routes/admin.py:764
+#: app/routes/admin.py:766
 msgid "Unidad de demostración regenerada correctamente."
 msgstr ""
 
-#: app/routes/admin.py:767
+#: app/routes/admin.py:769
 #, python-format
 msgid "Error al regenerar la demo: %(error)s"
 msgstr ""
 
-#: app/routes/admin.py:830 app/routes/admin.py:859
+#: app/routes/admin.py:832 app/routes/admin.py:861
 msgid "Ya existe un turno con ese nombre en ese grupo."
 msgstr ""
 
-#: app/routes/admin.py:842
+#: app/routes/admin.py:844
 msgid "Turno creado."
 msgstr ""
 
-#: app/routes/admin.py:866
+#: app/routes/admin.py:868
 msgid "Turno actualizado."
 msgstr ""
 
-#: app/routes/admin.py:870
+#: app/routes/admin.py:872
 msgid "Editar turno"
 msgstr ""
 
-#: app/routes/admin.py:879 app/routes/unidad.py:91
+#: app/routes/admin.py:881 app/routes/unidad.py:91
 msgid "Turno eliminado."
 msgstr ""
 
@@ -376,14 +376,50 @@ msgstr ""
 
 #: app/routes/calendario.py:86 app/templates/main/cambios.html:102
 #: app/templates/main/cambios.html:213 app/templates/main/dashboard.html:339
-#: app/templates/notificaciones/avisos.html:39
+#: app/templates/notificaciones/avisos.html:54
 msgid "Oportunidad a 3"
 msgstr ""
 
 #: app/routes/calendario.py:87 app/templates/main/cambios.html:103
 #: app/templates/main/cambios.html:204 app/templates/main/dashboard.html:339
-#: app/templates/notificaciones/avisos.html:41
+#: app/templates/notificaciones/avisos.html:56
 msgid "Oportunidad a 4"
+msgstr ""
+
+#: app/routes/documento_cambio.py:114
+msgid "Fechas incorrectas."
+msgstr ""
+
+#: app/routes/documento_cambio.py:118
+msgid "Selecciona un compañero válido."
+msgstr ""
+
+#: app/routes/documento_cambio.py:120
+msgid "Selecciona un turno válido."
+msgstr ""
+
+#: app/routes/documento_cambio.py:134
+msgid "Hoja de cambio creada. Ahora recoge las dos firmas."
+msgstr ""
+
+#: app/routes/documento_cambio.py:178
+msgid "Falta la firma. Dibújala en el recuadro antes de guardar."
+msgstr ""
+
+#: app/routes/documento_cambio.py:182
+msgid "Firma guardada."
+msgstr ""
+
+#: app/routes/documento_cambio.py:220
+msgid "Cambio autorizado y aplicado a las planillas."
+msgstr ""
+
+#: app/routes/documento_cambio.py:230
+msgid "Indica el motivo de la denegación."
+msgstr ""
+
+#: app/routes/documento_cambio.py:233
+msgid "Cambio denegado."
 msgstr ""
 
 #: app/routes/feedback.py:13
@@ -440,200 +476,200 @@ msgstr ""
 msgid "Has rechazado el cambio."
 msgstr ""
 
-#: app/routes/notificaciones.py:45
+#: app/routes/notificaciones.py:45 app/routes/notificaciones.py:54
 msgid "Preferencias de notificaciones guardadas."
 msgstr ""
 
-#: app/routes/notificaciones.py:53
+#: app/routes/notificaciones.py:62
 msgid "No puedes suscribirte a tus propias publicaciones."
 msgstr ""
 
-#: app/routes/publicaciones.py:56
+#: app/routes/publicaciones.py:57
 msgid "Indica la semana del junte."
 msgstr ""
 
-#: app/routes/publicaciones.py:58
+#: app/routes/publicaciones.py:59
 msgid "Selecciona tu cadencia de noches."
 msgstr ""
 
-#: app/routes/publicaciones.py:65
+#: app/routes/publicaciones.py:66
 msgid "No hay turno nocturno configurado para tu unidad."
 msgstr ""
 
-#: app/routes/publicaciones.py:72
+#: app/routes/publicaciones.py:73
 msgid "Datos del junte incorrectos."
 msgstr ""
 
-#: app/routes/publicaciones.py:78
+#: app/routes/publicaciones.py:79
 msgid "La semana del junte no puede ser anterior a la semana actual."
 msgstr ""
 
-#: app/routes/publicaciones.py:84
+#: app/routes/publicaciones.py:85
 #, python-format
 msgid "Debes seleccionar exactamente %(n)s noches."
 msgstr ""
 
-#: app/routes/publicaciones.py:90
+#: app/routes/publicaciones.py:91
 msgid "Debes seleccionar noches diferentes a las que ya tienes."
 msgstr ""
 
-#: app/routes/publicaciones.py:92
+#: app/routes/publicaciones.py:93
 msgid "Debes incluir al menos una noche de la otra cadencia."
 msgstr ""
 
-#: app/routes/publicaciones.py:107
+#: app/routes/publicaciones.py:108
 msgid "Indica la fecha del cambio."
 msgstr ""
 
-#: app/routes/publicaciones.py:109
+#: app/routes/publicaciones.py:110
 msgid "Indica tu turno actual."
 msgstr ""
 
-#: app/routes/publicaciones.py:111
+#: app/routes/publicaciones.py:112
 msgid "Indica el turno que deseas."
 msgstr ""
 
-#: app/routes/publicaciones.py:119
+#: app/routes/publicaciones.py:120
 msgid "Datos del cambio de turno incorrectos."
 msgstr ""
 
-#: app/routes/publicaciones.py:122 app/routes/publicaciones.py:172
+#: app/routes/publicaciones.py:123 app/routes/publicaciones.py:173
 msgid "El turno que cedes y el que deseas deben ser diferentes."
 msgstr ""
 
-#: app/routes/publicaciones.py:124 app/routes/publicaciones.py:174
-#: app/routes/publicaciones.py:606
+#: app/routes/publicaciones.py:125 app/routes/publicaciones.py:175
+#: app/routes/publicaciones.py:609
 msgid "Las fechas de los turnos no pueden ser anteriores a hoy."
 msgstr ""
 
-#: app/routes/publicaciones.py:157 app/routes/publicaciones.py:600
+#: app/routes/publicaciones.py:158 app/routes/publicaciones.py:603
 msgid "Debes indicar al menos un turno que cedes."
 msgstr ""
 
-#: app/routes/publicaciones.py:159 app/routes/publicaciones.py:603
+#: app/routes/publicaciones.py:160 app/routes/publicaciones.py:606
 msgid "Debes indicar al menos un turno que aceptarías."
 msgstr ""
 
-#: app/routes/publicaciones.py:162
+#: app/routes/publicaciones.py:163
 msgid "Debes indicar al menos un turno que ofreces trabajar."
 msgstr ""
 
-#: app/routes/publicaciones.py:165
+#: app/routes/publicaciones.py:166
 msgid "Debes indicar al menos un turno que quieres librar."
 msgstr ""
 
-#: app/routes/publicaciones.py:168
+#: app/routes/publicaciones.py:169
 msgid "Debes indicar el turno que cedes y el que deseas."
 msgstr ""
 
-#: app/routes/publicaciones.py:170
+#: app/routes/publicaciones.py:171
 msgid "El turno cedido y el deseado deben ser del mismo día."
 msgstr ""
 
-#: app/routes/publicaciones.py:250
+#: app/routes/publicaciones.py:251
 #, python-format
 msgid "Tipo de turno «%(n)s» creado."
 msgstr ""
 
-#: app/routes/publicaciones.py:252
+#: app/routes/publicaciones.py:253
 msgid "Ya existe un turno con ese nombre."
 msgstr ""
 
-#: app/routes/publicaciones.py:254
+#: app/routes/publicaciones.py:255
 msgid "Datos del turno incorrectos."
 msgstr ""
 
-#: app/routes/publicaciones.py:316
+#: app/routes/publicaciones.py:318
 msgid "Publicación creada correctamente."
 msgstr ""
 
-#: app/routes/publicaciones.py:365
+#: app/routes/publicaciones.py:367
 msgid "Solo puedes editar publicaciones activas."
 msgstr ""
 
-#: app/routes/publicaciones.py:410
+#: app/routes/publicaciones.py:413
 msgid "Publicación actualizada."
 msgstr ""
 
-#: app/routes/publicaciones.py:441
+#: app/routes/publicaciones.py:444
 msgid "No puedes aceptar tu propia publicación."
 msgstr ""
 
-#: app/routes/publicaciones.py:445 app/routes/publicaciones.py:573
+#: app/routes/publicaciones.py:448 app/routes/publicaciones.py:576
 msgid "Esta publicación ya no está activa."
 msgstr ""
 
-#: app/routes/publicaciones.py:466
+#: app/routes/publicaciones.py:469
 msgid "Esta oportunidad ya no está disponible."
 msgstr ""
 
-#: app/routes/publicaciones.py:472
+#: app/routes/publicaciones.py:475
 msgid "No fue posible cerrar el cambio. Los turnos pueden haber cambiado."
 msgstr ""
 
-#: app/routes/publicaciones.py:475
+#: app/routes/publicaciones.py:478
 msgid "¡Cambio a 4 bandas iniciado! Ve a «Mis cambios» para confirmar."
 msgstr ""
 
-#: app/routes/publicaciones.py:477
+#: app/routes/publicaciones.py:480
 msgid "¡Cambio a 3 bandas iniciado! Ve a «Mis cambios» para confirmar."
 msgstr ""
 
-#: app/routes/publicaciones.py:489
+#: app/routes/publicaciones.py:492
 msgid "No fue posible crear el match. Los turnos pueden haber cambiado."
 msgstr ""
 
-#: app/routes/publicaciones.py:491
+#: app/routes/publicaciones.py:494
 msgid "¡Match creado! Ve a «Mis cambios» para confirmar."
 msgstr ""
 
-#: app/routes/publicaciones.py:506
+#: app/routes/publicaciones.py:509
 msgid "Este regalo no tiene turnos disponibles."
 msgstr ""
 
-#: app/routes/publicaciones.py:516
+#: app/routes/publicaciones.py:519
 msgid "Selecciona el turno que quieres cubrir."
 msgstr ""
 
-#: app/routes/publicaciones.py:519
+#: app/routes/publicaciones.py:522
 msgid "Turno no encontrado o ya resuelto."
 msgstr ""
 
-#: app/routes/publicaciones.py:526
+#: app/routes/publicaciones.py:529
 msgid "El junte ya no tiene turnos disponibles."
 msgstr ""
 
-#: app/routes/publicaciones.py:533
+#: app/routes/publicaciones.py:536
 msgid "Este cambio de turno ya no está disponible."
 msgstr ""
 
-#: app/routes/publicaciones.py:540
+#: app/routes/publicaciones.py:543
 msgid "Selecciona los dos turnos."
 msgstr ""
 
-#: app/routes/publicaciones.py:544
+#: app/routes/publicaciones.py:547
 msgid "Turnos no encontrados en esta publicación."
 msgstr ""
 
-#: app/routes/publicaciones.py:548
+#: app/routes/publicaciones.py:551
 msgid "Especifica el turno que quieres librar."
 msgstr ""
 
-#: app/routes/publicaciones.py:555
+#: app/routes/publicaciones.py:558
 msgid "Tipo de publicación no reconocido."
 msgstr ""
 
-#: app/routes/publicaciones.py:577
+#: app/routes/publicaciones.py:580
 msgid "No puedes hacer una contraoferta a tu propia publicación."
 msgstr ""
 
-#: app/routes/publicaciones.py:613
+#: app/routes/publicaciones.py:616
 msgid ""
 "La contraoferta debe coincidir con al menos una parte de la publicación "
 "original."
 msgstr ""
 
-#: app/routes/publicaciones.py:644
+#: app/routes/publicaciones.py:648
 msgid ""
 "Tu contraoferta ha sido enviada. El autor de la publicación recibirá un "
 "aviso."
@@ -656,6 +692,57 @@ msgstr ""
 msgid "Turno «%(nombre)s» añadido."
 msgstr ""
 
+#: app/services/documento_cambio.py:47 app/services/documento_cambio.py:134
+#: app/templates/email/documento_cambio_completo.html:2
+msgid "Hoja de cambio completa"
+msgstr ""
+
+#: app/services/documento_cambio.py:81
+msgid "Hoja de cambio pendiente de firma"
+msgstr ""
+
+#: app/services/documento_cambio.py:82
+#, python-format
+msgid "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas."
+msgstr ""
+
+#: app/services/documento_cambio.py:135
+msgid "Las dos firmas están recogidas. La hoja de cambio ya está completa."
+msgstr ""
+
+#: app/services/documento_cambio.py:147
+msgid "Falta tu firma en la hoja de cambio"
+msgstr ""
+
+#: app/services/documento_cambio.py:148
+#, python-format
+msgid ""
+"%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
+"cambio."
+msgstr ""
+
+#: app/services/documento_cambio.py:267
+msgid "Cambio autorizado"
+msgstr ""
+
+#: app/services/documento_cambio.py:268
+#, python-format
+msgid ""
+"La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha "
+"aplicado a tu planilla."
+msgstr ""
+
+#: app/services/documento_cambio.py:288
+msgid "Cambio denegado"
+msgstr ""
+
+#: app/services/documento_cambio.py:290
+#, python-format
+msgid ""
+"La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: "
+"%(motivo)s"
+msgstr ""
+
 #: app/templates/base.html:7
 msgid "Cambio de turnos"
 msgstr ""
@@ -665,6 +752,10 @@ msgstr ""
 #: app/templates/auth/perfil_cuenta.html:3 app/templates/auth/recuperar.html:3
 #: app/templates/auth/registro.html:3 app/templates/auth/restablecer.html:3
 #: app/templates/base.html:14 app/templates/calendario/calendario.html:3
+#: app/templates/documento_cambio/lista.html:3
+#: app/templates/documento_cambio/nuevo.html:3
+#: app/templates/documento_cambio/supervisora.html:3
+#: app/templates/documento_cambio/ver.html:3
 #: app/templates/feedback/nuevo.html:3 app/templates/main/cambios.html:3
 #: app/templates/main/como_funciona.html:3
 #: app/templates/main/contraoferta.html:3 app/templates/main/dashboard.html:3
@@ -708,78 +799,89 @@ msgstr ""
 msgid "Mi planilla"
 msgstr ""
 
-#: app/templates/base.html:33 app/templates/notificaciones/panel.html:3
+#: app/templates/base.html:33 app/templates/documento_cambio/ver.html:3
+#: app/templates/documento_cambio/ver.html:7
+#: app/templates/notificaciones/avisos.html:33
+msgid "Hoja de cambio"
+msgstr ""
+
+#: app/templates/base.html:35 app/templates/documento_cambio/supervisora.html:3
+#: app/templates/documento_cambio/supervisora.html:7
+msgid "Supervisión de cambios"
+msgstr ""
+
+#: app/templates/base.html:37 app/templates/notificaciones/panel.html:3
 #: app/templates/notificaciones/panel.html:7
 msgid "Notificaciones"
 msgstr ""
 
 #: app/templates/auth/perfil.html:3 app/templates/auth/perfil.html:7
 #: app/templates/auth/perfil_cuenta.html:3
-#: app/templates/auth/perfil_cuenta.html:7 app/templates/base.html:34
+#: app/templates/auth/perfil_cuenta.html:7 app/templates/base.html:38
 msgid "Mi perfil"
 msgstr ""
 
-#: app/templates/base.html:35 app/templates/main/como_funciona.html:3
+#: app/templates/base.html:39 app/templates/main/como_funciona.html:3
 msgid "Cómo funciona"
 msgstr ""
 
-#: app/templates/base.html:37
+#: app/templates/base.html:41
 msgid "Administración"
 msgstr ""
 
 #: app/templates/admin/base_admin.html:17 app/templates/admin/feedback.html:3
-#: app/templates/base.html:38
+#: app/templates/base.html:42
 msgid "Feedback"
 msgstr ""
 
-#: app/templates/base.html:41
+#: app/templates/base.html:45
 msgid "Cerrar sesión"
 msgstr ""
 
 #: app/templates/auth/login.html:3 app/templates/auth/login.html:7
-#: app/templates/base.html:45 app/templates/main/index.html:9
+#: app/templates/base.html:49 app/templates/main/index.html:9
 msgid "Entrar"
 msgstr ""
 
 #: app/templates/auth/registro.html:3 app/templates/auth/registro.html:7
-#: app/templates/base.html:46 app/templates/main/index.html:8
+#: app/templates/base.html:50 app/templates/main/index.html:8
 msgid "Crear cuenta"
 msgstr ""
 
-#: app/templates/base.html:56 app/templates/base.html:71
+#: app/templates/base.html:60 app/templates/base.html:75
 msgid "Instala Turnero"
 msgstr ""
 
-#: app/templates/base.html:57
+#: app/templates/base.html:61
 msgid "Accede más rápido desde tu pantalla de inicio"
 msgstr ""
 
-#: app/templates/base.html:61
+#: app/templates/base.html:65
 msgid "Instalar"
 msgstr ""
 
-#: app/templates/base.html:62 app/templates/base.html:77
+#: app/templates/base.html:66 app/templates/base.html:81
 #: app/templates/calendario/calendario.html:200
 msgid "Cerrar"
 msgstr ""
 
-#: app/templates/base.html:72 app/templates/main/como_funciona.html:208
+#: app/templates/base.html:76 app/templates/main/como_funciona.html:208
 msgid "Pulsa"
 msgstr ""
 
-#: app/templates/base.html:74
+#: app/templates/base.html:78
 msgid "y luego \"Añadir a pantalla de inicio\""
 msgstr ""
 
-#: app/templates/base.html:95
+#: app/templates/base.html:99
 msgid "¿Tienes algún problema o sugerencia?"
 msgstr ""
 
-#: app/templates/base.html:189
+#: app/templates/base.html:193
 msgid "Notificaciones activas ✓"
 msgstr ""
 
-#: app/templates/base.html:192
+#: app/templates/base.html:196
 msgid "Activar notificaciones"
 msgstr ""
 
@@ -963,14 +1065,14 @@ msgstr ""
 #: app/templates/admin/franjas.html:16 app/templates/admin/hospitales.html:26
 #: app/templates/admin/paises.html:22 app/templates/admin/provincias.html:24
 #: app/templates/admin/publicaciones.html:25
-#: app/templates/admin/unidades.html:26 app/templates/admin/usuarios.html:20
+#: app/templates/admin/unidades.html:26 app/templates/admin/usuarios.html:21
 msgid "Acciones"
 msgstr ""
 
 #: app/templates/admin/categorias.html:31 app/templates/admin/ciudades.html:36
 #: app/templates/admin/franjas.html:26 app/templates/admin/hospitales.html:38
 #: app/templates/admin/paises.html:31 app/templates/admin/provincias.html:34
-#: app/templates/admin/unidades.html:37 app/templates/admin/usuarios.html:33
+#: app/templates/admin/unidades.html:37 app/templates/admin/usuarios.html:35
 #: app/templates/main/dashboard.html:157 app/templates/main/dashboard.html:170
 #: app/templates/main/dashboard.html:315
 msgid "Editar"
@@ -984,7 +1086,7 @@ msgstr ""
 #: app/templates/admin/franjas.html:30 app/templates/admin/hospitales.html:42
 #: app/templates/admin/paises.html:34 app/templates/admin/provincias.html:37
 #: app/templates/admin/publicaciones.html:71
-#: app/templates/admin/unidades.html:40 app/templates/admin/usuarios.html:35
+#: app/templates/admin/unidades.html:40 app/templates/admin/usuarios.html:37
 #: app/templates/main/cambios.html:41 app/templates/main/dashboard.html:320
 #: app/templates/main/dashboard.html:448 app/templates/unidad/turnos.html:41
 msgid "Eliminar"
@@ -1002,7 +1104,7 @@ msgstr ""
 #: app/templates/admin/publicaciones.html:66
 #: app/templates/admin/unidad_form.html:27
 #: app/templates/admin/usuario_eliminar_confirm.html:26
-#: app/templates/admin/usuario_form.html:144
+#: app/templates/admin/usuario_form.html:149
 #: app/templates/feedback/nuevo.html:49 app/templates/main/cambios.html:313
 #: app/templates/main/contraoferta.html:99
 #: app/templates/main/dashboard.html:447
@@ -1377,14 +1479,19 @@ msgid "+ Nuevo usuario"
 msgstr ""
 
 #: app/templates/admin/usuarios.html:15
+#: app/templates/notificaciones/panel.html:97
 msgid "Email"
 msgstr ""
 
-#: app/templates/admin/usuarios.html:31
+#: app/templates/admin/usuarios.html:20
+msgid "Supervisora"
+msgstr ""
+
+#: app/templates/admin/usuarios.html:32 app/templates/admin/usuarios.html:33
 msgid "Sí"
 msgstr ""
 
-#: app/templates/admin/usuarios.html:40
+#: app/templates/admin/usuarios.html:42
 msgid "No hay usuarios."
 msgstr ""
 
@@ -1443,6 +1550,7 @@ msgid ""
 msgstr ""
 
 #: app/templates/auth/perfil_cuenta.html:80
+#: app/templates/documento_cambio/ver.html:100
 msgid "Copiar"
 msgstr ""
 
@@ -1645,9 +1753,9 @@ msgstr ""
 
 #: app/templates/calendario/calendario.html:135
 #: app/templates/main/dashboard.html:347
-#: app/templates/notificaciones/avisos.html:70
-#: app/templates/notificaciones/avisos.html:72
-#: app/templates/notificaciones/avisos.html:74
+#: app/templates/notificaciones/avisos.html:85
+#: app/templates/notificaciones/avisos.html:87
+#: app/templates/notificaciones/avisos.html:89
 msgid "Ver publicación"
 msgstr ""
 
@@ -1672,6 +1780,290 @@ msgstr ""
 msgid "Publicar un cambio para este día"
 msgstr ""
 
+#: app/templates/documento_cambio/lista.html:3
+#: app/templates/documento_cambio/lista.html:7
+msgid "Mis hojas de cambio"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:15
+#: app/templates/documento_cambio/nuevo.html:3
+#: app/templates/documento_cambio/nuevo.html:7
+msgid "Nueva hoja de cambio"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:22
+#: app/templates/documento_cambio/supervisora.html:14
+#: app/templates/documento_cambio/ver.html:7
+#, python-format
+msgid "Nº %(numero)s"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:24
+#, python-format
+msgid "con %(nombre)s"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:27
+#: app/templates/documento_cambio/supervisora.html:22
+msgid "Completo"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:29
+#: app/templates/documento_cambio/supervisora.html:24
+#: app/templates/documento_cambio/ver.html:13
+msgid "Pendiente de firma"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:32
+#: app/templates/documento_cambio/supervisora.html:27
+msgid "Factible"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:34
+#: app/templates/documento_cambio/supervisora.html:29
+msgid "No factible"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:38
+#: app/templates/documento_cambio/supervisora.html:33
+msgid "Autorizado"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:40
+#: app/templates/documento_cambio/supervisora.html:35
+msgid "Denegado"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:42
+#: app/templates/documento_cambio/supervisora.html:37
+msgid "Pendiente de decisión"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:46
+#: app/templates/documento_cambio/supervisora.html:41
+msgid "Ver"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:48
+#: app/templates/documento_cambio/supervisora.html:43
+msgid "PDF"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:54
+msgid "Todavía no tienes ninguna hoja de cambio. Crea una nueva para empezar."
+msgstr ""
+
+#: app/templates/documento_cambio/nuevo.html:8
+msgid ""
+"Rellena los datos del cambio. Podrás firmar tú y tu compañero/a desde "
+"este mismo dispositivo a continuación."
+msgstr ""
+
+#: app/templates/documento_cambio/nuevo.html:14
+msgid "Compañero/a con quien cambias"
+msgstr ""
+
+#: app/templates/documento_cambio/nuevo.html:16
+#: app/templates/documento_cambio/nuevo.html:33
+#: app/templates/documento_cambio/nuevo.html:52
+#: app/templates/main/contraoferta.html:53
+#: app/templates/main/contraoferta.html:77
+#: app/templates/main/contraoferta.html:121
+#: app/templates/publicaciones/publicar.html:69
+#: app/templates/publicaciones/publicar.html:78
+msgid "— Selecciona —"
+msgstr ""
+
+#: app/templates/documento_cambio/nuevo.html:24
+msgid "Tu turno que cedes"
+msgstr ""
+
+#: app/templates/documento_cambio/nuevo.html:27
+#: app/templates/documento_cambio/nuevo.html:46
+#: app/templates/main/cambios.html:71
+#: app/templates/publicaciones/publicar.html:62
+msgid "Día"
+msgstr ""
+
+#: app/templates/documento_cambio/nuevo.html:31
+#: app/templates/documento_cambio/nuevo.html:50
+#: app/templates/main/cambios.html:85 app/templates/planilla/planilla.html:203
+#: app/templates/planilla/planilla.html:231
+#: app/templates/planilla/planilla.html:328
+#: app/templates/planilla/planilla.html:386
+msgid "Turno"
+msgstr ""
+
+#: app/templates/documento_cambio/nuevo.html:43
+msgid "El turno que recibes a cambio"
+msgstr ""
+
+#: app/templates/documento_cambio/nuevo.html:61
+msgid "Crear hoja de cambio"
+msgstr ""
+
+#: app/templates/documento_cambio/supervisora.html:8
+msgid "Todas las hojas de cambio de tu grupo de intercambio."
+msgstr ""
+
+#: app/templates/documento_cambio/supervisora.html:18
+msgid "cede"
+msgstr ""
+
+#: app/templates/documento_cambio/supervisora.html:19
+msgid "recibe"
+msgstr ""
+
+#: app/templates/documento_cambio/supervisora.html:49
+msgid "Todavía no hay ninguna hoja de cambio en tu grupo de intercambio."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:10
+msgid "Las dos firmas están recogidas. La hoja de cambio está completa."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:11
+msgid "Generar PDF"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:17
+msgid "Verificado contra la planilla"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:17
+msgid "El cambio es factible según las planillas subidas de ambos."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:19
+msgid ""
+"Atención: según las planillas subidas, este cambio no parece factible. "
+"Revisa los datos antes de firmar."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:21
+msgid "Factibilidad no verificada"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:21
+msgid ""
+"Falta la planilla publicada de alguna de las dos personas para ese mes. "
+"Comprueba manualmente que no haya conflictos."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:26
+msgid "Autorizado por la supervisora"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:26
+msgid "Ya se ha aplicado a las planillas."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:29
+msgid "Denegado por la supervisora"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:30
+msgid "Motivo"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:34
+msgid "Decisión de la supervisora"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:37
+msgid "Autorizar"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:42
+msgid "Motivo de la denegación"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:43
+msgid "Explica por qué se deniega, lo verán los dos implicados."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:45
+msgid "Denegar"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:49
+msgid "Pendiente de autorización de la supervisora"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:54
+msgid "Datos del cambio"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:58
+msgid "Cede"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:59
+msgid "Recibe"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:61
+msgid "Firmado"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:63
+msgid "Sin firmar"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:71
+msgid "Tu firma"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:72
+msgid "Dibuja tu firma con el dedo en el recuadro."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:79
+#: app/templates/planilla/planilla.html:363
+msgid "Borrar"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:80
+msgid "Guardar firma"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:85
+msgid "Ya has firmado. Esperando a que la otra parte firme también."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:91
+msgid "Notas para ilog"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:92
+msgid ""
+"Copia cada texto en la nota del día correspondiente, en la planilla de "
+"cada trabajador."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:98
+msgid "Copiado"
+msgstr ""
+
+#: app/templates/email/documento_cambio_completo.html:3
+#: app/templates/email/recuperar_password.html:3
+#, python-format
+msgid "Hola %(nombre)s,"
+msgstr ""
+
+#: app/templates/email/documento_cambio_completo.html:4
+#, python-format
+msgid "La hoja de cambio nº %(numero)s con %(companero)s ya tiene las dos firmas."
+msgstr ""
+
+#: app/templates/email/documento_cambio_completo.html:8
+msgid "Ver la hoja de cambio"
+msgstr ""
+
+#: app/templates/email/documento_cambio_completo.html:11
+msgid "Desde ahí puedes descargar el PDF firmado cuando lo necesites."
+msgstr ""
+
 #: app/templates/email/nuevo_feedback.html:3
 #: app/templates/feedback/nuevo.html:20
 msgid "Tipo"
@@ -1688,11 +2080,6 @@ msgstr ""
 
 #: app/templates/email/recuperar_password.html:2
 msgid "Recupera tu contraseña"
-msgstr ""
-
-#: app/templates/email/recuperar_password.html:3
-#, python-format
-msgid "Hola %(nombre)s,"
 msgstr ""
 
 #: app/templates/email/recuperar_password.html:4
@@ -1827,11 +2214,6 @@ msgstr ""
 msgid "Diciembre"
 msgstr ""
 
-#: app/templates/main/cambios.html:71
-#: app/templates/publicaciones/publicar.html:62
-msgid "Día"
-msgstr ""
-
 #: app/templates/main/cambios.html:73
 msgid "Cualquier día"
 msgstr ""
@@ -1850,13 +2232,6 @@ msgstr ""
 
 #: app/templates/main/cambios.html:81
 msgid "Turno que ofrece trabajar"
-msgstr ""
-
-#: app/templates/main/cambios.html:85 app/templates/planilla/planilla.html:203
-#: app/templates/planilla/planilla.html:231
-#: app/templates/planilla/planilla.html:328
-#: app/templates/planilla/planilla.html:386
-msgid "Turno"
 msgstr ""
 
 #: app/templates/main/cambios.html:87
@@ -1996,7 +2371,7 @@ msgid "Me interesa"
 msgstr ""
 
 #: app/templates/main/cambios.html:283
-#: app/templates/notificaciones/avisos.html:35
+#: app/templates/notificaciones/avisos.html:50
 msgid "Contraoferta"
 msgstr ""
 
@@ -2467,14 +2842,6 @@ msgstr ""
 msgid "Tipo de turno"
 msgstr ""
 
-#: app/templates/main/contraoferta.html:53
-#: app/templates/main/contraoferta.html:77
-#: app/templates/main/contraoferta.html:121
-#: app/templates/publicaciones/publicar.html:69
-#: app/templates/publicaciones/publicar.html:78
-msgid "— Selecciona —"
-msgstr ""
-
 #: app/templates/main/contraoferta.html:62
 msgid "+ Añadir otro turno a librar"
 msgstr ""
@@ -2860,16 +3227,21 @@ msgid "Borrar todos"
 msgstr ""
 
 #: app/templates/notificaciones/avisos.html:28
-#: app/templates/notificaciones/avisos.html:81
-#: app/templates/notificaciones/avisos.html:92
+#: app/templates/notificaciones/avisos.html:43
+#: app/templates/notificaciones/avisos.html:96
+#: app/templates/notificaciones/avisos.html:107
 msgid "Borrar aviso"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:37
+#: app/templates/notificaciones/avisos.html:39
+msgid "Ver hoja de cambio"
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:52
 msgid "Alerta"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:51
+#: app/templates/notificaciones/avisos.html:66
 #, python-format
 msgid ""
 "%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran del "
@@ -2877,7 +3249,7 @@ msgid ""
 "si un compañero la acepta, el cambio a 3 se cerrará automáticamente."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:54
+#: app/templates/notificaciones/avisos.html:69
 #, python-format
 msgid ""
 "%(nombre)s forma parte de una cadena de cambio a 4 bandas que casi "
@@ -2885,35 +3257,35 @@ msgid ""
 "compañero la acepta, el cambio a 4 se cerrará automáticamente."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:59
+#: app/templates/notificaciones/avisos.html:74
 #, python-format
 msgid "Alerta: %(nombre)s"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:61
+#: app/templates/notificaciones/avisos.html:76
 msgid "Alerta de búsqueda guardada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:68
+#: app/templates/notificaciones/avisos.html:83
 msgid "Ver resultados"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:77
+#: app/templates/notificaciones/avisos.html:92
 msgid "Publicación ya cerrada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:89
+#: app/templates/notificaciones/avisos.html:104
 msgid "Publicación eliminada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:100
+#: app/templates/notificaciones/avisos.html:115
 msgid ""
 "No tienes avisos todavía. Sigue a compañeros desde el panel de "
 "Notificaciones para recibir avisos cuando publiquen, o recibe "
 "contraofertas a tus publicaciones de cambio."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:104
+#: app/templates/notificaciones/avisos.html:119
 msgid "Gestionar notificaciones y seguimientos"
 msgstr ""
 
@@ -2949,59 +3321,65 @@ msgstr ""
 msgid "Una publicación nueva coincide con alguna de tus búsquedas guardadas"
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:97
+#: app/templates/notificaciones/panel.html:102
+msgid ""
+"Recibir por email la hoja de cambio cuando quede firmada por las dos "
+"partes"
+msgstr ""
+
+#: app/templates/notificaciones/panel.html:116
 msgid "Seguir compañeros"
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:98
+#: app/templates/notificaciones/panel.html:117
 msgid ""
 "Recibirás una notificación cada vez que el compañero seleccionado "
 "publique un cambio."
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:102
+#: app/templates/notificaciones/panel.html:121
 msgid "Buscar compañero…"
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:110
+#: app/templates/notificaciones/panel.html:129
 msgid "Dejar de seguir"
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:115
+#: app/templates/notificaciones/panel.html:134
 msgid "Seguir"
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:121
+#: app/templates/notificaciones/panel.html:140
 msgid "Ningún compañero coincide con la búsqueda."
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:123
+#: app/templates/notificaciones/panel.html:142
 msgid "No hay compañeros de tu misma categoría y grupo para seguir."
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:134
+#: app/templates/notificaciones/panel.html:153
 msgid "Tu navegador no soporta notificaciones push."
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:141
+#: app/templates/notificaciones/panel.html:160
 msgid ""
 "Las notificaciones están bloqueadas en el navegador. Desbloquéalas en los"
 " ajustes del sistema."
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:147
+#: app/templates/notificaciones/panel.html:166
 msgid "Este navegador está suscrito a notificaciones push."
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:149
+#: app/templates/notificaciones/panel.html:168
 msgid "Este navegador no está suscrito todavía."
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:149
+#: app/templates/notificaciones/panel.html:168
 msgid "Activar en este navegador"
 msgstr ""
 
-#: app/templates/notificaciones/panel.html:157
+#: app/templates/notificaciones/panel.html:176
 msgid "Las notificaciones están bloqueadas en el navegador."
 msgstr ""
 
@@ -3221,10 +3599,6 @@ msgstr ""
 
 #: app/templates/planilla/planilla.html:361
 msgid "Guardar"
-msgstr ""
-
-#: app/templates/planilla/planilla.html:363
-msgid "Borrar"
 msgstr ""
 
 #: app/templates/planilla/planilla.html:376

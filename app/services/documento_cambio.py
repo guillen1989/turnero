@@ -135,7 +135,8 @@ def firmar_documento(documento, usuario, imagen_firma):
                 _("Las dos firmas están recogidas. La hoja de cambio ya está completa."),
             )
             otro = next(o for o in documento.participantes if o.usuario_id != p.usuario_id)
-            _enviar_email_completo(documento, p.usuario, otro.usuario)
+            if p.usuario.notif_email_documento_cambio:
+                _enviar_email_completo(documento, p.usuario, otro.usuario)
     else:
         documento.estado = "pendiente_firmas"
         ids_firmantes = {f.usuario_id for f in documento.firmas}

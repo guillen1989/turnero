@@ -317,6 +317,33 @@ def test_firmar_documento_envia_email_a_ambos_al_completarse(db, monkeypatch):
     assert destinatarios == {"claudial@h.es", "juanl@h.es"}
 
 
+def test_firmar_documento_no_envia_email_si_usuario_lo_desactivo(db, monkeypatch):
+    enviados = []
+
+    def _fake_enviar_email(destinatario, asunto, cuerpo_html):
+        enviados.append((destinatario, asunto))
+        return True
+
+    monkeypatch.setattr("app.services.documento_cambio.enviar_email", _fake_enviar_email)
+
+    crear_usuario, manyana, tarde = _setup(db, "p")
+    claudia = crear_usuario("Claudia Pérez", "claudiap@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanp@h.es")
+    juan.notif_email_documento_cambio = False
+    db.session.commit()
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, "data:image/png;base64,AAA")
+    firmar_documento(documento, juan, "data:image/png;base64,BBB")
+
+    destinatarios = {d for d, _ in enviados}
+    assert destinatarios == {"claudiap@h.es"}  # Claudia sí, Juan lo desactivó
+
+
 def _crear_documento_completo(db, sufijo):
     crear_usuario, manyana, tarde = _setup(db, sufijo)
     claudia = crear_usuario(f"Claudia{sufijo}", f"claudia{sufijo}@h.es")

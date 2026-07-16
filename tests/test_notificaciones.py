@@ -120,6 +120,41 @@ def test_guardar_desactiva_notif_busqueda_guardada(client, db):
     assert usuario.notif_busqueda_guardada is False
 
 
+# --- Email de hoja de cambio completa ---
+
+def test_guardar_email_desactiva_notif_email_documento_cambio(client, db):
+    usuario = _usuario()
+    usuario.notif_email_documento_cambio = True
+    db.session.commit()
+    _login(client, "user@test.es")
+    client.post("/notificaciones/guardar-email", data={})  # ausente → False
+    db.session.refresh(usuario)
+    assert usuario.notif_email_documento_cambio is False
+
+
+def test_guardar_email_activa_notif_email_documento_cambio(client, db):
+    usuario = _usuario()
+    usuario.notif_email_documento_cambio = False
+    db.session.commit()
+    _login(client, "user@test.es")
+    client.post("/notificaciones/guardar-email", data={"notif_email_documento_cambio": "on"})
+    db.session.refresh(usuario)
+    assert usuario.notif_email_documento_cambio is True
+
+
+def test_guardar_email_no_afecta_a_preferencias_push(client, db):
+    """El toggle de email es independiente del push_activo maestro."""
+    usuario = _usuario()
+    usuario.push_activo = True
+    usuario.notif_match = True
+    db.session.commit()
+    _login(client, "user@test.es")
+    client.post("/notificaciones/guardar-email", data={"notif_email_documento_cambio": "on"})
+    db.session.refresh(usuario)
+    assert usuario.push_activo is True
+    assert usuario.notif_match is True
+
+
 # --- Suscripciones ---
 
 def test_suscribir_a_colega(client, db):

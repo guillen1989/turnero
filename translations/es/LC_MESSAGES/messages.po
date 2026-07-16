@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 15:19+0200\n"
+"POT-Creation-Date: 2026-07-16 15:31+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -488,11 +488,11 @@ msgstr "Has retirado tu confirmación del cambio."
 msgid "Has rechazado el cambio."
 msgstr "Has rechazado el cambio."
 
-#: app/routes/notificaciones.py:45
+#: app/routes/notificaciones.py:45 app/routes/notificaciones.py:54
 msgid "Preferencias de notificaciones guardadas."
 msgstr "Preferencias de notificaciones guardadas."
 
-#: app/routes/notificaciones.py:53
+#: app/routes/notificaciones.py:62
 msgid "No puedes suscribirte a tus propias publicaciones."
 msgstr "No puedes suscribirte a tus propias publicaciones."
 
@@ -726,11 +726,11 @@ msgstr "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas.
 msgid "Las dos firmas están recogidas. La hoja de cambio ya está completa."
 msgstr "Las dos firmas están recogidas. La hoja de cambio ya está completa."
 
-#: app/services/documento_cambio.py:146
+#: app/services/documento_cambio.py:147
 msgid "Falta tu firma en la hoja de cambio"
 msgstr "Falta tu firma en la hoja de cambio"
 
-#: app/services/documento_cambio.py:147
+#: app/services/documento_cambio.py:148
 #, python-format
 msgid ""
 "%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
@@ -739,11 +739,11 @@ msgstr ""
 "%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
 "cambio."
 
-#: app/services/documento_cambio.py:266
+#: app/services/documento_cambio.py:267
 msgid "Cambio autorizado"
 msgstr "Cambio autorizado"
 
-#: app/services/documento_cambio.py:267
+#: app/services/documento_cambio.py:268
 #, python-format
 msgid ""
 "La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha "
@@ -752,11 +752,11 @@ msgstr ""
 "La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha "
 "aplicado a tu planilla."
 
-#: app/services/documento_cambio.py:287
+#: app/services/documento_cambio.py:288
 msgid "Cambio denegado"
 msgstr "Cambio denegado"
 
-#: app/services/documento_cambio.py:289
+#: app/services/documento_cambio.py:290
 #, python-format
 msgid ""
 "La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: "
@@ -1512,6 +1512,7 @@ msgid "+ Nuevo usuario"
 msgstr "+ Nuevo usuario"
 
 #: app/templates/admin/usuarios.html:15
+#: app/templates/notificaciones/panel.html:97
 msgid "Email"
 msgstr "Email"
 
@@ -3464,11 +3465,19 @@ msgstr "Un compañero al que sigues publica un cambio"
 msgid "Una publicación nueva coincide con alguna de tus búsquedas guardadas"
 msgstr "Una publicación nueva coincide con alguna de tus búsquedas guardadas"
 
-#: app/templates/notificaciones/panel.html:97
+#: app/templates/notificaciones/panel.html:102
+msgid ""
+"Recibir por email la hoja de cambio cuando quede firmada por las dos "
+"partes"
+msgstr ""
+"Recibir por email la hoja de cambio cuando quede firmada por las dos "
+"partes"
+
+#: app/templates/notificaciones/panel.html:116
 msgid "Seguir compañeros"
 msgstr "Seguir compañeros"
 
-#: app/templates/notificaciones/panel.html:98
+#: app/templates/notificaciones/panel.html:117
 msgid ""
 "Recibirás una notificación cada vez que el compañero seleccionado "
 "publique un cambio."
@@ -3476,31 +3485,31 @@ msgstr ""
 "Recibirás una notificación cada vez que el compañero seleccionado "
 "publique un cambio."
 
-#: app/templates/notificaciones/panel.html:102
+#: app/templates/notificaciones/panel.html:121
 msgid "Buscar compañero…"
 msgstr "Buscar compañero…"
 
-#: app/templates/notificaciones/panel.html:110
+#: app/templates/notificaciones/panel.html:129
 msgid "Dejar de seguir"
 msgstr "Dejar de seguir"
 
-#: app/templates/notificaciones/panel.html:115
+#: app/templates/notificaciones/panel.html:134
 msgid "Seguir"
 msgstr "Seguir"
 
-#: app/templates/notificaciones/panel.html:121
+#: app/templates/notificaciones/panel.html:140
 msgid "Ningún compañero coincide con la búsqueda."
 msgstr "Ningún compañero coincide con la búsqueda."
 
-#: app/templates/notificaciones/panel.html:123
+#: app/templates/notificaciones/panel.html:142
 msgid "No hay compañeros de tu misma categoría y grupo para seguir."
 msgstr "No hay compañeros de tu misma categoría y grupo para seguir."
 
-#: app/templates/notificaciones/panel.html:134
+#: app/templates/notificaciones/panel.html:153
 msgid "Tu navegador no soporta notificaciones push."
 msgstr "Tu navegador no soporta notificaciones push."
 
-#: app/templates/notificaciones/panel.html:141
+#: app/templates/notificaciones/panel.html:160
 msgid ""
 "Las notificaciones están bloqueadas en el navegador. Desbloquéalas en los"
 " ajustes del sistema."
@@ -3508,19 +3517,19 @@ msgstr ""
 "Las notificaciones están bloqueadas en el navegador. Desbloquéalas en los"
 " ajustes del sistema."
 
-#: app/templates/notificaciones/panel.html:147
+#: app/templates/notificaciones/panel.html:166
 msgid "Este navegador está suscrito a notificaciones push."
 msgstr "Este navegador está suscrito a notificaciones push."
 
-#: app/templates/notificaciones/panel.html:149
+#: app/templates/notificaciones/panel.html:168
 msgid "Este navegador no está suscrito todavía."
 msgstr "Este navegador no está suscrito todavía."
 
-#: app/templates/notificaciones/panel.html:149
+#: app/templates/notificaciones/panel.html:168
 msgid "Activar en este navegador"
 msgstr "Activar en este navegador"
 
-#: app/templates/notificaciones/panel.html:157
+#: app/templates/notificaciones/panel.html:176
 msgid "Las notificaciones están bloqueadas en el navegador."
 msgstr "Las notificaciones están bloqueadas en el navegador."
 
