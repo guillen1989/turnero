@@ -4,9 +4,37 @@ from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
-from app.models import Notificacion, SuscripcionPublicaciones, Unidad, Usuario
+from app.models import (
+    MatchCambio,
+    MatchParticipacion,
+    Notificacion,
+    PublicacionCambio,
+    SuscripcionPublicaciones,
+    TurnoAceptado,
+    TurnoCedido,
+    Unidad,
+    Usuario,
+)
+from app.services.matches import calcular_trabajas
 
 bp = Blueprint("notificaciones", __name__)
+
+_TIPOS_AVISOS = (
+    "nueva_publicacion_seguido",
+    "contraoferta",
+    "alerta_busqueda_guardada",
+    "aviso_oportunidad_3",
+    "aviso_oportunidad_4",
+    "contrasena_restablecida",
+    "documento_cambio_pendiente_firma",
+    "documento_cambio_completo",
+    "documento_cambio_autorizado",
+    "documento_cambio_denegado",
+    "confirmado_total",
+    "rechazo",
+)
+
+_TIPOS_AVISOS_CON_MATCH = ("confirmado_total", "rechazo")
 
 
 @bp.get("/notificaciones")
@@ -90,18 +118,21 @@ def avisos():
         Notificacion.query
         .filter(
             Notificacion.usuario_id == current_user.id,
-            Notificacion.tipo.in_((
-                "nueva_publicacion_seguido",
-                "contraoferta",
-                "alerta_busqueda_guardada",
-                "aviso_oportunidad_3",
-                "aviso_oportunidad_4",
-                "contrasena_restablecida",
-                "documento_cambio_pendiente_firma",
-                "documento_cambio_completo",
-                "documento_cambio_autorizado",
-                "documento_cambio_denegado",
-            )),
+            Notificacion.tipo.in_(_TIPOS_AVISOS),
+        )
+        .options(
+            db.joinedload(Notificacion.match)
+            .selectinload(MatchCambio.participaciones)
+            .joinedload(MatchParticipacion.publicacion)
+            .joinedload(PublicacionCambio.usuario),
+            db.joinedload(Notificacion.match)
+            .selectinload(MatchCambio.participaciones)
+            .joinedload(MatchParticipacion.turno_cedido)
+            .joinedload(TurnoCedido.franja_horaria),
+            db.joinedload(Notificacion.match)
+            .selectinload(MatchCambio.participaciones)
+            .joinedload(MatchParticipacion.turno_aceptado)
+            .joinedload(TurnoAceptado.franja_horaria),
         )
         .order_by(Notificacion.fecha.desc())
         .all()
@@ -109,7 +140,15 @@ def avisos():
     for n in notifs:
         n.leida = True
     db.session.commit()
-    return render_template("notificaciones/avisos.html", avisos=notifs)
+
+    trabajas_por_match = {
+        n.match_id: calcular_trabajas(n.match)
+        for n in notifs
+        if n.tipo in _TIPOS_AVISOS_CON_MATCH and n.match is not None
+    }
+    return render_template(
+        "notificaciones/avisos.html", avisos=notifs, trabajas_por_match=trabajas_por_match
+    )
 
 
 @bp.post("/avisos/<int:notif_id>/borrar")
@@ -128,14 +167,7 @@ def borrar_aviso(notif_id):
 def borrar_todos_avisos():
     Notificacion.query.filter(
         Notificacion.usuario_id == current_user.id,
-        Notificacion.tipo.in_((
-            "nueva_publicacion_seguido",
-            "contraoferta",
-            "alerta_busqueda_guardada",
-            "aviso_oportunidad_3",
-            "aviso_oportunidad_4",
-            "contrasena_restablecida",
-        )),
+        Notificacion.tipo.in_(_TIPOS_AVISOS),
     ).delete()
     db.session.commit()
     return redirect(url_for("notificaciones.avisos"))

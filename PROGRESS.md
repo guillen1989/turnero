@@ -15,7 +15,10 @@ supervisora, con motivo obligatorio al denegar — HECHO. Además, dos
 peticiones sueltas del usuario ya resueltas: motivo obligatorio al
 denegar (visible para los implicados) y el email de hoja de cambio
 completa ahora es opcional por usuario (toggle en
-`/notificaciones`) — HECHO. Pausado
+`/notificaciones`) — HECHO, y el aviso de autorización/denegación
+incluye ahora los datos del cambio (quiénes lo hacen y qué día/turno
+libra y trabaja cada uno), no solo el número de hoja/motivo — HECHO.
+Pausado
 explícitamente aquí a petición del usuario (2026-07-16): **(9) cadenas
 a 3/4 bandas y juntes de noches y (10) enganche con el motor de
 matching NO se implementan por ahora** — son bastante más grandes que
@@ -1318,6 +1321,8 @@ mitigación preventiva independiente de la causa.
 - [x] Fase 10, paso 5: `ESPECIFICACION.md` actualizado con la hoja de cambio digital (entidades, reglas 11-14, CU10, decisión técnica xhtml2pdf, UAT-8.x)
 - [x] Fase 10, paso 6: recomprobar factibilidad en la 2ª firma · 1 test
 - [x] Fase 10, paso 7: firma cruzada entre cuentas reales · cada uno firma su propia fila desde su cuenta · notificaciones (push + campana) al crear y al firmar · migración `c2938aae9b98` · 12 tests + e2e actualizado
+- [x] Fase 10, paso 8: el aviso de autorización/denegación de la supervisora (`documento_cambio_autorizado`/`documento_cambio_denegado`) incluía solo el número de hoja (y, al denegar, el motivo) pero no los datos del cambio — nuevo `_resumen_cambio(documento)` en `app/services/documento_cambio.py` añade, para cada participante, quién libra qué turno/día y quién trabaja qué turno/día a cambio, y se concatena al mensaje ya existente en `autorizar_documento`/`denegar_documento` · 2 tests nuevos (`test_servicio_documento_cambio.py`)
+- [x] feat(avisos): el aviso de confirmación (`confirmado_total`) y de rechazo (`rechazo`) de un match del motor de matching (distinto del flujo de hoja de cambio del paso anterior) ahora se muestra también en `/avisos` con los datos del cambio — quiénes lo hacen y qué día/franja libra y trabaja cada participación — en vez de quedar invisible (esos dos tipos de `Notificacion` no entraban en la consulta de `/avisos`, solo generaban un push agregado sin detalle) · refactor: `_calcular_trabajas` se traslada de `app/routes/main.py` a `app/services/matches.py::calcular_trabajas` (lógica de dominio del match, no de la ruta) y se reutiliza desde ambos sitios · catálogo i18n actualizado (reutiliza los mismos msgid `libra:`/`trabaja:`/`cualquier turno` ya usados en el dashboard) · 2 tests nuevos · verificado con las suites de match/notificaciones/dashboard/cadenas (162 tests) limpias en una ventana sin contención de la BD de test compartida con otra sesión concurrente · 948 tests passing (suite completa, tras integrar con el trabajo paralelo de Fase 10)
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

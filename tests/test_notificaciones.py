@@ -4,7 +4,18 @@ from datetime import date
 from unittest.mock import patch
 
 from app.extensions import db
-from app.models import Categoria, Notificacion, SuscripcionPublicaciones, insertar_categorias_semilla
+from app.models import (
+    Categoria,
+    FranjaHoraria,
+    MatchCambio,
+    MatchParticipacion,
+    Notificacion,
+    PublicacionCambio,
+    SuscripcionPublicaciones,
+    TurnoAceptado,
+    TurnoCedido,
+    insertar_categorias_semilla,
+)
 from app.push.sender import enviar_push_condicional
 from app.services.publicaciones import publicar_cambio
 from app.services.registro import registrar_usuario
@@ -365,3 +376,76 @@ def test_push_condicional_envia_cuando_activo(app, db):
     finally:
         app.config["VAPID_PRIVATE_KEY"] = old_key
         app.config["VAPID_CLAIM_EMAIL"] = old_email
+
+
+# --- Avisos de confirmación/rechazo de un match: deben incluir los datos del cambio ---
+
+def _setup_match_ana_pedro(db):
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    ana = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "H1", "Urgencias", cat.id)
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=ana.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+
+    pub_ana = PublicacionCambio(usuario_id=ana.id)
+    db.session.add(pub_ana)
+    db.session.flush()
+    tc_ana = TurnoCedido(publicacion_id=pub_ana.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    db.session.add(tc_ana)
+    db.session.add(TurnoAceptado(publicacion_id=pub_ana.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+
+    pub_pedro = PublicacionCambio(usuario_id=pedro.id)
+    db.session.add(pub_pedro)
+    db.session.flush()
+    tc_pedro = TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id)
+    db.session.add(tc_pedro)
+    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_ana.id, turno_cedido_id=tc_ana.id))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_pedro.id, turno_cedido_id=tc_pedro.id))
+    db.session.commit()
+
+    return ana, pedro, match
+
+
+def test_avisos_confirmado_total_incluye_datos_del_cambio(client, db):
+    """El aviso de un cambio confirmado debe mostrar quién libra y trabaja cada día."""
+    ana, pedro, match = _setup_match_ana_pedro(db)
+    _login(client, "ana@test.es")
+    client.post(f"/matches/{match.id}/confirmar")
+    client.get("/auth/logout")
+    _login(client, "pedro@test.es")
+    client.post(f"/matches/{match.id}/confirmar")
+
+    resp = client.get("/avisos")
+    html = resp.data.decode()
+    assert resp.status_code == 200
+    assert "Ana" in html
+    assert "Pedro" in html
+    assert "01/09/2026" in html
+    assert "02/09/2026" in html
+    assert "Mañana" in html
+
+
+def test_avisos_rechazo_incluye_datos_del_cambio(client, db):
+    """El aviso de un cambio rechazado debe mostrar quiénes lo hacían y sus turnos."""
+    ana, pedro, match = _setup_match_ana_pedro(db)
+    _login(client, "ana@test.es")
+    client.post(f"/matches/{match.id}/rechazar")
+    client.get("/auth/logout")
+
+    _login(client, "pedro@test.es")
+    resp = client.get("/avisos")
+    html = resp.data.decode()
+    assert resp.status_code == 200
+    assert "Ana" in html
+    assert "Pedro" in html
+    assert "01/09/2026" in html
+    assert "02/09/2026" in html
+    assert "Mañana" in html

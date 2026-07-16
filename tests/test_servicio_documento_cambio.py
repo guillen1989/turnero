@@ -413,3 +413,39 @@ def test_denegar_documento_incluye_motivo_en_la_notificacion(db):
 
     notif = Notificacion.query.filter_by(usuario_id=claudia.id, tipo="documento_cambio_denegado").first()
     assert "Falta el visto bueno de RRHH." in notif.mensaje
+
+
+def test_autorizar_documento_incluye_datos_del_cambio_en_la_notificacion(db):
+    """El aviso de autorización debe incluir quiénes hacen el cambio y qué
+    día/turno libra y trabaja cada uno, no solo el número de hoja."""
+    from app.models import Notificacion
+
+    documento, claudia, juan, supervisora, manyana = _crear_documento_completo(db, "p")
+
+    autorizar_documento(documento, supervisora)
+
+    notif = Notificacion.query.filter_by(usuario_id=claudia.id, tipo="documento_cambio_autorizado").first()
+    assert notif is not None
+    assert claudia.nombre in notif.mensaje
+    assert juan.nombre in notif.mensaje
+    assert "07/07/2026" in notif.mensaje
+    assert "28/07/2026" in notif.mensaje
+    assert "Mañana" in notif.mensaje
+
+
+def test_denegar_documento_incluye_datos_del_cambio_en_la_notificacion(db):
+    """El aviso de denegación debe incluir quiénes hacen el cambio y qué
+    día/turno libra y trabaja cada uno, no solo el motivo."""
+    from app.models import Notificacion
+
+    documento, claudia, juan, supervisora, manyana = _crear_documento_completo(db, "q")
+
+    denegar_documento(documento, supervisora, motivo="Los turnos no cuadran.")
+
+    notif = Notificacion.query.filter_by(usuario_id=juan.id, tipo="documento_cambio_denegado").first()
+    assert notif is not None
+    assert claudia.nombre in notif.mensaje
+    assert juan.nombre in notif.mensaje
+    assert "07/07/2026" in notif.mensaje
+    assert "28/07/2026" in notif.mensaje
+    assert "Mañana" in notif.mensaje
