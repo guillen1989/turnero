@@ -1,4 +1,5 @@
-from datetime import time
+from datetime import date, time
+from app.extensions import db
 from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario
 
 
@@ -361,3 +362,102 @@ def test_no_supervisora_no_puede_ver_la_pagina_de_supervisora(db, client):
 
     resp = client.get("/documentos-cambio/supervisora")
     assert resp.status_code == 403
+
+
+def _crear_documento_completo_via_client(client, claudia, juan, manyana):
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    from app.models import DocumentoCambio
+    p1, p2 = db.session.get(DocumentoCambio, documento_id).participantes
+
+    client.post(f"/documentos-cambio/{documento_id}/firmar/{p1.id}", data={"imagen_firma": _FIRMA_PNG})
+    client.get("/auth/logout")
+    _login(client, juan.email)
+    client.post(f"/documentos-cambio/{documento_id}/firmar/{p2.id}", data={"imagen_firma": _FIRMA_PNG})
+    return documento_id
+
+
+def test_supervisora_autoriza_y_vuelca_a_planillas(db, client):
+    from app.models import DocumentoCambio, TurnoPlanilla
+
+    crear_usuario, manyana, tarde = _setup(db, "kk")
+    claudia = crear_usuario("Claudia Pérez", "claudiakk@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juankk@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martakk@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    resp = client.post(f"/documentos-cambio/{documento_id}/autorizar")
+    assert resp.status_code == 302
+
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.decision_supervisora == "autorizado"
+    assert documento.supervisora_id == supervisora.id
+    assert TurnoPlanilla.query.filter_by(
+        usuario_id=claudia.id, fecha=date(2026, 7, 28), franja_horaria_id=manyana.id
+    ).first() is not None
+
+
+def test_supervisora_deniega_sin_tocar_planillas(db, client):
+    from app.models import DocumentoCambio, TurnoPlanilla
+
+    crear_usuario, manyana, tarde = _setup(db, "ll")
+    claudia = crear_usuario("Claudia Pérez", "claudiall@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanll@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martall@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    resp = client.post(f"/documentos-cambio/{documento_id}/denegar")
+    assert resp.status_code == 302
+
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.decision_supervisora == "denegado"
+    assert TurnoPlanilla.query.filter_by(usuario_id=claudia.id).count() == 0
+
+
+def test_no_supervisora_no_puede_autorizar(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "mm")
+    claudia = crear_usuario("Claudia Pérez", "claudiamm@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanmm@h.es")
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, claudia.email)
+    resp = client.post(f"/documentos-cambio/{documento_id}/autorizar")
+    assert resp.status_code == 403
+
+
+def test_no_se_puede_autorizar_dos_veces(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "nn")
+    claudia = crear_usuario("Claudia Pérez", "claudiann@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juannn@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martann@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    client.post(f"/documentos-cambio/{documento_id}/autorizar")
+    resp = client.post(f"/documentos-cambio/{documento_id}/autorizar")
+    assert resp.status_code == 409

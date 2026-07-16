@@ -12,18 +12,52 @@ paso anterior de esa fecha), (5) listado de "mis hojas de cambio" en la
 cuenta de cada usuario — HECHO, (6) enviar los cambios por email a los
 implicados — HECHO, (7) cuenta de supervisora con acceso a todos los
 cambios — HECHO, (8) botón autorizar/denegar en la cuenta de
-supervisora que decide si se vuelca a las planillas, (9) cadenas a 3/4
-bandas y juntes de noches, (10) enganche con el motor de matching vía
-`match_id` — el usuario matizó este punto (2026-07-16): la acción de
-**confirmar un match** (o el "Me interesa" sobre una publicación
-sintética) debe **aparejarse con la firma** del documento de cambio en
-el mismo gesto, en vez de tener dos ciclos separados (uno de
-confirmaciones del motor de matching, otro de firmas del documento) —
-o sea, confirmar un match YA firma la parte de quien confirma. Tenerlo
-en cuenta al diseñar el paso 10. Siguiente: (8) botón
-autorizar/denegar — este paso ya deja el terreno preparado (rol
-`es_supervisora` + acceso de lectura a todos los cambios de su grupo),
-falta la acción de decisión.
+supervisora que decide si se vuelca a las planillas — HECHO, (9)
+cadenas a 3/4 bandas y juntes de noches, (10) enganche con el motor de
+matching vía `match_id` — el usuario matizó este punto (2026-07-16): la
+acción de **confirmar un match** (o el "Me interesa" sobre una
+publicación sintética) debe **aparejarse con la firma** del documento
+de cambio en el mismo gesto, en vez de tener dos ciclos separados (uno
+de confirmaciones del motor de matching, otro de firmas del documento)
+— o sea, confirmar un match YA firma la parte de quien confirma.
+Tenerlo en cuenta al diseñar el paso 10. Siguiente: (9) cadenas a 3/4
+bandas y juntes de noches.
+
+## Paso anterior
+feat(documento-cambio): botón autorizar/denegar en la cuenta de
+supervisora — nuevos campos `DocumentoCambio.decision_supervisora`
+(pendiente/autorizado/denegado, `server_default='pendiente'` por la
+misma razón que `factibilidad_estado`), `supervisora_id` y
+`fecha_decision_supervisora` (migración `8719b0fd144e`, deliberadamente
+separados del campo `estado` existente para no mezclar el progreso de
+firmas con la decisión de la supervisora — son dos máquinas de estados
+independientes).
+
+Nuevo `volcar_documento_a_planillas(documento)`: reutiliza
+`añadir_turno`/`eliminar_turno` de `app/services/planilla.py` (mismos
+helpers que ya usa `volcar_matches_a_planilla` para los matches del
+motor de matching) y `_añadir_linea_nota` de `volcar_cambios.py` para
+anotar el día — reaprovechando el propio `generar_notas_ilog` como
+fuente del texto de la nota, en vez de redactarlo dos veces. Solo se
+llama al **autorizar**, nunca al denegar.
+
+`autorizar_documento`/`denegar_documento`: cambian
+`decision_supervisora`, registran quién y cuándo, notifican (push +
+campana) a ambos participantes con dos tipos de notificación nuevos
+(`documento_cambio_autorizado`/`_denegado`, wiring mínimo en avisos()/
+badge/avisos.html, mismo patrón que los tipos anteriores).
+
+Rutas `POST /documentos-cambio/<id>/autorizar` y `/denegar`: 403 si
+quien lo pide no es supervisora (o de otro grupo), 409 si el documento
+no está `completo` o si ya se había decidido antes (evita autorizar dos
+veces y volcar el cambio dos veces a la planilla). Botones visibles en
+`ver.html` solo para la supervisora mientras esté pendiente; badge de
+la decisión visible para todos una vez tomada, también añadido al
+listado de supervisión.
+
+7 tests nuevos (2 de servicio, 4 de rutas, incluida la doble
+autorización) · 92 tests en la suite ampliada · catálogo i18n
+actualizado.
 
 ## Paso anterior
 feat(documento-cambio): cuenta de supervisora — nuevo campo

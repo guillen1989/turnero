@@ -90,6 +90,8 @@ def avisos():
                 "contrasena_restablecida",
                 "documento_cambio_pendiente_firma",
                 "documento_cambio_completo",
+                "documento_cambio_autorizado",
+                "documento_cambio_denegado",
             )),
         )
         .order_by(Notificacion.fecha.desc())

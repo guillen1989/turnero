@@ -8,6 +8,7 @@ from app.models import DocumentoCambio, FranjaHoraria, ParticipanteDocumentoCamb
 from app.extensions import db
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
+    autorizar_documento, denegar_documento,
 )
 from app.services.registro import crear_franjas_default
 
@@ -195,3 +196,35 @@ def pdf(documento_id):
         mimetype="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=hoja-cambio-{documento.id}.pdf"},
     )
+
+
+def _get_documento_para_decision(documento_id):
+    """Devuelve el documento o aborta 403/404/409, para las acciones de
+    autorizar/denegar: solo una supervisora del grupo, solo si está
+    completo, solo si todavía no se ha decidido."""
+    documento = _get_documento_validado(documento_id)
+    if not current_user.es_supervisora:
+        abort(403)
+    if documento.estado != "completo":
+        abort(409)
+    if documento.decision_supervisora != "pendiente":
+        abort(409)
+    return documento
+
+
+@bp.post("/<int:documento_id>/autorizar")
+@login_required
+def autorizar(documento_id):
+    documento = _get_documento_para_decision(documento_id)
+    autorizar_documento(documento, current_user)
+    flash(_("Cambio autorizado y aplicado a las planillas."), "success")
+    return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
+
+
+@bp.post("/<int:documento_id>/denegar")
+@login_required
+def denegar(documento_id):
+    documento = _get_documento_para_decision(documento_id)
+    denegar_documento(documento, current_user)
+    flash(_("Cambio denegado."), "info")
+    return redirect(url_for("documento_cambio.ver", documento_id=documento.id))

@@ -28,7 +28,7 @@
             <button type="submit" class="btn btn-sm btn-ghost aviso-btn-borrar" title="{{ _('Borrar aviso') }}">✕</button>
           </form>
         </div>
-      {% elif aviso.tipo in ('documento_cambio_pendiente_firma', 'documento_cambio_completo') %}
+      {% elif aviso.tipo in ('documento_cambio_pendiente_firma', 'documento_cambio_completo', 'documento_cambio_autorizado', 'documento_cambio_denegado') %}
         <div class="aviso-info">
           <span class="aviso-tipo tipo-badge tipo-badge--admin">{{ _('Hoja de cambio') }}</span>
           <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>

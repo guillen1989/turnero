@@ -21,7 +21,7 @@ from app.models.planilla import (
 )
 from app.models.documento_cambio import (
     DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio,
-    ESTADOS_DOCUMENTO_CAMBIO, ESTADOS_FACTIBILIDAD,
+    ESTADOS_DOCUMENTO_CAMBIO, ESTADOS_FACTIBILIDAD, ESTADOS_DECISION_SUPERVISORA,
 )
 
 __all__ = [
@@ -59,4 +59,5 @@ __all__ = [
     "FirmaDocumentoCambio",
     "ESTADOS_DOCUMENTO_CAMBIO",
     "ESTADOS_FACTIBILIDAD",
+    "ESTADOS_DECISION_SUPERVISORA",
 ]

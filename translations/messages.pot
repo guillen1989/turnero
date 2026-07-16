@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 14:49+0200\n"
+"POT-Creation-Date: 2026-07-16 15:07+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -386,28 +386,36 @@ msgstr ""
 msgid "Oportunidad a 4"
 msgstr ""
 
-#: app/routes/documento_cambio.py:113
+#: app/routes/documento_cambio.py:114
 msgid "Fechas incorrectas."
 msgstr ""
 
-#: app/routes/documento_cambio.py:117
+#: app/routes/documento_cambio.py:118
 msgid "Selecciona un compañero válido."
 msgstr ""
 
-#: app/routes/documento_cambio.py:119
+#: app/routes/documento_cambio.py:120
 msgid "Selecciona un turno válido."
 msgstr ""
 
-#: app/routes/documento_cambio.py:133
+#: app/routes/documento_cambio.py:134
 msgid "Hoja de cambio creada. Ahora recoge las dos firmas."
 msgstr ""
 
-#: app/routes/documento_cambio.py:177
+#: app/routes/documento_cambio.py:178
 msgid "Falta la firma. Dibújala en el recuadro antes de guardar."
 msgstr ""
 
-#: app/routes/documento_cambio.py:181
+#: app/routes/documento_cambio.py:182
 msgid "Firma guardada."
+msgstr ""
+
+#: app/routes/documento_cambio.py:220
+msgid "Cambio autorizado y aplicado a las planillas."
+msgstr ""
+
+#: app/routes/documento_cambio.py:229
+msgid "Cambio denegado."
 msgstr ""
 
 #: app/routes/feedback.py:13
@@ -680,33 +688,53 @@ msgstr ""
 msgid "Turno «%(nombre)s» añadido."
 msgstr ""
 
-#: app/services/documento_cambio.py:46 app/services/documento_cambio.py:133
+#: app/services/documento_cambio.py:47 app/services/documento_cambio.py:134
 #: app/templates/email/documento_cambio_completo.html:2
 msgid "Hoja de cambio completa"
 msgstr ""
 
-#: app/services/documento_cambio.py:80
+#: app/services/documento_cambio.py:81
 msgid "Hoja de cambio pendiente de firma"
 msgstr ""
 
-#: app/services/documento_cambio.py:81
+#: app/services/documento_cambio.py:82
 #, python-format
 msgid "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas."
 msgstr ""
 
-#: app/services/documento_cambio.py:134
+#: app/services/documento_cambio.py:135
 msgid "Las dos firmas están recogidas. La hoja de cambio ya está completa."
 msgstr ""
 
-#: app/services/documento_cambio.py:145
+#: app/services/documento_cambio.py:146
 msgid "Falta tu firma en la hoja de cambio"
 msgstr ""
 
-#: app/services/documento_cambio.py:146
+#: app/services/documento_cambio.py:147
 #, python-format
 msgid ""
 "%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
 "cambio."
+msgstr ""
+
+#: app/services/documento_cambio.py:266
+msgid "Cambio autorizado"
+msgstr ""
+
+#: app/services/documento_cambio.py:267
+#, python-format
+msgid ""
+"La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha "
+"aplicado a tu planilla."
+msgstr ""
+
+#: app/services/documento_cambio.py:285
+msgid "Cambio denegado"
+msgstr ""
+
+#: app/services/documento_cambio.py:286
+#, python-format
+msgid "La supervisora ha denegado tu hoja de cambio nº %(numero)s."
 msgstr ""
 
 #: app/templates/base.html:7
@@ -1515,7 +1543,7 @@ msgid ""
 msgstr ""
 
 #: app/templates/auth/perfil_cuenta.html:80
-#: app/templates/documento_cambio/ver.html:71
+#: app/templates/documento_cambio/ver.html:93
 msgid "Copiar"
 msgstr ""
 
@@ -1790,12 +1818,12 @@ msgid "No factible"
 msgstr ""
 
 #: app/templates/documento_cambio/lista.html:37
-#: app/templates/documento_cambio/supervisora.html:32
+#: app/templates/documento_cambio/supervisora.html:41
 msgid "Ver"
 msgstr ""
 
 #: app/templates/documento_cambio/lista.html:39
-#: app/templates/documento_cambio/supervisora.html:34
+#: app/templates/documento_cambio/supervisora.html:43
 msgid "PDF"
 msgstr ""
 
@@ -1864,7 +1892,19 @@ msgstr ""
 msgid "recibe"
 msgstr ""
 
-#: app/templates/documento_cambio/supervisora.html:40
+#: app/templates/documento_cambio/supervisora.html:33
+msgid "Autorizado"
+msgstr ""
+
+#: app/templates/documento_cambio/supervisora.html:35
+msgid "Denegado"
+msgstr ""
+
+#: app/templates/documento_cambio/supervisora.html:37
+msgid "Pendiente de decisión"
+msgstr ""
+
+#: app/templates/documento_cambio/supervisora.html:49
 msgid "Todavía no hay ninguna hoja de cambio en tu grupo de intercambio."
 msgstr ""
 
@@ -1900,58 +1940,86 @@ msgid ""
 "Comprueba manualmente que no haya conflictos."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:25
-msgid "Datos del cambio"
+#: app/templates/documento_cambio/ver.html:26
+msgid "Autorizado por la supervisora"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:29
-msgid "Cede"
+#: app/templates/documento_cambio/ver.html:26
+msgid "Ya se ha aplicado a las planillas."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:30
-msgid "Recibe"
+#: app/templates/documento_cambio/ver.html:28
+msgid "Denegado por la supervisora"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:32
-msgid "Firmado"
+#: app/templates/documento_cambio/ver.html:31
+msgid "Decisión de la supervisora"
 msgstr ""
 
 #: app/templates/documento_cambio/ver.html:34
-msgid "Sin firmar"
+msgid "Autorizar"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:38
+msgid "Denegar"
 msgstr ""
 
 #: app/templates/documento_cambio/ver.html:42
+msgid "Pendiente de autorización de la supervisora"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:47
+msgid "Datos del cambio"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:51
+msgid "Cede"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:52
+msgid "Recibe"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:54
+msgid "Firmado"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:56
+msgid "Sin firmar"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:64
 msgid "Tu firma"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:43
+#: app/templates/documento_cambio/ver.html:65
 msgid "Dibuja tu firma con el dedo en el recuadro."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:50
+#: app/templates/documento_cambio/ver.html:72
 #: app/templates/planilla/planilla.html:363
 msgid "Borrar"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:51
+#: app/templates/documento_cambio/ver.html:73
 msgid "Guardar firma"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:56
+#: app/templates/documento_cambio/ver.html:78
 msgid "Ya has firmado. Esperando a que la otra parte firme también."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:62
+#: app/templates/documento_cambio/ver.html:84
 msgid "Notas para ilog"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:63
+#: app/templates/documento_cambio/ver.html:85
 msgid ""
 "Copia cada texto en la nota del día correspondiente, en la planilla de "
 "cada trabajador."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:69
+#: app/templates/documento_cambio/ver.html:91
 msgid "Copiado"
 msgstr ""
 

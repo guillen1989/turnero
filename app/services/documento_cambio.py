@@ -6,6 +6,7 @@ y pega en ilog.
 """
 import hashlib
 import io
+from datetime import datetime, timezone
 
 from flask import current_app, render_template
 from flask_babel import _
@@ -226,3 +227,63 @@ def generar_pdf_documento(documento):
     if resultado.err:
         raise RuntimeError(f"Error generando el PDF: {resultado.log}")
     return buffer.getvalue()
+
+
+def volcar_documento_a_planillas(documento):
+    """
+    Aplica el cambio ya autorizado a la planilla de cada participante:
+    elimina el turno cedido, añade el turno recibido, y deja anotado el
+    día con la misma nota en lenguaje natural que se ofrece para ilog
+    (generar_notas_ilog) -- así queda constancia dentro de la propia app,
+    igual que ya hace volcar_matches_a_planilla para los matches del motor
+    de matching.
+    """
+    from app.services.planilla import añadir_turno, eliminar_turno
+    from app.services.volcar_cambios import _añadir_linea_nota
+
+    for p in documento.participantes:
+        eliminar_turno(p.usuario, p.turno_cede_fecha, p.turno_cede_franja_id)
+        añadir_turno(p.usuario, p.turno_recibe_fecha, p.turno_recibe_franja_id)
+
+    for nota in generar_notas_ilog(documento):
+        _añadir_linea_nota(nota["usuario"], nota["fecha"], nota["texto"])
+    db.session.commit()
+
+
+def autorizar_documento(documento, supervisora):
+    """
+    La supervisora autoriza un documento completo (dos firmas): se vuelca
+    a las planillas de los implicados y se notifica a ambos.
+    """
+    documento.decision_supervisora = "autorizado"
+    documento.supervisora = supervisora
+    documento.fecha_decision_supervisora = datetime.now(timezone.utc)
+    volcar_documento_a_planillas(documento)
+
+    for p in documento.participantes:
+        _notificar(
+            p.usuario, documento, "documento_cambio_autorizado",
+            _("Cambio autorizado"),
+            _("La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha aplicado a tu planilla.", numero=documento.id),
+        )
+    db.session.commit()
+    return documento
+
+
+def denegar_documento(documento, supervisora):
+    """
+    La supervisora deniega un documento completo: no se toca ninguna
+    planilla, solo se notifica a los implicados.
+    """
+    documento.decision_supervisora = "denegado"
+    documento.supervisora = supervisora
+    documento.fecha_decision_supervisora = datetime.now(timezone.utc)
+
+    for p in documento.participantes:
+        _notificar(
+            p.usuario, documento, "documento_cambio_denegado",
+            _("Cambio denegado"),
+            _("La supervisora ha denegado tu hoja de cambio nº %(numero)s.", numero=documento.id),
+        )
+    db.session.commit()
+    return documento

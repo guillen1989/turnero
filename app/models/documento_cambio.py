@@ -4,6 +4,7 @@ from app.extensions import db
 
 ESTADOS_DOCUMENTO_CAMBIO = ("borrador", "pendiente_firmas", "completo", "caducado")
 ESTADOS_FACTIBILIDAD = ("no_verificado", "factible", "no_factible")
+ESTADOS_DECISION_SUPERVISORA = ("pendiente", "autorizado", "denegado")
 
 
 class DocumentoCambio(db.Model):
@@ -32,8 +33,19 @@ class DocumentoCambio(db.Model):
     factibilidad_estado = db.Column(
         db.String(20), nullable=False, default="no_verificado", server_default="no_verificado"
     )
+    # Decisión de la supervisora sobre un documento ya completo (dos firmas).
+    # Solo si queda 'autorizado' se vuelca el cambio a las planillas de los
+    # implicados -- mientras esté 'pendiente' o si queda 'denegado', las
+    # planillas no se tocan. server_default por la misma razón que
+    # factibilidad_estado (filas ya existentes en producción).
+    decision_supervisora = db.Column(
+        db.String(20), nullable=False, default="pendiente", server_default="pendiente"
+    )
+    supervisora_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=True)
+    fecha_decision_supervisora = db.Column(db.DateTime(timezone=True), nullable=True)
 
-    creado_por = db.relationship("Usuario")
+    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
+    supervisora = db.relationship("Usuario", foreign_keys=[supervisora_id])
     match = db.relationship("MatchCambio")
     participantes = db.relationship(
         "ParticipanteDocumentoCambio",

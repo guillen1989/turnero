@@ -1,7 +1,9 @@
 from datetime import date, time
-from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario
+from app.extensions import db
+from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario, TurnoPlanilla, NotaDia
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
+    autorizar_documento, denegar_documento,
 )
 
 _FIRMA_PNG = (
@@ -313,3 +315,62 @@ def test_firmar_documento_envia_email_a_ambos_al_completarse(db, monkeypatch):
 
     destinatarios = {d for d, _ in enviados}
     assert destinatarios == {"claudial@h.es", "juanl@h.es"}
+
+
+def _crear_documento_completo(db, sufijo):
+    crear_usuario, manyana, tarde = _setup(db, sufijo)
+    claudia = crear_usuario(f"Claudia{sufijo}", f"claudia{sufijo}@h.es")
+    juan = crear_usuario(f"Juan{sufijo}", f"juan{sufijo}@h.es")
+    supervisora = crear_usuario(f"Marta{sufijo}", f"marta{sufijo}@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, "data:image/png;base64,AAA")
+    firmar_documento(documento, juan, "data:image/png;base64,BBB")
+    return documento, claudia, juan, supervisora, manyana
+
+
+def test_autorizar_documento_vuelca_a_planillas(db):
+    documento, claudia, juan, supervisora, manyana = _crear_documento_completo(db, "m")
+
+    autorizar_documento(documento, supervisora)
+
+    assert documento.decision_supervisora == "autorizado"
+    assert documento.supervisora_id == supervisora.id
+    assert documento.fecha_decision_supervisora is not None
+
+    # Claudia ya no tiene el turno que cedió, y sí el que recibió.
+    assert TurnoPlanilla.query.filter_by(
+        usuario_id=claudia.id, fecha=date(2026, 7, 7), franja_horaria_id=manyana.id
+    ).first() is None
+    assert TurnoPlanilla.query.filter_by(
+        usuario_id=claudia.id, fecha=date(2026, 7, 28), franja_horaria_id=manyana.id
+    ).first() is not None
+
+    # Juan al revés.
+    assert TurnoPlanilla.query.filter_by(
+        usuario_id=juan.id, fecha=date(2026, 7, 28), franja_horaria_id=manyana.id
+    ).first() is None
+    assert TurnoPlanilla.query.filter_by(
+        usuario_id=juan.id, fecha=date(2026, 7, 7), franja_horaria_id=manyana.id
+    ).first() is not None
+
+    # Notas añadidas a la planilla de cada uno.
+    assert NotaDia.query.filter_by(usuario_id=claudia.id, fecha=date(2026, 7, 7)).first() is not None
+    assert NotaDia.query.filter_by(usuario_id=juan.id, fecha=date(2026, 7, 28)).first() is not None
+
+
+def test_denegar_documento_no_toca_planillas(db):
+    documento, claudia, juan, supervisora, manyana = _crear_documento_completo(db, "n")
+
+    denegar_documento(documento, supervisora)
+
+    assert documento.decision_supervisora == "denegado"
+    assert documento.supervisora_id == supervisora.id
+
+    # Nada cambia en las planillas.
+    assert TurnoPlanilla.query.filter_by(usuario_id=claudia.id).count() == 0
+    assert TurnoPlanilla.query.filter_by(usuario_id=juan.id).count() == 0

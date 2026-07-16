@@ -101,6 +101,8 @@ def create_app(config_name=None):
                         "contrasena_restablecida",
                         "documento_cambio_pendiente_firma",
                         "documento_cambio_completo",
+                        "documento_cambio_autorizado",
+                        "documento_cambio_denegado",
                     ]),
                     Notificacion.leida.is_(False),
                 ).count()
