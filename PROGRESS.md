@@ -7,14 +7,34 @@ Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 Cola de pendientes que el usuario pidió abordar seguidos, en el orden
 que mejor convenga: (1) recomprobar factibilidad en la 2ª firma — HECHO,
 (2) firma cruzada entre cuentas reales — HECHO, (3) número de cambio
-junto a la fecha — HECHO, (4) mejorar el PDF para que sea aún más fiel
-al original, (5) listado de "mis hojas de cambio" en la cuenta de cada
-usuario (guardar/consultar documentos, regenerar PDF cuando haga falta),
-(6) enviar los cambios por email a los implicados, (7) cuenta de
-supervisora con acceso a todos los cambios, (8) botón autorizar/denegar
-en la cuenta de supervisora que decide si se vuelca a las planillas,
-(9) cadenas a 3/4 bandas y juntes de noches, (10) enganche con el motor
-de matching vía `match_id`. Siguiente: (4) mejorar el PDF.
+junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (parcial, ver
+"Paso anterior"), (5) listado de "mis hojas de cambio" en la cuenta de
+cada usuario (guardar/consultar documentos, regenerar PDF cuando haga
+falta), (6) enviar los cambios por email a los implicados, (7) cuenta
+de supervisora con acceso a todos los cambios, (8) botón
+autorizar/denegar en la cuenta de supervisora que decide si se vuelca a
+las planillas, (9) cadenas a 3/4 bandas y juntes de noches, (10)
+enganche con el motor de matching vía `match_id`. Siguiente: (5)
+listado "mis hojas de cambio".
+
+## Paso anterior
+fix(documento-cambio): mejoras de fidelidad del PDF — "Favorable"/
+"Desfavorable" del bloque de la supervisora pasan a líneas separadas
+(en el impreso real están apiladas, no en la misma línea, como tenía
+antes). Se intentó también reproducir el patrón `_`/`N` de la rejilla
+"CORRESPONDE A:" (boilerplate fijo del impreso, legado de juntes de
+noches) añadiendo una segunda fila de datos con ese contenido, pero
+`xhtml2pdf`/reportlab no calcula bien el ancho de columnas en cuanto
+hay contenido real en varias filas de una tabla con una columna de
+etiqueta ancha (el label se queda comprimido en una columna diminuta,
+probado con `rowspan` y con anchos explícitos `width=` por columna, sin
+éxito en ninguno de los dos intentos) — revertido a una sola fila en
+blanco por rejilla, que sí renderiza bien, en vez de seguir invirtiendo
+tiempo en un problema de una librería de terceros para un elemento que
+además es boilerplate de una función (juntes de noches) todavía fuera
+de alcance. Verificado visualmente con `pdftoppm` en cada iteración,
+1 página confirmada con `pypdf`. Sin tests nuevos (cambio de
+maquetación, no de comportamiento) · 23 tests existentes en verde.
 
 ## Paso anterior
 feat(documento-cambio): número de cambio junto a la fecha — pedido
