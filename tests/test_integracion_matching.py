@@ -1,5 +1,6 @@
 """Tests de integración: crear MatchCambio y Notificaciones al publicar (Fase 4, paso 3)."""
 from datetime import date, time
+from unittest.mock import patch
 
 from app.extensions import db
 from app.models import (
@@ -133,3 +134,34 @@ def test_publicar_sin_coincidencia_no_crea_match(client, db):
     })
 
     assert MatchCambio.query.count() == 0
+
+
+def test_publicar_calcula_candidatas_una_sola_vez(client, db):
+    """Publicar lanza 5 búsquedas de matching distintas (match directo, cadena_3,
+    cadena_4, cadena parcial 4 y avisos de interés) que antes repetían cada una
+    su propia consulta de candidatas activas (_candidatas_base). Deben compartir
+    un único cálculo en vez de repetirlo 5 veces."""
+    from app.matching import service as matching_service
+
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_pedro = PublicacionCambio(usuario_id=pedro.id)
+    db.session.add(pub_pedro)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    with patch.object(
+        matching_service, "_candidatas_base", wraps=matching_service._candidatas_base
+    ) as candidatas_spy:
+        client.post("/publicar", data={
+            "fecha_cedida_0": "2026-09-01",
+            "franja_cedida_0": franja.id,
+            "fecha_aceptada_0": "2026-09-02",
+            "franja_aceptada_0": franja.id,
+        })
+        assert candidatas_spy.call_count == 1

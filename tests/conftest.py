@@ -1,5 +1,5 @@
 import pytest
-from sqlalchemy import text
+from sqlalchemy import event, text
 from app import create_app
 from app.extensions import db as _db
 
@@ -39,3 +39,23 @@ def db(app):
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+class QueryCounter:
+    """Cuenta las sentencias SELECT ejecutadas mientras está activo, para
+    detectar N+1 (nº de queries que crece con el nº de filas procesadas)."""
+
+    def __init__(self):
+        self.selects = 0
+
+    def _contar(self, conn, cursor, statement, *args):
+        if statement.strip().upper().startswith("SELECT"):
+            self.selects += 1
+
+
+@pytest.fixture
+def query_counter(app, db):
+    counter = QueryCounter()
+    event.listen(db.engine, "after_cursor_execute", counter._contar)
+    yield counter
+    event.remove(db.engine, "after_cursor_execute", counter._contar)

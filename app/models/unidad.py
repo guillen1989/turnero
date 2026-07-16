@@ -7,7 +7,7 @@ class Unidad(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(200), nullable=False)
     hospital_id = db.Column(db.Integer, db.ForeignKey("hospital.id"), nullable=False)
-    grupo_intercambio_id = db.Column(db.Integer, db.ForeignKey("grupo_intercambio.id"), nullable=False)
+    grupo_intercambio_id = db.Column(db.Integer, db.ForeignKey("grupo_intercambio.id"), nullable=False, index=True)
 
     categoria_id = db.Column(db.Integer, db.ForeignKey("categoria.id"), nullable=True)
 

@@ -13,15 +13,15 @@ class PublicacionCambio(db.Model):
     __tablename__ = "publicacion_cambio"
 
     id = db.Column(db.Integer, primary_key=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False, index=True)
     fecha_creacion = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
-    estado = db.Column(db.String(30), nullable=False, default="abierta")
+    estado = db.Column(db.String(30), nullable=False, default="abierta", index=True)
     fecha_cierre = db.Column(db.DateTime, nullable=True)
-    tipo = db.Column(db.String(20), nullable=False, default="cambio")
+    tipo = db.Column(db.String(20), nullable=False, default="cambio", index=True)
     mensaje = db.Column(db.String(200), nullable=True)
-    es_sintetica = db.Column(db.Boolean, nullable=False, default=False)
+    es_sintetica = db.Column(db.Boolean, nullable=False, default=False, index=True)
     sintetica_pub_a_id = db.Column(
         db.Integer, db.ForeignKey("publicacion_cambio.id"), nullable=True
     )

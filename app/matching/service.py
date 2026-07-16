@@ -99,7 +99,29 @@ def _candidatas_base(publicacion, propietario, grupo_id):
     )
 
 
-def buscar_matches_para(publicacion):
+def candidatas_activas_para(publicacion):
+    """Candidatas activas para `publicacion` (mismo grupo/categoría, mismos
+    filtros que usan todas las búsquedas de matching).
+
+    Pensada para calcularse una sola vez por publish/editar y pasarse a las
+    distintas búsquedas (buscar_matches_para, buscar_cadenas_3_para, ...) en
+    vez de que cada una repita la misma consulta (con sus selectinload).
+    """
+    propietario = db.session.get(Usuario, publicacion.usuario_id)
+    grupo_id = propietario.unidad.grupo_intercambio_id
+    return _candidatas_base(publicacion, propietario, grupo_id)
+
+
+def _resolver_candidatas(publicacion, candidatas):
+    """Devuelve `candidatas` tal cual si ya se pasaron calculadas, o las
+    calcula si no (para que cada búsqueda siga funcionando de forma
+    independiente cuando se llama sin ese argumento, como en los tests)."""
+    if candidatas is not None:
+        return candidatas
+    return candidatas_activas_para(publicacion)
+
+
+def buscar_matches_para(publicacion, candidatas=None):
     """
     Devuelve las publicaciones activas que hacen match con `publicacion`.
 
@@ -112,10 +134,10 @@ def buscar_matches_para(publicacion):
     Matches parciales (un lado satisfecho):
       - cambio ↔ regalo: el regalo cubre uno de los cedidos del cambio
       - cambio ↔ peticion: la peticion cubre uno de los aceptados del cambio
+
+    `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
     """
-    propietario = db.session.get(Usuario, publicacion.usuario_id)
-    grupo_id = propietario.unidad.grupo_intercambio_id
-    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+    candidatas = _resolver_candidatas(publicacion, candidatas)
 
     tipo = publicacion.tipo
 
@@ -340,19 +362,18 @@ def _cadenas_3_existentes(pub_id):
     return {frozenset(pubs) for pubs in agrupado.values()}
 
 
-def buscar_cadenas_3_para(publicacion):
+def buscar_cadenas_3_para(publicacion, candidatas=None):
     """
     Devuelve lista de pares (pub_b, pub_c) donde publicacion→pub_b→pub_c→publicacion
     forma un ciclo de intercambio válido a 3 bandas.
 
     Solo opera sobre publicaciones de tipo 'cambio'.
+    `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
     """
     if publicacion.tipo != "cambio":
         return []
 
-    propietario = db.session.get(Usuario, publicacion.usuario_id)
-    grupo_id = propietario.unidad.grupo_intercambio_id
-    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+    candidatas = _resolver_candidatas(publicacion, candidatas)
     candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
 
     cedidos_a = _cedidos_abiertos(publicacion)
@@ -488,20 +509,19 @@ def _cadenas_4_existentes(pub_id):
     return {frozenset(pubs) for pubs in agrupado.values()}
 
 
-def buscar_cadenas_4_para(publicacion):
+def buscar_cadenas_4_para(publicacion, candidatas=None):
     """
     Devuelve lista de tríos (pub_b, pub_c, pub_d) donde
     publicacion→pub_b→pub_c→pub_d→publicacion forma un ciclo de intercambio
     válido a 4 bandas.
 
     Solo opera sobre publicaciones de tipo 'cambio'.
+    `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
     """
     if publicacion.tipo != "cambio":
         return []
 
-    propietario = db.session.get(Usuario, publicacion.usuario_id)
-    grupo_id = propietario.unidad.grupo_intercambio_id
-    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+    candidatas = _resolver_candidatas(publicacion, candidatas)
     candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
 
     cedidos_a = _cedidos_abiertos(publicacion)
@@ -627,7 +647,7 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
     return match
 
 
-def buscar_cadenas_parciales_4_para(publicacion):
+def buscar_cadenas_parciales_4_para(publicacion, candidatas=None):
     """
     Devuelve lista de tríos (pub_a, pub_b, pub_c) donde pub_a→pub_b→pub_c
     cierra 2 de los 3 eslabones de un ciclo sin cerrar el tercero (pub_c→pub_a):
@@ -642,13 +662,12 @@ def buscar_cadenas_parciales_4_para(publicacion):
     Estos tríos son la base para generar una publicación sintética que
     represente al cuarto usuario que falta. Solo opera sobre publicaciones
     de tipo 'cambio'.
+    `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
     """
     if publicacion.tipo != "cambio":
         return []
 
-    propietario = db.session.get(Usuario, publicacion.usuario_id)
-    grupo_id = propietario.unidad.grupo_intercambio_id
-    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+    candidatas = _resolver_candidatas(publicacion, candidatas)
     candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
 
     cedidos_pub = _cedidos_abiertos(publicacion)
@@ -704,7 +723,7 @@ def buscar_cadenas_parciales_4_para(publicacion):
     return resultado
 
 
-def buscar_avisos_interes_para(publicacion):
+def buscar_avisos_interes_para(publicacion, candidatas=None):
     """
     Devuelve publicaciones cambio con solapamiento unilateral respecto a `publicacion`.
 
@@ -712,13 +731,12 @@ def buscar_avisos_interes_para(publicacion):
     no la otra, por lo que no puede formarse un match directo. Se notifica a ambas
     partes para que puedan ampliar sus aceptados o explorar cadenas.
     Solo opera sobre publicaciones de tipo 'cambio'.
+    `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
     """
     if publicacion.tipo != "cambio":
         return []
 
-    propietario = db.session.get(Usuario, publicacion.usuario_id)
-    grupo_id = propietario.unidad.grupo_intercambio_id
-    candidatas = _candidatas_base(publicacion, propietario, grupo_id)
+    candidatas = _resolver_candidatas(publicacion, candidatas)
 
     cedidos_pub = _cedidos_abiertos(publicacion)
     aceptados_pub = _aceptados(publicacion)
