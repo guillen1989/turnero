@@ -4,12 +4,30 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Pendiente: confirmar con el usuario en el próximo deploy que el PDF ya
-funciona en Railway con xhtml2pdf (ver "Paso anterior") — no se puede
-verificar desde este entorno de desarrollo, solo con el deploy real.
-Además: comprobación de factibilidad contra planillas (de momento se
-genera el documento sin verificar) y actualizar `ESPECIFICACION.md` (ver
-nota de varios pasos atrás).
+Pendiente: confirmar con el usuario que el PDF se ve bien en Railway
+(xhtml2pdf ya generaba el PDF correctamente ahí, solo quedaba el ajuste
+de maquetación del paso anterior). Además: comprobación de factibilidad
+contra planillas (de momento se genera el documento sin verificar) y
+actualizar `ESPECIFICACION.md` (ver nota de varios pasos atrás).
+
+## Paso anterior
+fix(documento-cambio): el PDF desbordaba a una segunda página en
+Railway — "LA SUPERVISORA DE LA UNIDAD," terminaba en la página 2,
+reportado por el usuario tras el deploy. La maquetación se había
+ajustado a ojo comparando capturas locales y, sin darme cuenta, ya
+ocupaba ~96% de la altura útil de una A4 (medido a posteriori contando
+píxeles en la captura del paso anterior) — sin margen para que una
+diferencia mínima de métricas de fuente en otro entorno la hiciera
+desbordar. Reducidos márgenes/paddings/tamaños de fuente en
+`pdf.html` (`@page` de 2cm a 1.5cm, cuerpo de 11pt a 10pt, márgenes de
+`.campo`/rejillas/firmas/supervisora recortados proporcionalmente) sin
+cambiar el contenido ni la estructura. Verificado contando páginas del
+PDF generado con `pypdf` (1 página, antes también daba 1 en local pero
+sin margen) y visualmente con `pdftoppm` — ahora queda con ~30% de
+espacio en blanco al final, margen real para absorber diferencias de
+entorno. Sin tests nuevos (cambio puramente de maquetación, no de
+comportamiento) · 14 tests existentes siguen en verde · push directo a
+staging a petición del usuario.
 
 ## Paso anterior
 fix(documento-cambio): sustituido WeasyPrint por xhtml2pdf — dos
