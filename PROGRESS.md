@@ -4,12 +4,28 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Paso 2: formulario manual para introducir los datos del cambio (hospital/
-unidad/categoría se derivan del `Usuario` autenticado, no se piden) y
-captura de firma con canvas (dibujo con el dedo), con las dos firmas desde
-la misma cuenta (fase 1 del plan: mono-cuenta, sin cadenas a 3/4, sin
-juntes de noches). Tras la firma 2, `DocumentoCambio.estado` pasa a
-`completo`.
+Paso 2b: rutas + formulario HTML + captura de firma con canvas (dibujo con
+el dedo), con las dos firmas desde la misma cuenta (mono-cuenta, sin
+cadenas a 3/4, sin juntes de noches). Reutiliza el servicio del paso 2a.
+En la misma página del documento, cuando esté `completo`, mostrar el
+cuadro de notas para ilog (`generar_notas_ilog`) — pedido explícito del
+usuario 2026-07-16: junto al documento debe aparecer un texto copiable
+para que la ayudante lo pegue en la nota del día correspondiente en ilog.
+Un cambio 1 a 1 afecta a 4 casillas (2 trabajadores x 2 días), así que son
+4 notas, cada una con su propio botón de copiar.
+
+## Paso anterior
+feat(documento-cambio): servicio `crear_documento_cambio` (genera los dos
+`ParticipanteDocumentoCambio` espejo), `firmar_documento` (registra la
+firma, calcula `hash_documento` con sha256 sobre el contenido firmable, y
+mueve el estado borrador→pendiente_firmas→completo según falten firmas) y
+`generar_notas_ilog` (4 notas en lenguaje natural — una por trabajador y
+día afectado — para que la ayudante las copie a la nota del día en ilog;
+formato de fecha "D de mes" con lista de meses en español, mismo patrón ya
+usado en `busquedas_guardadas.py`). 5 tests nuevos, todos en verde a la
+primera · 901 tests passing (896 + 5 nuevos, no se ha vuelto a correr la
+suite completa, solo el fichero nuevo — el resto de la suite no se ha
+tocado desde el último run completo).
 
 ## Paso anterior
 feat(documento-cambio): modelo de datos para la hoja de cambio digital —
