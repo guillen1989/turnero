@@ -19,6 +19,9 @@ from app.models.audit import AuditEliminacion
 from app.models.planilla import (
     TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, CompatibilidadPlanilla, NotaDia, SalienteDia, TIPOS_ESTADO_DIA
 )
+from app.models.documento_cambio import (
+    DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio, ESTADOS_DOCUMENTO_CAMBIO
+)
 
 __all__ = [
     "Pais",
@@ -50,4 +53,8 @@ __all__ = [
     "SalienteDia",
     "TIPOS_ESTADO_DIA",
     "insertar_categorias_semilla",
+    "DocumentoCambio",
+    "ParticipanteDocumentoCambio",
+    "FirmaDocumentoCambio",
+    "ESTADOS_DOCUMENTO_CAMBIO",
 ]

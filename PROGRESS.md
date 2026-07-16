@@ -1,9 +1,42 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 9 — Mejoras post-MVP
+Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
+Paso 2: formulario manual para introducir los datos del cambio (hospital/
+unidad/categoría se derivan del `Usuario` autenticado, no se piden) y
+captura de firma con canvas (dibujo con el dedo), con las dos firmas desde
+la misma cuenta (fase 1 del plan: mono-cuenta, sin cadenas a 3/4, sin
+juntes de noches). Tras la firma 2, `DocumentoCambio.estado` pasa a
+`completo`.
+
+## Paso anterior
+feat(documento-cambio): modelo de datos para la hoja de cambio digital —
+`DocumentoCambio` (estado borrador/pendiente_firmas/completo/caducado,
+`match_id` nullable para enlazar más adelante con `MatchCambio` cuando el
+documento se genere desde el motor de matching), `ParticipanteDocumentoCambio`
+(una fila por trabajador implicado, con el turno que cede y el que recibe;
+no depende de `PublicacionCambio`/`TurnoCedido` porque en esta fase manual
+no hay ninguna publicación de por medio) y `FirmaDocumentoCambio` (una fila
+por firma, con `imagen_firma` para el trazo dibujado y `hash_documento`
+como huella del contenido exacto firmado, para poder demostrar qué se
+firmó aunque la plantilla cambie después). `UniqueConstraint` en
+participante y firma (un usuario no puede aparecer dos veces en el mismo
+documento ni firmar dos veces). Método `todos_han_firmado()` compara el
+conjunto de usuarios participantes contra el conjunto de firmantes.
+Migración `3f8d2428aa64` (3 tablas nuevas, todas las columnas `NOT NULL`
+son seguras en un solo paso porque las tablas nacen vacías — no aplica el
+patrón de 3 pasos). 9 tests nuevos en `test_models_documento_cambio.py` ·
+896 tests passing (suite completa).
+
+Pendiente (fuera del alcance de este paso, anotado para no perderlo):
+`ESPECIFICACION.md` todavía dice "no deja constancia oficial del cambio
+para terceros (no es un documento de RRHH)" — ese principio ya no es
+exacto una vez que este documento exista, hay que actualizarlo cuando se
+cierre el diseño completo de esta fase.
+
+## Paso anterior
 fix(matching): las cadenas de 3 y 4 bandas (`crear_match_cadena_3`,
 `crear_match_cadena_4` en `app/matching/service.py`) solo registraban en
 `MatchParticipacion` el `turno_cedido_id` que cada banda cede a la
@@ -618,6 +651,7 @@ mitigación preventiva independiente de la causa.
 - [x] feat(dashboard): las tarjetas de match de cadenas de 3/4 bandas muestran quién ya confirmó (✓, chip verde) y quién falta (○) — solo plantilla + CSS, el dato (`MatchParticipacion.confirmado`) ya existía · se muestra mientras el match no esté `confirmado_total` · catálogo i18n actualizado · 1 test nuevo · 880 tests passing
 - [x] fix(dashboard): investigado el reporte de que la tarjeta de Pendientes no reflejaba nuevas confirmaciones de otros al recargar — no se pudo reproducir ningún bug de datos/plantilla (verificado con test client y con servidor real + sesiones HTTP independientes); se añade `Cache-Control: no-store` a `main.index` como medida defensiva ante caché de navegador/proxy, ya que la página es dinámica y personal y no llevaba cabecera anti-caché · 4 tests nuevos · 884 tests passing
 - [x] fix(matching): `crear_match_cadena_3`/`crear_match_cadena_4` no registraban el `turno_aceptado_id` que cada banda recibe de la anterior en el ciclo (solo el `turno_cedido_id` que cede), así que al confirmarse una cadena el turno ya conseguido nunca se marcaba `resuelto` y seguía apareciendo como pendiente en la publicación reactivada · reportado por el usuario en producción (match cadena_4 confirmado, publicación 818) · fix reutiliza `_primer_aceptado_que_cubre` (ya usado por `crear_match_directo`) · 4 tests de regresión nuevos · 887 tests passing
+- [x] Fase 10, paso 1: modelos `DocumentoCambio`/`ParticipanteDocumentoCambio`/`FirmaDocumentoCambio` para la hoja de cambio digital con firma (reproduce `hojacambios.png`, formulario "SOLICITUD DE CAMBIO DE TURNO O GUARDIA" del Hospital La Paz) · migración `3f8d2428aa64` · 9 tests nuevos · 896 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
@@ -627,3 +661,13 @@ mitigación preventiva independiente de la causa.
 - El motor de matching se implementa como módulo puro sin acoplamiento a Flask ni SQLAlchemy.
 - Los conflictos de pip (streamlit, spyder) son del sistema y no afectan al proyecto.
 - conftest.py empuja un app context fresco por test para aislar g (Flask-Login) y la sesión SQLAlchemy. Necesario porque en Flask 3.x g está scoped al app context (no al request context) y Flask-Login cachea current_user en g._login_user.
+
+### Hoja de cambios digital (Fase 10) — decisiones tomadas con el usuario
+- Fase 1 explícitamente: sin cadenas a 3/4 bandas, sin juntes de noches, mono-cuenta (las dos firmas se hacen desde el mismo dispositivo/cuenta).
+- Se genera el documento aunque no se haya comprobado factibilidad contra planillas (decisión consciente: el objetivo inmediato es tener un prototipo que enseñar a los jefes, no bloquear por falta de verificación). La comprobación de factibilidad es un paso posterior.
+- Firma dibujada con el dedo (canvas) por decisión explícita del usuario para dar sensación de formalidad ante su supervisora, aunque no tenga valor legal reforzado — de ahí `hash_documento` en `FirmaDocumentoCambio` como rastro real por detrás del gesto visual.
+- El documento generado debe ser visualmente lo más fiel posible a `hojacambios.png` (formulario real "SOLICITUD DE CAMBIO DE TURNO O GUARDIA" del Hospital Universitario La Paz, guardado en la raíz del repo).
+- Las dos rejillas L-M-X-J-V-S-D del impreso son para juntes de noches (fuera de alcance ahora) — se renderizan en blanco/estáticas, sin datos.
+- El bloque "INFORME POR PARTE DE LA SUPERVISORA" (Favorable/Desfavorable + firma) no se usa en la práctica según el usuario, pero se mantiene en el documento generado como bloque estático/en blanco, sin tercer firmante ni lógica funcional.
+- Plantilla: HTML/Jinja2 + renderizado a PDF con WeasyPrint (no Word/LibreOffice), generado bajo demanda (no se persiste el PDF, evita el problema de disco efímero en Railway) — pendiente de implementar.
+- `ESPECIFICACION.md` pendiente de actualizar (ver nota en el paso anterior): el principio "no deja constancia oficial... no es un documento de RRHH" queda desactualizado con esta funcionalidad.

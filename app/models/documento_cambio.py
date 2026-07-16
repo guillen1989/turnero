@@ -1,0 +1,123 @@
+from datetime import datetime, timezone
+
+from app.extensions import db
+
+ESTADOS_DOCUMENTO_CAMBIO = ("borrador", "pendiente_firmas", "completo", "caducado")
+
+
+class DocumentoCambio(db.Model):
+    """
+    Hoja de cambio de turno digital (equivalente al impreso en papel que
+    firman los dos trabajadores implicados).
+
+    match_id es nullable a propósito: en la fase manual (datos introducidos
+    a mano) no hay ningún MatchCambio de por medio; cuando el motor de
+    matching genere el documento automáticamente, se enlazará aquí sin
+    tener que rediseñar el modelo.
+    """
+    __tablename__ = "documento_cambio"
+
+    id = db.Column(db.Integer, primary_key=True)
+    estado = db.Column(db.String(20), nullable=False, default="borrador")
+    fecha_creacion = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    match_id = db.Column(db.Integer, db.ForeignKey("match_cambio.id"), nullable=True)
+    factibilidad_verificada = db.Column(db.Boolean, nullable=False, default=False)
+
+    creado_por = db.relationship("Usuario")
+    match = db.relationship("MatchCambio")
+    participantes = db.relationship(
+        "ParticipanteDocumentoCambio",
+        back_populates="documento",
+        cascade="all, delete-orphan",
+    )
+    firmas = db.relationship(
+        "FirmaDocumentoCambio",
+        back_populates="documento",
+        cascade="all, delete-orphan",
+    )
+
+    def todos_han_firmado(self) -> bool:
+        ids_participantes = {p.usuario_id for p in self.participantes}
+        if not ids_participantes:
+            return False
+        ids_firmantes = {f.usuario_id for f in self.firmas}
+        return ids_participantes.issubset(ids_firmantes)
+
+    def __repr__(self):
+        return f"<DocumentoCambio {self.id} [{self.estado}]>"
+
+
+class ParticipanteDocumentoCambio(db.Model):
+    """
+    Una fila por trabajador implicado en el documento: qué turno cede y qué
+    turno recibe a cambio. No depende de PublicacionCambio/TurnoCedido
+    porque en la fase manual no existe ninguna publicación de por medio.
+    """
+    __tablename__ = "participante_documento_cambio"
+
+    id = db.Column(db.Integer, primary_key=True)
+    documento_id = db.Column(
+        db.Integer, db.ForeignKey("documento_cambio.id"), nullable=False
+    )
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    turno_cede_fecha = db.Column(db.Date, nullable=False)
+    turno_cede_franja_id = db.Column(
+        db.Integer, db.ForeignKey("franja_horaria.id"), nullable=False
+    )
+    turno_recibe_fecha = db.Column(db.Date, nullable=False)
+    turno_recibe_franja_id = db.Column(
+        db.Integer, db.ForeignKey("franja_horaria.id"), nullable=False
+    )
+
+    documento = db.relationship("DocumentoCambio", back_populates="participantes")
+    usuario = db.relationship("Usuario")
+    turno_cede_franja = db.relationship(
+        "FranjaHoraria", foreign_keys=[turno_cede_franja_id]
+    )
+    turno_recibe_franja = db.relationship(
+        "FranjaHoraria", foreign_keys=[turno_recibe_franja_id]
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "documento_id", "usuario_id", name="uq_participante_documento_usuario"
+        ),
+    )
+
+    def __repr__(self):
+        return f"<ParticipanteDocumentoCambio doc={self.documento_id} usuario={self.usuario_id}>"
+
+
+class FirmaDocumentoCambio(db.Model):
+    """
+    Una fila por firma recogida. imagen_firma guarda el trazo dibujado
+    (data URI); hash_documento es la huella del contenido exacto firmado,
+    para poder demostrar qué se firmó aunque la plantilla cambie después.
+    """
+    __tablename__ = "firma_documento_cambio"
+
+    id = db.Column(db.Integer, primary_key=True)
+    documento_id = db.Column(
+        db.Integer, db.ForeignKey("documento_cambio.id"), nullable=False
+    )
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    fecha_firma = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+    imagen_firma = db.Column(db.Text, nullable=False)
+    hash_documento = db.Column(db.String(64), nullable=False)
+
+    documento = db.relationship("DocumentoCambio", back_populates="firmas")
+    usuario = db.relationship("Usuario")
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "documento_id", "usuario_id", name="uq_firma_documento_usuario"
+        ),
+    )
+
+    def __repr__(self):
+        return f"<FirmaDocumentoCambio doc={self.documento_id} usuario={self.usuario_id}>"
