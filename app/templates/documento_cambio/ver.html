@@ -8,6 +8,7 @@
 
   {% if documento.estado == 'completo' %}
     <div class="flash flash--success documento-completo-banner">{{ _('Las dos firmas están recogidas. La hoja de cambio está completa.') }}</div>
+    <a href="{{ url_for('documento_cambio.pdf', documento_id=documento.id) }}" class="btn btn-primary">{{ _('Generar PDF') }}</a>
   {% else %}
     <span class="badge-draft">{{ _('Pendiente de firma') }}</span>
   {% endif %}

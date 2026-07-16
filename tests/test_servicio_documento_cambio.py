@@ -1,7 +1,12 @@
 from datetime import date, time
 from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario
 from app.services.documento_cambio import (
-    crear_documento_cambio, firmar_documento, generar_notas_ilog,
+    crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
+)
+
+_FIRMA_PNG = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAADklE"
+    "QVR4nGNgGAWDEwAAAZoAAR2CVqgAAAAASUVORK5CYII="
 )
 
 
@@ -150,3 +155,21 @@ def test_generar_notas_ilog_contenido_para_ejemplo_del_usuario(db):
         "Trabaja el turno de mañana a Juan Rodríguez a cambio de que "
         "Juan Rodríguez le trabaje el turno de mañana del 7 de julio."
     )
+
+
+def test_generar_pdf_documento_completo(db):
+    crear_usuario, manyana, tarde = _setup(db, "f")
+    claudia = crear_usuario("Claudia Pérez", "claudiaf@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanf@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, _FIRMA_PNG)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    assert pdf_bytes[:5] == b"%PDF-"
+    assert len(pdf_bytes) > 1000

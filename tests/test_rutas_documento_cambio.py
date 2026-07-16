@@ -153,3 +153,54 @@ def test_firmar_dos_veces_el_mismo_participante_da_409(db, client):
     resp = client.post(f"/documentos-cambio/{documento_id}/firmar/{p1.id}",
                         data={"imagen_firma": "data:image/png;base64,CCC"})
     assert resp.status_code == 409
+
+
+_FIRMA_PNG = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAADklE"
+    "QVR4nGNgGAWDEwAAAZoAAR2CVqgAAAAASUVORK5CYII="
+)
+
+
+def test_pdf_da_409_si_no_esta_completo(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "f")
+    claudia = crear_usuario("Claudia Pérez", "claudiaf@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanf@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+
+    resp = client.get(f"/documentos-cambio/{documento_id}/pdf")
+    assert resp.status_code == 409
+
+
+def test_pdf_descarga_cuando_esta_completo(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "g")
+    claudia = crear_usuario("Claudia Pérez", "claudiag@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juang@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    from app.models import DocumentoCambio
+    p1, p2 = db.session.get(DocumentoCambio, documento_id).participantes
+
+    client.post(f"/documentos-cambio/{documento_id}/firmar/{p1.id}", data={"imagen_firma": _FIRMA_PNG})
+    client.post(f"/documentos-cambio/{documento_id}/firmar/{p2.id}", data={"imagen_firma": _FIRMA_PNG})
+
+    resp = client.get(f"/documentos-cambio/{documento_id}/pdf")
+    assert resp.status_code == 200
+    assert resp.mimetype == "application/pdf"
+    assert resp.data[:5] == b"%PDF-"

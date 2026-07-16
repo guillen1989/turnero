@@ -4,14 +4,53 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Paso 3: plantilla Jinja fiel al impreso real (`hojacambios.png`) + render
-a PDF con WeasyPrint, generado bajo demanda (sin persistir el binario).
-La página `/documentos-cambio/<id>` actual es funcional pero no es la
-réplica visual del papel — eso queda para este paso. También pendiente:
-comprobación de factibilidad contra planillas (de momento se genera el
-documento sin verificar, decisión consciente para tener un prototipo que
-enseñar a los jefes) y actualizar `ESPECIFICACION.md` (ver nota de dos
-pasos atrás).
+Pendiente: comprobación de factibilidad contra planillas (de momento se
+genera el documento sin verificar, decisión consciente para tener un
+prototipo que enseñar a los jefes) y actualizar `ESPECIFICACION.md` (ver
+nota de varios pasos atrás). Sin siguiente paso concreto decidido más
+allá de eso — a definir con el usuario.
+
+## Paso anterior
+feat(documento-cambio): plantilla PDF fiel al impreso real + botón
+"Generar PDF" — pedido explícito del usuario tras probar manualmente el
+flujo de firma: quiere enseñar el PDF generado a sus jefes. Nueva
+plantilla standalone `documento_cambio/pdf.html` (no extiende `base.html`,
+es un documento HTML propio pensado para WeasyPrint, con CSS `@page`) que
+reproduce el impreso `hojacambios.png` del Hospital La Paz: logo (recortado
+de la cabecera del propio PNG con Pillow, guardado en
+`app/static/img/logo-hospital-la-paz.png`), título, campos de
+hospital/unidad/categoría/solicitante derivados del `Usuario` (no
+duplicados en el modelo), datos del cambio, las dos rejillas L-M-X-J-V-S-D
+en blanco (juntes de noches, fuera de alcance), fecha, las dos firmas
+(las imágenes `data:image/png;base64,...` ya guardadas se embeben
+directamente — WeasyPrint las soporta nativas) y el bloque de la
+supervisora en blanco/estático, tal y como se decidió en el diseño de la
+plantilla.
+
+`generar_pdf_documento(documento)` en el servicio: usa
+`documento.creado_por` como "LA INTERESADA" (quien solicita) y el otro
+participante como "ACEPTA EL CAMBIO", busca sus firmas por `usuario_id`,
+renderiza la plantilla con `render_template` y la convierte con
+`WeasyPrint.HTML(string=html).write_pdf()` — se genera bajo demanda en
+cada petición, no se persiste el binario en ningún sitio (evita el
+problema de disco efímero en Railway que ya habíamos identificado).
+Nueva ruta `GET /documentos-cambio/<id>/pdf` (403 si no eres el creador,
+409 si el documento no está `completo` — decisión explícita del usuario:
+el botón solo aparece cuando las dos firmas ya están recogidas, no como
+borrador), devuelve el PDF con `Content-Disposition: attachment`.
+
+Añadida dependencia `weasyprint==69.0` a `requirements.txt` — probada en
+este entorno (renderiza sin problemas, no ha hecho falta instalar
+paquetes de sistema aparte de los que ya trae la imagen). Verificado
+generando un PDF real end-to-end (con firma dibujada de verdad, no un
+placeholder) y convirtiéndolo a imagen con `pdftoppm` para inspección
+visual — el resultado es fiel al impreso original, incluidas las firmas
+renderizando correctamente en su sitio.
+
+A petición del usuario, tests mínimos en vez de la suite completa en este
+paso (3 tests nuevos: PDF válido con 2 firmas a nivel de servicio, 409 sin
+completar, 200+descarga al completar) y push directo a `staging` sin pasar
+por PR.
 
 ## Paso anterior
 feat(documento-cambio): rutas, formulario y firma con canvas — nuevo
@@ -830,6 +869,7 @@ mitigación preventiva independiente de la causa.
 - [x] Fase 10, paso 1: modelos `DocumentoCambio`/`ParticipanteDocumentoCambio`/`FirmaDocumentoCambio` para la hoja de cambio digital con firma (reproduce `hojacambios.png`, formulario "SOLICITUD DE CAMBIO DE TURNO O GUARDIA" del Hospital La Paz) · migración `3f8d2428aa64` · 9 tests nuevos · 896 tests passing
 - [x] Fase 10, paso 2a: servicio `crear_documento_cambio`/`firmar_documento`/`generar_notas_ilog` · 5 tests nuevos
 - [x] Fase 10, paso 2b: rutas + formulario + firma con canvas (`pointerdown/move/up`) + notas para ilog copiables · blueprint `documento_cambio`, enlace en nav · catálogo i18n actualizado · 9 tests de rutas + 1 e2e (Playwright, firma real dibujada) · verificado en navegador
+- [x] Fase 10, paso 3: plantilla PDF fiel a `hojacambios.png` + botón "Generar PDF" (solo si `completo`) · `generar_pdf_documento` con WeasyPrint, bajo demanda · logo recortado del PNG real · dependencia `weasyprint==69.0` · 3 tests nuevos (tests mínimos a petición del usuario) · verificado visualmente con `pdftoppm`
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

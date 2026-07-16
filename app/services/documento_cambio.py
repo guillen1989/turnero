@@ -5,6 +5,9 @@ en lenguaje natural que la ayudante copia y pega en ilog.
 """
 import hashlib
 
+from flask import current_app, render_template
+from weasyprint import HTML
+
 from app.extensions import db
 from app.models import DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio
 
@@ -111,3 +114,34 @@ def generar_notas_ilog(documento):
             ),
         })
     return notas
+
+
+def generar_pdf_documento(documento):
+    """
+    Renderiza la hoja de cambio rellena y firmada como PDF, fiel al impreso
+    real (hojacambios.png). Se genera bajo demanda a partir de los datos
+    guardados, no se persiste el binario en ningún sitio.
+    """
+    solicitante = documento.creado_por
+    participante_solicitante = next(
+        p for p in documento.participantes if p.usuario_id == solicitante.id
+    )
+    companero = next(
+        p.usuario for p in documento.participantes if p.usuario_id != solicitante.id
+    )
+    firmas_por_usuario = {f.usuario_id: f for f in documento.firmas}
+
+    html = render_template(
+        "documento_cambio/pdf.html",
+        hospital_nombre=solicitante.unidad.hospital.nombre,
+        unidad_nombre=solicitante.unidad.nombre,
+        solicitante=solicitante,
+        participante_solicitante=participante_solicitante,
+        companero=companero,
+        fecha_documento=documento.fecha_creacion.date(),
+        meses=_MESES,
+        firma_solicitante=firmas_por_usuario.get(solicitante.id),
+        firma_companero=firmas_por_usuario.get(companero.id),
+        logo_path=f"file://{current_app.static_folder}/img/logo-hospital-la-paz.png",
+    )
+    return HTML(string=html).write_pdf()
