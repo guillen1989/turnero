@@ -4,16 +4,56 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Paso 3 (reintento): plantilla Jinja fiel al impreso real
-(`hojacambios.png`) + render a PDF, generado bajo demanda. La
-implementación con WeasyPrint ya se hizo una vez y se revirtió por
-crashear el deploy — ver "Paso anterior" (revert) justo abajo antes de
-reintentarlo: hay que resolver primero las dependencias de sistema de
-WeasyPrint en Railway (o valorar una alternativa que no las necesite)
-ANTES de volver a añadir `weasyprint` a `requirements.txt`. También
-pendiente: comprobación de factibilidad contra planillas (de momento se
-genera el documento sin verificar) y actualizar `ESPECIFICACION.md` (ver
-nota de varios pasos atrás).
+Pendiente: comprobación de factibilidad contra planillas (de momento se
+genera el documento sin verificar, decisión consciente para tener un
+prototipo que enseñar a los jefes) y actualizar `ESPECIFICACION.md` (ver
+nota de varios pasos atrás). Sin siguiente paso concreto decidido más
+allá de eso — a definir con el usuario.
+
+## Paso anterior
+fix(documento-cambio): reintroducido el PDF (revertido el revert) con
+dos cambios para que no vuelva a pasar lo de antes: (1) `from weasyprint
+import HTML` movido de nivel de módulo a dentro de
+`generar_pdf_documento()` — importar weasyprint ya no puede tirar abajo
+el arranque completo de la app si algo de sus dependencias nativas falla
+en el contenedor de destino, como mucho falla esa única ruta; (2) nuevo
+`nixpacks.toml` que declara los paquetes de sistema Nix que WeasyPrint
+necesita en tiempo de ejecución (`pango`, `cairo`, `gdk-pixbuf`, `glib`,
+`harfbuzz`, `fontconfig`) para que Railway los instale en el build. No
+hay forma de probar un build de Nixpacks real desde este entorno de
+desarrollo, así que el import perezoso es la red de seguridad real: si
+`nixpacks.toml` no basta o le faltase algún paquete, el resto de la app
+sigue funcionando y solo falla "Generar PDF" con un 500, en vez de
+crashear todo el arranque otra vez.
+
+## Paso anterior
+revert(documento-cambio): deshecho el commit que generaba el PDF con
+WeasyPrint — crasheaba el arranque completo de la app en Railway
+(`staging`), no solo la ruta del PDF. `weasyprint` importa Pango/cairo/
+gdk-pixbuf vía cffi con `dlopen` en tiempo de import (`from weasyprint
+import HTML` en `app/services/documento_cambio.py`, importado a su vez
+por el blueprint `documento_cambio` al arrancar `create_app`), y el
+contenedor de Railway no tiene esas librerías de sistema instaladas
+(`OSError: cannot load library 'libgobject-2.0-0'`), así que
+`flask db upgrade` (primer paso del `Procfile`) fallaba antes de que la
+app llegara a arrancar — bucle de crash total, confirmado con los logs
+de Railway que pegó el usuario. Localmente SÍ funcionaba sin problemas
+(este entorno de desarrollo ya tenía esas librerías preinstaladas), lo
+que ocultó el problema hasta el deploy real — lección para la próxima
+vez: cualquier dependencia con bindings nativos (cffi/ctypes) hay que
+asumir que puede faltar en el entorno de producción aunque funcione en
+local, y comprobarlo explícitamente (o probarlo primero en un entorno
+lo más parecido posible a Railway) antes de dar por bueno un paso que
+toque el arranque de la app.
+
+Revert limpio con `git revert` (no se tocó nada a mano): quita
+`weasyprint==69.0` de `requirements.txt`, la plantilla `pdf.html`, la
+ruta `GET /documentos-cambio/<id>/pdf`, el botón "Generar PDF", el logo
+recortado y los 3 tests del PDF. Deja el estado exactamente como al
+final del paso 2b (rutas + firma con canvas, sin PDF), que es lo último
+que el usuario había comprobado manualmente que funcionaba. 19 tests
+passing (servicio + rutas + modelos de `documento_cambio`) · push directo
+a `staging` para restaurar el servicio cuanto antes.
 
 ## Paso anterior
 revert(documento-cambio): deshecho el commit que generaba el PDF con
@@ -52,6 +92,48 @@ mínimo) declarándolos en un `nixpacks.toml` nuevo — y/o hacer el `import
 weasyprint` perezoso (dentro de la función, no a nivel de módulo) como
 red de seguridad para que un fallo de esa dependencia no vuelva a tirar
 abajo el arranque completo de la app, solo la ruta del PDF.
+
+## Paso anterior
+feat(documento-cambio): plantilla PDF fiel al impreso real + botón
+"Generar PDF" — pedido explícito del usuario tras probar manualmente el
+flujo de firma: quiere enseñar el PDF generado a sus jefes. Nueva
+plantilla standalone `documento_cambio/pdf.html` (no extiende `base.html`,
+es un documento HTML propio pensado para WeasyPrint, con CSS `@page`) que
+reproduce el impreso `hojacambios.png` del Hospital La Paz: logo (recortado
+de la cabecera del propio PNG con Pillow, guardado en
+`app/static/img/logo-hospital-la-paz.png`), título, campos de
+hospital/unidad/categoría/solicitante derivados del `Usuario` (no
+duplicados en el modelo), datos del cambio, las dos rejillas L-M-X-J-V-S-D
+en blanco (juntes de noches, fuera de alcance), fecha, las dos firmas
+(las imágenes `data:image/png;base64,...` ya guardadas se embeben
+directamente — WeasyPrint las soporta nativas) y el bloque de la
+supervisora en blanco/estático, tal y como se decidió en el diseño de la
+plantilla.
+
+`generar_pdf_documento(documento)` en el servicio: usa
+`documento.creado_por` como "LA INTERESADA" (quien solicita) y el otro
+participante como "ACEPTA EL CAMBIO", busca sus firmas por `usuario_id`,
+renderiza la plantilla con `render_template` y la convierte con
+`WeasyPrint.HTML(string=html).write_pdf()` — se genera bajo demanda en
+cada petición, no se persiste el binario en ningún sitio (evita el
+problema de disco efímero en Railway que ya habíamos identificado).
+Nueva ruta `GET /documentos-cambio/<id>/pdf` (403 si no eres el creador,
+409 si el documento no está `completo` — decisión explícita del usuario:
+el botón solo aparece cuando las dos firmas ya están recogidas, no como
+borrador), devuelve el PDF con `Content-Disposition: attachment`.
+
+Añadida dependencia `weasyprint==69.0` a `requirements.txt` — probada en
+este entorno (renderiza sin problemas, no ha hecho falta instalar
+paquetes de sistema aparte de los que ya trae la imagen). Verificado
+generando un PDF real end-to-end (con firma dibujada de verdad, no un
+placeholder) y convirtiéndolo a imagen con `pdftoppm` para inspección
+visual — el resultado es fiel al impreso original, incluidas las firmas
+renderizando correctamente en su sitio.
+
+A petición del usuario, tests mínimos en vez de la suite completa en este
+paso (3 tests nuevos: PDF válido con 2 firmas a nivel de servicio, 409 sin
+completar, 200+descarga al completar) y push directo a `staging` sin pasar
+por PR.
 
 ## Paso anterior
 feat(documento-cambio): rutas, formulario y firma con canvas — nuevo
@@ -870,6 +952,7 @@ mitigación preventiva independiente de la causa.
 - [x] Fase 10, paso 1: modelos `DocumentoCambio`/`ParticipanteDocumentoCambio`/`FirmaDocumentoCambio` para la hoja de cambio digital con firma (reproduce `hojacambios.png`, formulario "SOLICITUD DE CAMBIO DE TURNO O GUARDIA" del Hospital La Paz) · migración `3f8d2428aa64` · 9 tests nuevos · 896 tests passing
 - [x] Fase 10, paso 2a: servicio `crear_documento_cambio`/`firmar_documento`/`generar_notas_ilog` · 5 tests nuevos
 - [x] Fase 10, paso 2b: rutas + formulario + firma con canvas (`pointerdown/move/up`) + notas para ilog copiables · blueprint `documento_cambio`, enlace en nav · catálogo i18n actualizado · 9 tests de rutas + 1 e2e (Playwright, firma real dibujada) · verificado en navegador
+- [x] Fase 10, paso 3: plantilla PDF fiel a `hojacambios.png` + botón "Generar PDF" (solo si `completo`) · `generar_pdf_documento` con WeasyPrint, bajo demanda · logo recortado del PNG real · dependencia `weasyprint==69.0` · 3 tests nuevos (tests mínimos a petición del usuario) · verificado visualmente con `pdftoppm`
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
