@@ -14,16 +14,20 @@ def _participacion_del_usuario(match, usuario_id):
     return None
 
 
-def confirmar_participacion(match, usuario_id):
+def confirmar_participacion(match, usuario_id, firma_data=None):
     """
     Marca la participación del usuario como confirmada.
     Si todas las partes confirman: cierra el match, resuelve los turnos cedidos
     y actualiza el estado de las publicaciones.
     Si no: pone el match en 'confirmado_parcial' y notifica a los demás.
+
+    firma_data: PNG en base64 (data URI) de la firma dibujada al confirmar,
+    solo aplicable a matches directo_2 (ver app/routes/matches.py).
     """
     participacion = _participacion_del_usuario(match, usuario_id)
     participacion.confirmado = True
     participacion.fecha_confirmacion = datetime.now(timezone.utc)
+    participacion.firma_data = firma_data
 
     if match.todas_confirmadas():
         match.estado = "confirmado_total"

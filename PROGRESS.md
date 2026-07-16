@@ -24,9 +24,21 @@ mano), `flask db heads` → 1 head; nullable así que no aplica el patrón de
 upgrade`). 2 tests nuevos en `tests/test_models_match.py` (default None,
 guarda y recupera el valor).
 
-Siguiente paso: `confirmar_participacion` (`app/services/matches.py`)
-acepta un `firma_data` opcional y lo persiste en la participación del
-usuario que confirma.
+Paso 2 completado: `confirmar_participacion` (`app/services/matches.py`)
+acepta ahora un parámetro opcional `firma_data` (default `None`, para no
+romper las llamadas existentes de las cadenas) y lo persiste en la
+participación del usuario que confirma — no toca la firma de las demás
+partes. 3 tests nuevos en `tests/test_servicio_confirmar.py` (unitarios,
+llaman al servicio directamente sin pasar por HTTP: sin firma queda
+`None`, guarda la firma de quien confirma, no pisa la firma de otra
+parte) · 27 tests relacionados passing.
+
+Siguiente paso: la ruta `POST /matches/<id>/confirmar`
+(`app/routes/matches.py`) debe leer `request.form['firma']` y, si
+`match.tipo == 'directo_2'` y no hay firma, rechazar con flash de error
+sin confirmar — hay que actualizar los tests existentes que confirman
+matches directos sin firma (`test_confirmacion.py`, `test_smoke.py`,
+`test_flujos_criticos.py`, `test_dashboard.py`).
 
 ## Paso anterior
 perf(db): `publicacion_cambio`, `usuario` y `unidad` no tenían más índice
