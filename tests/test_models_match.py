@@ -101,6 +101,40 @@ def test_todas_confirmadas_verdadero_si_ambas(db):
     assert match.todas_confirmadas() is True
 
 
+def test_match_participacion_firma_data_por_defecto_es_none(db):
+    crear_usuario, crear_pub = _setup(db, "e")
+
+    ana = crear_usuario("ana5@h.es")
+    pub_ana, cedido_ana = crear_pub(ana)
+
+    match = MatchCambio()
+    part = MatchParticipacion(publicacion=pub_ana, turno_cedido=cedido_ana)
+    match.participaciones.append(part)
+    db.session.add(match)
+    db.session.commit()
+
+    assert part.firma_data is None
+
+
+def test_match_participacion_guarda_firma_data(db):
+    crear_usuario, crear_pub = _setup(db, "f")
+
+    ana = crear_usuario("ana6@h.es")
+    pub_ana, cedido_ana = crear_pub(ana)
+
+    match = MatchCambio()
+    part = MatchParticipacion(
+        publicacion=pub_ana, turno_cedido=cedido_ana,
+        firma_data="data:image/png;base64,iVBORw0KGgo=",
+    )
+    match.participaciones.append(part)
+    db.session.add(match)
+    db.session.commit()
+
+    recuperado = db.session.get(MatchParticipacion, part.id)
+    assert recuperado.firma_data == "data:image/png;base64,iVBORw0KGgo="
+
+
 def test_crear_notificacion(db):
     crear_usuario, crear_pub = _setup(db, "d")
 

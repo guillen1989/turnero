@@ -4,6 +4,31 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+B20 en marcha: firma digital al confirmar un match directo (1 a 1), a
+petición del usuario ("al confirmar un cambio el usuario debe poder
+firmarlo también, así queda todo listo por su parte") — pensando en el
+formulario físico "Solicitud de cambio de turno o guardia" del hospital
+(`LA INTERESADA` / `ACEPTA EL CAMBIO`), que hoy se rellena y firma a mano
+aparte de usar la app. Alcance acordado con el usuario: firma dibujada en
+un canvas (no checkbox), solo se guarda en la app al confirmar (no genera
+el PDF automáticamente), y solo aplica a matches `directo_2` (las cadenas
+de 3/4 bandas quedan fuera por ahora); más adelante, bajo demanda, se
+podrá generar y descargar un PDF con los datos del cambio y ambas firmas.
+
+Paso 1 completado: columna `firma_data` (Text, nullable) en
+`MatchParticipacion` (`app/models/match.py`) — guarda el PNG de la firma
+en base64 (data URI) de cada participación; NULL en cadenas o mientras no
+se ha firmado. Migración `76121be7a1b5` (`flask db migrate`, nunca a
+mano), `flask db heads` → 1 head; nullable así que no aplica el patrón de
+3 pasos de `NOT NULL`. Aplicada y verificada en local (`flask db
+upgrade`). 2 tests nuevos en `tests/test_models_match.py` (default None,
+guarda y recupera el valor).
+
+Siguiente paso: `confirmar_participacion` (`app/services/matches.py`)
+acepta un `firma_data` opcional y lo persiste en la participación del
+usuario que confirma.
+
+## Paso anterior
 perf(db): `publicacion_cambio`, `usuario` y `unidad` no tenían más índice
 que la PK (`\d publicacion_cambio` en producción lo confirmó), pese a que
 `usuario_id`, `estado`, `es_sintetica` y `tipo` de `publicacion_cambio`,
