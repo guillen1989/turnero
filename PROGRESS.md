@@ -4,10 +4,88 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
+Retomado el paso 10 (enganche con el motor de matching), parcialmente:
+al confirmar un match directo **simétrico** (cambio↔cambio: ambas partes
+ceden y reciben un turno con franja concreta, venga de publicación
+automática o de "Me interesa"), la app crea y firma el DocumentoCambio
+sola, sin ningún paso manual — el usuario dibuja su firma en el mismo
+momento de pulsar "Confirmar" y, en cuanto confirma la otra parte, el
+documento queda completo. `match_admite_documento_cambio` (app/services/documento_cambio.py)
+es la condición: solo `directo_2` con las 2 participaciones teniendo
+turno_cedido Y turno_aceptado con franja concreta (no "cualquier turno").
+Fuera de scope todavía, como ya estaba decidido: **cadenas de 3/4 bandas
+y coincidencias asimétricas (regalo/petición) siguen sin firma
+obligatoria ni documento automático** — para esos casos, y para cambios
+sin match de por medio, sigue disponible "Mis hojas de cambio > Nueva
+hoja de cambio" tal cual.
+
+Contexto: petición del usuario en otra sesión en paralelo ("al confirmar
+un cambio el usuario debe poder firmarlo también, así queda todo listo
+por su parte"), resuelta primero en un branch aparte sobre `main` con un
+modelo propio (columna `firma_data` en `MatchParticipacion` + PDF propio)
+antes de descubrir que esta rama (`staging`) ya tenía construido un
+sistema de hoja de cambio digital mucho más completo (`DocumentoCambio`,
+supervisora, email, PDF fiel al impreso). Se descartó el modelo propio y
+se reaprovechó solo la idea de "firmar en el momento de confirmar",
+enganchándola al `DocumentoCambio` ya existente en vez de duplicar
+firma/PDF.
+
+Paso 11 completado (fusiona los pasos 1-3 del enganche): `match_admite_documento_cambio(match)`
+y `crear_documento_cambio_desde_match(match)` (`app/services/documento_cambio.py`)
+— crea el documento con `match_id` y participantes derivados de los
+turnos del match, sin retipear nada; `POST /matches/<id>/confirmar`
+exige firma para esos matches y, con ella, crea (si no existe) el
+documento y llama a `firmar_documento`, reutilizando la lógica de firma
+ya existente (no duplica notificación de "pendiente de firma": la de
+`confirmar_participacion` ya cumple ese papel). `MatchCambio.documento_cambio`
+(back_populates nuevo) para poder enlazarlo desde plantillas. Canvas de
+firma en `dashboard.html` (mismo patrón visual que ya usaba
+`/documentos-cambio`, reutiliza la clase `.firma-canvas` existente):
+el botón "Confirmar" de un match que admite documento abre el modal en
+vez de enviar el formulario directo; solo envía si se ha dibujado algo.
+Enlace "Ver hoja de cambio" cuando el documento queda completo.
+
+Al rebasar sobre el HEAD real de `staging` (que había avanzado con la
+numeración de cambios por unidad mientras se hacía este trabajo),
+`crear_documento_cambio_desde_match` necesitó rellenar también
+`unidad_id`/`numero_unidad` (columnas NOT NULL añadidas después) — fix
+de una línea, detectado por los tests existentes al re-ejecutar la
+suite tras el rebase, no fue necesario tocar nada más.
+
+Tests nuevos: `tests/test_documento_cambio_desde_match.py` (8, condición
+de aplicabilidad + creación desde match), `tests/test_confirmar_con_documento.py`
+(11, integración HTTP: firma obligatoria solo en simétricos, documento
+se crea/firma/completa, cadenas y asimétricos sin cambios, reconfirmar
+tras desconfirmar no duplica firma), 2 tests de plantilla en
+`test_dashboard.py`, 2 tests E2E con Playwright
+(`e2e/test_confirmar_firma_documento.py`) que dibujan de verdad en el
+canvas — uno confirma con éxito y comprueba en BD que el documento queda
+`pendiente_firmas` con 1 firma, el otro comprueba que sin dibujar nada
+no se envía el formulario. Catálogo i18n actualizado (pybabel
+extract/update/compile, 4 `#, fuzzy` corregidos a mano). 968 tests
+unitarios/integración + 14/17 E2E passing — los 3 E2E que fallan
+(`test_documento_cambio.py::test_hoja_de_cambio_golden_path_completa`,
+`test_sintetica_golden_path.py::test_golden_path_cambio_a_3`,
+`test_sintetica_staging.py::test_golden_path_staging`) **ya fallaban
+igual en un checkout limpio de `origin/staging` sin ningún cambio de
+esta rama** (verificado en un worktree temporal aparte antes de dar
+por buena la rama) — el primero es un test desactualizado desde
+`827cd00` (exige "Notas para ilog" a un usuario que no es supervisora,
+la condición cambió y el test no se actualizó), los otros dos parecen
+inestabilidad/entorno preexistente, no relacionados con este trabajo.
+
+Siguiente paso: a definir con el usuario. Pendiente: los 3 E2E
+preexistentes que fallan (ver arriba) siguen sin arreglar, quedaron
+fuera de scope de este trabajo.
+
+## Paso anterior
 Cola de pendientes que el usuario pidió abordar seguidos, en el orden
 que mejor convenga: (1) recomprobar factibilidad en la 2ª firma — HECHO,
 (2) firma cruzada entre cuentas reales — HECHO, (3) número de cambio
-junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (parcial), (5)
+junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (el PDF ahora usa
+el escaneo real del impreso como fondo a página completa, con los
+campos en las mismas coordenadas y dimensiones que sus huecos en el
+impreso — ver el "Paso anterior" correspondiente más abajo), (5)
 listado de "mis hojas de cambio" — HECHO, (6) enviar los cambios por
 email a los implicados — HECHO, (7) cuenta de supervisora con acceso a
 todos los cambios — HECHO, (8) botón autorizar/denegar en la cuenta de
@@ -31,6 +109,74 @@ cadena a 3 a mano y qué campos necesita un junte de noches. La nota
 sobre "confirmar un match aparejado con firmar" (2026-07-16, ver el
 propio texto de la conversación si hace falta el detalle completo) sigue
 siendo válida para cuando se retome el paso 10.
+
+## Paso anterior
+fix(documento-cambio): el PDF ya no corta el texto de los campos contra
+la línea impresa -- pedido explícito del usuario tras ver el resultado
+del paso anterior ("el texto queda demasiado abajo"). Los 12 `@frame`
+de campos de texto (no las firmas ni el número, que ya estaban bien)
+suben 2mm (su `top` baja 2mm en la coordenada de página, que crece
+hacia abajo). Sin test nuevo: es un ajuste visual de coordenadas, no de
+comportamiento, igual que el resto de retoques de maquetación de esta
+fase -- verificado con `pdftoppm` como los anteriores.
+
+feat(documento-cambio): numero_unidad -- numeración absoluta por unidad,
+no el id global de Postgres -- pedido explícito del usuario: "solo
+puede haber un cambio #3 del 7 de julio de 2026", es decir, cada unidad
+lleva su propia secuencia 1, 2, 3... como hacía la ayudante a mano,
+independiente de cuántos cambios haya creado el resto de unidades de la
+app. Nuevas columnas en `documento_cambio`: `unidad_id` (la del
+creador, congelada al crear el documento) y `numero_unidad` (calculado
+en `crear_documento_cambio` con `MAX(numero_unidad) WHERE unidad_id=...
++ 1`), con `UniqueConstraint(unidad_id, numero_unidad)` para que la
+base de datos garantice la invariante aunque hubiera una condición de
+carrera (aceptable en un MVP de bajo tráfico: ante colisión, lanza
+`IntegrityError` en vez de crear un número duplicado en silencio).
+Migración `b6770d428a60`, patrón de tres pasos (columnas ya con filas
+reales en staging): nullable → backfill (unidad = la del creador;
+numero_unidad = `ROW_NUMBER() OVER (PARTITION BY unidad_id ORDER BY
+id)`) → NOT NULL + constraint. Backfill verificado a mano contra una
+base de datos de prueba con filas intercaladas de dos unidades distintas
+antes de aplicarlo. Todas las plantillas y notificaciones que mostraban
+"Nº X" (`ver.html`, `lista.html`, `supervisora.html`, `pdf.html`, email
+de hoja completa, notificación de autorizar/denegar) pasan de
+`documento.id` a `documento.numero_unidad`; `documento.id` se mantiene
+tal cual para las URLs y como semilla del hash de la firma, que no son
+visibles para el usuario. 2 tests nuevos (secuencia independiente por
+unidad; el id global puede ir por delante sin que se note en el número
+mostrado) + 4 tests de `test_models_documento_cambio.py` actualizados
+(construían `DocumentoCambio` a pelo, sin pasar por el servicio) · 947
+tests en la suite ampliada.
+
+feat(documento-cambio): el PDF generado reproduce el impreso real píxel
+a píxel — antes el PDF dibujaba su propio layout con CSS (aproximado,
+no coincidía con el impreso real del hospital). Ahora `pdf.html` pone
+el escaneo del impreso (`app/static/img/hoja-cambio-fondo.png`, copia
+de `hojacambios.png`) como fondo de página completa (`@page
+{ background-image: ... }` de xhtml2pdf) y superpone cada dato dinámico
+en un `@frame` propio, con las coordenadas y dimensiones exactas del
+hueco que ocupa ese campo en el escaneo (medidas a mano sobre la imagen
+con una rejilla de referencia, convertidas de píxeles a mm porque el
+escaneo, 905×1280px, tiene la misma proporción que A4). Como el fondo
+ya trae impresos el título, las etiquetas, las rejillas L-M-X-J-V-S-D y
+el bloque de la supervisora, la plantilla quedó mucho más corta: ya no
+dibuja nada de eso, solo el texto que varía por documento.
+
+Detalle no obvio importante para no repetir el error: si la altura de
+un `@frame` es insuficiente para el contenido (aunque sea de una sola
+línea), xhtml2pdf/reportlab descartan ese contenido **en silencio, sin
+ningún error** — no lo recortan, directamente no aparece. Costó una
+ronda de tanteo con renders de prueba dar con una altura mínima segura
+(~6mm a 9.5pt; se dejó 8mm de margen). Motivo por el que se añadió
+`test_generar_pdf_documento_no_pierde_campos_con_nombres_largos`: extrae
+el texto del PDF con `pypdf` y comprueba que un nombre de hospital/unidad
+realista (basado en datos reales de staging) sigue apareciendo, como
+red flag si se vuelve a estrechar algún frame por debajo del mínimo.
+
+2 tests nuevos/ampliados en `test_servicio_documento_cambio.py`
+(contenido esperado extraído del PDF con `pypdf`; nombres largos no
+desaparecen). Verificado además visualmente, renderizando el PDF a PNG
+con `pdftoppm` y comparándolo a ojo contra `hojacambios.png`.
 
 ## Paso anterior
 fix(documento-cambio): las notas para ilog (`generar_notas_ilog`) solo

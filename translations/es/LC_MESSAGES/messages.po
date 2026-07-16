@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 19:13+0200\n"
+"POT-Creation-Date: 2026-07-16 21:42+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -356,7 +356,7 @@ msgstr "Cualquiera"
 
 #: app/routes/calendario.py:81 app/templates/main/cambios.html:97
 #: app/templates/main/cambios.html:258 app/templates/main/como_funciona.html:54
-#: app/templates/main/dashboard.html:222
+#: app/templates/main/dashboard.html:233
 #: app/templates/publicaciones/editar.html:23
 #: app/templates/publicaciones/publicar.html:24
 msgid "Cambio"
@@ -364,7 +364,7 @@ msgstr "Cambio"
 
 #: app/routes/calendario.py:82 app/templates/main/cambios.html:98
 #: app/templates/main/cambios.html:146 app/templates/main/como_funciona.html:58
-#: app/templates/main/dashboard.html:184
+#: app/templates/main/dashboard.html:195
 #: app/templates/publicaciones/editar.html:28
 #: app/templates/publicaciones/publicar.html:31
 msgid "Regalo"
@@ -372,7 +372,7 @@ msgstr "Regalo"
 
 #: app/routes/calendario.py:83 app/templates/main/cambios.html:99
 #: app/templates/main/cambios.html:155 app/templates/main/como_funciona.html:62
-#: app/templates/main/dashboard.html:192
+#: app/templates/main/dashboard.html:203
 #: app/templates/publicaciones/editar.html:33
 #: app/templates/publicaciones/publicar.html:38
 msgid "Petición"
@@ -380,20 +380,20 @@ msgstr "Petición"
 
 #: app/routes/calendario.py:84 app/templates/main/cambios.html:101
 #: app/templates/main/cambios.html:188 app/templates/main/como_funciona.html:70
-#: app/templates/main/dashboard.html:214
+#: app/templates/main/dashboard.html:225
 #: app/templates/publicaciones/editar.html:38
 #: app/templates/publicaciones/publicar.html:52
 msgid "Cambio de turno en el día"
 msgstr "Cambio de turno en el día"
 
 #: app/routes/calendario.py:86 app/templates/main/cambios.html:102
-#: app/templates/main/cambios.html:213 app/templates/main/dashboard.html:339
+#: app/templates/main/cambios.html:213 app/templates/main/dashboard.html:350
 #: app/templates/notificaciones/avisos.html:83
 msgid "Oportunidad a 3"
 msgstr "Oportunidad a 3"
 
 #: app/routes/calendario.py:87 app/templates/main/cambios.html:103
-#: app/templates/main/cambios.html:204 app/templates/main/dashboard.html:339
+#: app/templates/main/cambios.html:204 app/templates/main/dashboard.html:350
 #: app/templates/notificaciones/avisos.html:85
 msgid "Oportunidad a 4"
 msgstr "Oportunidad a 4"
@@ -476,15 +476,19 @@ msgstr "Tipo de mensaje no válido."
 msgid "Gracias, hemos recibido tu mensaje."
 msgstr "Gracias, hemos recibido tu mensaje."
 
-#: app/routes/matches.py:30
+#: app/routes/matches.py:36
+msgid "Debes firmar el cambio antes de confirmarlo."
+msgstr "Debes firmar el cambio antes de confirmarlo."
+
+#: app/routes/matches.py:47
 msgid "Has confirmado tu parte del cambio."
 msgstr "Has confirmado tu parte del cambio."
 
-#: app/routes/matches.py:45
+#: app/routes/matches.py:62
 msgid "Has retirado tu confirmación del cambio."
 msgstr "Has retirado tu confirmación del cambio."
 
-#: app/routes/matches.py:54
+#: app/routes/matches.py:71
 msgid "Has rechazado el cambio."
 msgstr "Has rechazado el cambio."
 
@@ -717,29 +721,29 @@ msgstr ""
 "%(nombre)s libra %(turno_cede)s del %(fecha_cede)s y trabaja "
 "%(turno_recibe)s del %(fecha_recibe)s."
 
-#: app/services/documento_cambio.py:68 app/services/documento_cambio.py:155
+#: app/services/documento_cambio.py:82 app/services/documento_cambio.py:235
 #: app/templates/email/documento_cambio_completo.html:2
 msgid "Hoja de cambio completa"
 msgstr "Hoja de cambio completa"
 
-#: app/services/documento_cambio.py:102
+#: app/services/documento_cambio.py:120
 msgid "Hoja de cambio pendiente de firma"
 msgstr "Hoja de cambio pendiente de firma"
 
-#: app/services/documento_cambio.py:103
+#: app/services/documento_cambio.py:121
 #, python-format
 msgid "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas."
 msgstr "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas."
 
-#: app/services/documento_cambio.py:156
+#: app/services/documento_cambio.py:236
 msgid "Las dos firmas están recogidas. La hoja de cambio ya está completa."
 msgstr "Las dos firmas están recogidas. La hoja de cambio ya está completa."
 
-#: app/services/documento_cambio.py:168
+#: app/services/documento_cambio.py:248
 msgid "Falta tu firma en la hoja de cambio"
 msgstr "Falta tu firma en la hoja de cambio"
 
-#: app/services/documento_cambio.py:169
+#: app/services/documento_cambio.py:249
 #, python-format
 msgid ""
 "%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
@@ -748,11 +752,11 @@ msgstr ""
 "%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
 "cambio."
 
-#: app/services/documento_cambio.py:289
+#: app/services/documento_cambio.py:372
 msgid "Cambio autorizado"
 msgstr "Cambio autorizado"
 
-#: app/services/documento_cambio.py:290
+#: app/services/documento_cambio.py:373
 #, python-format
 msgid ""
 "La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha "
@@ -761,11 +765,11 @@ msgstr ""
 "La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha "
 "aplicado a tu planilla."
 
-#: app/services/documento_cambio.py:312
+#: app/services/documento_cambio.py:395
 msgid "Cambio denegado"
 msgstr "Cambio denegado"
 
-#: app/services/documento_cambio.py:314
+#: app/services/documento_cambio.py:397
 #, python-format
 msgid ""
 "La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: "
@@ -790,7 +794,7 @@ msgstr "Cambio de turnos"
 #: app/templates/feedback/nuevo.html:3 app/templates/main/cambios.html:3
 #: app/templates/main/como_funciona.html:3
 #: app/templates/main/contraoferta.html:3 app/templates/main/dashboard.html:3
-#: app/templates/main/dashboard.html:444 app/templates/main/index.html:5
+#: app/templates/main/dashboard.html:455 app/templates/main/index.html:5
 #: app/templates/notificaciones/avisos.html:3
 #: app/templates/notificaciones/panel.html:3
 #: app/templates/planilla/planilla.html:3
@@ -1104,8 +1108,8 @@ msgstr "Acciones"
 #: app/templates/admin/franjas.html:26 app/templates/admin/hospitales.html:38
 #: app/templates/admin/paises.html:31 app/templates/admin/provincias.html:34
 #: app/templates/admin/unidades.html:37 app/templates/admin/usuarios.html:35
-#: app/templates/main/dashboard.html:157 app/templates/main/dashboard.html:170
-#: app/templates/main/dashboard.html:315
+#: app/templates/main/dashboard.html:168 app/templates/main/dashboard.html:181
+#: app/templates/main/dashboard.html:326
 msgid "Editar"
 msgstr "Editar"
 
@@ -1118,8 +1122,8 @@ msgstr "¿Eliminar esta categoría?"
 #: app/templates/admin/paises.html:34 app/templates/admin/provincias.html:37
 #: app/templates/admin/publicaciones.html:71
 #: app/templates/admin/unidades.html:40 app/templates/admin/usuarios.html:37
-#: app/templates/main/cambios.html:41 app/templates/main/dashboard.html:320
-#: app/templates/main/dashboard.html:448 app/templates/unidad/turnos.html:41
+#: app/templates/main/cambios.html:41 app/templates/main/dashboard.html:331
+#: app/templates/main/dashboard.html:459 app/templates/unidad/turnos.html:41
 msgid "Eliminar"
 msgstr "Eliminar"
 
@@ -1138,7 +1142,7 @@ msgstr "No hay categorías."
 #: app/templates/admin/usuario_form.html:149
 #: app/templates/feedback/nuevo.html:49 app/templates/main/cambios.html:313
 #: app/templates/main/contraoferta.html:99
-#: app/templates/main/dashboard.html:447
+#: app/templates/main/dashboard.html:458 app/templates/main/dashboard.html:472
 #: app/templates/planilla/planilla.html:392
 #: app/templates/publicaciones/editar.html:65
 #: app/templates/publicaciones/publicar.html:142
@@ -1818,7 +1822,7 @@ msgid "libra"
 msgstr "libra"
 
 #: app/templates/calendario/calendario.html:135
-#: app/templates/main/dashboard.html:347
+#: app/templates/main/dashboard.html:358
 #: app/templates/notificaciones/avisos.html:114
 #: app/templates/notificaciones/avisos.html:116
 #: app/templates/notificaciones/avisos.html:118
@@ -2091,6 +2095,7 @@ msgid "Dibuja tu firma con el dedo en el recuadro."
 msgstr "Dibuja tu firma con el dedo en el recuadro."
 
 #: app/templates/documento_cambio/ver.html:79
+#: app/templates/main/dashboard.html:471
 #: app/templates/planilla/planilla.html:363
 msgid "Borrar"
 msgstr "Borrar"
@@ -2328,7 +2333,7 @@ msgstr "— Todos los tipos —"
 
 #: app/templates/main/cambios.html:100 app/templates/main/cambios.html:164
 #: app/templates/main/como_funciona.html:66
-#: app/templates/main/dashboard.html:200
+#: app/templates/main/dashboard.html:211
 #: app/templates/publicaciones/publicar.html:45
 msgid "Junte de noches"
 msgstr "Junte de noches"
@@ -2361,7 +2366,7 @@ msgstr "Quiere librar (sin ofrecer nada):"
 msgid "Tiene"
 msgstr "Tiene"
 
-#: app/templates/main/cambios.html:168 app/templates/main/dashboard.html:293
+#: app/templates/main/cambios.html:168 app/templates/main/dashboard.html:304
 #: app/templates/publicaciones/publicar.html:238
 #: app/templates/publicaciones/publicar.html:286
 msgid "noches"
@@ -2410,8 +2415,8 @@ msgstr "Oportunidad de cambio a 3 bandas."
 msgid "Le trabajarías a %(nombre)s:"
 msgstr "Le trabajarías a %(nombre)s:"
 
-#: app/templates/main/cambios.html:223 app/templates/main/dashboard.html:385
-#: app/templates/main/dashboard.html:419
+#: app/templates/main/cambios.html:223 app/templates/main/dashboard.html:396
+#: app/templates/main/dashboard.html:430
 msgid "Trabajarías:"
 msgstr "Trabajarías:"
 
@@ -2420,7 +2425,7 @@ msgstr "Trabajarías:"
 msgid "A cambio, %(nombre)s te trabajaría:"
 msgstr "A cambio, %(nombre)s te trabajaría:"
 
-#: app/templates/main/cambios.html:230 app/templates/main/dashboard.html:419
+#: app/templates/main/cambios.html:230 app/templates/main/dashboard.html:430
 msgid "Librarías:"
 msgstr "Librarías:"
 
@@ -2934,7 +2939,7 @@ msgid "Publicación de"
 msgstr "Publicación de"
 
 #: app/templates/main/contraoferta.html:27
-#: app/templates/main/dashboard.html:188 app/templates/main/dashboard.html:232
+#: app/templates/main/dashboard.html:199 app/templates/main/dashboard.html:243
 msgid "Cualquier turno"
 msgstr "Cualquier turno"
 
@@ -3067,8 +3072,8 @@ msgstr "Tú trabajas:"
 
 #: app/templates/main/dashboard.html:88 app/templates/main/dashboard.html:102
 #: app/templates/main/dashboard.html:126 app/templates/main/dashboard.html:134
-#: app/templates/main/dashboard.html:219 app/templates/main/dashboard.html:281
-#: app/templates/main/dashboard.html:297 app/templates/main/dashboard.html:305
+#: app/templates/main/dashboard.html:230 app/templates/main/dashboard.html:292
+#: app/templates/main/dashboard.html:308 app/templates/main/dashboard.html:316
 #: app/templates/notificaciones/avisos.html:64
 msgid "cualquier turno"
 msgstr "cualquier turno"
@@ -3117,77 +3122,82 @@ msgstr "Entra en Turnero para confirmarlo:"
 msgid "Avisar por WhatsApp"
 msgstr "Avisar por WhatsApp"
 
-#: app/templates/main/dashboard.html:145
+#: app/templates/main/dashboard.html:146
 msgid "Cambio confirmado por todas las partes."
 msgstr "Cambio confirmado por todas las partes."
 
-#: app/templates/main/dashboard.html:150
+#: app/templates/main/dashboard.html:149
+#: app/templates/notificaciones/avisos.html:39
+msgid "Ver hoja de cambio"
+msgstr "Ver hoja de cambio"
+
+#: app/templates/main/dashboard.html:158 app/templates/main/dashboard.html:160
 msgid "Confirmar"
 msgstr "Confirmar"
 
-#: app/templates/main/dashboard.html:154
+#: app/templates/main/dashboard.html:165
 msgid "Rechazar"
 msgstr "Rechazar"
 
-#: app/templates/main/dashboard.html:162
+#: app/templates/main/dashboard.html:173
 msgid "Has confirmado. Esperando a los demás."
 msgstr "Has confirmado. Esperando a los demás."
 
-#: app/templates/main/dashboard.html:163
+#: app/templates/main/dashboard.html:174
 msgid "Has confirmado. Esperando al otro usuario."
 msgstr "Has confirmado. Esperando al otro usuario."
 
-#: app/templates/main/dashboard.html:168
+#: app/templates/main/dashboard.html:179
 msgid "Desconfirmar"
 msgstr "Desconfirmar"
 
-#: app/templates/main/dashboard.html:186 app/templates/main/dashboard.html:230
-#: app/templates/main/dashboard.html:309
+#: app/templates/main/dashboard.html:197 app/templates/main/dashboard.html:241
+#: app/templates/main/dashboard.html:320
 msgid "Me ofrezco a trabajar:"
 msgstr "Me ofrezco a trabajar:"
 
-#: app/templates/main/dashboard.html:194 app/templates/main/dashboard.html:224
-#: app/templates/main/dashboard.html:309 app/templates/main/dashboard.html:311
+#: app/templates/main/dashboard.html:205 app/templates/main/dashboard.html:235
+#: app/templates/main/dashboard.html:320 app/templates/main/dashboard.html:322
 msgid "Quiero librar:"
 msgstr "Quiero librar:"
 
-#: app/templates/main/dashboard.html:202
+#: app/templates/main/dashboard.html:213
 msgid "Noches que cedo:"
 msgstr "Noches que cedo:"
 
-#: app/templates/main/dashboard.html:208
+#: app/templates/main/dashboard.html:219
 msgid "Noches que tomo:"
 msgstr "Noches que tomo:"
 
-#: app/templates/main/dashboard.html:216
+#: app/templates/main/dashboard.html:227
 msgid "Quiero cambiar:"
 msgstr "Quiero cambiar:"
 
-#: app/templates/main/dashboard.html:240
+#: app/templates/main/dashboard.html:251
 msgid "Con:"
 msgstr "Con:"
 
-#: app/templates/main/dashboard.html:248
+#: app/templates/main/dashboard.html:259
 msgid "Disponibilidad en planilla"
 msgstr "Disponibilidad en planilla"
 
-#: app/templates/main/dashboard.html:252
+#: app/templates/main/dashboard.html:263
 msgid "compañero(s) libran ese día:"
 msgstr "compañero(s) libran ese día:"
 
-#: app/templates/main/dashboard.html:258
+#: app/templates/main/dashboard.html:269
 msgid "tienen turno compatible:"
 msgstr "tienen turno compatible:"
 
-#: app/templates/main/dashboard.html:264
+#: app/templates/main/dashboard.html:275
 msgid "compañero(s) con disponibilidad."
 msgstr "compañero(s) con disponibilidad."
 
-#: app/templates/main/dashboard.html:267
+#: app/templates/main/dashboard.html:278
 msgid "Publica tu planilla del mes para ver sus nombres."
 msgstr "Publica tu planilla del mes para ver sus nombres."
 
-#: app/templates/main/dashboard.html:271
+#: app/templates/main/dashboard.html:282
 msgid ""
 "Estos compañeros no han publicado un cambio — pero tienen ese día "
 "disponible en su planilla. Si te interesa, háblales por WhatsApp."
@@ -3195,47 +3205,47 @@ msgstr ""
 "Estos compañeros no han publicado un cambio — pero tienen ese día "
 "disponible en su planilla. Si te interesa, háblales por WhatsApp."
 
-#: app/templates/main/dashboard.html:284
+#: app/templates/main/dashboard.html:295
 msgid "Me ofrezco a trabajar en sustitución:"
 msgstr "Me ofrezco a trabajar en sustitución:"
 
-#: app/templates/main/dashboard.html:290
+#: app/templates/main/dashboard.html:301
 msgid "Busco a alguien que me cubra un turno:"
 msgstr "Busco a alguien que me cubra un turno:"
 
-#: app/templates/main/dashboard.html:293
+#: app/templates/main/dashboard.html:304
 msgid "Junte de noches — semana del "
 msgstr "Junte de noches — semana del "
 
-#: app/templates/main/dashboard.html:293
+#: app/templates/main/dashboard.html:304
 msgid "Tengo "
 msgstr "Tengo "
 
-#: app/templates/main/dashboard.html:293
+#: app/templates/main/dashboard.html:304
 msgid "Busco trabajar "
 msgstr "Busco trabajar "
 
-#: app/templates/main/dashboard.html:293
+#: app/templates/main/dashboard.html:304
 msgid "Busco librar "
 msgstr "Busco librar "
 
-#: app/templates/main/dashboard.html:298
+#: app/templates/main/dashboard.html:309
 msgid "Busco cambio de turno en el día: tengo el "
 msgstr "Busco cambio de turno en el día: tengo el "
 
-#: app/templates/main/dashboard.html:298
+#: app/templates/main/dashboard.html:309
 msgid " del "
 msgstr " del "
 
-#: app/templates/main/dashboard.html:298
+#: app/templates/main/dashboard.html:309
 msgid " y busco el "
 msgstr " y busco el "
 
-#: app/templates/main/dashboard.html:324 app/templates/main/dashboard.html:423
+#: app/templates/main/dashboard.html:335 app/templates/main/dashboard.html:434
 msgid "Compartir"
 msgstr "Compartir"
 
-#: app/templates/main/dashboard.html:343
+#: app/templates/main/dashboard.html:354
 #, python-format
 msgid ""
 "%(nombre)s forma parte de una cadena de 4 personas con turnos tuyos, pero"
@@ -3246,7 +3256,7 @@ msgstr ""
 " falta cerrar un hueco. El sistema ha generado una publicación puente: si"
 " un compañero la acepta, el cambio a 4 se cerrará automáticamente."
 
-#: app/templates/main/dashboard.html:345
+#: app/templates/main/dashboard.html:356
 #, python-format
 msgid ""
 "%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran del "
@@ -3257,25 +3267,25 @@ msgstr ""
 "todo. El sistema ha generado una publicación puente: si un compañero la "
 "acepta, el cambio a 3 se cerrará automáticamente."
 
-#: app/templates/main/dashboard.html:365
+#: app/templates/main/dashboard.html:376
 msgid "Oportunidad a 4 bandas"
 msgstr "Oportunidad a 4 bandas"
 
-#: app/templates/main/dashboard.html:365
+#: app/templates/main/dashboard.html:376
 msgid "Oportunidad a 3 bandas"
 msgstr "Oportunidad a 3 bandas"
 
-#: app/templates/main/dashboard.html:367
+#: app/templates/main/dashboard.html:378
 #, python-format
 msgid "con %(a)s, %(i)s y %(b)s"
 msgstr "con %(a)s, %(i)s y %(b)s"
 
-#: app/templates/main/dashboard.html:369
+#: app/templates/main/dashboard.html:380
 #, python-format
 msgid "con %(a)s y %(b)s"
 msgstr "con %(a)s y %(b)s"
 
-#: app/templates/main/dashboard.html:374
+#: app/templates/main/dashboard.html:385
 msgid ""
 "Si alguien acepta esta publicación puente, tú trabajarías los turnos "
 "indicados y esa persona te libraría tus turnos deseados."
@@ -3283,7 +3293,7 @@ msgstr ""
 "Si alguien acepta esta publicación puente, tú trabajarías los turnos "
 "indicados y esa persona te libraría tus turnos deseados."
 
-#: app/templates/main/dashboard.html:376
+#: app/templates/main/dashboard.html:387
 #, python-format
 msgid ""
 "Si un tercero acepta, te libraría %(trabajas)s y %(a)s le trabajaría al "
@@ -3292,11 +3302,11 @@ msgstr ""
 "Si un tercero acepta, te libraría %(trabajas)s y %(a)s le trabajaría al "
 "tercero sus turnos."
 
-#: app/templates/main/dashboard.html:376
+#: app/templates/main/dashboard.html:387
 msgid "los turnos indicados"
 msgstr "los turnos indicados"
 
-#: app/templates/main/dashboard.html:379
+#: app/templates/main/dashboard.html:390
 msgid ""
 "El sistema ha generado una publicación puente con tu turno. Cualquier "
 "compañero que la acepte cerrará el cambio a 4 con un solo clic en «Me "
@@ -3306,7 +3316,7 @@ msgstr ""
 "compañero que la acepte cerrará el cambio a 4 con un solo clic en «Me "
 "interesa»."
 
-#: app/templates/main/dashboard.html:381
+#: app/templates/main/dashboard.html:392
 msgid ""
 "El sistema ha generado una publicación puente con tu turno. Cualquier "
 "compañero que la acepte cerrará el cambio a 3 con un solo clic en «Me "
@@ -3316,54 +3326,74 @@ msgstr ""
 "compañero que la acepte cerrará el cambio a 3 con un solo clic en «Me "
 "interesa»."
 
-#: app/templates/main/dashboard.html:391
+#: app/templates/main/dashboard.html:402
 msgid "Quien acepte este cambio libraría:"
 msgstr "Quien acepte este cambio libraría:"
 
-#: app/templates/main/dashboard.html:398
+#: app/templates/main/dashboard.html:409
 msgid "Un tercero te libraría:"
 msgstr "Un tercero te libraría:"
 
-#: app/templates/main/dashboard.html:404
+#: app/templates/main/dashboard.html:415
 #, python-format
 msgid "%(nombre)s trabajaría para el tercero:"
 msgstr "%(nombre)s trabajaría para el tercero:"
 
-#: app/templates/main/dashboard.html:404
+#: app/templates/main/dashboard.html:415
 msgid "El tercero trabajaría:"
 msgstr "El tercero trabajaría:"
 
-#: app/templates/main/dashboard.html:418
+#: app/templates/main/dashboard.html:429
 msgid "¿Puedes completar este cambio a 4 personas?"
 msgstr "¿Puedes completar este cambio a 4 personas?"
 
-#: app/templates/main/dashboard.html:418
+#: app/templates/main/dashboard.html:429
 msgid "¿Puedes completar este cambio a 3 personas?"
 msgstr "¿Puedes completar este cambio a 3 personas?"
 
-#: app/templates/main/dashboard.html:432
+#: app/templates/main/dashboard.html:443
 msgid "No tienes publicaciones activas."
 msgstr "No tienes publicaciones activas."
 
-#: app/templates/main/dashboard.html:433
+#: app/templates/main/dashboard.html:444
 msgid "No tienes cambios pendientes de confirmar."
 msgstr "No tienes cambios pendientes de confirmar."
 
-#: app/templates/main/dashboard.html:434
+#: app/templates/main/dashboard.html:445
 msgid "No tienes publicaciones confirmadas."
 msgstr "No tienes publicaciones confirmadas."
 
-#: app/templates/main/dashboard.html:435
+#: app/templates/main/dashboard.html:446
 msgid "No tienes publicaciones caducadas."
 msgstr "No tienes publicaciones caducadas."
 
-#: app/templates/main/dashboard.html:445
+#: app/templates/main/dashboard.html:456
 msgid ""
 "¿Seguro que quieres eliminar esta publicación? Esta acción no se puede "
 "deshacer."
 msgstr ""
 "¿Seguro que quieres eliminar esta publicación? Esta acción no se puede "
 "deshacer."
+
+#: app/templates/main/dashboard.html:466
+msgid "Firma para confirmar el cambio"
+msgstr "Firma para confirmar el cambio"
+
+#: app/templates/main/dashboard.html:467
+msgid ""
+"Dibuja tu firma con el dedo o el ratón. Se guardará en la hoja de cambio "
+"de este intercambio."
+msgstr ""
+"Dibuja tu firma con el dedo o el ratón. Se guardará en la hoja de cambio "
+"de este intercambio."
+
+#: app/templates/main/dashboard.html:469
+msgid "Dibuja tu firma antes de continuar."
+msgstr "Dibuja tu firma antes de continuar."
+
+#: app/templates/main/dashboard.html:473
+msgid "Firmar y confirmar"
+msgstr "Firmar y confirmar"
 
 #: app/templates/main/index.html:6
 msgid "Intercambia turnos con tus compañeros de forma sencilla."
@@ -3380,10 +3410,6 @@ msgstr "Borrar todos"
 #: app/templates/notificaciones/avisos.html:136
 msgid "Borrar aviso"
 msgstr "Borrar aviso"
-
-#: app/templates/notificaciones/avisos.html:39
-msgid "Ver hoja de cambio"
-msgstr "Ver hoja de cambio"
 
 #: app/templates/notificaciones/avisos.html:49
 msgid "Cambio confirmado"
@@ -4201,9 +4227,6 @@ msgstr "Ir al inicio"
 
 #~ msgid "Contraseña actual"
 #~ msgstr "Contraseña actual"
-
-#~ msgid "Nueva contraseña"
-#~ msgstr "Nueva contraseña"
 
 #~ msgid "Repite la nueva contraseña"
 #~ msgstr "Repite la nueva contraseña"

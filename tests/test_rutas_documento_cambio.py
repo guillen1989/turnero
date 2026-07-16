@@ -315,7 +315,45 @@ def test_ver_muestra_numero_de_documento(db, client):
     documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
 
     resp = client.get(f"/documentos-cambio/{documento_id}")
-    assert f"Nº {documento_id}".encode("utf-8") in resp.data
+    assert b"N\xc2\xba 1" in resp.data
+
+
+def test_numero_de_documento_es_por_unidad_no_el_id_global(db, client):
+    """
+    Si otra unidad ya ha creado hojas de cambio antes (id global más alto),
+    la primera hoja de una unidad nueva tiene que seguir mostrando "Nº 1",
+    no arrastrar el id autoincremental compartido por toda la app.
+    """
+    crear_usuario_otra, manyana_otra, _ = _setup(db, "hh-otra")
+    alguien = crear_usuario_otra("Alguien de Otra Unidad", "alguienhh@h.es")
+    companero_otro = crear_usuario_otra("Compañero de Otra Unidad", "companerohh@h.es")
+    _login(client, alguien.email)
+    client.post("/documentos-cambio/nuevo", data={
+        "companero_id": companero_otro.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana_otra.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana_otra.id,
+    })
+    client.get("/auth/logout")
+
+    crear_usuario, manyana, tarde = _setup(db, "hh")
+    claudia = crear_usuario("Claudia Pérez", "claudiahh@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanhh@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    assert documento_id > 1  # el id global ya iba por delante por la otra unidad
+
+    resp = client.get(f"/documentos-cambio/{documento_id}")
+    assert b"N\xc2\xba 1" in resp.data
 
 
 def test_lista_muestra_documentos_donde_soy_participante(db, client):

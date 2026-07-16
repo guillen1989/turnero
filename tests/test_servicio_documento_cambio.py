@@ -159,6 +159,45 @@ def test_generar_notas_ilog_contenido_para_ejemplo_del_usuario(db):
     )
 
 
+def test_numero_unidad_es_secuencial_por_unidad_y_no_por_id_global(db):
+    """
+    El número que ve la ayudante tiene que ser el mismo tipo de numeración
+    que llevaba en papel: una secuencia propia de su unidad, empezando en 1,
+    sin huecos ni saltos por cambios de otras unidades. No puede depender
+    del id autoincremental de Postgres, que es compartido por toda la app.
+    """
+    crear_usuario_n, manyana_n, tarde_n = _setup(db, "n")
+    claudia_n = crear_usuario_n("Claudia Pérez", "claudian@h.es")
+    juan_n = crear_usuario_n("Juan Rodríguez", "juann@h.es")
+
+    doc_n1 = crear_documento_cambio(
+        creado_por=claudia_n, companero=juan_n,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana_n.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana_n.id,
+    )
+    assert doc_n1.numero_unidad == 1
+
+    crear_usuario_o, manyana_o, tarde_o = _setup(db, "o")
+    claudia_o = crear_usuario_o("Ana García", "anao@h.es")
+    juan_o = crear_usuario_o("Bruno López", "brunoo@h.es")
+
+    doc_o1 = crear_documento_cambio(
+        creado_por=claudia_o, companero=juan_o,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana_o.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana_o.id,
+    )
+    # Nueva unidad -> su propia secuencia, aunque el id global siga creciendo.
+    assert doc_o1.numero_unidad == 1
+    assert doc_o1.id > doc_n1.id
+
+    doc_n2 = crear_documento_cambio(
+        creado_por=claudia_n, companero=juan_n,
+        turno_cede_fecha=date(2026, 8, 7), turno_cede_franja_id=manyana_n.id,
+        turno_recibe_fecha=date(2026, 8, 28), turno_recibe_franja_id=manyana_n.id,
+    )
+    assert doc_n2.numero_unidad == 2
+
+
 def test_generar_pdf_documento_completo(db):
     crear_usuario, manyana, tarde = _setup(db, "f")
     claudia = crear_usuario("Claudia Pérez", "claudiaf@h.es")
@@ -175,6 +214,48 @@ def test_generar_pdf_documento_completo(db):
 
     assert pdf_bytes[:5] == b"%PDF-"
     assert len(pdf_bytes) > 1000
+
+    import pypdf
+    import io as _io
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    assert "Claudia Pérez" in texto
+    assert "Juan Rodríguez" in texto
+    assert "Mañana" in texto
+    assert "07/07/2026" in texto
+    assert "28/07/2026" in texto
+
+
+def test_generar_pdf_documento_no_pierde_campos_con_nombres_largos(db):
+    """
+    Regresión: xhtml2pdf/reportlab descartan en silencio (sin error) el
+    contenido de un @frame estático si no cabe en su altura -- ver
+    PROGRESS.md, Fase 10. Un nombre de unidad u hospital largo no debe
+    desaparecer del PDF.
+    """
+    crear_usuario, manyana, tarde = _setup(db, "g")
+    hospital = manyana.grupo_intercambio.unidades[0].hospital
+    hospital.nombre = "Hospital Universitario La Paz"
+    unidad = manyana.grupo_intercambio.unidades[0]
+    unidad.nombre = "Urgencias de Demostración"
+    db.session.commit()
+
+    claudia = crear_usuario("Claudia Pérez", "claudiag@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juang@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, _FIRMA_PNG)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    import pypdf
+    import io as _io
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    assert hospital.nombre in texto
+    assert unidad.nombre in texto
 
 
 def test_crear_documento_cambio_calcula_factibilidad_no_verificado_por_defecto(db):

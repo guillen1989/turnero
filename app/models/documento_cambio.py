@@ -26,6 +26,13 @@ class DocumentoCambio(db.Model):
     )
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
     match_id = db.Column(db.Integer, db.ForeignKey("match_cambio.id"), nullable=True)
+    # Unidad de quien crea el documento (congelada en el momento de crearlo,
+    # igual que en el impreso de papel). Determina el ámbito de numero_unidad:
+    # cada unidad lleva su propia numeración, como hacía la ayudante a mano.
+    unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), nullable=False)
+    # Número secuencial dentro de esa unidad (1, 2, 3...), no el id
+    # autoincremental de Postgres (compartido por toda la app).
+    numero_unidad = db.Column(db.Integer, nullable=False)
     # 'no_verificado': falta la planilla publicada de algún participante para
     # poder comprobarlo. server_default porque documento_cambio ya tiene filas
     # reales en staging (probadas manualmente por el usuario) -- ver CLAUDE.md,
@@ -48,7 +55,8 @@ class DocumentoCambio(db.Model):
 
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
     supervisora = db.relationship("Usuario", foreign_keys=[supervisora_id])
-    match = db.relationship("MatchCambio")
+    unidad = db.relationship("Unidad")
+    match = db.relationship("MatchCambio", back_populates="documento_cambio")
     participantes = db.relationship(
         "ParticipanteDocumentoCambio",
         back_populates="documento",
@@ -58,6 +66,10 @@ class DocumentoCambio(db.Model):
         "FirmaDocumentoCambio",
         back_populates="documento",
         cascade="all, delete-orphan",
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("unidad_id", "numero_unidad", name="uq_documento_unidad_numero"),
     )
 
     def todos_han_firmado(self) -> bool:

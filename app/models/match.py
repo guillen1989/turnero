@@ -27,6 +27,7 @@ class MatchCambio(db.Model):
         cascade="all, delete-orphan",
     )
     notificaciones = db.relationship("Notificacion", back_populates="match", lazy="dynamic")
+    documento_cambio = db.relationship("DocumentoCambio", back_populates="match", uselist=False)
 
     def todas_confirmadas(self):
         return all(p.confirmado for p in self.participaciones)

@@ -34,7 +34,7 @@ def _crear_documento_con_dos_participantes(db, sufijo):
     ana = crear_usuario(f"ana{sufijo}@h.es")
     pedro = crear_usuario(f"pedro{sufijo}@h.es")
 
-    documento = DocumentoCambio(creado_por=ana)
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
     db.session.add(documento)
     db.session.flush()
 
@@ -75,7 +75,7 @@ def test_documento_cambio_enlaza_a_match_opcional(db):
     db.session.add(match)
     db.session.flush()
 
-    documento = DocumentoCambio(creado_por=ana, match=match)
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1, match=match)
     db.session.add(documento)
     db.session.commit()
 
@@ -88,7 +88,7 @@ def test_participante_unico_por_documento_y_usuario(db):
 
     crear_usuario, manyana, tarde = _setup(db, "c")
     ana = crear_usuario("anac@h.es")
-    documento = DocumentoCambio(creado_por=ana)
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
     db.session.add(documento)
     db.session.flush()
 
@@ -170,7 +170,7 @@ def test_todos_han_firmado_verdadero_si_firman_todos(db):
 def test_todos_han_firmado_falso_sin_participantes(db):
     crear_usuario, manyana, tarde = _setup(db, "h")
     ana = crear_usuario("anah@h.es")
-    documento = DocumentoCambio(creado_por=ana)
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
     db.session.add(documento)
     db.session.commit()
 

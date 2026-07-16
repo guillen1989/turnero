@@ -3,73 +3,63 @@
 <head>
 <meta charset="utf-8">
 <style>
-  @page { size: A4; margin: 1.5cm; }
-  body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #111; }
-  .logo { height: 50px; margin-bottom: 0.3cm; }
-  h1 { font-size: 12pt; text-align: center; text-decoration: underline; margin: 0.4cm 0; }
-  .campo { margin: 0.2cm 0; }
-  .campo u { padding: 0 0.2cm; }
-  .solicita-titulo { font-weight: bold; margin-top: 0.35cm; }
-  .rejilla { border-collapse: collapse; margin: 0.2cm 0 0.35cm; width: 100%; }
-  .rejilla th, .rejilla td { border: 1px solid #333; padding: 0.1cm 0.25cm; text-align: center; font-size: 8pt; height: 0.45cm; }
-  .rejilla .titulo-col { text-align: left; font-weight: normal; }
-  .fecha-lugar { text-align: right; margin: 0.5cm 0 0.3cm; }
-  .firmas-tabla { width: 100%; margin-top: 0.4cm; }
-  .firmas-tabla td { vertical-align: top; padding-right: 1cm; }
-  .firmas-tabla .etiqueta { font-weight: bold; margin-bottom: 0.1cm; }
-  .firmas-tabla img { height: 1.8cm; }
-  .firma-linea { margin-top: 1.8cm; width: 6cm; }
-  .supervisora { margin-top: 0.6cm; }
-  .supervisora .titulo { font-weight: bold; }
-  .supervisora hr { margin: 0.3cm 0; }
-  .supervisora .opciones { margin: 0.25cm 0; }
+  {#
+    El fondo de página es el impreso real del hospital escaneado
+    (hoja-cambio-fondo.png, A4 a página completa). Cada dato dinámico se
+    superpone en un @frame propio, con las coordenadas y dimensiones del
+    hueco que ocupa ese campo en el impreso (medidas en el propio escaneo
+    y convertidas a mm; ver PROGRESS.md, Fase 10). La altura de cada frame
+    tiene que ser >= 6mm aprox.: por debajo de eso, xhtml2pdf/reportlab
+    descartan el contenido del frame en silencio si no cabe, sin ningún
+    error -- de ahí el margen amplio.
+  #}
+  @page {
+    size: A4;
+    margin: 0;
+    background-image: url({{ fondo_path }});
+
+    @frame hospital_frame { -pdf-frame-content: hospital_c; left: 41.30mm; top: 42.73mm; width: 48.73mm; height: 8mm; }
+    @frame unidad_frame { -pdf-frame-content: unidad_c; left: 135.28mm; top: 42.73mm; width: 48.03mm; height: 8mm; }
+    @frame categoria_frame { -pdf-frame-content: categoria_c; left: 44.09mm; top: 53.64mm; width: 40.61mm; height: 8mm; }
+    @frame ddna_frame { -pdf-frame-content: ddna_c; left: 100.48mm; top: 53.64mm; width: 82.84mm; height: 8mm; }
+    @frame cede_franja_frame { -pdf-frame-content: cede_franja_c; left: 53.60mm; top: 74.29mm; width: 35.73mm; height: 8mm; }
+    @frame cede_fecha_frame { -pdf-frame-content: cede_fecha_c; left: 99.78mm; top: 74.29mm; width: 83.54mm; height: 8mm; }
+    @frame recibe_franja_frame { -pdf-frame-content: recibe_franja_c; left: 35.97mm; top: 84.96mm; width: 49.89mm; height: 8mm; }
+    @frame recibe_fecha_frame { -pdf-frame-content: recibe_fecha_c; left: 98.62mm; top: 84.96mm; width: 84.70mm; height: 8mm; }
+    @frame companero_frame { -pdf-frame-content: companero_c; left: 58.01mm; top: 92.16mm; width: 125.30mm; height: 8mm; }
+    @frame madrid_dia_frame { -pdf-frame-content: madrid_dia_c; left: 122.52mm; top: 156.66mm; width: 10.91mm; height: 8mm; }
+    @frame madrid_mes_frame { -pdf-frame-content: madrid_mes_c; left: 140.39mm; top: 156.66mm; width: 17.40mm; height: 8mm; }
+    @frame madrid_anyo_frame { -pdf-frame-content: madrid_anyo_c; left: 165.91mm; top: 156.66mm; width: 15.08mm; height: 8mm; }
+    @frame firma_solicitante_frame { -pdf-frame-content: firma_solicitante_c; left: 22.51mm; top: 174.5mm; width: 77.27mm; height: 17mm; }
+    @frame firma_companero_frame { -pdf-frame-content: firma_companero_c; left: 106.74mm; top: 174.5mm; width: 76.57mm; height: 17mm; }
+    @frame numero_frame { -pdf-frame-content: numero_c; left: 146.19mm; top: 12.76mm; width: 37.13mm; height: 5.80mm; }
+  }
+
+  #hospital_c, #unidad_c, #categoria_c, #ddna_c, #cede_franja_c, #cede_fecha_c,
+  #recibe_franja_c, #recibe_fecha_c, #companero_c,
+  #madrid_dia_c, #madrid_mes_c, #madrid_anyo_c {
+    font-family: Helvetica; font-size: 9.5pt; color: #1a1a6e;
+    margin: 0; padding: 0 0 0 1mm;
+  }
+  #numero_c { font-family: Helvetica; font-size: 8pt; color: #555; text-align: right; margin: 0; }
+  .firma-img { height: 15mm; }
 </style>
 </head>
 <body>
-  <img class="logo" src="{{ logo_path }}" alt="">
-  <h1>SOLICITUD DE CAMBIO DE TURNO O GUARDIA</h1>
-
-  <div class="campo">HOSPITAL: <u>{{ hospital_nombre }}</u> &nbsp;&nbsp; UNIDAD: <u>{{ unidad_nombre }}</u></div>
-  <div class="campo">CATEGORIA <u>{{ solicitante.categoria.nombre }}</u> &nbsp;&nbsp; D/Dña.: <u>{{ solicitante.nombre }}</u></div>
-
-  <div class="solicita-titulo">SOLICITA:</div>
-  <div class="campo">Cambiar el turno de: <u>{{ participante_solicitante.turno_cede_franja.nombre }}</u> &nbsp; El día <u>{{ participante_solicitante.turno_cede_fecha.strftime('%d/%m/%Y') }}</u></div>
-  <div class="campo">Por el de <u>{{ participante_solicitante.turno_recibe_franja.nombre }}</u> &nbsp; El día <u>{{ participante_solicitante.turno_recibe_fecha.strftime('%d/%m/%Y') }}</u></div>
-  <div class="campo">De acuerdo con D/DÑA <u>{{ companero.nombre }}</u></div>
-
-  <table class="rejilla">
-    <tr><th></th><th>L</th><th>M</th><th>X</th><th>J</th><th>V</th><th>S</th><th>D</th><th class="titulo-col">CORRESPONDE A:</th></tr>
-    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-  </table>
-
-  <table class="rejilla">
-    <tr><th>L</th><th>M</th><th>X</th><th>J</th><th>V</th><th>S</th><th>D</th><th class="titulo-col">CAMBIO</th></tr>
-    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-  </table>
-
-  <div class="fecha-lugar">Nº {{ numero_documento }} — Madrid, {{ fecha_documento.day }} de {{ meses[fecha_documento.month] }} de {{ fecha_documento.year }}</div>
-
-  <table class="firmas-tabla">
-    <tr>
-      <td width="45%">
-        <div class="etiqueta">LA INTERESADA,</div>
-        {% if firma_solicitante %}<img src="{{ firma_solicitante.imagen_firma }}" alt="">{% else %}<hr class="firma-linea">{% endif %}
-      </td>
-      <td width="45%">
-        <div class="etiqueta">ACEPTA EL CAMBIO</div>
-        {% if firma_companero %}<img src="{{ firma_companero.imagen_firma }}" alt="">{% else %}<hr class="firma-linea">{% endif %}
-      </td>
-    </tr>
-  </table>
-
-  <div class="supervisora">
-    <div class="titulo">INFORME POR PARTE DE LA SUPERVISORA DE LA UNIDAD:</div>
-    <hr>
-    <hr>
-    <div class="opciones">Favorable: _____</div>
-    <div class="opciones">Desfavorable: _____</div>
-    <div class="fecha-lugar">Madrid, ___ /de ________ /de ______</div>
-    <div style="text-align:right; font-weight:bold;">LA SUPERVISORA DE LA UNIDAD,</div>
-  </div>
+  <div id="hospital_c">{{ hospital_nombre }}</div>
+  <div id="unidad_c">{{ unidad_nombre }}</div>
+  <div id="categoria_c">{{ solicitante.categoria.nombre }}</div>
+  <div id="ddna_c">{{ solicitante.nombre }}</div>
+  <div id="cede_franja_c">{{ participante_solicitante.turno_cede_franja.nombre }}</div>
+  <div id="cede_fecha_c">{{ participante_solicitante.turno_cede_fecha.strftime('%d/%m/%Y') }}</div>
+  <div id="recibe_franja_c">{{ participante_solicitante.turno_recibe_franja.nombre }}</div>
+  <div id="recibe_fecha_c">{{ participante_solicitante.turno_recibe_fecha.strftime('%d/%m/%Y') }}</div>
+  <div id="companero_c">{{ companero.nombre }}</div>
+  <div id="madrid_dia_c">{{ fecha_documento.day }}</div>
+  <div id="madrid_mes_c">{{ meses[fecha_documento.month] }}</div>
+  <div id="madrid_anyo_c">{{ fecha_documento.year }}</div>
+  <div id="firma_solicitante_c"><img class="firma-img" src="{{ firma_solicitante.imagen_firma }}" alt=""></div>
+  <div id="firma_companero_c"><img class="firma-img" src="{{ firma_companero.imagen_firma }}" alt=""></div>
+  <div id="numero_c">Nº {{ numero_documento }}</div>
 </body>
 </html>
