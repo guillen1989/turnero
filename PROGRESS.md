@@ -4,6 +4,29 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+perf(db): `publicacion_cambio`, `usuario` y `unidad` no tenían más índice
+que la PK (`\d publicacion_cambio` en producción lo confirmó), pese a que
+`usuario_id`, `estado`, `es_sintetica` y `tipo` de `publicacion_cambio`,
+`categoria_id` de `usuario` y `grupo_intercambio_id` de `unidad` son
+justo las columnas que filtran todas las búsquedas del motor de matching
+y el dashboard. Cuarto y último paso del plan de 4 para resolver los
+cuelgues de producción (ver pasos anteriores). Fix: `index=True` en esas
+6 columnas (`app/models/publicacion.py`, `app/models/usuario.py`,
+`app/models/unidad.py`) y migración generada con `flask db migrate`
+(nunca a mano) — `285a7610df2f_añade_índices_para_filtros_de_matching.py`,
+`flask db heads` da un único head. Solo crea índices (`create_index`),
+no toca datos ni columnas existentes, así que no aplica el patrón de 3
+pasos de `NOT NULL`. Aplicada y verificada en local (`flask db upgrade`)
+· 890 tests passing.
+
+Con esto quedan completados los 4 pasos del plan. Pendiente de que el
+usuario decida cuándo hacer push/deploy a producción (ninguno de los 4
+commits se ha empujado todavía) y, tras el deploy, verificar en
+`railway logs` que: (a) arrancan 3 workers de gunicorn, (b) `flask db
+upgrade` aplica la migración de índices sin errores, y (c) no vuelven a
+aparecer `WORKER TIMEOUT` en los días siguientes.
+
+## Paso anterior
 chore(deploy): `Procfile` pasa de `gunicorn run:app` (default: 1 worker
 síncrono, sin `-w`) a `gunicorn --workers 3 --timeout 60 run:app`. Tercer
 paso del plan de 4 para resolver los cuelgues de producción (ver pasos
