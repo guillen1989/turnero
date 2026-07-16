@@ -36,6 +36,9 @@ def create_app(config_name=None):
     from flask_babel import get_locale
     app.jinja_env.globals["get_locale"] = get_locale
 
+    from app.services.documento_cambio import match_admite_documento_cambio
+    app.jinja_env.globals["match_admite_documento_cambio"] = match_admite_documento_cambio
+
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "info"
