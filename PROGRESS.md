@@ -7,7 +7,10 @@ Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 Cola de pendientes que el usuario pidió abordar seguidos, en el orden
 que mejor convenga: (1) recomprobar factibilidad en la 2ª firma — HECHO,
 (2) firma cruzada entre cuentas reales — HECHO, (3) número de cambio
-junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (parcial), (5)
+junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (el PDF ahora usa
+el escaneo real del impreso como fondo a página completa, con los
+campos en las mismas coordenadas y dimensiones que sus huecos en el
+impreso — ver el "Paso anterior" correspondiente más abajo), (5)
 listado de "mis hojas de cambio" — HECHO, (6) enviar los cambios por
 email a los implicados — HECHO, (7) cuenta de supervisora con acceso a
 todos los cambios — HECHO, (8) botón autorizar/denegar en la cuenta de
@@ -28,6 +31,37 @@ cadena a 3 a mano y qué campos necesita un junte de noches. La nota
 sobre "confirmar un match aparejado con firmar" (2026-07-16, ver el
 propio texto de la conversación si hace falta el detalle completo) sigue
 siendo válida para cuando se retome el paso 10.
+
+## Paso anterior
+feat(documento-cambio): el PDF generado reproduce el impreso real píxel
+a píxel — antes el PDF dibujaba su propio layout con CSS (aproximado,
+no coincidía con el impreso real del hospital). Ahora `pdf.html` pone
+el escaneo del impreso (`app/static/img/hoja-cambio-fondo.png`, copia
+de `hojacambios.png`) como fondo de página completa (`@page
+{ background-image: ... }` de xhtml2pdf) y superpone cada dato dinámico
+en un `@frame` propio, con las coordenadas y dimensiones exactas del
+hueco que ocupa ese campo en el escaneo (medidas a mano sobre la imagen
+con una rejilla de referencia, convertidas de píxeles a mm porque el
+escaneo, 905×1280px, tiene la misma proporción que A4). Como el fondo
+ya trae impresos el título, las etiquetas, las rejillas L-M-X-J-V-S-D y
+el bloque de la supervisora, la plantilla quedó mucho más corta: ya no
+dibuja nada de eso, solo el texto que varía por documento.
+
+Detalle no obvio importante para no repetir el error: si la altura de
+un `@frame` es insuficiente para el contenido (aunque sea de una sola
+línea), xhtml2pdf/reportlab descartan ese contenido **en silencio, sin
+ningún error** — no lo recortan, directamente no aparece. Costó una
+ronda de tanteo con renders de prueba dar con una altura mínima segura
+(~6mm a 9.5pt; se dejó 8mm de margen). Motivo por el que se añadió
+`test_generar_pdf_documento_no_pierde_campos_con_nombres_largos`: extrae
+el texto del PDF con `pypdf` y comprueba que un nombre de hospital/unidad
+realista (basado en datos reales de staging) sigue apareciendo, como
+red flag si se vuelve a estrechar algún frame por debajo del mínimo.
+
+2 tests nuevos/ampliados en `test_servicio_documento_cambio.py`
+(contenido esperado extraído del PDF con `pypdf`; nombres largos no
+desaparecen). Verificado además visualmente, renderizando el PDF a PNG
+con `pdftoppm` y comparándolo a ojo contra `hojacambios.png`.
 
 ## Paso anterior
 fix(documento-cambio): las notas para ilog (`generar_notas_ilog`) solo

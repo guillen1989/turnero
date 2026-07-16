@@ -176,6 +176,48 @@ def test_generar_pdf_documento_completo(db):
     assert pdf_bytes[:5] == b"%PDF-"
     assert len(pdf_bytes) > 1000
 
+    import pypdf
+    import io as _io
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    assert "Claudia Pérez" in texto
+    assert "Juan Rodríguez" in texto
+    assert "Mañana" in texto
+    assert "07/07/2026" in texto
+    assert "28/07/2026" in texto
+
+
+def test_generar_pdf_documento_no_pierde_campos_con_nombres_largos(db):
+    """
+    Regresión: xhtml2pdf/reportlab descartan en silencio (sin error) el
+    contenido de un @frame estático si no cabe en su altura -- ver
+    PROGRESS.md, Fase 10. Un nombre de unidad u hospital largo no debe
+    desaparecer del PDF.
+    """
+    crear_usuario, manyana, tarde = _setup(db, "g")
+    hospital = manyana.grupo_intercambio.unidades[0].hospital
+    hospital.nombre = "Hospital Universitario La Paz"
+    unidad = manyana.grupo_intercambio.unidades[0]
+    unidad.nombre = "Urgencias de Demostración"
+    db.session.commit()
+
+    claudia = crear_usuario("Claudia Pérez", "claudiag@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juang@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, _FIRMA_PNG)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    import pypdf
+    import io as _io
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    assert hospital.nombre in texto
+    assert unidad.nombre in texto
+
 
 def test_crear_documento_cambio_calcula_factibilidad_no_verificado_por_defecto(db):
     crear_usuario, manyana, tarde = _setup(db, "g")

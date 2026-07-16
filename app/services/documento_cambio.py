@@ -188,9 +188,12 @@ def generar_notas_ilog(documento):
 
 def generar_pdf_documento(documento):
     """
-    Renderiza la hoja de cambio rellena y firmada como PDF, fiel al impreso
-    real (hojacambios.png). Se genera bajo demanda a partir de los datos
-    guardados, no se persiste el binario en ningún sitio.
+    Renderiza la hoja de cambio rellena y firmada como PDF. El impreso real
+    del hospital (app/static/img/hoja-cambio-fondo.png) se usa como fondo a
+    página completa; los datos se superponen en las mismas coordenadas que
+    ocupan sus huecos en el impreso, vía @frame de xhtml2pdf (ver pdf.html).
+    Se genera bajo demanda a partir de los datos guardados, no se persiste
+    el binario en ningún sitio.
 
     xhtml2pdf (no WeasyPrint) a propósito: WeasyPrint necesita Pango/
     cairo/gdk-pixbuf vía cffi, y esas librerías de sistema no estaban
@@ -220,7 +223,7 @@ def generar_pdf_documento(documento):
         meses=_MESES,
         firma_solicitante=firmas_por_usuario.get(solicitante.id),
         firma_companero=firmas_por_usuario.get(companero.id),
-        logo_path=f"{current_app.static_folder}/img/logo-hospital-la-paz.png",
+        fondo_path=f"{current_app.static_folder}/img/hoja-cambio-fondo.png",
     )
 
     buffer = io.BytesIO()
