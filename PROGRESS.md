@@ -4,6 +4,44 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+perf(busquedas): corregido un N+1 en `notificar_busquedas_guardadas`
+(`app/services/busquedas_guardadas.py`) — por cada `BusquedaGuardada`
+candidata que coincidía con una publicación nueva, se hacía un
+`db.session.get(Usuario, busqueda.usuario_id)` dentro del bucle, en vez
+de reutilizar el `Usuario` que la propia consulta ya traía por el `join`.
+Detectado investigando por qué la app en producción se ha vuelto notable
+mente más lenta en los últimos días (a petición del usuario, sin ninguna
+sospecha previa de dónde estaba el problema): los logs de Railway
+mostraban 3 `WORKER TIMEOUT` de gunicorn en 48h (2026-07-14 12:23,
+2026-07-15 00:29, 2026-07-15 14:16), y el stack trace del worker matado
+apuntaba siempre a este mismo punto — `notificar_busquedas_guardadas`
+llamada desde `crear_pub_sintetica`, que a su vez se llama hasta 13 veces
+en un solo publish/editar en el grupo de intercambio más activo
+(categoría 2 / grupo 5: 89 publicaciones "cambio" activas ahora mismo).
+Como no hay más de 1 worker de gunicorn (`Procfile` sin `-w`), cada
+timeout congelaba la app entera para todos los usuarios, no solo para
+quien publicaba. Fix: `contains_eager(BusquedaGuardada.usuario)` en la
+query de candidatas (ya hace `join` con `Usuario`) y uso directo de
+`busqueda.usuario` en vez del `get()` redundante. Nuevo test
+(`test_notificar_busquedas_guardadas_no_crece_con_n`) que cuenta
+`SELECT`s ejecutados (nuevo fixture `query_counter` en `conftest.py`,
+basado en el evento `after_cursor_execute` de SQLAlchemy) y comprueba que
+no crecen con el número de búsquedas guardadas coincidentes — usando
+usuarios *distintos* por búsqueda, ya que con el mismo usuario repetido
+el identity map de SQLAlchemy habría ocultado el bug. Confirmado en rojo
+sin el fix (12 selects con 5 búsquedas vs 8 con 1) y en verde con el fix
+aplicado (igual en ambos casos) · 889 tests passing.
+
+Este es el primer paso de un plan de 4 para resolver los cuelgues de
+producción (ver `/home/portatil/.claude/plans/dreamy-noodling-glacier.md`
+si sigue disponible, o pedir al usuario que lo recuerde): 2) reutilizar
+`_candidatas_base` entre las 6 búsquedas de matching que se lanzan en
+cada publish/editar (hoy se repite la misma consulta 6 veces), 3) gunicorn
+con varios workers en el `Procfile` (red de seguridad de infraestructura:
+que un request lento no bloquee toda la app), 4) añadir los índices que
+faltan en `publicacion_cambio`/`usuario`/`unidad` (hoy solo tienen la PK).
+
+## Paso anterior
 fix(matching): las cadenas de 3 y 4 bandas (`crear_match_cadena_3`,
 `crear_match_cadena_4` en `app/matching/service.py`) solo registraban en
 `MatchParticipacion` el `turno_cedido_id` que cada banda cede a la

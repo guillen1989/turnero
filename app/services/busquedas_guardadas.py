@@ -1,3 +1,4 @@
+from sqlalchemy.orm import contains_eager
 from werkzeug.exceptions import Forbidden
 
 from app.extensions import db
@@ -116,6 +117,7 @@ def notificar_busquedas_guardadas(pub):
             Usuario.categoria_id == categoria_id,
             BusquedaGuardada.usuario_id != pub.usuario_id,
         )
+        .options(contains_eager(BusquedaGuardada.usuario))
         .all()
     )
 
@@ -127,8 +129,6 @@ def notificar_busquedas_guardadas(pub):
                 busqueda_guardada_id=busqueda.id,
                 tipo="alerta_busqueda_guardada",
             ))
-            usuario = db.session.get(Usuario, busqueda.usuario_id)
-            if usuario:
-                enviar_push_condicional(usuario, "busqueda_guardada")
+            enviar_push_condicional(busqueda.usuario, "busqueda_guardada")
 
     db.session.commit()

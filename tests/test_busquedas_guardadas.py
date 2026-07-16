@@ -35,6 +35,12 @@ def _franja_id(usuario):
     return usuario.unidad.grupo_intercambio.franjas_horarias.first().id
 
 
+def _usuario_n(n, unidad="Urgencias"):
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    return registrar_usuario(f"User{n}", f"u{n}@test.es", "pass123", "H1", unidad, cat.id)
+
+
 def _login(client, email, password="pass123"):
     client.post("/auth/login", data={"email": email, "password": password})
 
@@ -201,6 +207,34 @@ def test_publicar_no_notifica_al_propio_publicador(app, db):
         usuario_id=u1.id, tipo="alerta_busqueda_guardada"
     ).first()
     assert notif is None
+
+
+def test_notificar_busquedas_guardadas_no_crece_con_n(app, db, query_counter):
+    """No debe haber una query SELECT extra por cada búsqueda guardada coincidente
+    (regresión del N+1 en notificar_busquedas_guardadas: antes hacía un
+    db.session.get(Usuario, ...) por cada búsqueda dentro del bucle). Cada
+    búsqueda debe pertenecer a un usuario *distinto*: con el mismo usuario
+    repetido, el identity map de SQLAlchemy serviría el get() de caché y
+    ocultaría el N+1."""
+    publicador = _usuario_n(0)
+    franja = _franja_id(publicador)
+
+    buscador_1 = _usuario_n(1)
+    guardar_busqueda(buscador_1.id, {})
+    with patch("app.services.busquedas_guardadas.enviar_push_condicional"):
+        query_counter.selects = 0
+        publicar_cambio(publicador.id, [], [(date(2025, 7, 10), franja)], tipo="regalo")
+        selects_con_1_busqueda = query_counter.selects
+
+        for n in range(2, 6):
+            buscador = _usuario_n(n)
+            guardar_busqueda(buscador.id, {})
+
+        query_counter.selects = 0
+        publicar_cambio(publicador.id, [], [(date(2025, 7, 11), franja)], tipo="regalo")
+        selects_con_5_busquedas = query_counter.selects
+
+    assert selects_con_5_busquedas == selects_con_1_busqueda
 
 
 def test_publicar_notifica_por_mes(app, db):
