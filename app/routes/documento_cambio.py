@@ -149,7 +149,11 @@ def ver(documento_id):
         (p for p in documento.participantes if p.usuario_id == current_user.id), None
     )
     puedo_firmar = mi_participante is not None and mi_participante.usuario_id not in ids_firmantes
-    notas_ilog = generar_notas_ilog(documento) if documento.estado == "completo" else []
+    notas_ilog = (
+        generar_notas_ilog(documento)
+        if documento.estado == "completo" and current_user.es_supervisora
+        else []
+    )
     return render_template(
         "documento_cambio/ver.html", documento=documento,
         ids_firmantes=ids_firmantes, mi_participante=mi_participante, puedo_firmar=puedo_firmar,

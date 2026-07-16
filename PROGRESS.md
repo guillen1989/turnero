@@ -30,6 +30,17 @@ propio texto de la conversación si hace falta el detalle completo) sigue
 siendo válida para cuando se retome el paso 10.
 
 ## Paso anterior
+fix(documento-cambio): las notas para ilog (`generar_notas_ilog`) solo
+se calculan y se muestran en `ver.html` si `current_user.es_supervisora`
+— antes cualquier participante del documento completo las veía también,
+pero son un texto de uso interno para la ayudante de la supervisora, no
+para los trabajadores. `Usuario.unidad_id` ya es una FK obligatoria de
+uno solo (no hace falta cambio de modelo): cada cuenta de supervisora
+ya estaba, y sigue estando, asignada a una única unidad. 2 tests
+actualizados/nuevos en `test_rutas_documento_cambio.py` (el participante
+ya no ve "Notas para ilog" tras la 2ª firma; la supervisora sí las ve).
+
+## Paso anterior
 feat(documento-cambio): el email de hoja de cambio completa es opcional
 por usuario — nuevo campo `Usuario.notif_email_documento_cambio`
 (Boolean, `server_default='true'`, migración `a18f63631b51`, seguro en

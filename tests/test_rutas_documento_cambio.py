@@ -92,7 +92,7 @@ def test_ver_documento_ajeno_da_403(db, client):
     assert resp.status_code == 403
 
 
-def test_flujo_completo_firmar_ambos_muestra_notas_ilog(db, client):
+def test_flujo_completo_firmar_ambos_no_muestra_notas_ilog_a_los_participantes(db, client):
     crear_usuario, manyana, tarde = _setup(db, "d")
     claudia = crear_usuario("Claudia Pérez", "claudiad@h.es")
     juan = crear_usuario("Juan Rodríguez", "juand@h.es")
@@ -132,6 +132,26 @@ def test_flujo_completo_firmar_ambos_muestra_notas_ilog(db, client):
     )
     assert resp.status_code == 200
     assert db.session.get(DocumentoCambio, documento_id).estado == "completo"
+    assert "Libra el turno de mañana".encode("utf-8") not in resp.data
+    assert b"Notas para ilog" not in resp.data
+
+
+def test_supervisora_ve_las_notas_ilog_de_un_documento_completo(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "mm")
+    claudia = crear_usuario("Claudia Pérez", "claudiamm@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanmm@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martamm@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    resp = client.get(f"/documentos-cambio/{documento_id}")
+    assert resp.status_code == 200
+    assert b"Notas para ilog" in resp.data
     assert "Libra el turno de mañana".encode("utf-8") in resp.data
 
 
