@@ -8,20 +8,20 @@
   .logo { height: 60px; margin-bottom: 0.5cm; }
   h1 { font-size: 13pt; text-align: center; text-decoration: underline; margin: 0.8cm 0; }
   .campo { margin: 0.35cm 0; }
-  .campo .valor { border-bottom: 1px solid #333; padding: 0 0.2cm; }
+  .campo u { padding: 0 0.2cm; }
   .solicita-titulo { font-weight: bold; margin-top: 0.6cm; }
   .rejilla { border-collapse: collapse; margin: 0.3cm 0 0.6cm; width: 100%; }
   .rejilla th, .rejilla td { border: 1px solid #333; padding: 0.15cm 0.3cm; text-align: center; font-size: 9pt; height: 0.7cm; }
   .rejilla .titulo-col { text-align: left; font-weight: normal; }
   .fecha-lugar { text-align: right; margin: 0.8cm 0 0.4cm; }
-  .firmas { display: flex; justify-content: space-between; margin-top: 0.6cm; }
-  .firma-bloque { width: 45%; }
-  .firma-bloque .etiqueta { font-weight: bold; margin-bottom: 0.1cm; }
-  .firma-bloque img { max-height: 2.2cm; max-width: 100%; display: block; }
-  .firma-linea { border-top: 1px solid #333; margin-top: 2.2cm; }
+  .firmas-tabla { width: 100%; margin-top: 0.6cm; }
+  .firmas-tabla td { vertical-align: top; padding-right: 1cm; }
+  .firmas-tabla .etiqueta { font-weight: bold; margin-bottom: 0.1cm; }
+  .firmas-tabla img { height: 2.2cm; }
+  .firma-linea { margin-top: 2.2cm; width: 6cm; }
   .supervisora { margin-top: 1cm; }
   .supervisora .titulo { font-weight: bold; }
-  .supervisora .linea { border-bottom: 1px solid #333; height: 0.6cm; margin: 0.3cm 0; }
+  .supervisora hr { margin: 0.5cm 0; }
   .supervisora .opciones { margin: 0.3cm 0; }
 </style>
 </head>
@@ -29,13 +29,13 @@
   <img class="logo" src="{{ logo_path }}" alt="">
   <h1>SOLICITUD DE CAMBIO DE TURNO O GUARDIA</h1>
 
-  <div class="campo">HOSPITAL: <span class="valor">{{ hospital_nombre }}</span> &nbsp;&nbsp; UNIDAD: <span class="valor">{{ unidad_nombre }}</span></div>
-  <div class="campo">CATEGORIA <span class="valor">{{ solicitante.categoria.nombre }}</span> &nbsp;&nbsp; D/Dña.: <span class="valor">{{ solicitante.nombre }}</span></div>
+  <div class="campo">HOSPITAL: <u>{{ hospital_nombre }}</u> &nbsp;&nbsp; UNIDAD: <u>{{ unidad_nombre }}</u></div>
+  <div class="campo">CATEGORIA <u>{{ solicitante.categoria.nombre }}</u> &nbsp;&nbsp; D/Dña.: <u>{{ solicitante.nombre }}</u></div>
 
   <div class="solicita-titulo">SOLICITA:</div>
-  <div class="campo">Cambiar el turno de: <span class="valor">{{ participante_solicitante.turno_cede_franja.nombre }}</span> &nbsp; El día <span class="valor">{{ participante_solicitante.turno_cede_fecha.strftime('%d/%m/%Y') }}</span></div>
-  <div class="campo">Por el de <span class="valor">{{ participante_solicitante.turno_recibe_franja.nombre }}</span> &nbsp; El día <span class="valor">{{ participante_solicitante.turno_recibe_fecha.strftime('%d/%m/%Y') }}</span></div>
-  <div class="campo">De acuerdo con D/DÑA <span class="valor">{{ companero.nombre }}</span></div>
+  <div class="campo">Cambiar el turno de: <u>{{ participante_solicitante.turno_cede_franja.nombre }}</u> &nbsp; El día <u>{{ participante_solicitante.turno_cede_fecha.strftime('%d/%m/%Y') }}</u></div>
+  <div class="campo">Por el de <u>{{ participante_solicitante.turno_recibe_franja.nombre }}</u> &nbsp; El día <u>{{ participante_solicitante.turno_recibe_fecha.strftime('%d/%m/%Y') }}</u></div>
+  <div class="campo">De acuerdo con D/DÑA <u>{{ companero.nombre }}</u></div>
 
   <table class="rejilla">
     <tr><th></th><th>L</th><th>M</th><th>X</th><th>J</th><th>V</th><th>S</th><th>D</th><th class="titulo-col">CORRESPONDE A:</th></tr>
@@ -49,21 +49,23 @@
 
   <div class="fecha-lugar">Madrid, {{ fecha_documento.day }} de {{ meses[fecha_documento.month] }} de {{ fecha_documento.year }}</div>
 
-  <div class="firmas">
-    <div class="firma-bloque">
-      <div class="etiqueta">LA INTERESADA,</div>
-      {% if firma_solicitante %}<img src="{{ firma_solicitante.imagen_firma }}" alt="">{% else %}<div class="firma-linea"></div>{% endif %}
-    </div>
-    <div class="firma-bloque">
-      <div class="etiqueta">ACEPTA EL CAMBIO</div>
-      {% if firma_companero %}<img src="{{ firma_companero.imagen_firma }}" alt="">{% else %}<div class="firma-linea"></div>{% endif %}
-    </div>
-  </div>
+  <table class="firmas-tabla">
+    <tr>
+      <td width="45%">
+        <div class="etiqueta">LA INTERESADA,</div>
+        {% if firma_solicitante %}<img src="{{ firma_solicitante.imagen_firma }}" alt="">{% else %}<hr class="firma-linea">{% endif %}
+      </td>
+      <td width="45%">
+        <div class="etiqueta">ACEPTA EL CAMBIO</div>
+        {% if firma_companero %}<img src="{{ firma_companero.imagen_firma }}" alt="">{% else %}<hr class="firma-linea">{% endif %}
+      </td>
+    </tr>
+  </table>
 
   <div class="supervisora">
     <div class="titulo">INFORME POR PARTE DE LA SUPERVISORA DE LA UNIDAD:</div>
-    <div class="linea"></div>
-    <div class="linea"></div>
+    <hr>
+    <hr>
     <div class="opciones">Favorable: _____ &nbsp;&nbsp;&nbsp; Desfavorable: _____</div>
     <div class="fecha-lugar">Madrid, ___ /de ________ /de ______</div>
     <div style="text-align:right; font-weight:bold;">LA SUPERVISORA DE LA UNIDAD,</div>

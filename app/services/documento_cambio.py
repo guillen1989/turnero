@@ -4,6 +4,7 @@ sin cadenas de 3/4 ni juntes de noches), firma y generación de las notas
 en lenguaje natural que la ayudante copia y pega en ilog.
 """
 import hashlib
+import io
 
 from flask import current_app, render_template
 
@@ -121,13 +122,13 @@ def generar_pdf_documento(documento):
     real (hojacambios.png). Se genera bajo demanda a partir de los datos
     guardados, no se persiste el binario en ningún sitio.
 
-    Import perezoso a propósito: weasyprint carga Pango/cairo/gdk-pixbuf
-    vía cffi en tiempo de import. Si esas librerías de sistema faltan en
-    el entorno de despliegue, un import a nivel de módulo tira abajo el
-    arranque completo de la app (ya pasó una vez en Railway); así, como
-    mucho, falla esta función con un 500 en la ruta del PDF.
+    xhtml2pdf (no WeasyPrint) a propósito: WeasyPrint necesita Pango/
+    cairo/gdk-pixbuf vía cffi, y esas librerías de sistema no estaban
+    disponibles en Railway (crash en producción, ver PROGRESS.md, Fase
+    10). xhtml2pdf es Python puro (usa reportlab por debajo), sin
+    dependencias nativas, así que no puede volver a pasar.
     """
-    from weasyprint import HTML
+    from xhtml2pdf import pisa
     solicitante = documento.creado_por
     participante_solicitante = next(
         p for p in documento.participantes if p.usuario_id == solicitante.id
@@ -148,6 +149,11 @@ def generar_pdf_documento(documento):
         meses=_MESES,
         firma_solicitante=firmas_por_usuario.get(solicitante.id),
         firma_companero=firmas_por_usuario.get(companero.id),
-        logo_path=f"file://{current_app.static_folder}/img/logo-hospital-la-paz.png",
+        logo_path=f"{current_app.static_folder}/img/logo-hospital-la-paz.png",
     )
-    return HTML(string=html).write_pdf()
+
+    buffer = io.BytesIO()
+    resultado = pisa.CreatePDF(html, dest=buffer)
+    if resultado.err:
+        raise RuntimeError(f"Error generando el PDF: {resultado.log}")
+    return buffer.getvalue()

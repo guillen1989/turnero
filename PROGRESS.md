@@ -4,13 +4,42 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Pendiente: confirmar con el usuario si el segundo intento de
-`nixpacks.toml` (con `aptPkgs` en vez de `nixPkgs`, ver "Paso anterior")
-resuelve el 500 en "Generar PDF" en Railway — no se puede verificar
-desde este entorno de desarrollo, solo con el deploy real. Además:
-comprobación de factibilidad contra planillas (de momento se genera el
-documento sin verificar) y actualizar `ESPECIFICACION.md` (ver nota de
-varios pasos atrás).
+Pendiente: confirmar con el usuario en el próximo deploy que el PDF ya
+funciona en Railway con xhtml2pdf (ver "Paso anterior") — no se puede
+verificar desde este entorno de desarrollo, solo con el deploy real.
+Además: comprobación de factibilidad contra planillas (de momento se
+genera el documento sin verificar) y actualizar `ESPECIFICACION.md` (ver
+nota de varios pasos atrás).
+
+## Paso anterior
+fix(documento-cambio): sustituido WeasyPrint por xhtml2pdf — dos
+intentos seguidos de arreglar las dependencias nativas de WeasyPrint en
+Railway (`nixPkgs` y luego `aptPkgs` en `nixpacks.toml`) dieron el
+mismo error exacto (`OSError: cannot load library 'libgobject-2.0-0'`),
+lo que apunta a que `nixpacks.toml` ni siquiera se estaba aplicando en
+el build de este proyecto (o el builder real no es Nixpacks) — sin
+acceso al panel de Railway no hay forma de confirmarlo, y no tenía
+sentido seguir adivinando configuración de build a ciegas gastando
+ciclos de deploy del usuario. Cambio de estrategia: `xhtml2pdf` (usa
+`reportlab` por debajo) es Python puro, sin ningún binding nativo/cffi,
+así que esta categoría entera de fallo deja de ser posible
+independientemente de qué builder use Railway. `nixpacks.toml` eliminado
+(ya no hace falta). Plantilla `pdf.html` adaptada al subset de CSS de
+xhtml2pdf: la maquetación de las firmas pasa de `display:flex` (no
+soportado) a una tabla; los `border-bottom` en `<span>`/`<div>` vacíos
+no se renderizaban (regresión visual detectada comparando capturas antes
+de dar el paso por bueno) — sustituidos por `<u>` para los valores de
+campo y `<hr>` para las líneas en blanco del bloque de la supervisora,
+verificado que ambos si funcionan en xhtml2pdf con un PDF de prueba
+aislado antes de tocar la plantilla real. Import de `xhtml2pdf` sigue
+siendo perezoso (dentro de la función, no a nivel de módulo) como buena
+práctica, aunque el riesgo concreto que lo motivó (crash de arranque por
+dependencia nativa) ya no aplica con una librería pura Python.
+Reverificado generando un PDF real con firma dibujada y convirtiéndolo a
+imagen con `pdftoppm` — visualmente equivalente a la versión con
+WeasyPrint, incluidos las firmas y las rejillas. 22 tests siguen en
+verde sin cambios (el contrato de `generar_pdf_documento` no cambió,
+solo la implementación interna).
 
 ## Paso anterior
 fix(documento-cambio): `nixpacks.toml` con `nixPkgs` no arregló el 500
