@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, flash, redirect, url_for
+from flask import Blueprint, abort, flash, redirect, request, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 
@@ -26,7 +26,11 @@ def _get_match_validado(match_id):
 @login_required
 def confirmar(match_id):
     match = _get_match_validado(match_id)
-    confirmar_participacion(match, current_user.id)
+    firma = request.form.get("firma", "").strip()
+    if match.tipo == "directo_2" and not firma:
+        flash(_("Debes firmar el cambio antes de confirmarlo."), "danger")
+        return redirect(url_for("main.index"))
+    confirmar_participacion(match, current_user.id, firma_data=firma or None)
     flash(_("Has confirmado tu parte del cambio."), "success")
     return redirect(url_for("main.index"))
 

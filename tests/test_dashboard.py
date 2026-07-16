@@ -14,6 +14,12 @@ from app.models import (
 from app.extensions import db
 from app.services.registro import registrar_usuario
 
+# PNG 1x1 transparente válido, usado como firma de prueba.
+FIRMA_VALIDA = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4"
+    "2mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
+
 
 def _usuario_y_login(client, email="test@test.es"):
     insertar_categorias_semilla()
@@ -587,10 +593,10 @@ def test_confirmar_total_resuelve_turno_aceptado(client, db):
     db.session.commit()
 
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.get("/auth/logout")
     client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
 
     db.session.refresh(ta_ana)
     db.session.refresh(ta_pedro)

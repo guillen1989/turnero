@@ -15,6 +15,12 @@ from app.models import (
 )
 from app.services.registro import registrar_usuario
 
+# PNG 1x1 transparente válido, usado como firma de prueba.
+FIRMA_VALIDA = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4"
+    "2mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
+
 
 # --- Helper: crea dos usuarios con un match propuesto entre ellos ---
 
@@ -91,7 +97,7 @@ def test_rechazar_match_no_propio_devuelve_403(client, db):
 def test_confirmar_primera_parte_establece_confirmado_parcial(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     db.session.refresh(match)
     assert match.estado == "confirmado_parcial"
 
@@ -99,7 +105,7 @@ def test_confirmar_primera_parte_establece_confirmado_parcial(client, db):
 def test_confirmar_primera_parte_no_resuelve_turno(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     part_ana = MatchParticipacion.query.filter_by(match_id=match.id, publicacion_id=match.participaciones[0].publicacion_id).first()
     db.session.refresh(part_ana.turno_cedido)
     assert part_ana.turno_cedido.estado == "abierto"
@@ -108,7 +114,7 @@ def test_confirmar_primera_parte_no_resuelve_turno(client, db):
 def test_confirmar_parcial_notifica_a_la_otra_parte(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     n = Notificacion.query.filter_by(usuario_id=pedro.id, tipo="confirmacion_parcial").first()
     assert n is not None
     assert n.match_id == match.id
@@ -117,10 +123,10 @@ def test_confirmar_parcial_notifica_a_la_otra_parte(client, db):
 def test_confirmar_ambas_partes_establece_confirmado_total(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.get("/auth/logout")
     client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     db.session.refresh(match)
     assert match.estado == "confirmado_total"
 
@@ -128,10 +134,10 @@ def test_confirmar_ambas_partes_establece_confirmado_total(client, db):
 def test_confirmar_total_resuelve_turnos_cedidos(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.get("/auth/logout")
     client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     for p in match.participaciones:
         db.session.refresh(p.turno_cedido)
         assert p.turno_cedido.estado == "resuelto"
@@ -140,10 +146,10 @@ def test_confirmar_total_resuelve_turnos_cedidos(client, db):
 def test_confirmar_total_actualiza_estado_publicaciones(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.get("/auth/logout")
     client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     for p in match.participaciones:
         db.session.refresh(p.publicacion)
         assert p.publicacion.estado == "confirmada"
@@ -154,8 +160,34 @@ def test_confirmar_match_cerrado_devuelve_409(client, db):
     match.estado = "rechazado"
     db.session.commit()
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    resp = client.post(f"/matches/{match.id}/confirmar")
+    resp = client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     assert resp.status_code == 409
+
+
+# --- Confirmación: firma obligatoria en matches directos ---
+
+def test_confirmar_directo_sin_firma_no_confirma(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    db.session.refresh(match)
+    assert match.estado == "propuesto"
+
+
+def test_confirmar_directo_sin_firma_redirige_con_flash_error(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.post(f"/matches/{match.id}/confirmar", follow_redirects=True)
+    assert "Debes firmar" in resp.get_data(as_text=True)
+
+
+def test_confirmar_directo_con_firma_guarda_la_firma_de_quien_confirma(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
+    part_ana = next(p for p in match.participaciones if p.publicacion.usuario_id == ana.id)
+    db.session.refresh(part_ana)
+    assert part_ana.firma_data == FIRMA_VALIDA
 
 
 # --- Rechazo ---
@@ -222,7 +254,7 @@ def test_desconfirmar_match_cerrado_devuelve_409(client, db):
 def test_desconfirmar_revierte_confirmacion_propia(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.post(f"/matches/{match.id}/desconfirmar")
     db.session.refresh(match)
     part_ana = next(p for p in match.participaciones if p.publicacion.usuario_id == ana.id)
@@ -233,7 +265,7 @@ def test_desconfirmar_revierte_confirmacion_propia(client, db):
 def test_desconfirmar_devuelve_match_a_propuesto_si_nadie_mas_confirmo(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.post(f"/matches/{match.id}/desconfirmar")
     db.session.refresh(match)
     assert match.estado == "propuesto"
@@ -242,7 +274,7 @@ def test_desconfirmar_devuelve_match_a_propuesto_si_nadie_mas_confirmo(client, d
 def test_desconfirmar_no_afecta_turnos_ni_publicaciones(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.post(f"/matches/{match.id}/desconfirmar")
     part_ana = next(p for p in match.participaciones if p.publicacion.usuario_id == ana.id)
     db.session.refresh(part_ana.turno_cedido)
@@ -254,7 +286,7 @@ def test_desconfirmar_no_afecta_turnos_ni_publicaciones(client, db):
 def test_desconfirmar_notifica_a_la_otra_parte(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.post(f"/matches/{match.id}/desconfirmar")
     n = Notificacion.query.filter_by(usuario_id=pedro.id, tipo="desconfirmacion").first()
     assert n is not None
@@ -264,7 +296,7 @@ def test_desconfirmar_notifica_a_la_otra_parte(client, db):
 def test_desconfirmar_redirige_al_dashboard(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     resp = client.post(f"/matches/{match.id}/desconfirmar", follow_redirects=False)
     assert resp.status_code == 302
     assert resp.headers["Location"].endswith("/")
@@ -273,10 +305,10 @@ def test_desconfirmar_redirige_al_dashboard(client, db):
 def test_desconfirmar_no_desconfirma_al_otro_usuario(client, db):
     ana, pedro, match = _setup_match(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.get("/auth/logout")
     client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     db.session.refresh(match)
     assert match.estado == "confirmado_total"
 

@@ -33,12 +33,25 @@ llaman al servicio directamente sin pasar por HTTP: sin firma queda
 `None`, guarda la firma de quien confirma, no pisa la firma de otra
 parte) · 27 tests relacionados passing.
 
-Siguiente paso: la ruta `POST /matches/<id>/confirmar`
-(`app/routes/matches.py`) debe leer `request.form['firma']` y, si
-`match.tipo == 'directo_2'` y no hay firma, rechazar con flash de error
-sin confirmar — hay que actualizar los tests existentes que confirman
-matches directos sin firma (`test_confirmacion.py`, `test_smoke.py`,
-`test_flujos_criticos.py`, `test_dashboard.py`).
+Paso 3 completado: `POST /matches/<id>/confirmar` (`app/routes/matches.py`)
+lee ahora `request.form['firma']`; si `match.tipo == 'directo_2'` y no hay
+firma, flash de error (`"Debes firmar el cambio antes de confirmarlo."`)
++ redirect sin confirmar (las cadenas de 3/4 bandas no cambian: siguen
+sin exigir firma). `confirmar_participacion` recibe `firma_data=firma or
+None`. Actualizados todos los tests existentes que confirmaban matches
+`directo_2` sin firma para que ahora manden `data={"firma": FIRMA_VALIDA}`
+(PNG 1x1 de prueba): `test_confirmacion.py` (+3 tests nuevos: sin firma no
+confirma, sin firma da flash de error, con firma se guarda en la
+participación de quien confirma), `test_flujos_criticos.py`,
+`test_dashboard.py`. Nota al pasar la suite completa: la BD de test
+compartida (`turnero_test`) puede estar siendo usada por otro job/worktree
+en paralelo (deadlocks / `UndefinedColumn` vistos en un intento) — se creó
+una BD privada (`turnero_test_firma_confirmacion`, `TEST_DATABASE_URL`)
+para verificar sin interferencias. 898 tests passing.
+
+Siguiente paso: canvas de firma en `dashboard.html` — modal con lienzo
+táctil/ratón que sustituye al submit directo del botón "Confirmar" en
+matches directos (las cadenas siguen con su botón normal, sin firma).
 
 ## Paso anterior
 perf(db): `publicacion_cambio`, `usuario` y `unidad` no tenían más índice

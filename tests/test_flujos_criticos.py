@@ -15,6 +15,12 @@ from app.models import (
 )
 from app.services.registro import registrar_usuario
 
+# PNG 1x1 transparente válido, usado como firma de prueba.
+FIRMA_VALIDA = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4"
+    "2mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -98,14 +104,18 @@ def test_flujo_me_interesa_confirmar_ambas_partes(client, db):
     assert match.estado == "propuesto"
 
     with patch("app.push.sender.webpush"):
-        assert client.post(f"/matches/{match.id}/confirmar", follow_redirects=False).status_code == 302
+        assert client.post(
+            f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA}, follow_redirects=False
+        ).status_code == 302
     db.session.refresh(match)
     assert match.estado == "confirmado_parcial"
 
     client.get("/auth/logout")
     _login(client, "a@test.es")
     with patch("app.push.sender.webpush"):
-        assert client.post(f"/matches/{match.id}/confirmar", follow_redirects=False).status_code == 302
+        assert client.post(
+            f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA}, follow_redirects=False
+        ).status_code == 302
     db.session.refresh(match)
     assert match.estado == "confirmado_total"
 
