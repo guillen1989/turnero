@@ -4,15 +4,61 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Paso 2b: rutas + formulario HTML + captura de firma con canvas (dibujo con
-el dedo), con las dos firmas desde la misma cuenta (mono-cuenta, sin
-cadenas a 3/4, sin juntes de noches). Reutiliza el servicio del paso 2a.
-En la misma página del documento, cuando esté `completo`, mostrar el
-cuadro de notas para ilog (`generar_notas_ilog`) — pedido explícito del
-usuario 2026-07-16: junto al documento debe aparecer un texto copiable
-para que la ayudante lo pegue en la nota del día correspondiente en ilog.
-Un cambio 1 a 1 afecta a 4 casillas (2 trabajadores x 2 días), así que son
-4 notas, cada una con su propio botón de copiar.
+Paso 3: plantilla Jinja fiel al impreso real (`hojacambios.png`) + render
+a PDF con WeasyPrint, generado bajo demanda (sin persistir el binario).
+La página `/documentos-cambio/<id>` actual es funcional pero no es la
+réplica visual del papel — eso queda para este paso. También pendiente:
+comprobación de factibilidad contra planillas (de momento se genera el
+documento sin verificar, decisión consciente para tener un prototipo que
+enseñar a los jefes) y actualizar `ESPECIFICACION.md` (ver nota de dos
+pasos atrás).
+
+## Paso anterior
+feat(documento-cambio): rutas, formulario y firma con canvas — nuevo
+blueprint `documento_cambio` (`/documentos-cambio`): `GET/POST /nuevo`
+(elige compañero de la misma categoría+grupo y los datos del turno;
+reutiliza `crear_franjas_default` como ya hace `/publicar` para que el
+selector de turnos no salga vacío en un grupo nuevo), `GET /<id>` (ver
+datos + firmar + notas ilog cuando esté completo) y
+`POST /<id>/firmar/<participante_id>` (403 si no es el creador —
+fase mono-cuenta: solo quien creó el documento firma por las dos partes
+desde su propio dispositivo — 409 si ese participante ya había firmado).
+`app/static/js/firma-canvas.js`: canvas con eventos `pointerdown/move/up`
+(cubre dedo/ratón/lápiz uniformemente), botón «Borrar», y en el submit
+del formulario vuelca el trazo a `imagen_firma` como PNG en base64;
+mismo fichero incluye `copiarAlPortapapeles` para los botones «Copiar»
+de las notas ilog. Enlace «Hoja de cambio» añadido al nav. Catálogo i18n
+actualizado (`pybabel extract/update/compile`, 26 entradas nuevas
+corregidas a mano: `pybabel update` empareja mal los `msgid` nuevos con
+similares existentes — mismo problema ya documentado en pasos previos de
+esta fase de tipo "Fase 9").
+
+Verificado en navegador real con Playwright (`e2e/test_documento_cambio.py`,
+`--headed` opcional): flujo completo con dos usuarios (Ana/Pedro),
+firma dibujada con `page.mouse` en el canvas (con `scroll_into_view_if_needed`
+— si el canvas queda fuera del viewport, `page.mouse` no impacta el
+elemento y la firma queda vacía, dando un `alert()` bloqueante sin que se
+note por qué), sin errores de consola ni alertas inesperadas, y contenido
+exacto de las 4 notas ilog comprobado. De paso se encontró y arregló un
+bug ya existente (no introducido por este cambio, pero copiado sin querer
+al escribir las plantillas nuevas a partir de `publicar.html`): las
+plantillas usaban clases `alert`/`alert--*` que no existen en
+`main.css` (solo `flash`/`flash--*` están definidas), y además
+duplicaban el bloque de flash messages que `base.html` ya renderiza
+globalmente — el mensaje aparecía dos veces, una con estilo (el de
+`base.html`) y otra en texto plano sin caja. Corregido solo en las
+plantillas nuevas de esta feature; `publicaciones/publicar.html` sigue
+teniendo el mismo bug latente, no tocado por no ser parte de este paso
+(anotado abajo para no perderlo).
+
+9 tests nuevos de rutas (`test_rutas_documento_cambio.py`) + 1 e2e nuevo.
+Contención puntual de BD compartida (`turnero_test`) con otro job en
+paralelo durante la verificación — confirmado con BD privada temporal,
+sin relación con el código; también se limpió un proceso `pytest`
+huérfano propio, sobrante de dos intentos de `git push` cortados por
+timeout antes de descubrir que el hook de pre-push solo tardaba ~1min
+(testmon acota bien, no hace falta el baseline completo salvo la
+primerísima vez).
 
 ## Paso anterior
 feat(documento-cambio): servicio `crear_documento_cambio` (genera los dos
@@ -668,6 +714,8 @@ mitigación preventiva independiente de la causa.
 - [x] fix(dashboard): investigado el reporte de que la tarjeta de Pendientes no reflejaba nuevas confirmaciones de otros al recargar — no se pudo reproducir ningún bug de datos/plantilla (verificado con test client y con servidor real + sesiones HTTP independientes); se añade `Cache-Control: no-store` a `main.index` como medida defensiva ante caché de navegador/proxy, ya que la página es dinámica y personal y no llevaba cabecera anti-caché · 4 tests nuevos · 884 tests passing
 - [x] fix(matching): `crear_match_cadena_3`/`crear_match_cadena_4` no registraban el `turno_aceptado_id` que cada banda recibe de la anterior en el ciclo (solo el `turno_cedido_id` que cede), así que al confirmarse una cadena el turno ya conseguido nunca se marcaba `resuelto` y seguía apareciendo como pendiente en la publicación reactivada · reportado por el usuario en producción (match cadena_4 confirmado, publicación 818) · fix reutiliza `_primer_aceptado_que_cubre` (ya usado por `crear_match_directo`) · 4 tests de regresión nuevos · 887 tests passing
 - [x] Fase 10, paso 1: modelos `DocumentoCambio`/`ParticipanteDocumentoCambio`/`FirmaDocumentoCambio` para la hoja de cambio digital con firma (reproduce `hojacambios.png`, formulario "SOLICITUD DE CAMBIO DE TURNO O GUARDIA" del Hospital La Paz) · migración `3f8d2428aa64` · 9 tests nuevos · 896 tests passing
+- [x] Fase 10, paso 2a: servicio `crear_documento_cambio`/`firmar_documento`/`generar_notas_ilog` · 5 tests nuevos
+- [x] Fase 10, paso 2b: rutas + formulario + firma con canvas (`pointerdown/move/up`) + notas para ilog copiables · blueprint `documento_cambio`, enlace en nav · catálogo i18n actualizado · 9 tests de rutas + 1 e2e (Playwright, firma real dibujada) · verificado en navegador
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
@@ -687,3 +735,4 @@ mitigación preventiva independiente de la causa.
 - El bloque "INFORME POR PARTE DE LA SUPERVISORA" (Favorable/Desfavorable + firma) no se usa en la práctica según el usuario, pero se mantiene en el documento generado como bloque estático/en blanco, sin tercer firmante ni lógica funcional.
 - Plantilla: HTML/Jinja2 + renderizado a PDF con WeasyPrint (no Word/LibreOffice), generado bajo demanda (no se persiste el PDF, evita el problema de disco efímero en Railway) — pendiente de implementar.
 - `ESPECIFICACION.md` pendiente de actualizar (ver nota en el paso anterior): el principio "no deja constancia oficial... no es un documento de RRHH" queda desactualizado con esta funcionalidad.
+- Bug preexistente encontrado en `app/templates/publicaciones/publicar.html` (no arreglado, fuera de alcance de esta fase): usa clases `alert`/`alert--{{cat}}` para los flash messages, que no existen en `main.css` (solo `flash`/`flash--*` están definidas), y además duplica el bloque `get_flashed_messages` que `base.html` ya renderiza globalmente — el mensaje sale dos veces, una con estilo y otra en texto plano sin caja. Las plantillas nuevas de `documento_cambio` no repiten el patrón. Pendiente decidir si merece su propio paso de limpieza.

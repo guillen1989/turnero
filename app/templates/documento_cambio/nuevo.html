@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Nueva hoja de cambio') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Nueva hoja de cambio') }}</h1>
+  <p>{{ _('Rellena los datos del cambio. Podrás firmar tú y tu compañero/a desde este mismo dispositivo a continuación.') }}</p>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label for="companero_id">{{ _('Compañero/a con quien cambias') }}</label>
+      <select id="companero_id" name="companero_id" required>
+        <option value="">{{ _('— Selecciona —') }}</option>
+        {% for c in companeros %}
+        <option value="{{ c.id }}">{{ c.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <section class="turnos-section">
+      <h2>{{ _('Tu turno que cedes') }}</h2>
+      <div class="turno-row">
+        <div class="turno-row-campo">
+          <label for="turno_cede_fecha">{{ _('Día') }}</label>
+          <input type="date" id="turno_cede_fecha" name="turno_cede_fecha" required>
+        </div>
+        <div class="turno-row-campo">
+          <label for="turno_cede_franja_id">{{ _('Turno') }}</label>
+          <select id="turno_cede_franja_id" name="turno_cede_franja_id" required>
+            <option value="">{{ _('— Selecciona —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="turnos-section">
+      <h2>{{ _('El turno que recibes a cambio') }}</h2>
+      <div class="turno-row">
+        <div class="turno-row-campo">
+          <label for="turno_recibe_fecha">{{ _('Día') }}</label>
+          <input type="date" id="turno_recibe_fecha" name="turno_recibe_fecha" required>
+        </div>
+        <div class="turno-row-campo">
+          <label for="turno_recibe_franja_id">{{ _('Turno') }}</label>
+          <select id="turno_recibe_franja_id" name="turno_recibe_franja_id" required>
+            <option value="">{{ _('— Selecciona —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <button type="submit" class="btn btn-primary">{{ _('Crear hoja de cambio') }}</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Hoja de cambio') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Hoja de cambio') }}</h1>
+
+  {% if documento.estado == 'completo' %}
+    <div class="flash flash--success documento-completo-banner">{{ _('Las dos firmas están recogidas. La hoja de cambio está completa.') }}</div>
+  {% else %}
+    <span class="badge-draft">{{ _('Pendiente de firma') }}</span>
+  {% endif %}
+
+  <section class="turnos-section">
+    <h2>{{ _('Datos del cambio') }}</h2>
+    {% for p in documento.participantes %}
+    <div class="card">
+      <strong>{{ p.usuario.nombre }}</strong>
+      <p>{{ _('Cede') }}: {{ p.turno_cede_franja.nombre }} — {{ p.turno_cede_fecha.strftime('%d/%m/%Y') }}</p>
+      <p>{{ _('Recibe') }}: {{ p.turno_recibe_franja.nombre }} — {{ p.turno_recibe_fecha.strftime('%d/%m/%Y') }}</p>
+      {% if p.usuario_id in ids_firmantes %}
+        <span class="badge-success">{{ _('Firmado') }}</span>
+      {% else %}
+        <span class="badge-draft">{{ _('Sin firmar') }}</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  {% if siguiente_participante %}
+  <section class="turnos-section">
+    <h2>{{ _('Firma de %(nombre)s', nombre=siguiente_participante.usuario.nombre) }}</h2>
+    <p>{{ _('Pasa el móvil a %(nombre)s y que dibuje su firma con el dedo en el recuadro.', nombre=siguiente_participante.usuario.nombre) }}</p>
+    <form method="post" id="firma-form" action="{{ url_for('documento_cambio.firmar', documento_id=documento.id, participante_id=siguiente_participante.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="imagen_firma" value="">
+      <div class="firma-box">
+        <canvas class="firma-canvas" width="500" height="180"></canvas>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
+      <button type="submit" class="btn btn-primary">{{ _('Guardar firma') }}</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if notas_ilog %}
+  <section class="turnos-section">
+    <h2>{{ _('Notas para ilog') }}</h2>
+    <p>{{ _('Copia cada texto en la nota del día correspondiente, en la planilla de cada trabajador.') }}</p>
+    {% for nota in notas_ilog %}
+    <div class="card">
+      <strong>{{ nota.usuario.nombre }} — {{ nota.fecha.strftime('%d/%m/%Y') }}</strong>
+      <textarea class="nota-ilog-texto" readonly rows="2" id="nota-ilog-{{ loop.index }}">{{ nota.texto }}</textarea>
+      <button type="button" class="btn btn-secondary btn-sm"
+        data-copiado-label="{{ _('Copiado') }}"
+        onclick="copiarAlPortapapeles(this, document.getElementById('nota-ilog-{{ loop.index }}').value)">
+        {{ _('Copiar') }}
+      </button>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='js/firma-canvas.js') }}"></script>
+{% if siguiente_participante %}
+<script>initFirmaForm('firma-form');</script>
+{% endif %}
+{% endblock %}

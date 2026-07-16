@@ -1088,3 +1088,26 @@ body {
 @keyframes swipe-from-left  { from { transform: translateX(-40px); opacity: 0; } }
 .swipe-from-right { animation: swipe-from-right 230ms ease-out; }
 .swipe-from-left  { animation: swipe-from-left  230ms ease-out; }
+
+/* ── Hoja de cambio digital: firma y notas para ilog ────────────────── */
+.firma-box { margin: 0.75rem 0; }
+.firma-canvas {
+  touch-action: none;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  height: 180px;
+  background: #fff;
+  display: block;
+}
+.nota-ilog-texto {
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}

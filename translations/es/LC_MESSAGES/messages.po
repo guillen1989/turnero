@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-12 14:07+0200\n"
+"POT-Creation-Date: 2026-07-16 11:45+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -398,6 +398,30 @@ msgstr "Oportunidad a 3"
 msgid "Oportunidad a 4"
 msgstr "Oportunidad a 4"
 
+#: app/routes/documento_cambio.py:69
+msgid "Fechas incorrectas."
+msgstr "Fechas incorrectas."
+
+#: app/routes/documento_cambio.py:73
+msgid "Selecciona un compañero válido."
+msgstr "Selecciona un compañero válido."
+
+#: app/routes/documento_cambio.py:75
+msgid "Selecciona un turno válido."
+msgstr "Selecciona un turno válido."
+
+#: app/routes/documento_cambio.py:89
+msgid "Hoja de cambio creada. Ahora recoge las dos firmas."
+msgstr "Hoja de cambio creada. Ahora recoge las dos firmas."
+
+#: app/routes/documento_cambio.py:128
+msgid "Falta la firma. Dibújala en el recuadro antes de guardar."
+msgstr "Falta la firma. Dibújala en el recuadro antes de guardar."
+
+#: app/routes/documento_cambio.py:132
+msgid "Firma guardada."
+msgstr "Firma guardada."
+
 #: app/routes/feedback.py:13
 msgid "Error en la app"
 msgstr "Error en la app"
@@ -681,6 +705,8 @@ msgstr "Cambio de turnos"
 #: app/templates/auth/perfil_cuenta.html:3 app/templates/auth/recuperar.html:3
 #: app/templates/auth/registro.html:3 app/templates/auth/restablecer.html:3
 #: app/templates/base.html:14 app/templates/calendario/calendario.html:3
+#: app/templates/documento_cambio/nuevo.html:3
+#: app/templates/documento_cambio/ver.html:3
 #: app/templates/feedback/nuevo.html:3 app/templates/main/cambios.html:3
 #: app/templates/main/como_funciona.html:3
 #: app/templates/main/contraoferta.html:3 app/templates/main/dashboard.html:3
@@ -724,78 +750,83 @@ msgstr "Buscar cambios"
 msgid "Mi planilla"
 msgstr "Mi planilla"
 
-#: app/templates/base.html:33 app/templates/notificaciones/panel.html:3
+#: app/templates/base.html:33 app/templates/documento_cambio/ver.html:3
+#: app/templates/documento_cambio/ver.html:7
+msgid "Hoja de cambio"
+msgstr "Hoja de cambio"
+
+#: app/templates/base.html:34 app/templates/notificaciones/panel.html:3
 #: app/templates/notificaciones/panel.html:7
 msgid "Notificaciones"
 msgstr "Notificaciones"
 
 #: app/templates/auth/perfil.html:3 app/templates/auth/perfil.html:7
 #: app/templates/auth/perfil_cuenta.html:3
-#: app/templates/auth/perfil_cuenta.html:7 app/templates/base.html:34
+#: app/templates/auth/perfil_cuenta.html:7 app/templates/base.html:35
 msgid "Mi perfil"
 msgstr "Mi perfil"
 
-#: app/templates/base.html:35 app/templates/main/como_funciona.html:3
+#: app/templates/base.html:36 app/templates/main/como_funciona.html:3
 msgid "Cómo funciona"
 msgstr "Cómo funciona"
 
-#: app/templates/base.html:37
+#: app/templates/base.html:38
 msgid "Administración"
 msgstr "Administración"
 
 #: app/templates/admin/base_admin.html:17 app/templates/admin/feedback.html:3
-#: app/templates/base.html:38
+#: app/templates/base.html:39
 msgid "Feedback"
 msgstr "Feedback"
 
-#: app/templates/base.html:41
+#: app/templates/base.html:42
 msgid "Cerrar sesión"
 msgstr "Cerrar sesión"
 
 #: app/templates/auth/login.html:3 app/templates/auth/login.html:7
-#: app/templates/base.html:45 app/templates/main/index.html:9
+#: app/templates/base.html:46 app/templates/main/index.html:9
 msgid "Entrar"
 msgstr "Entrar"
 
 #: app/templates/auth/registro.html:3 app/templates/auth/registro.html:7
-#: app/templates/base.html:46 app/templates/main/index.html:8
+#: app/templates/base.html:47 app/templates/main/index.html:8
 msgid "Crear cuenta"
 msgstr "Crear cuenta"
 
-#: app/templates/base.html:56 app/templates/base.html:71
+#: app/templates/base.html:57 app/templates/base.html:72
 msgid "Instala Turnero"
 msgstr "Instala Turnero"
 
-#: app/templates/base.html:57
+#: app/templates/base.html:58
 msgid "Accede más rápido desde tu pantalla de inicio"
 msgstr "Accede más rápido desde tu pantalla de inicio"
 
-#: app/templates/base.html:61
+#: app/templates/base.html:62
 msgid "Instalar"
 msgstr "Instalar"
 
-#: app/templates/base.html:62 app/templates/base.html:77
+#: app/templates/base.html:63 app/templates/base.html:78
 #: app/templates/calendario/calendario.html:200
 msgid "Cerrar"
 msgstr "Cerrar"
 
-#: app/templates/base.html:72 app/templates/main/como_funciona.html:208
+#: app/templates/base.html:73 app/templates/main/como_funciona.html:208
 msgid "Pulsa"
 msgstr "Pulsa"
 
-#: app/templates/base.html:74
+#: app/templates/base.html:75
 msgid "y luego \"Añadir a pantalla de inicio\""
 msgstr "y luego \"Añadir a pantalla de inicio\""
 
-#: app/templates/base.html:95
+#: app/templates/base.html:96
 msgid "¿Tienes algún problema o sugerencia?"
 msgstr "¿Tienes algún problema o sugerencia?"
 
-#: app/templates/base.html:189
+#: app/templates/base.html:190
 msgid "Notificaciones activas ✓"
 msgstr "Notificaciones activas ✓"
 
-#: app/templates/base.html:192
+#: app/templates/base.html:193
 msgid "Activar notificaciones"
 msgstr "Activar notificaciones"
 
@@ -1475,6 +1506,7 @@ msgstr ""
 "unidad y categoría."
 
 #: app/templates/auth/perfil_cuenta.html:80
+#: app/templates/documento_cambio/ver.html:64
 msgid "Copiar"
 msgstr "Copiar"
 
@@ -1723,6 +1755,129 @@ msgstr "Nadie ha publicado nada este día todavía."
 msgid "Publicar un cambio para este día"
 msgstr "Publicar un cambio para este día"
 
+#: app/templates/documento_cambio/nuevo.html:3
+#: app/templates/documento_cambio/nuevo.html:7
+msgid "Nueva hoja de cambio"
+msgstr "Nueva hoja de cambio"
+
+#: app/templates/documento_cambio/nuevo.html:8
+msgid ""
+"Rellena los datos del cambio. Podrás firmar tú y tu compañero/a desde "
+"este mismo dispositivo a continuación."
+msgstr ""
+"Rellena los datos del cambio. Podrás firmar tú y tu compañero/a desde "
+"este mismo dispositivo a continuación."
+
+#: app/templates/documento_cambio/nuevo.html:20
+msgid "Compañero/a con quien cambias"
+msgstr "Compañero/a con quien cambias"
+
+#: app/templates/documento_cambio/nuevo.html:22
+#: app/templates/documento_cambio/nuevo.html:39
+#: app/templates/documento_cambio/nuevo.html:58
+#: app/templates/main/contraoferta.html:53
+#: app/templates/main/contraoferta.html:77
+#: app/templates/main/contraoferta.html:121
+#: app/templates/publicaciones/publicar.html:69
+#: app/templates/publicaciones/publicar.html:78
+msgid "— Selecciona —"
+msgstr "— Selecciona —"
+
+#: app/templates/documento_cambio/nuevo.html:30
+msgid "Tu turno que cedes"
+msgstr "Tu turno que cedes"
+
+#: app/templates/documento_cambio/nuevo.html:33
+#: app/templates/documento_cambio/nuevo.html:52
+#: app/templates/main/cambios.html:71
+#: app/templates/publicaciones/publicar.html:62
+msgid "Día"
+msgstr "Día"
+
+#: app/templates/documento_cambio/nuevo.html:37
+#: app/templates/documento_cambio/nuevo.html:56
+#: app/templates/main/cambios.html:85 app/templates/planilla/planilla.html:203
+#: app/templates/planilla/planilla.html:231
+#: app/templates/planilla/planilla.html:328
+#: app/templates/planilla/planilla.html:386
+msgid "Turno"
+msgstr "Turno"
+
+#: app/templates/documento_cambio/nuevo.html:49
+msgid "El turno que recibes a cambio"
+msgstr "El turno que recibes a cambio"
+
+#: app/templates/documento_cambio/nuevo.html:67
+msgid "Crear hoja de cambio"
+msgstr "Crear hoja de cambio"
+
+#: app/templates/documento_cambio/ver.html:16
+msgid "Las dos firmas están recogidas. La hoja de cambio está completa."
+msgstr "Las dos firmas están recogidas. La hoja de cambio está completa."
+
+#: app/templates/documento_cambio/ver.html:18
+msgid "Pendiente de firma"
+msgstr "Pendiente de firma"
+
+#: app/templates/documento_cambio/ver.html:22
+msgid "Datos del cambio"
+msgstr "Datos del cambio"
+
+#: app/templates/documento_cambio/ver.html:26
+msgid "Cede"
+msgstr "Cede"
+
+#: app/templates/documento_cambio/ver.html:27
+msgid "Recibe"
+msgstr "Recibe"
+
+#: app/templates/documento_cambio/ver.html:29
+msgid "Firmado"
+msgstr "Firmado"
+
+#: app/templates/documento_cambio/ver.html:31
+msgid "Sin firmar"
+msgstr "Sin firmar"
+
+#: app/templates/documento_cambio/ver.html:39
+#, python-format
+msgid "Firma de %(nombre)s"
+msgstr "Firma de %(nombre)s"
+
+#: app/templates/documento_cambio/ver.html:40
+#, python-format
+msgid ""
+"Pasa el móvil a %(nombre)s y que dibuje su firma con el dedo en el "
+"recuadro."
+msgstr ""
+"Pasa el móvil a %(nombre)s y que dibuje su firma con el dedo en el "
+"recuadro."
+
+#: app/templates/documento_cambio/ver.html:47
+#: app/templates/planilla/planilla.html:363
+msgid "Borrar"
+msgstr "Borrar"
+
+#: app/templates/documento_cambio/ver.html:48
+msgid "Guardar firma"
+msgstr "Guardar firma"
+
+#: app/templates/documento_cambio/ver.html:55
+msgid "Notas para ilog"
+msgstr "Notas para ilog"
+
+#: app/templates/documento_cambio/ver.html:56
+msgid ""
+"Copia cada texto en la nota del día correspondiente, en la planilla de "
+"cada trabajador."
+msgstr ""
+"Copia cada texto en la nota del día correspondiente, en la planilla de "
+"cada trabajador."
+
+#: app/templates/documento_cambio/ver.html:62
+msgid "Copiado"
+msgstr "Copiado"
+
 #: app/templates/email/nuevo_feedback.html:3
 #: app/templates/feedback/nuevo.html:20
 msgid "Tipo"
@@ -1884,11 +2039,6 @@ msgstr "Noviembre"
 msgid "Diciembre"
 msgstr "Diciembre"
 
-#: app/templates/main/cambios.html:71
-#: app/templates/publicaciones/publicar.html:62
-msgid "Día"
-msgstr "Día"
-
 #: app/templates/main/cambios.html:73
 msgid "Cualquier día"
 msgstr "Cualquier día"
@@ -1908,13 +2058,6 @@ msgstr "Turno que quiere librar"
 #: app/templates/main/cambios.html:81
 msgid "Turno que ofrece trabajar"
 msgstr "Turno que ofrece trabajar"
-
-#: app/templates/main/cambios.html:85 app/templates/planilla/planilla.html:203
-#: app/templates/planilla/planilla.html:231
-#: app/templates/planilla/planilla.html:328
-#: app/templates/planilla/planilla.html:386
-msgid "Turno"
-msgstr "Turno"
 
 #: app/templates/main/cambios.html:87
 msgid "— Todos los turnos —"
@@ -2563,14 +2706,6 @@ msgstr "Fecha"
 #: app/templates/main/contraoferta.html:119
 msgid "Tipo de turno"
 msgstr "Tipo de turno"
-
-#: app/templates/main/contraoferta.html:53
-#: app/templates/main/contraoferta.html:77
-#: app/templates/main/contraoferta.html:121
-#: app/templates/publicaciones/publicar.html:69
-#: app/templates/publicaciones/publicar.html:78
-msgid "— Selecciona —"
-msgstr "— Selecciona —"
 
 #: app/templates/main/contraoferta.html:62
 msgid "+ Añadir otro turno a librar"
@@ -3372,10 +3507,6 @@ msgstr "Escribe una nota para este día…"
 #: app/templates/planilla/planilla.html:361
 msgid "Guardar"
 msgstr "Guardar"
-
-#: app/templates/planilla/planilla.html:363
-msgid "Borrar"
-msgstr "Borrar"
 
 #: app/templates/planilla/planilla.html:376
 msgid "Acción sobre días seleccionados"
