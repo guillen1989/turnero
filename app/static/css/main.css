@@ -179,16 +179,19 @@ body {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
   width: 100%;
   padding: 0.6rem 0.75rem;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 1rem;
+  font-family: inherit;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: #005a9c;
   box-shadow: 0 0 0 2px rgba(0,90,156,.2);

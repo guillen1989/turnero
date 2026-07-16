@@ -270,20 +270,25 @@ def autorizar_documento(documento, supervisora):
     return documento
 
 
-def denegar_documento(documento, supervisora):
+def denegar_documento(documento, supervisora, motivo):
     """
     La supervisora deniega un documento completo: no se toca ninguna
-    planilla, solo se notifica a los implicados.
+    planilla. `motivo` es obligatorio -- los participantes deben poder ver
+    por qué se ha denegado, no solo que se ha denegado.
     """
     documento.decision_supervisora = "denegado"
     documento.supervisora = supervisora
     documento.fecha_decision_supervisora = datetime.now(timezone.utc)
+    documento.motivo_denegacion = motivo
 
     for p in documento.participantes:
         _notificar(
             p.usuario, documento, "documento_cambio_denegado",
             _("Cambio denegado"),
-            _("La supervisora ha denegado tu hoja de cambio nº %(numero)s.", numero=documento.id),
+            _(
+                "La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: %(motivo)s",
+                numero=documento.id, motivo=motivo,
+            ),
         )
     db.session.commit()
     return documento

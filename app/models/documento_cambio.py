@@ -43,6 +43,8 @@ class DocumentoCambio(db.Model):
     )
     supervisora_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=True)
     fecha_decision_supervisora = db.Column(db.DateTime(timezone=True), nullable=True)
+    # Solo se rellena al denegar; los participantes deben poder ver por qué.
+    motivo_denegacion = db.Column(db.Text, nullable=True)
 
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
     supervisora = db.relationship("Usuario", foreign_keys=[supervisora_id])

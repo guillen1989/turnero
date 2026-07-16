@@ -33,6 +33,15 @@
       {% elif documento.factibilidad_estado == 'no_factible' %}
         <span class="badge-draft">{{ _('No factible') }}</span>
       {% endif %}
+      {% if documento.estado == 'completo' %}
+        {% if documento.decision_supervisora == 'autorizado' %}
+          <span class="badge-success">{{ _('Autorizado') }}</span>
+        {% elif documento.decision_supervisora == 'denegado' %}
+          <span class="badge-draft">{{ _('Denegado') }}</span>
+        {% else %}
+          <span class="badge-draft">{{ _('Pendiente de decisión') }}</span>
+        {% endif %}
+      {% endif %}
       <br>
       <a href="{{ url_for('documento_cambio.ver', documento_id=documento.id) }}" class="btn btn-secondary btn-sm">{{ _('Ver') }}</a>
       {% if documento.estado == 'completo' %}

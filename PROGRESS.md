@@ -7,21 +7,37 @@ Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 Cola de pendientes que el usuario pidió abordar seguidos, en el orden
 que mejor convenga: (1) recomprobar factibilidad en la 2ª firma — HECHO,
 (2) firma cruzada entre cuentas reales — HECHO, (3) número de cambio
-junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (parcial, ver
-paso anterior de esa fecha), (5) listado de "mis hojas de cambio" en la
-cuenta de cada usuario — HECHO, (6) enviar los cambios por email a los
-implicados — HECHO, (7) cuenta de supervisora con acceso a todos los
-cambios — HECHO, (8) botón autorizar/denegar en la cuenta de
-supervisora que decide si se vuelca a las planillas — HECHO, (9)
-cadenas a 3/4 bandas y juntes de noches, (10) enganche con el motor de
-matching vía `match_id` — el usuario matizó este punto (2026-07-16): la
-acción de **confirmar un match** (o el "Me interesa" sobre una
-publicación sintética) debe **aparejarse con la firma** del documento
-de cambio en el mismo gesto, en vez de tener dos ciclos separados (uno
-de confirmaciones del motor de matching, otro de firmas del documento)
-— o sea, confirmar un match YA firma la parte de quien confirma.
-Tenerlo en cuenta al diseñar el paso 10. Siguiente: (9) cadenas a 3/4
-bandas y juntes de noches.
+junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (parcial), (5)
+listado de "mis hojas de cambio" — HECHO, (6) enviar los cambios por
+email a los implicados — HECHO, (7) cuenta de supervisora con acceso a
+todos los cambios — HECHO, (8) botón autorizar/denegar en la cuenta de
+supervisora, con motivo obligatorio al denegar — HECHO. Pausado
+explícitamente aquí a petición del usuario (2026-07-16): **(9) cadenas
+a 3/4 bandas y juntes de noches y (10) enganche con el motor de
+matching NO se implementan por ahora** — son bastante más grandes que
+los anteriores (tocan el formulario de creación, hoy fijo a 2 personas;
+la plantilla del PDF, hoy con 2 huecos de firma; y "juntes de noches"
+no encaja con los campos turno_cede/turno_recibe actuales — es un
+intercambio de una semana de noches, no un turno suelto). Antes de
+retomarlos hace falta aclarar con el usuario cómo se construye una
+cadena a 3 a mano y qué campos necesita un junte de noches. La nota
+sobre "confirmar un match aparejado con firmar" (2026-07-16, ver el
+propio texto de la conversación si hace falta el detalle completo) sigue
+siendo válida para cuando se retome el paso 10.
+
+## Paso anterior
+feat(documento-cambio): motivo obligatorio al denegar — nuevo campo
+`DocumentoCambio.motivo_denegacion` (Text, nullable, migración
+`1181ee9b2dd8`), pedido explícito del usuario: los participantes deben
+poder ver por qué se denegó, no solo que se denegó. La ruta `denegar`
+exige un campo `motivo` no vacío en el formulario (si falta, redirige
+con un aviso y el documento se queda en `pendiente`, no se deniega a
+medias). El motivo se incluye en el texto de la notificación
+(push+campana) y se muestra en `ver.html` a cualquiera de los dos
+implicados, en un aviso destacado. 4 tests nuevos (motivo guardado,
+notificación lo incluye, denegar sin motivo no deniega nada, el
+participante lo ve en su página) · 71 tests en la suite ampliada ·
+catálogo i18n actualizado.
 
 ## Paso anterior
 feat(documento-cambio): botón autorizar/denegar en la cuenta de

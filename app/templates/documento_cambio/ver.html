@@ -25,16 +25,23 @@
     {% if documento.decision_supervisora == 'autorizado' %}
       <p><span class="badge-success">{{ _('Autorizado por la supervisora') }}</span> {{ _('Ya se ha aplicado a las planillas.') }}</p>
     {% elif documento.decision_supervisora == 'denegado' %}
-      <p><span class="badge-draft">{{ _('Denegado por la supervisora') }}</span></p>
+      <div class="flash flash--danger">
+        <strong>{{ _('Denegado por la supervisora') }}</strong>
+        {% if documento.motivo_denegacion %}<p>{{ _('Motivo') }}: {{ documento.motivo_denegacion }}</p>{% endif %}
+      </div>
     {% elif current_user.es_supervisora %}
       <section class="turnos-section">
         <h2>{{ _('Decisión de la supervisora') }}</h2>
-        <form method="post" action="{{ url_for('documento_cambio.autorizar', documento_id=documento.id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('documento_cambio.autorizar', documento_id=documento.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-primary">{{ _('Autorizar') }}</button>
         </form>
-        <form method="post" action="{{ url_for('documento_cambio.denegar', documento_id=documento.id) }}" style="display:inline">
+        <form method="post" action="{{ url_for('documento_cambio.denegar', documento_id=documento.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="form-group">
+            <label for="motivo">{{ _('Motivo de la denegación') }}</label>
+            <textarea id="motivo" name="motivo" rows="2" required placeholder="{{ _('Explica por qué se deniega, lo verán los dos implicados.') }}"></textarea>
+          </div>
           <button type="submit" class="btn btn-danger">{{ _('Denegar') }}</button>
         </form>
       </section>

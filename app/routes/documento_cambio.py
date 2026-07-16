@@ -225,6 +225,10 @@ def autorizar(documento_id):
 @login_required
 def denegar(documento_id):
     documento = _get_documento_para_decision(documento_id)
-    denegar_documento(documento, current_user)
+    motivo = request.form.get("motivo", "").strip()
+    if not motivo:
+        flash(_("Indica el motivo de la denegación."), "danger")
+        return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
+    denegar_documento(documento, current_user, motivo=motivo)
     flash(_("Cambio denegado."), "info")
     return redirect(url_for("documento_cambio.ver", documento_id=documento.id))

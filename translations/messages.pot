@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 15:07+0200\n"
+"POT-Creation-Date: 2026-07-16 15:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -414,7 +414,11 @@ msgstr ""
 msgid "Cambio autorizado y aplicado a las planillas."
 msgstr ""
 
-#: app/routes/documento_cambio.py:229
+#: app/routes/documento_cambio.py:230
+msgid "Indica el motivo de la denegación."
+msgstr ""
+
+#: app/routes/documento_cambio.py:233
 msgid "Cambio denegado."
 msgstr ""
 
@@ -728,13 +732,15 @@ msgid ""
 "aplicado a tu planilla."
 msgstr ""
 
-#: app/services/documento_cambio.py:285
+#: app/services/documento_cambio.py:287
 msgid "Cambio denegado"
 msgstr ""
 
-#: app/services/documento_cambio.py:286
+#: app/services/documento_cambio.py:289
 #, python-format
-msgid "La supervisora ha denegado tu hoja de cambio nº %(numero)s."
+msgid ""
+"La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: "
+"%(motivo)s"
 msgstr ""
 
 #: app/templates/base.html:7
@@ -1543,7 +1549,7 @@ msgid ""
 msgstr ""
 
 #: app/templates/auth/perfil_cuenta.html:80
-#: app/templates/documento_cambio/ver.html:93
+#: app/templates/documento_cambio/ver.html:100
 msgid "Copiar"
 msgstr ""
 
@@ -1817,17 +1823,32 @@ msgstr ""
 msgid "No factible"
 msgstr ""
 
-#: app/templates/documento_cambio/lista.html:37
+#: app/templates/documento_cambio/lista.html:38
+#: app/templates/documento_cambio/supervisora.html:33
+msgid "Autorizado"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:40
+#: app/templates/documento_cambio/supervisora.html:35
+msgid "Denegado"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:42
+#: app/templates/documento_cambio/supervisora.html:37
+msgid "Pendiente de decisión"
+msgstr ""
+
+#: app/templates/documento_cambio/lista.html:46
 #: app/templates/documento_cambio/supervisora.html:41
 msgid "Ver"
 msgstr ""
 
-#: app/templates/documento_cambio/lista.html:39
+#: app/templates/documento_cambio/lista.html:48
 #: app/templates/documento_cambio/supervisora.html:43
 msgid "PDF"
 msgstr ""
 
-#: app/templates/documento_cambio/lista.html:45
+#: app/templates/documento_cambio/lista.html:54
 msgid "Todavía no tienes ninguna hoja de cambio. Crea una nueva para empezar."
 msgstr ""
 
@@ -1892,18 +1913,6 @@ msgstr ""
 msgid "recibe"
 msgstr ""
 
-#: app/templates/documento_cambio/supervisora.html:33
-msgid "Autorizado"
-msgstr ""
-
-#: app/templates/documento_cambio/supervisora.html:35
-msgid "Denegado"
-msgstr ""
-
-#: app/templates/documento_cambio/supervisora.html:37
-msgid "Pendiente de decisión"
-msgstr ""
-
 #: app/templates/documento_cambio/supervisora.html:49
 msgid "Todavía no hay ninguna hoja de cambio en tu grupo de intercambio."
 msgstr ""
@@ -1948,78 +1957,90 @@ msgstr ""
 msgid "Ya se ha aplicado a las planillas."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:28
+#: app/templates/documento_cambio/ver.html:29
 msgid "Denegado por la supervisora"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:31
-msgid "Decisión de la supervisora"
+#: app/templates/documento_cambio/ver.html:30
+msgid "Motivo"
 msgstr ""
 
 #: app/templates/documento_cambio/ver.html:34
+msgid "Decisión de la supervisora"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:37
 msgid "Autorizar"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:38
+#: app/templates/documento_cambio/ver.html:42
+msgid "Motivo de la denegación"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:43
+msgid "Explica por qué se deniega, lo verán los dos implicados."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:45
 msgid "Denegar"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:42
+#: app/templates/documento_cambio/ver.html:49
 msgid "Pendiente de autorización de la supervisora"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:47
+#: app/templates/documento_cambio/ver.html:54
 msgid "Datos del cambio"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:51
+#: app/templates/documento_cambio/ver.html:58
 msgid "Cede"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:52
+#: app/templates/documento_cambio/ver.html:59
 msgid "Recibe"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:54
+#: app/templates/documento_cambio/ver.html:61
 msgid "Firmado"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:56
+#: app/templates/documento_cambio/ver.html:63
 msgid "Sin firmar"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:64
+#: app/templates/documento_cambio/ver.html:71
 msgid "Tu firma"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:65
+#: app/templates/documento_cambio/ver.html:72
 msgid "Dibuja tu firma con el dedo en el recuadro."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:72
+#: app/templates/documento_cambio/ver.html:79
 #: app/templates/planilla/planilla.html:363
 msgid "Borrar"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:73
+#: app/templates/documento_cambio/ver.html:80
 msgid "Guardar firma"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:78
+#: app/templates/documento_cambio/ver.html:85
 msgid "Ya has firmado. Esperando a que la otra parte firme también."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:84
+#: app/templates/documento_cambio/ver.html:91
 msgid "Notas para ilog"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:85
+#: app/templates/documento_cambio/ver.html:92
 msgid ""
 "Copia cada texto en la nota del día correspondiente, en la planilla de "
 "cada trabajador."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:91
+#: app/templates/documento_cambio/ver.html:98
 msgid "Copiado"
 msgstr ""
 

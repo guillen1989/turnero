@@ -366,11 +366,23 @@ def test_autorizar_documento_vuelca_a_planillas(db):
 def test_denegar_documento_no_toca_planillas(db):
     documento, claudia, juan, supervisora, manyana = _crear_documento_completo(db, "n")
 
-    denegar_documento(documento, supervisora)
+    denegar_documento(documento, supervisora, motivo="Los turnos no cuadran con la planilla real.")
 
     assert documento.decision_supervisora == "denegado"
     assert documento.supervisora_id == supervisora.id
+    assert documento.motivo_denegacion == "Los turnos no cuadran con la planilla real."
 
     # Nada cambia en las planillas.
     assert TurnoPlanilla.query.filter_by(usuario_id=claudia.id).count() == 0
     assert TurnoPlanilla.query.filter_by(usuario_id=juan.id).count() == 0
+
+
+def test_denegar_documento_incluye_motivo_en_la_notificacion(db):
+    from app.models import Notificacion
+
+    documento, claudia, juan, supervisora, manyana = _crear_documento_completo(db, "o")
+
+    denegar_documento(documento, supervisora, motivo="Falta el visto bueno de RRHH.")
+
+    notif = Notificacion.query.filter_by(usuario_id=claudia.id, tipo="documento_cambio_denegado").first()
+    assert "Falta el visto bueno de RRHH." in notif.mensaje

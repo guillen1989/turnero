@@ -424,12 +424,61 @@ def test_supervisora_deniega_sin_tocar_planillas(db, client):
 
     client.get("/auth/logout")
     _login(client, supervisora.email)
-    resp = client.post(f"/documentos-cambio/{documento_id}/denegar")
+    resp = client.post(
+        f"/documentos-cambio/{documento_id}/denegar",
+        data={"motivo": "No coincide con la planilla real de ese mes."},
+    )
     assert resp.status_code == 302
 
     documento = db.session.get(DocumentoCambio, documento_id)
     assert documento.decision_supervisora == "denegado"
+    assert documento.motivo_denegacion == "No coincide con la planilla real de ese mes."
     assert TurnoPlanilla.query.filter_by(usuario_id=claudia.id).count() == 0
+
+
+def test_denegar_sin_motivo_no_deniega(db, client):
+    from app.models import DocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "oo")
+    claudia = crear_usuario("Claudia Pérez", "claudiaoo@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanoo@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaoo@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    client.post(f"/documentos-cambio/{documento_id}/denegar", data={"motivo": "   "})
+
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.decision_supervisora == "pendiente"
+
+
+def test_participante_ve_el_motivo_de_denegacion(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "pp")
+    claudia = crear_usuario("Claudia Pérez", "claudiapp@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanpp@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martapp@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    client.post(
+        f"/documentos-cambio/{documento_id}/denegar",
+        data={"motivo": "Pedro ya tenía otro cambio ese día."},
+    )
+
+    client.get("/auth/logout")
+    _login(client, claudia.email)
+    resp = client.get(f"/documentos-cambio/{documento_id}")
+    assert "Pedro ya tenía otro cambio ese día.".encode("utf-8") in resp.data
 
 
 def test_no_supervisora_no_puede_autorizar(db, client):
