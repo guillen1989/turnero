@@ -4,6 +4,81 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
+Retomado el paso 10 (enganche con el motor de matching), parcialmente:
+al confirmar un match directo **simétrico** (cambio↔cambio: ambas partes
+ceden y reciben un turno con franja concreta, venga de publicación
+automática o de "Me interesa"), la app crea y firma el DocumentoCambio
+sola, sin ningún paso manual — el usuario dibuja su firma en el mismo
+momento de pulsar "Confirmar" y, en cuanto confirma la otra parte, el
+documento queda completo. `match_admite_documento_cambio` (app/services/documento_cambio.py)
+es la condición: solo `directo_2` con las 2 participaciones teniendo
+turno_cedido Y turno_aceptado con franja concreta (no "cualquier turno").
+Fuera de scope todavía, como ya estaba decidido: **cadenas de 3/4 bandas
+y coincidencias asimétricas (regalo/petición) siguen sin firma
+obligatoria ni documento automático** — para esos casos, y para cambios
+sin match de por medio, sigue disponible "Mis hojas de cambio > Nueva
+hoja de cambio" tal cual.
+
+Contexto: petición del usuario en otra sesión en paralelo ("al confirmar
+un cambio el usuario debe poder firmarlo también, así queda todo listo
+por su parte"), resuelta primero en un branch aparte sobre `main` con un
+modelo propio (columna `firma_data` en `MatchParticipacion` + PDF propio)
+antes de descubrir que esta rama (`staging`) ya tenía construido un
+sistema de hoja de cambio digital mucho más completo (`DocumentoCambio`,
+supervisora, email, PDF fiel al impreso). Se descartó el modelo propio y
+se reaprovechó solo la idea de "firmar en el momento de confirmar",
+enganchándola al `DocumentoCambio` ya existente en vez de duplicar
+firma/PDF.
+
+Paso 11 completado (fusiona los pasos 1-3 del enganche): `match_admite_documento_cambio(match)`
+y `crear_documento_cambio_desde_match(match)` (`app/services/documento_cambio.py`)
+— crea el documento con `match_id` y participantes derivados de los
+turnos del match, sin retipear nada; `POST /matches/<id>/confirmar`
+exige firma para esos matches y, con ella, crea (si no existe) el
+documento y llama a `firmar_documento`, reutilizando la lógica de firma
+ya existente (no duplica notificación de "pendiente de firma": la de
+`confirmar_participacion` ya cumple ese papel). `MatchCambio.documento_cambio`
+(back_populates nuevo) para poder enlazarlo desde plantillas. Canvas de
+firma en `dashboard.html` (mismo patrón visual que ya usaba
+`/documentos-cambio`, reutiliza la clase `.firma-canvas` existente):
+el botón "Confirmar" de un match que admite documento abre el modal en
+vez de enviar el formulario directo; solo envía si se ha dibujado algo.
+Enlace "Ver hoja de cambio" cuando el documento queda completo.
+
+Al rebasar sobre el HEAD real de `staging` (que había avanzado con la
+numeración de cambios por unidad mientras se hacía este trabajo),
+`crear_documento_cambio_desde_match` necesitó rellenar también
+`unidad_id`/`numero_unidad` (columnas NOT NULL añadidas después) — fix
+de una línea, detectado por los tests existentes al re-ejecutar la
+suite tras el rebase, no fue necesario tocar nada más.
+
+Tests nuevos: `tests/test_documento_cambio_desde_match.py` (8, condición
+de aplicabilidad + creación desde match), `tests/test_confirmar_con_documento.py`
+(11, integración HTTP: firma obligatoria solo en simétricos, documento
+se crea/firma/completa, cadenas y asimétricos sin cambios, reconfirmar
+tras desconfirmar no duplica firma), 2 tests de plantilla en
+`test_dashboard.py`, 2 tests E2E con Playwright
+(`e2e/test_confirmar_firma_documento.py`) que dibujan de verdad en el
+canvas — uno confirma con éxito y comprueba en BD que el documento queda
+`pendiente_firmas` con 1 firma, el otro comprueba que sin dibujar nada
+no se envía el formulario. Catálogo i18n actualizado (pybabel
+extract/update/compile, 4 `#, fuzzy` corregidos a mano). 968 tests
+unitarios/integración + 14/17 E2E passing — los 3 E2E que fallan
+(`test_documento_cambio.py::test_hoja_de_cambio_golden_path_completa`,
+`test_sintetica_golden_path.py::test_golden_path_cambio_a_3`,
+`test_sintetica_staging.py::test_golden_path_staging`) **ya fallaban
+igual en un checkout limpio de `origin/staging` sin ningún cambio de
+esta rama** (verificado en un worktree temporal aparte antes de dar
+por buena la rama) — el primero es un test desactualizado desde
+`827cd00` (exige "Notas para ilog" a un usuario que no es supervisora,
+la condición cambió y el test no se actualizó), los otros dos parecen
+inestabilidad/entorno preexistente, no relacionados con este trabajo.
+
+Siguiente paso: a definir con el usuario. Pendiente: los 3 E2E
+preexistentes que fallan (ver arriba) siguen sin arreglar, quedaron
+fuera de scope de este trabajo.
+
+## Paso anterior
 Cola de pendientes que el usuario pidió abordar seguidos, en el orden
 que mejor convenga: (1) recomprobar factibilidad en la 2ª firma — HECHO,
 (2) firma cruzada entre cuentas reales — HECHO, (3) número de cambio

@@ -56,7 +56,7 @@ class DocumentoCambio(db.Model):
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
     supervisora = db.relationship("Usuario", foreign_keys=[supervisora_id])
     unidad = db.relationship("Unidad")
-    match = db.relationship("MatchCambio")
+    match = db.relationship("MatchCambio", back_populates="documento_cambio")
     participantes = db.relationship(
         "ParticipanteDocumentoCambio",
         back_populates="documento",

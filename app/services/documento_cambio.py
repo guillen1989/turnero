@@ -104,6 +104,68 @@ def crear_documento_cambio(
     return documento
 
 
+def match_admite_documento_cambio(match) -> bool:
+    """
+    Un match solo puede generar su propio DocumentoCambio si es un
+    intercambio simétrico entre 2 personas: cada participación cede Y
+    recibe un turno con franja concreta (no 'cualquier turno'). Las
+    coincidencias asimétricas (regalo/petición: una parte solo cede o solo
+    recibe) y las cadenas de 3/4 bandas no encajan en el modelo de
+    ParticipanteDocumentoCambio (cede/recibe obligatorios) y quedan fuera;
+    para esos casos se sigue usando 'Mis hojas de cambio > Nueva hoja de
+    cambio'.
+    """
+    if match.tipo != "directo_2" or len(match.participaciones) != 2:
+        return False
+    for p in match.participaciones:
+        if p.turno_cedido is None or p.turno_aceptado is None:
+            return False
+        if p.turno_aceptado.cualquier_franja or p.turno_aceptado.franja_horaria_id is None:
+            return False
+    return True
+
+
+def crear_documento_cambio_desde_match(match):
+    """
+    Crea el DocumentoCambio equivalente a un MatchCambio directo_2 ya
+    detectado por el motor de matching (publicación automática o 'Me
+    interesa'), reutilizando los turnos que ya tiene el match en vez de
+    que el usuario los vuelva a escribir a mano. Solo válido si
+    match_admite_documento_cambio(match) es True.
+
+    No manda la notificación "pendiente de firma" de crear_documento_cambio:
+    confirmar_participacion ya notifica al resto de partes que hay un
+    cambio pendiente de confirmar.
+    """
+    p1, p2 = match.participaciones
+    u1, u2 = p1.publicacion.usuario, p2.publicacion.usuario
+
+    documento = DocumentoCambio(
+        creado_por=u1, match=match,
+        unidad_id=u1.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(u1.unidad_id),
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=u1,
+        turno_cede_fecha=p1.turno_cedido.fecha, turno_cede_franja_id=p1.turno_cedido.franja_horaria_id,
+        turno_recibe_fecha=p1.turno_aceptado.fecha, turno_recibe_franja_id=p1.turno_aceptado.franja_horaria_id,
+    ))
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=u2,
+        turno_cede_fecha=p2.turno_cedido.fecha, turno_cede_franja_id=p2.turno_cedido.franja_horaria_id,
+        turno_recibe_fecha=p2.turno_aceptado.fecha, turno_recibe_franja_id=p2.turno_aceptado.franja_horaria_id,
+    ))
+    db.session.flush()
+
+    documento.factibilidad_estado = comprobar_factibilidad(documento)
+
+    db.session.commit()
+    return documento
+
+
 def _hash_contenido(documento):
     """
     Huella del contenido firmable (quién cede/recibe qué). Igual para todas
