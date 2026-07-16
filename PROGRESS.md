@@ -4,11 +4,47 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Pendiente: confirmar con el usuario que el PDF se ve bien en Railway
-(xhtml2pdf ya generaba el PDF correctamente ahí, solo quedaba el ajuste
-de maquetación del paso anterior). Además: comprobación de factibilidad
-contra planillas (de momento se genera el documento sin verificar) y
-actualizar `ESPECIFICACION.md` (ver nota de varios pasos atrás).
+Queda actualizar `ESPECIFICACION.md` (ver nota de varios pasos atrás:
+el principio "no deja constancia oficial... no es un documento de RRHH"
+ya no es exacto con esta funcionalidad). Sin siguiente paso concreto
+más allá de eso — a definir con el usuario (posibles candidatos:
+cross-cuenta real en vez de mono-cuenta, cadenas a 3/4, juntes de
+noches, o enganchar el documento al motor de matching vía `match_id`).
+
+## Paso anterior
+feat(documento-cambio): comprobación de factibilidad contra planillas —
+nuevo servicio puro `app/services/factibilidad_documento_cambio.py`
+(`comprobar_factibilidad(documento)`), reutiliza las mismas reglas que
+`compatibilidad_planilla.py` (`turnos_solapan`, `EstadoDiaPlanilla`,
+`tiene_mes_publicado`) en vez de reinventarlas: para cada participante,
+comprueba que trabaja de verdad el turno que dice ceder y que está
+libre para el que dice recibir. Devuelve `'no_verificado'` si falta la
+planilla publicada de alguien para alguno de los meses implicados (no
+se puede comprobar), `'no_factible'` si hay planilla de ambos pero algo
+no cuadra, `'factible'` si todo encaja.
+
+Columna `DocumentoCambio.factibilidad_estado` (String, reemplaza al
+booleano `factibilidad_verificada` que quedó del paso 1 sin usar nunca)
+con `server_default='no_verificado'` — necesario en un solo paso porque
+`documento_cambio` ya tenía filas reales en staging (probadas a mano
+por el usuario), ver regla de migraciones NOT NULL de `CLAUDE.md`.
+Migración `3a9f874609fe` generada con `flask db migrate`, un solo head.
+`crear_documento_cambio` calcula y guarda el resultado al crear el
+documento (no se recalcula más tarde, ver nota pendiente abajo).
+
+`ver.html` muestra el resultado con tres estados visuales: verificado
+(verde), no factible (aviso rojo destacado — "revisa los datos antes de
+firmar"), no verificado (aviso neutro — "comprueba manualmente"). 6
+tests nuevos (5 del servicio + 1 de integración en
+`crear_documento_cambio`) · 28 tests en la suite de `documento_cambio` ·
+catálogo i18n actualizado.
+
+Pendiente (anotado para no perderlo, fuera de alcance de este paso): la
+factibilidad solo se calcula una vez, al crear el documento — si la
+planilla de alguien cambia mientras el documento sigue sin firmar, no
+se recalcula. El plan original (ver conversación de diseño) contemplaba
+recomprobar también al completar la segunda firma; no implementado
+todavía por mantener el paso acotado.
 
 ## Paso anterior
 fix(documento-cambio): el PDF desbordaba a una segunda página en
@@ -1021,7 +1057,8 @@ mitigación preventiva independiente de la causa.
 - [x] Fase 10, paso 1: modelos `DocumentoCambio`/`ParticipanteDocumentoCambio`/`FirmaDocumentoCambio` para la hoja de cambio digital con firma (reproduce `hojacambios.png`, formulario "SOLICITUD DE CAMBIO DE TURNO O GUARDIA" del Hospital La Paz) · migración `3f8d2428aa64` · 9 tests nuevos · 896 tests passing
 - [x] Fase 10, paso 2a: servicio `crear_documento_cambio`/`firmar_documento`/`generar_notas_ilog` · 5 tests nuevos
 - [x] Fase 10, paso 2b: rutas + formulario + firma con canvas (`pointerdown/move/up`) + notas para ilog copiables · blueprint `documento_cambio`, enlace en nav · catálogo i18n actualizado · 9 tests de rutas + 1 e2e (Playwright, firma real dibujada) · verificado en navegador
-- [x] Fase 10, paso 3: plantilla PDF fiel a `hojacambios.png` + botón "Generar PDF" (solo si `completo`) · `generar_pdf_documento` con WeasyPrint, bajo demanda · logo recortado del PNG real · dependencia `weasyprint==69.0` · 3 tests nuevos (tests mínimos a petición del usuario) · verificado visualmente con `pdftoppm`
+- [x] Fase 10, paso 3: plantilla PDF fiel a `hojacambios.png` + botón "Generar PDF" (solo si `completo`) · `generar_pdf_documento`, bajo demanda · logo recortado del PNG real · WeasyPrint crasheó el arranque completo en Railway (dependencias nativas ausentes, dos intentos de nixpacks.toml no lo arreglaron) → sustituido por `xhtml2pdf` (Python puro, sin ese riesgo) · ajuste de maquetación tras desbordar a 2ª página en producción · verificado visualmente con `pdftoppm` en cada iteración
+- [x] Fase 10, paso 4: comprobación de factibilidad contra planillas · servicio puro `comprobar_factibilidad` reutiliza las reglas de `compatibilidad_planilla.py` · columna `factibilidad_estado` (no_verificado/factible/no_factible) · aviso visual en `ver.html` según el resultado · 6 tests nuevos
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

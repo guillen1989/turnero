@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 12:31+0200\n"
+"POT-Creation-Date: 2026-07-16 13:33+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -1506,7 +1506,7 @@ msgstr ""
 "unidad y categoría."
 
 #: app/templates/auth/perfil_cuenta.html:80
-#: app/templates/documento_cambio/ver.html:59
+#: app/templates/documento_cambio/ver.html:67
 msgid "Copiar"
 msgstr "Copiar"
 
@@ -1824,31 +1824,59 @@ msgid "Pendiente de firma"
 msgstr "Pendiente de firma"
 
 #: app/templates/documento_cambio/ver.html:17
+msgid "Verificado contra la planilla"
+msgstr "Verificado contra la planilla"
+
+#: app/templates/documento_cambio/ver.html:17
+msgid "El cambio es factible según las planillas subidas de ambos."
+msgstr "El cambio es factible según las planillas subidas de ambos."
+
+#: app/templates/documento_cambio/ver.html:19
+msgid ""
+"Atención: según las planillas subidas, este cambio no parece factible. "
+"Revisa los datos antes de firmar."
+msgstr ""
+"Atención: según las planillas subidas, este cambio no parece factible. "
+"Revisa los datos antes de firmar."
+
+#: app/templates/documento_cambio/ver.html:21
+msgid "Factibilidad no verificada"
+msgstr "Factibilidad no verificada"
+
+#: app/templates/documento_cambio/ver.html:21
+msgid ""
+"Falta la planilla publicada de alguna de las dos personas para ese mes. "
+"Comprueba manualmente que no haya conflictos."
+msgstr ""
+"Falta la planilla publicada de alguna de las dos personas para ese mes. "
+"Comprueba manualmente que no haya conflictos."
+
+#: app/templates/documento_cambio/ver.html:25
 msgid "Datos del cambio"
 msgstr "Datos del cambio"
 
-#: app/templates/documento_cambio/ver.html:21
+#: app/templates/documento_cambio/ver.html:29
 msgid "Cede"
 msgstr "Cede"
 
-#: app/templates/documento_cambio/ver.html:22
+#: app/templates/documento_cambio/ver.html:30
 msgid "Recibe"
 msgstr "Recibe"
 
-#: app/templates/documento_cambio/ver.html:24
+#: app/templates/documento_cambio/ver.html:32
 msgid "Firmado"
 msgstr "Firmado"
 
-#: app/templates/documento_cambio/ver.html:26
+#: app/templates/documento_cambio/ver.html:34
 msgid "Sin firmar"
 msgstr "Sin firmar"
 
-#: app/templates/documento_cambio/ver.html:34
+#: app/templates/documento_cambio/ver.html:42
 #, python-format
 msgid "Firma de %(nombre)s"
 msgstr "Firma de %(nombre)s"
 
-#: app/templates/documento_cambio/ver.html:35
+#: app/templates/documento_cambio/ver.html:43
 #, python-format
 msgid ""
 "Pasa el móvil a %(nombre)s y que dibuje su firma con el dedo en el "
@@ -1857,20 +1885,20 @@ msgstr ""
 "Pasa el móvil a %(nombre)s y que dibuje su firma con el dedo en el "
 "recuadro."
 
-#: app/templates/documento_cambio/ver.html:42
+#: app/templates/documento_cambio/ver.html:50
 #: app/templates/planilla/planilla.html:363
 msgid "Borrar"
 msgstr "Borrar"
 
-#: app/templates/documento_cambio/ver.html:43
+#: app/templates/documento_cambio/ver.html:51
 msgid "Guardar firma"
 msgstr "Guardar firma"
 
-#: app/templates/documento_cambio/ver.html:50
+#: app/templates/documento_cambio/ver.html:58
 msgid "Notas para ilog"
 msgstr "Notas para ilog"
 
-#: app/templates/documento_cambio/ver.html:51
+#: app/templates/documento_cambio/ver.html:59
 msgid ""
 "Copia cada texto en la nota del día correspondiente, en la planilla de "
 "cada trabajador."
@@ -1878,7 +1906,7 @@ msgstr ""
 "Copia cada texto en la nota del día correspondiente, en la planilla de "
 "cada trabajador."
 
-#: app/templates/documento_cambio/ver.html:57
+#: app/templates/documento_cambio/ver.html:65
 msgid "Copiado"
 msgstr "Copiado"
 

@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from app.extensions import db
 
 ESTADOS_DOCUMENTO_CAMBIO = ("borrador", "pendiente_firmas", "completo", "caducado")
+ESTADOS_FACTIBILIDAD = ("no_verificado", "factible", "no_factible")
 
 
 class DocumentoCambio(db.Model):
@@ -24,7 +25,13 @@ class DocumentoCambio(db.Model):
     )
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
     match_id = db.Column(db.Integer, db.ForeignKey("match_cambio.id"), nullable=True)
-    factibilidad_verificada = db.Column(db.Boolean, nullable=False, default=False)
+    # 'no_verificado': falta la planilla publicada de algún participante para
+    # poder comprobarlo. server_default porque documento_cambio ya tiene filas
+    # reales en staging (probadas manualmente por el usuario) -- ver CLAUDE.md,
+    # columnas NOT NULL sin server_default fallan en una tabla ya poblada.
+    factibilidad_estado = db.Column(
+        db.String(20), nullable=False, default="no_verificado", server_default="no_verificado"
+    )
 
     creado_por = db.relationship("Usuario")
     match = db.relationship("MatchCambio")

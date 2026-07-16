@@ -10,6 +10,7 @@ from flask import current_app, render_template
 
 from app.extensions import db
 from app.models import DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio
+from app.services.factibilidad_documento_cambio import comprobar_factibilidad
 
 _MESES = [
     None, "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -44,6 +45,9 @@ def crear_documento_cambio(
         turno_cede_fecha=turno_recibe_fecha, turno_cede_franja_id=turno_recibe_franja_id,
         turno_recibe_fecha=turno_cede_fecha, turno_recibe_franja_id=turno_cede_franja_id,
     ))
+    db.session.flush()
+
+    documento.factibilidad_estado = comprobar_factibilidad(documento)
     db.session.commit()
     return documento
 

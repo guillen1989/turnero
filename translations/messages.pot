@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 12:31+0200\n"
+"POT-Creation-Date: 2026-07-16 13:33+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1474,7 +1474,7 @@ msgid ""
 msgstr ""
 
 #: app/templates/auth/perfil_cuenta.html:80
-#: app/templates/documento_cambio/ver.html:59
+#: app/templates/documento_cambio/ver.html:67
 msgid "Copiar"
 msgstr ""
 
@@ -1771,57 +1771,81 @@ msgid "Pendiente de firma"
 msgstr ""
 
 #: app/templates/documento_cambio/ver.html:17
-msgid "Datos del cambio"
+msgid "Verificado contra la planilla"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:17
+msgid "El cambio es factible según las planillas subidas de ambos."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:19
+msgid ""
+"Atención: según las planillas subidas, este cambio no parece factible. "
+"Revisa los datos antes de firmar."
 msgstr ""
 
 #: app/templates/documento_cambio/ver.html:21
+msgid "Factibilidad no verificada"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:21
+msgid ""
+"Falta la planilla publicada de alguna de las dos personas para ese mes. "
+"Comprueba manualmente que no haya conflictos."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:25
+msgid "Datos del cambio"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:29
 msgid "Cede"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:22
+#: app/templates/documento_cambio/ver.html:30
 msgid "Recibe"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:24
+#: app/templates/documento_cambio/ver.html:32
 msgid "Firmado"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:26
+#: app/templates/documento_cambio/ver.html:34
 msgid "Sin firmar"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:34
+#: app/templates/documento_cambio/ver.html:42
 #, python-format
 msgid "Firma de %(nombre)s"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:35
+#: app/templates/documento_cambio/ver.html:43
 #, python-format
 msgid ""
 "Pasa el móvil a %(nombre)s y que dibuje su firma con el dedo en el "
 "recuadro."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:42
+#: app/templates/documento_cambio/ver.html:50
 #: app/templates/planilla/planilla.html:363
 msgid "Borrar"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:43
+#: app/templates/documento_cambio/ver.html:51
 msgid "Guardar firma"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:50
+#: app/templates/documento_cambio/ver.html:58
 msgid "Notas para ilog"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:51
+#: app/templates/documento_cambio/ver.html:59
 msgid ""
 "Copia cada texto en la nota del día correspondiente, en la planilla de "
 "cada trabajador."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:57
+#: app/templates/documento_cambio/ver.html:65
 msgid "Copiado"
 msgstr ""
 

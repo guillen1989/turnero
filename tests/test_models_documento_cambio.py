@@ -57,7 +57,7 @@ def test_crear_documento_cambio_con_participantes(db):
 
     recuperado = db.session.get(DocumentoCambio, documento.id)
     assert recuperado.estado == "borrador"
-    assert recuperado.factibilidad_verificada is False
+    assert recuperado.factibilidad_estado == "no_verificado"
     assert recuperado.match_id is None
     assert recuperado.creado_por_id == ana.id
     assert len(recuperado.participantes) == 2

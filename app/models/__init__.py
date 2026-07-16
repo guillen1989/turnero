@@ -20,7 +20,8 @@ from app.models.planilla import (
     TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, CompatibilidadPlanilla, NotaDia, SalienteDia, TIPOS_ESTADO_DIA
 )
 from app.models.documento_cambio import (
-    DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio, ESTADOS_DOCUMENTO_CAMBIO
+    DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio,
+    ESTADOS_DOCUMENTO_CAMBIO, ESTADOS_FACTIBILIDAD,
 )
 
 __all__ = [
@@ -57,4 +58,5 @@ __all__ = [
     "ParticipanteDocumentoCambio",
     "FirmaDocumentoCambio",
     "ESTADOS_DOCUMENTO_CAMBIO",
+    "ESTADOS_FACTIBILIDAD",
 ]

@@ -173,3 +173,18 @@ def test_generar_pdf_documento_completo(db):
 
     assert pdf_bytes[:5] == b"%PDF-"
     assert len(pdf_bytes) > 1000
+
+
+def test_crear_documento_cambio_calcula_factibilidad_no_verificado_por_defecto(db):
+    crear_usuario, manyana, tarde = _setup(db, "g")
+    claudia = crear_usuario("Claudia Pérez", "claudiag2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juang2@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+
+    # Sin planillas publicadas de por medio, no se puede verificar.
+    assert documento.factibilidad_estado == "no_verificado"
