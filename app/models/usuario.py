@@ -12,7 +12,7 @@ class Usuario(UserMixin, db.Model):
     email = db.Column(db.String(254), nullable=False, unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
     unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), nullable=False)
-    categoria_id = db.Column(db.Integer, db.ForeignKey("categoria.id"), nullable=False)
+    categoria_id = db.Column(db.Integer, db.ForeignKey("categoria.id"), nullable=False, index=True)
     locale = db.Column(db.String(10), nullable=False, default="es")
     push_subscription = db.Column(db.Text, nullable=True)
     push_activo = db.Column(db.Boolean, nullable=False, default=True, server_default="true")

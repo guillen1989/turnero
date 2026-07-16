@@ -4,6 +4,120 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+perf(db): `publicacion_cambio`, `usuario` y `unidad` no tenían más índice
+que la PK (`\d publicacion_cambio` en producción lo confirmó), pese a que
+`usuario_id`, `estado`, `es_sintetica` y `tipo` de `publicacion_cambio`,
+`categoria_id` de `usuario` y `grupo_intercambio_id` de `unidad` son
+justo las columnas que filtran todas las búsquedas del motor de matching
+y el dashboard. Cuarto y último paso del plan de 4 para resolver los
+cuelgues de producción (ver pasos anteriores). Fix: `index=True` en esas
+6 columnas (`app/models/publicacion.py`, `app/models/usuario.py`,
+`app/models/unidad.py`) y migración generada con `flask db migrate`
+(nunca a mano) — `285a7610df2f_añade_índices_para_filtros_de_matching.py`,
+`flask db heads` da un único head. Solo crea índices (`create_index`),
+no toca datos ni columnas existentes, así que no aplica el patrón de 3
+pasos de `NOT NULL`. Aplicada y verificada en local (`flask db upgrade`)
+· 890 tests passing.
+
+Con esto quedan completados los 4 pasos del plan. Pendiente de que el
+usuario decida cuándo hacer push/deploy a producción (ninguno de los 4
+commits se ha empujado todavía) y, tras el deploy, verificar en
+`railway logs` que: (a) arrancan 3 workers de gunicorn, (b) `flask db
+upgrade` aplica la migración de índices sin errores, y (c) no vuelven a
+aparecer `WORKER TIMEOUT` en los días siguientes.
+
+## Paso anterior
+chore(deploy): `Procfile` pasa de `gunicorn run:app` (default: 1 worker
+síncrono, sin `-w`) a `gunicorn --workers 3 --timeout 60 run:app`. Tercer
+paso del plan de 4 para resolver los cuelgues de producción (ver pasos
+anteriores): con 1 solo worker, cualquier request lento (el motor de
+matching en el grupo de intercambio más activo, u otra cosa en el
+futuro) congelaba la app entera para todos los usuarios, no solo para
+quien la disparó — es la causa de que los 3 `WORKER TIMEOUT` de gunicorn
+vistos en producción (2026-07-14/15) se sintieran como "toda la app va
+lenta" en vez de "una acción en concreto tardó". Con 3 workers, ese mismo
+request lento deja de bloquear al resto. 60s de timeout (antes 30s,
+default de gunicorn) da margen mientras los pasos 1 y 2 ya aplicados
+reducen el tiempo real. 3 workers es un valor conservador para el plan
+de Railway actual; si tras el deploy aparece presión de memoria
+(reinicios por OOM en los logs, no `WORKER TIMEOUT`), habría que subir de
+plan antes de subir el nº de workers.
+
+Pendiente: **no se ha desplegado ni empujado (push) todavía** — el commit
+queda listo en local (rama `staging`) a la espera de que el usuario
+confirme el push/deploy. La verificación de este paso (confirmar en
+`railway logs` que arrancan 3 workers y que `/health` sigue respondiendo)
+solo se puede hacer después de ese deploy.
+
+## Paso anterior
+perf(matching): las 5 búsquedas de matching que se lanzan en cada
+publish/editar/contraoferta (`buscar_matches_para`, `buscar_cadenas_3_para`,
+`buscar_cadenas_4_para`, `buscar_cadenas_parciales_4_para`,
+`buscar_avisos_interes_para`, en `app/matching/service.py`) repetían cada
+una su propia llamada a `_candidatas_base` (misma consulta + 2
+`selectinload`) en vez de compartir un único cálculo — 5x consultas
+redundantes por request. Segundo paso del plan de 4 para resolver los
+cuelgues de producción (ver paso anterior). Fix: nueva función pública
+`candidatas_activas_para(publicacion)` (antes lógica repetida al principio
+de cada búsqueda) y parámetro opcional `candidatas=None` en las 5
+funciones — si se pasa ya calculado se reutiliza, si no se calcula como
+antes (así los tests unitarios existentes, que llaman con un solo
+argumento, siguen funcionando sin cambios). Las 3 rutas que hacían este
+patrón (`nueva`, `editar` y `contraoferta` en `app/routes/publicaciones.py`)
+calculan ahora `candidatas` una vez y la pasan a las 5 búsquedas.
+`buscar_sinteticas_que_coinciden_con` queda fuera: consulta sintéticas,
+no candidatas normales. Nuevo test de regresión
+(`test_publicar_calcula_candidatas_una_sola_vez` en
+`test_integracion_matching.py`) que espía `_candidatas_base` con
+`unittest.mock.patch.object(..., wraps=...)` y comprueba `call_count == 1`
+tras un publish real vía el cliente HTTP — confirmado en rojo sin el fix
+(5 llamadas) y en verde con el fix aplicado · 890 tests passing.
+
+Quedan 2 pasos del plan: 3) gunicorn con varios workers en el `Procfile`
+(red de seguridad de infraestructura: que un request lento no bloquee
+toda la app, ya que solo hay 1 worker síncrono hoy) y 4) añadir los
+índices que faltan en `publicacion_cambio`/`usuario`/`unidad` (hoy solo
+tienen la PK).
+
+## Paso anterior
+perf(busquedas): corregido un N+1 en `notificar_busquedas_guardadas`
+(`app/services/busquedas_guardadas.py`) — por cada `BusquedaGuardada`
+candidata que coincidía con una publicación nueva, se hacía un
+`db.session.get(Usuario, busqueda.usuario_id)` dentro del bucle, en vez
+de reutilizar el `Usuario` que la propia consulta ya traía por el `join`.
+Detectado investigando por qué la app en producción se ha vuelto notable
+mente más lenta en los últimos días (a petición del usuario, sin ninguna
+sospecha previa de dónde estaba el problema): los logs de Railway
+mostraban 3 `WORKER TIMEOUT` de gunicorn en 48h (2026-07-14 12:23,
+2026-07-15 00:29, 2026-07-15 14:16), y el stack trace del worker matado
+apuntaba siempre a este mismo punto — `notificar_busquedas_guardadas`
+llamada desde `crear_pub_sintetica`, que a su vez se llama hasta 13 veces
+en un solo publish/editar en el grupo de intercambio más activo
+(categoría 2 / grupo 5: 89 publicaciones "cambio" activas ahora mismo).
+Como no hay más de 1 worker de gunicorn (`Procfile` sin `-w`), cada
+timeout congelaba la app entera para todos los usuarios, no solo para
+quien publicaba. Fix: `contains_eager(BusquedaGuardada.usuario)` en la
+query de candidatas (ya hace `join` con `Usuario`) y uso directo de
+`busqueda.usuario` en vez del `get()` redundante. Nuevo test
+(`test_notificar_busquedas_guardadas_no_crece_con_n`) que cuenta
+`SELECT`s ejecutados (nuevo fixture `query_counter` en `conftest.py`,
+basado en el evento `after_cursor_execute` de SQLAlchemy) y comprueba que
+no crecen con el número de búsquedas guardadas coincidentes — usando
+usuarios *distintos* por búsqueda, ya que con el mismo usuario repetido
+el identity map de SQLAlchemy habría ocultado el bug. Confirmado en rojo
+sin el fix (12 selects con 5 búsquedas vs 8 con 1) y en verde con el fix
+aplicado (igual en ambos casos) · 889 tests passing.
+
+Este es el primer paso de un plan de 4 para resolver los cuelgues de
+producción (ver `/home/portatil/.claude/plans/dreamy-noodling-glacier.md`
+si sigue disponible, o pedir al usuario que lo recuerde): 2) reutilizar
+`_candidatas_base` entre las 6 búsquedas de matching que se lanzan en
+cada publish/editar (hoy se repite la misma consulta 6 veces), 3) gunicorn
+con varios workers en el `Procfile` (red de seguridad de infraestructura:
+que un request lento no bloquee toda la app), 4) añadir los índices que
+faltan en `publicacion_cambio`/`usuario`/`unidad` (hoy solo tienen la PK).
+
+## Paso anterior
 fix(matching): las cadenas de 3 y 4 bandas (`crear_match_cadena_3`,
 `crear_match_cadena_4` en `app/matching/service.py`) solo registraban en
 `MatchParticipacion` el `turno_cedido_id` que cada banda cede a la
