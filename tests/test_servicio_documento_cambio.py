@@ -159,6 +159,45 @@ def test_generar_notas_ilog_contenido_para_ejemplo_del_usuario(db):
     )
 
 
+def test_numero_unidad_es_secuencial_por_unidad_y_no_por_id_global(db):
+    """
+    El número que ve la ayudante tiene que ser el mismo tipo de numeración
+    que llevaba en papel: una secuencia propia de su unidad, empezando en 1,
+    sin huecos ni saltos por cambios de otras unidades. No puede depender
+    del id autoincremental de Postgres, que es compartido por toda la app.
+    """
+    crear_usuario_n, manyana_n, tarde_n = _setup(db, "n")
+    claudia_n = crear_usuario_n("Claudia Pérez", "claudian@h.es")
+    juan_n = crear_usuario_n("Juan Rodríguez", "juann@h.es")
+
+    doc_n1 = crear_documento_cambio(
+        creado_por=claudia_n, companero=juan_n,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana_n.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana_n.id,
+    )
+    assert doc_n1.numero_unidad == 1
+
+    crear_usuario_o, manyana_o, tarde_o = _setup(db, "o")
+    claudia_o = crear_usuario_o("Ana García", "anao@h.es")
+    juan_o = crear_usuario_o("Bruno López", "brunoo@h.es")
+
+    doc_o1 = crear_documento_cambio(
+        creado_por=claudia_o, companero=juan_o,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana_o.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana_o.id,
+    )
+    # Nueva unidad -> su propia secuencia, aunque el id global siga creciendo.
+    assert doc_o1.numero_unidad == 1
+    assert doc_o1.id > doc_n1.id
+
+    doc_n2 = crear_documento_cambio(
+        creado_por=claudia_n, companero=juan_n,
+        turno_cede_fecha=date(2026, 8, 7), turno_cede_franja_id=manyana_n.id,
+        turno_recibe_fecha=date(2026, 8, 28), turno_recibe_franja_id=manyana_n.id,
+    )
+    assert doc_n2.numero_unidad == 2
+
+
 def test_generar_pdf_documento_completo(db):
     crear_usuario, manyana, tarde = _setup(db, "f")
     claudia = crear_usuario("Claudia Pérez", "claudiaf@h.es")

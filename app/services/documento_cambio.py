@@ -38,6 +38,20 @@ def _notificar(usuario, documento, tipo, titulo, cuerpo):
         enviar_push(usuario, titulo, cuerpo, url=_url_documento(documento))
 
 
+def _siguiente_numero_unidad(unidad_id):
+    """
+    Siguiente número de la secuencia propia de esa unidad (1, 2, 3...), la
+    misma numeración absoluta que llevaba a mano la ayudante -- no el id
+    autoincremental de Postgres, compartido por toda la app.
+    """
+    ultimo = (
+        db.session.query(db.func.max(DocumentoCambio.numero_unidad))
+        .filter(DocumentoCambio.unidad_id == unidad_id)
+        .scalar()
+    )
+    return (ultimo or 0) + 1
+
+
 def _enviar_email_completo(documento, usuario, companero):
     enlace = url_absoluta("documento_cambio.ver", documento_id=documento.id)
     cuerpo_html = render_template(
@@ -58,7 +72,11 @@ def crear_documento_cambio(
     compañero (a quien lo crea no le hace falta, ya sabe que lo acaba de
     hacer) de que tiene una hoja de cambio pendiente de su firma.
     """
-    documento = DocumentoCambio(creado_por=creado_por)
+    documento = DocumentoCambio(
+        creado_por=creado_por,
+        unidad_id=creado_por.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+    )
     db.session.add(documento)
     db.session.flush()
 
@@ -219,7 +237,7 @@ def generar_pdf_documento(documento):
         participante_solicitante=participante_solicitante,
         companero=companero,
         fecha_documento=documento.fecha_creacion.date(),
-        numero_documento=documento.id,
+        numero_documento=documento.numero_unidad,
         meses=_MESES,
         firma_solicitante=firmas_por_usuario.get(solicitante.id),
         firma_companero=firmas_por_usuario.get(companero.id),
@@ -268,7 +286,7 @@ def autorizar_documento(documento, supervisora):
         _notificar(
             p.usuario, documento, "documento_cambio_autorizado",
             _("Cambio autorizado"),
-            _("La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha aplicado a tu planilla.", numero=documento.id),
+            _("La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha aplicado a tu planilla.", numero=documento.numero_unidad),
         )
     db.session.commit()
     return documento
@@ -291,7 +309,7 @@ def denegar_documento(documento, supervisora, motivo):
             _("Cambio denegado"),
             _(
                 "La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: %(motivo)s",
-                numero=documento.id, motivo=motivo,
+                numero=documento.numero_unidad, motivo=motivo,
             ),
         )
     db.session.commit()

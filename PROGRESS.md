@@ -33,6 +33,34 @@ propio texto de la conversación si hace falta el detalle completo) sigue
 siendo válida para cuando se retome el paso 10.
 
 ## Paso anterior
+feat(documento-cambio): numero_unidad -- numeración absoluta por unidad,
+no el id global de Postgres -- pedido explícito del usuario: "solo
+puede haber un cambio #3 del 7 de julio de 2026", es decir, cada unidad
+lleva su propia secuencia 1, 2, 3... como hacía la ayudante a mano,
+independiente de cuántos cambios haya creado el resto de unidades de la
+app. Nuevas columnas en `documento_cambio`: `unidad_id` (la del
+creador, congelada al crear el documento) y `numero_unidad` (calculado
+en `crear_documento_cambio` con `MAX(numero_unidad) WHERE unidad_id=...
++ 1`), con `UniqueConstraint(unidad_id, numero_unidad)` para que la
+base de datos garantice la invariante aunque hubiera una condición de
+carrera (aceptable en un MVP de bajo tráfico: ante colisión, lanza
+`IntegrityError` en vez de crear un número duplicado en silencio).
+Migración `b6770d428a60`, patrón de tres pasos (columnas ya con filas
+reales en staging): nullable → backfill (unidad = la del creador;
+numero_unidad = `ROW_NUMBER() OVER (PARTITION BY unidad_id ORDER BY
+id)`) → NOT NULL + constraint. Backfill verificado a mano contra una
+base de datos de prueba con filas intercaladas de dos unidades distintas
+antes de aplicarlo. Todas las plantillas y notificaciones que mostraban
+"Nº X" (`ver.html`, `lista.html`, `supervisora.html`, `pdf.html`, email
+de hoja completa, notificación de autorizar/denegar) pasan de
+`documento.id` a `documento.numero_unidad`; `documento.id` se mantiene
+tal cual para las URLs y como semilla del hash de la firma, que no son
+visibles para el usuario. 2 tests nuevos (secuencia independiente por
+unidad; el id global puede ir por delante sin que se note en el número
+mostrado) + 4 tests de `test_models_documento_cambio.py` actualizados
+(construían `DocumentoCambio` a pelo, sin pasar por el servicio) · 947
+tests en la suite ampliada.
+
 feat(documento-cambio): el PDF generado reproduce el impreso real píxel
 a píxel — antes el PDF dibujaba su propio layout con CSS (aproximado,
 no coincidía con el impreso real del hospital). Ahora `pdf.html` pone
