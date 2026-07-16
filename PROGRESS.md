@@ -4,14 +4,54 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Paso 3: plantilla Jinja fiel al impreso real (`hojacambios.png`) + render
-a PDF con WeasyPrint, generado bajo demanda (sin persistir el binario).
-La página `/documentos-cambio/<id>` actual es funcional pero no es la
-réplica visual del papel — eso queda para este paso. También pendiente:
-comprobación de factibilidad contra planillas (de momento se genera el
-documento sin verificar, decisión consciente para tener un prototipo que
-enseñar a los jefes) y actualizar `ESPECIFICACION.md` (ver nota de dos
-pasos atrás).
+Paso 3 (reintento): plantilla Jinja fiel al impreso real
+(`hojacambios.png`) + render a PDF, generado bajo demanda. La
+implementación con WeasyPrint ya se hizo una vez y se revirtió por
+crashear el deploy — ver "Paso anterior" (revert) justo abajo antes de
+reintentarlo: hay que resolver primero las dependencias de sistema de
+WeasyPrint en Railway (o valorar una alternativa que no las necesite)
+ANTES de volver a añadir `weasyprint` a `requirements.txt`. También
+pendiente: comprobación de factibilidad contra planillas (de momento se
+genera el documento sin verificar) y actualizar `ESPECIFICACION.md` (ver
+nota de varios pasos atrás).
+
+## Paso anterior
+revert(documento-cambio): deshecho el commit que generaba el PDF con
+WeasyPrint — crasheaba el arranque completo de la app en Railway
+(`staging`), no solo la ruta del PDF. `weasyprint` importa Pango/cairo/
+gdk-pixbuf vía cffi con `dlopen` en tiempo de import (`from weasyprint
+import HTML` en `app/services/documento_cambio.py`, importado a su vez
+por el blueprint `documento_cambio` al arrancar `create_app`), y el
+contenedor de Railway no tiene esas librerías de sistema instaladas
+(`OSError: cannot load library 'libgobject-2.0-0'`), así que
+`flask db upgrade` (primer paso del `Procfile`) fallaba antes de que la
+app llegara a arrancar — bucle de crash total, confirmado con los logs
+de Railway que pegó el usuario. Localmente SÍ funcionaba sin problemas
+(este entorno de desarrollo ya tenía esas librerías preinstaladas), lo
+que ocultó el problema hasta el deploy real — lección para la próxima
+vez: cualquier dependencia con bindings nativos (cffi/ctypes) hay que
+asumir que puede faltar en el entorno de producción aunque funcione en
+local, y comprobarlo explícitamente (o probarlo primero en un entorno
+lo más parecido posible a Railway) antes de dar por bueno un paso que
+toque el arranque de la app.
+
+Revert limpio con `git revert` (no se tocó nada a mano): quita
+`weasyprint==69.0` de `requirements.txt`, la plantilla `pdf.html`, la
+ruta `GET /documentos-cambio/<id>/pdf`, el botón "Generar PDF", el logo
+recortado y los 3 tests del PDF. Deja el estado exactamente como al
+final del paso 2b (rutas + firma con canvas, sin PDF), que es lo último
+que el usuario había comprobado manualmente que funcionaba. 19 tests
+passing (servicio + rutas + modelos de `documento_cambio`) · push directo
+a `staging` para restaurar el servicio cuanto antes.
+
+Antes de reintentar el PDF: investigar si Railway usa Nixpacks (sin
+`nixpacks.toml`/`Dockerfile` en el repo ahora mismo, así que autodetección
+por defecto) y qué paquetes Nix equivalentes hacen falta (`pango`,
+`cairo`, `gdk-pixbuf`, `glib`/`gobject`, `harfbuzz`, `fontconfig` como
+mínimo) declarándolos en un `nixpacks.toml` nuevo — y/o hacer el `import
+weasyprint` perezoso (dentro de la función, no a nivel de módulo) como
+red de seguridad para que un fallo de esa dependencia no vuelva a tirar
+abajo el arranque completo de la app, solo la ruta del PDF.
 
 ## Paso anterior
 feat(documento-cambio): rutas, formulario y firma con canvas — nuevo
