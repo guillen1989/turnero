@@ -188,3 +188,99 @@ def test_crear_documento_cambio_calcula_factibilidad_no_verificado_por_defecto(d
 
     # Sin planillas publicadas de por medio, no se puede verificar.
     assert documento.factibilidad_estado == "no_verificado"
+
+
+def test_firmar_documento_recalcula_factibilidad_al_completarse(db):
+    from app.models import TurnoPlanilla, PlanillaMes
+
+    crear_usuario, manyana, tarde = _setup(db, "h")
+    claudia = crear_usuario("Claudia Pérez", "claudiah@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanh@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    assert documento.factibilidad_estado == "no_verificado"
+
+    # Entre la creación y la firma, ambos publican su planilla y cuadra todo.
+    db.session.add(PlanillaMes(usuario=claudia, anyo=2026, mes=7, publicada=True))
+    db.session.add(PlanillaMes(usuario=juan, anyo=2026, mes=7, publicada=True))
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    db.session.commit()
+
+    firmar_documento(documento, claudia, "data:image/png;base64,AAA")
+    # Tras la primera firma (documento aún no completo) no hace falta que ya
+    # esté recalculado, pero no debe romper nada si lo está.
+    firmar_documento(documento, juan, "data:image/png;base64,BBB")
+
+    assert documento.estado == "completo"
+    assert documento.factibilidad_estado == "factible"
+
+
+def test_crear_documento_cambio_notifica_al_companero(db):
+    from app.models import Notificacion
+
+    crear_usuario, manyana, tarde = _setup(db, "i")
+    claudia = crear_usuario("Claudia Pérez", "claudiai@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juani@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+
+    notifs_juan = Notificacion.query.filter_by(usuario_id=juan.id, documento_cambio_id=documento.id).all()
+    assert len(notifs_juan) == 1
+    assert notifs_juan[0].tipo == "documento_cambio_pendiente_firma"
+
+    # A quien lo crea no le hace falta que le avisen de su propio documento.
+    notifs_claudia = Notificacion.query.filter_by(usuario_id=claudia.id, documento_cambio_id=documento.id).all()
+    assert notifs_claudia == []
+
+
+def test_firmar_documento_notifica_a_quien_falta_firmar(db):
+    from app.models import Notificacion
+
+    crear_usuario, manyana, tarde = _setup(db, "j")
+    claudia = crear_usuario("Claudia Pérez", "claudiaj@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanj@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+
+    firmar_documento(documento, claudia, "data:image/png;base64,AAA")
+
+    notifs_juan = Notificacion.query.filter_by(
+        usuario_id=juan.id, documento_cambio_id=documento.id, tipo="documento_cambio_pendiente_firma"
+    ).all()
+    # Una al crear + otra al firmar Claudia (avisando de que ya solo falta él).
+    assert len(notifs_juan) == 2
+
+
+def test_firmar_documento_notifica_completo_a_ambos(db):
+    from app.models import Notificacion
+
+    crear_usuario, manyana, tarde = _setup(db, "k")
+    claudia = crear_usuario("Claudia Pérez", "claudiak@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juank@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, "data:image/png;base64,AAA")
+    firmar_documento(documento, juan, "data:image/png;base64,BBB")
+
+    for usuario in (claudia, juan):
+        notifs = Notificacion.query.filter_by(
+            usuario_id=usuario.id, documento_cambio_id=documento.id, tipo="documento_cambio_completo"
+        ).all()
+        assert len(notifs) == 1

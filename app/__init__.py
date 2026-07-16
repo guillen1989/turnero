@@ -99,6 +99,8 @@ def create_app(config_name=None):
                         "aviso_oportunidad_3",
                         "aviso_oportunidad_4",
                         "contrasena_restablecida",
+                        "documento_cambio_pendiente_firma",
+                        "documento_cambio_completo",
                     ]),
                     Notificacion.leida.is_(False),
                 ).count()

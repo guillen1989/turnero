@@ -88,6 +88,8 @@ def avisos():
                 "aviso_oportunidad_3",
                 "aviso_oportunidad_4",
                 "contrasena_restablecida",
+                "documento_cambio_pendiente_firma",
+                "documento_cambio_completo",
             )),
         )
         .order_by(Notificacion.fecha.desc())

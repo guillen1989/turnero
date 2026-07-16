@@ -121,6 +121,9 @@ def test_flujo_completo_firmar_ambos_muestra_notas_ilog(db, client):
     assert resp.status_code == 302
     assert db.session.get(DocumentoCambio, documento_id).estado == "pendiente_firmas"
 
+    # Firma cruzada entre cuentas reales: Juan firma desde su propia cuenta.
+    client.get("/auth/logout")
+    _login(client, juan.email)
     resp = client.post(
         f"/documentos-cambio/{documento_id}/firmar/{p2.id}",
         data={"imagen_firma": "data:image/png;base64,BBB"},
@@ -129,6 +132,31 @@ def test_flujo_completo_firmar_ambos_muestra_notas_ilog(db, client):
     assert resp.status_code == 200
     assert db.session.get(DocumentoCambio, documento_id).estado == "completo"
     assert "Libra el turno de mañana".encode("utf-8") in resp.data
+
+
+def test_no_se_puede_firmar_en_nombre_de_otro(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "dd")
+    claudia = crear_usuario("Claudia Pérez", "claudiadd@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juandd@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    from app.models import DocumentoCambio
+    p1, p2 = db.session.get(DocumentoCambio, documento_id).participantes
+
+    # Claudia (logueada) intenta firmar la fila de Juan (p2): prohibido.
+    resp = client.post(
+        f"/documentos-cambio/{documento_id}/firmar/{p2.id}",
+        data={"imagen_firma": "data:image/png;base64,AAA"},
+    )
+    assert resp.status_code == 403
 
 
 def test_firmar_dos_veces_el_mismo_participante_da_409(db, client):
@@ -198,9 +226,53 @@ def test_pdf_descarga_cuando_esta_completo(db, client):
     p1, p2 = db.session.get(DocumentoCambio, documento_id).participantes
 
     client.post(f"/documentos-cambio/{documento_id}/firmar/{p1.id}", data={"imagen_firma": _FIRMA_PNG})
+    client.get("/auth/logout")
+    _login(client, juan.email)
     client.post(f"/documentos-cambio/{documento_id}/firmar/{p2.id}", data={"imagen_firma": _FIRMA_PNG})
 
     resp = client.get(f"/documentos-cambio/{documento_id}/pdf")
     assert resp.status_code == 200
     assert resp.mimetype == "application/pdf"
     assert resp.data[:5] == b"%PDF-"
+
+
+def test_companero_puede_ver_el_documento_y_firmar_su_parte(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "ee")
+    claudia = crear_usuario("Claudia Pérez", "claudiaee@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanee@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    client.get("/auth/logout")
+
+    _login(client, juan.email)
+    resp = client.get(f"/documentos-cambio/{documento_id}")
+    assert resp.status_code == 200  # antes daba 403: solo el creador podía verlo
+
+
+def test_companero_ve_aviso_de_documento_pendiente(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "ff")
+    claudia = crear_usuario("Claudia Pérez", "claudiaff@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanff@h.es")
+    _login(client, claudia.email)
+
+    client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    client.get("/auth/logout")
+
+    _login(client, juan.email)
+    resp = client.get("/avisos")
+    assert resp.status_code == 200
+    assert b"Hoja de cambio" in resp.data

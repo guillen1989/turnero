@@ -1,8 +1,9 @@
-"""Golden-path visual: hoja de cambio digital con firma dibujada a mano.
+"""Golden-path visual: hoja de cambio digital con firma cruzada entre cuentas.
 
-Ana crea una hoja de cambio con Pedro (mismo hospital/unidad/categoría),
-firma ella misma en el canvas, pasa el móvil y firma Pedro, y comprueba
-que aparecen las notas para copiar en ilog.
+Ana crea una hoja de cambio con Pedro (mismo hospital/unidad/categoría) y
+firma ella misma en el canvas. Pedro entra con su propia cuenta, ve el
+documento pendiente y firma su parte. Comprueba que aparecen las notas
+para copiar en ilog una vez completo.
 
 Ejecución (headed, con pausa visual):
   pytest e2e/test_documento_cambio.py --headed --slowmo=400 -s
@@ -64,13 +65,20 @@ def test_hoja_de_cambio_golden_path_completa(e2e_app, page, live_server, clean_e
     page.locator("form button[type=submit]").click()
 
     page.wait_for_url(lambda url: "/documentos-cambio/" in url and "nuevo" not in url)
+    documento_url = page.url
     page.screenshot(path="/tmp/doc_cambio_1_creado.png")
 
-    assert page.locator("text=Firma de Ana García").count() == 1
+    assert page.locator("h2:has-text('Tu firma')").count() == 1
     _dibujar_firma(page)
     page.locator("button:has-text('Guardar firma')").click()
-    page.wait_for_selector("text=Firma de Pedro Ruiz")
-    page.screenshot(path="/tmp/doc_cambio_2_una_firma.png")
+    page.wait_for_selector("text=Ya has firmado")
+    page.screenshot(path="/tmp/doc_cambio_2_ana_firmada.png")
+
+    # Firma cruzada entre cuentas reales: Pedro entra con su propia cuenta.
+    page.goto(f"{live_server}/auth/logout")
+    _login(page, live_server, "pedro.doc@test.es")
+    page.goto(documento_url)
+    assert page.locator("h2:has-text('Tu firma')").count() == 1
 
     _dibujar_firma(page)
     page.locator("button:has-text('Guardar firma')").click()

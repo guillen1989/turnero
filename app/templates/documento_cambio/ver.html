@@ -37,11 +37,11 @@
     {% endfor %}
   </section>
 
-  {% if siguiente_participante %}
+  {% if puedo_firmar %}
   <section class="turnos-section">
-    <h2>{{ _('Firma de %(nombre)s', nombre=siguiente_participante.usuario.nombre) }}</h2>
-    <p>{{ _('Pasa el móvil a %(nombre)s y que dibuje su firma con el dedo en el recuadro.', nombre=siguiente_participante.usuario.nombre) }}</p>
-    <form method="post" id="firma-form" action="{{ url_for('documento_cambio.firmar', documento_id=documento.id, participante_id=siguiente_participante.id) }}">
+    <h2>{{ _('Tu firma') }}</h2>
+    <p>{{ _('Dibuja tu firma con el dedo en el recuadro.') }}</p>
+    <form method="post" id="firma-form" action="{{ url_for('documento_cambio.firmar', documento_id=documento.id, participante_id=mi_participante.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="imagen_firma" value="">
       <div class="firma-box">
@@ -50,6 +50,10 @@
       <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
       <button type="submit" class="btn btn-primary">{{ _('Guardar firma') }}</button>
     </form>
+  </section>
+  {% elif documento.estado != 'completo' and mi_participante %}
+  <section class="turnos-section">
+    <p>{{ _('Ya has firmado. Esperando a que la otra parte firme también.') }}</p>
   </section>
   {% endif %}
 
@@ -73,7 +77,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/firma-canvas.js') }}"></script>
-{% if siguiente_participante %}
+{% if puedo_firmar %}
 <script>initFirmaForm('firma-form');</script>
 {% endif %}
 {% endblock %}

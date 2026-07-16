@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from app.extensions import db
 
-TIPOS_NOTIFICACION = ("nuevo_match", "confirmacion_parcial", "desconfirmacion", "rechazo", "caducidad", "nueva_publicacion_seguido", "contraoferta", "alerta_busqueda_guardada", "aviso_oportunidad_3", "aviso_oportunidad_4", "contrasena_restablecida")
+TIPOS_NOTIFICACION = ("nuevo_match", "confirmacion_parcial", "desconfirmacion", "rechazo", "caducidad", "nueva_publicacion_seguido", "contraoferta", "alerta_busqueda_guardada", "aviso_oportunidad_3", "aviso_oportunidad_4", "contrasena_restablecida", "documento_cambio_pendiente_firma", "documento_cambio_completo")
 
 
 class Notificacion(db.Model):
@@ -16,6 +16,9 @@ class Notificacion(db.Model):
         db.ForeignKey("busqueda_guardada.id", ondelete="SET NULL"),
         nullable=True,
     )
+    documento_cambio_id = db.Column(
+        db.Integer, db.ForeignKey("documento_cambio.id"), nullable=True
+    )
     tipo = db.Column(db.String(50), nullable=False)
     mensaje = db.Column(db.Text, nullable=True)
     fecha = db.Column(
@@ -27,6 +30,7 @@ class Notificacion(db.Model):
     match = db.relationship("MatchCambio", back_populates="notificaciones")
     publicacion = db.relationship("PublicacionCambio")
     busqueda_guardada = db.relationship("BusquedaGuardada")
+    documento_cambio = db.relationship("DocumentoCambio")
 
     def __repr__(self):
         return f"<Notificacion {self.tipo} usuario={self.usuario_id} leida={self.leida}>"

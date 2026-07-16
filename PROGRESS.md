@@ -4,14 +4,67 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-`ESPECIFICACION.md` actualizado (ver "Paso anterior"). Sin siguiente
-paso concreto decidido todavía — pendiente de que el usuario elija entre
-los candidatos anotados en la sección "Hoja de cambio digital — pendiente
-de fase futura" del propio `ESPECIFICACION.md`: firma cruzada entre
-cuentas reales (en vez de mono-cuenta), cadenas a 3/4 bandas y juntes de
-noches dentro del documento, recomprobación de factibilidad en la
-segunda firma, o enganche automático con el motor de matching vía
-`match_id`.
+El usuario pidió abordar, en el orden que mejor convenga, todos estos
+pendientes seguidos: (1) recomprobar factibilidad en la 2ª firma — HECHO,
+(2) firma cruzada entre cuentas reales — HECHO, (3) número de cambio
+junto a la fecha, (4) mejorar el PDF para que sea aún más fiel al
+original, (5) listado de "mis hojas de cambio" en la cuenta de cada
+usuario (guardar/consultar documentos, regenerar PDF cuando haga falta),
+(6) enviar los cambios por email a los implicados, (7) cuenta de
+supervisora con acceso a todos los cambios, (8) botón autorizar/denegar
+en la cuenta de supervisora que decide si se vuelca a las planillas,
+(9) cadenas a 3/4 bandas y juntes de noches, (10) enganche con el motor
+de matching vía `match_id`. Siguiente: (3) número de cambio.
+
+## Paso anterior
+feat(documento-cambio): firma cruzada entre cuentas reales — cada
+participante firma su propia parte desde su propia cuenta, ya no hace
+falta pasar el móvil ni que el compañero tenga sesión iniciada en el
+mismo dispositivo. `_get_documento_validado` ahora permite ver el
+documento a cualquiera de sus participantes (antes solo al creador —
+como el creador siempre es también un participante, no hizo falta
+lógica aparte). La ruta `firmar` ahora exige
+`participante.usuario_id == current_user.id` (403 si intentas firmar la
+fila de otro) en vez de "solo el creador firma por cualquiera". `ver.html`
+sustituye el antiguo "siguiente_participante" (pensado para mono-cuenta)
+por `mi_participante`/`puedo_firmar`: el canvas de firma solo aparece si
+el usuario logueado es quien todavía tiene que firmar su propia fila; si
+ya firmó pero el documento no está completo, ve un mensaje de "esperando
+a la otra parte".
+
+Notificaciones: nueva columna `Notificacion.documento_cambio_id`
+(nullable, migración `c2938aae9b98`) y dos tipos nuevos
+(`documento_cambio_pendiente_firma`, `documento_cambio_completo`). Al
+crear el documento se notifica al compañero (push + aviso en la
+campana); al firmar, si falta alguien se le notifica que ya solo depende
+de él/ella, y al completarse se notifica a ambos. Reutiliza
+`enviar_push` (no `enviar_push_condicional`, que exige wiring profundo
+por tipo en `push/sender.py` — más apropiado para tipos con lógica de
+límite diario, que este no necesita) y respeta `usuario.push_activo`.
+Wiring mínimo en la página de avisos existente (`avisos()`, contador de
+la campana en `app/__init__.py`, nueva rama en `avisos.html`) en vez de
+levantar un sistema de notificaciones aparte.
+
+Textos de notificación con `gettext` (`_()`), seguiendo el precedente de
+`admin.py` (mensaje de "contraseña restablecida"), no el de
+`push/sender.py::_TEXTOS` (que están sin traducir pese a que `CLAUDE.md`
+lo exige — deuda técnica preexistente, no arreglada aquí por no ser parte
+de este paso).
+
+e2e/test_documento_cambio.py actualizado para reflejar el flujo real:
+Ana firma, cierra sesión, Pedro entra con su propia cuenta y firma la
+suya — verificado con Playwright, firma real dibujada en ambos canvas,
+sin errores de consola.
+
+12 tests nuevos/actualizados en rutas y servicio · 57 tests en la suite
+de `documento_cambio`+`notificaciones` · catálogo i18n actualizado.
+
+## Paso anterior
+feat(documento-cambio): recomprueba la factibilidad al completarse la
+segunda firma, no solo al crear el documento — puede haber pasado
+tiempo desde la creación y alguien haber publicado/cambiado su planilla
+mientras tanto, dejando desactualizado el resultado guardado justo
+cuando más importa (el momento de cerrar el documento). 1 test nuevo.
 
 ## Paso anterior
 docs(especificacion): documenta la hoja de cambio digital en
@@ -1078,6 +1131,9 @@ mitigación preventiva independiente de la causa.
 - [x] Fase 10, paso 2b: rutas + formulario + firma con canvas (`pointerdown/move/up`) + notas para ilog copiables · blueprint `documento_cambio`, enlace en nav · catálogo i18n actualizado · 9 tests de rutas + 1 e2e (Playwright, firma real dibujada) · verificado en navegador
 - [x] Fase 10, paso 3: plantilla PDF fiel a `hojacambios.png` + botón "Generar PDF" (solo si `completo`) · `generar_pdf_documento`, bajo demanda · logo recortado del PNG real · WeasyPrint crasheó el arranque completo en Railway (dependencias nativas ausentes, dos intentos de nixpacks.toml no lo arreglaron) → sustituido por `xhtml2pdf` (Python puro, sin ese riesgo) · ajuste de maquetación tras desbordar a 2ª página en producción · verificado visualmente con `pdftoppm` en cada iteración
 - [x] Fase 10, paso 4: comprobación de factibilidad contra planillas · servicio puro `comprobar_factibilidad` reutiliza las reglas de `compatibilidad_planilla.py` · columna `factibilidad_estado` (no_verificado/factible/no_factible) · aviso visual en `ver.html` según el resultado · 6 tests nuevos
+- [x] Fase 10, paso 5: `ESPECIFICACION.md` actualizado con la hoja de cambio digital (entidades, reglas 11-14, CU10, decisión técnica xhtml2pdf, UAT-8.x)
+- [x] Fase 10, paso 6: recomprobar factibilidad en la 2ª firma · 1 test
+- [x] Fase 10, paso 7: firma cruzada entre cuentas reales · cada uno firma su propia fila desde su cuenta · notificaciones (push + campana) al crear y al firmar · migración `c2938aae9b98` · 12 tests + e2e actualizado
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

@@ -28,6 +28,21 @@
             <button type="submit" class="btn btn-sm btn-ghost aviso-btn-borrar" title="{{ _('Borrar aviso') }}">✕</button>
           </form>
         </div>
+      {% elif aviso.tipo in ('documento_cambio_pendiente_firma', 'documento_cambio_completo') %}
+        <div class="aviso-info">
+          <span class="aviso-tipo tipo-badge tipo-badge--admin">{{ _('Hoja de cambio') }}</span>
+          <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        <p class="aviso-mensaje">{{ aviso.mensaje }}</p>
+        <div class="aviso-actions">
+          {% if aviso.documento_cambio %}
+          <a href="{{ url_for('documento_cambio.ver', documento_id=aviso.documento_cambio_id) }}" class="btn btn-sm btn-primary aviso-btn">{{ _('Ver hoja de cambio') }}</a>
+          {% endif %}
+          <form method="post" action="{{ url_for('notificaciones.borrar_aviso', notif_id=aviso.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-ghost aviso-btn-borrar" title="{{ _('Borrar aviso') }}">✕</button>
+          </form>
+        </div>
       {% elif aviso.publicacion %}
         <div class="aviso-info">
           <span class="aviso-autor">{{ aviso.publicacion.usuario.nombre }}</span>

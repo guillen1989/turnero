@@ -38,11 +38,11 @@ def _franjas_disponibles():
 
 
 def _get_documento_validado(documento_id):
-    """Devuelve el documento o aborta 403/404. Fase mono-cuenta: solo quien
-    lo creó puede verlo/firmarlo, ya que las dos firmas se recogen desde su
-    mismo dispositivo."""
+    """Devuelve el documento o aborta 403/404. Solo puede verlo quien es
+    alguno de sus participantes (quien lo creó siempre es uno de ellos)."""
     documento = db.get_or_404(DocumentoCambio, documento_id)
-    if documento.creado_por_id != current_user.id:
+    ids_participantes = {p.usuario_id for p in documento.participantes}
+    if current_user.id not in ids_participantes:
         abort(403)
     return documento
 
@@ -107,13 +107,14 @@ def nueva():
 def ver(documento_id):
     documento = _get_documento_validado(documento_id)
     ids_firmantes = {f.usuario_id for f in documento.firmas}
-    siguiente_participante = next(
-        (p for p in documento.participantes if p.usuario_id not in ids_firmantes), None
+    mi_participante = next(
+        (p for p in documento.participantes if p.usuario_id == current_user.id), None
     )
+    puedo_firmar = mi_participante is not None and mi_participante.usuario_id not in ids_firmantes
     notas_ilog = generar_notas_ilog(documento) if documento.estado == "completo" else []
     return render_template(
         "documento_cambio/ver.html", documento=documento,
-        ids_firmantes=ids_firmantes, siguiente_participante=siguiente_participante,
+        ids_firmantes=ids_firmantes, mi_participante=mi_participante, puedo_firmar=puedo_firmar,
         notas_ilog=notas_ilog,
     )
 
@@ -127,6 +128,10 @@ def firmar(documento_id, participante_id):
     )
     if participante is None:
         abort(404)
+    if participante.usuario_id != current_user.id:
+        # Firma cruzada entre cuentas reales: cada uno firma su propia
+        # parte, nadie puede firmar en nombre de otro.
+        abort(403)
     if participante.usuario_id in {f.usuario_id for f in documento.firmas}:
         abort(409)
 

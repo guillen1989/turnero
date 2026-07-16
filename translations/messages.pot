@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 13:33+0200\n"
+"POT-Creation-Date: 2026-07-16 14:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -376,13 +376,13 @@ msgstr ""
 
 #: app/routes/calendario.py:86 app/templates/main/cambios.html:102
 #: app/templates/main/cambios.html:213 app/templates/main/dashboard.html:339
-#: app/templates/notificaciones/avisos.html:39
+#: app/templates/notificaciones/avisos.html:54
 msgid "Oportunidad a 3"
 msgstr ""
 
 #: app/routes/calendario.py:87 app/templates/main/cambios.html:103
 #: app/templates/main/cambios.html:204 app/templates/main/dashboard.html:339
-#: app/templates/notificaciones/avisos.html:41
+#: app/templates/notificaciones/avisos.html:56
 msgid "Oportunidad a 4"
 msgstr ""
 
@@ -402,11 +402,11 @@ msgstr ""
 msgid "Hoja de cambio creada. Ahora recoge las dos firmas."
 msgstr ""
 
-#: app/routes/documento_cambio.py:135
+#: app/routes/documento_cambio.py:140
 msgid "Falta la firma. Dibújala en el recuadro antes de guardar."
 msgstr ""
 
-#: app/routes/documento_cambio.py:139
+#: app/routes/documento_cambio.py:144
 msgid "Firma guardada."
 msgstr ""
 
@@ -680,6 +680,34 @@ msgstr ""
 msgid "Turno «%(nombre)s» añadido."
 msgstr ""
 
+#: app/services/documento_cambio.py:70
+msgid "Hoja de cambio pendiente de firma"
+msgstr ""
+
+#: app/services/documento_cambio.py:71
+#, python-format
+msgid "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas."
+msgstr ""
+
+#: app/services/documento_cambio.py:123
+msgid "Hoja de cambio completa"
+msgstr ""
+
+#: app/services/documento_cambio.py:124
+msgid "Las dos firmas están recogidas. La hoja de cambio ya está completa."
+msgstr ""
+
+#: app/services/documento_cambio.py:133
+msgid "Falta tu firma en la hoja de cambio"
+msgstr ""
+
+#: app/services/documento_cambio.py:134
+#, python-format
+msgid ""
+"%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
+"cambio."
+msgstr ""
+
 #: app/templates/base.html:7
 msgid "Cambio de turnos"
 msgstr ""
@@ -736,6 +764,7 @@ msgstr ""
 
 #: app/templates/base.html:33 app/templates/documento_cambio/ver.html:3
 #: app/templates/documento_cambio/ver.html:7
+#: app/templates/notificaciones/avisos.html:33
 msgid "Hoja de cambio"
 msgstr ""
 
@@ -1474,7 +1503,7 @@ msgid ""
 msgstr ""
 
 #: app/templates/auth/perfil_cuenta.html:80
-#: app/templates/documento_cambio/ver.html:67
+#: app/templates/documento_cambio/ver.html:71
 msgid "Copiar"
 msgstr ""
 
@@ -1677,9 +1706,9 @@ msgstr ""
 
 #: app/templates/calendario/calendario.html:135
 #: app/templates/main/dashboard.html:347
-#: app/templates/notificaciones/avisos.html:70
-#: app/templates/notificaciones/avisos.html:72
-#: app/templates/notificaciones/avisos.html:74
+#: app/templates/notificaciones/avisos.html:85
+#: app/templates/notificaciones/avisos.html:87
+#: app/templates/notificaciones/avisos.html:89
 msgid "Ver publicación"
 msgstr ""
 
@@ -1815,15 +1844,11 @@ msgid "Sin firmar"
 msgstr ""
 
 #: app/templates/documento_cambio/ver.html:42
-#, python-format
-msgid "Firma de %(nombre)s"
+msgid "Tu firma"
 msgstr ""
 
 #: app/templates/documento_cambio/ver.html:43
-#, python-format
-msgid ""
-"Pasa el móvil a %(nombre)s y que dibuje su firma con el dedo en el "
-"recuadro."
+msgid "Dibuja tu firma con el dedo en el recuadro."
 msgstr ""
 
 #: app/templates/documento_cambio/ver.html:50
@@ -1835,17 +1860,21 @@ msgstr ""
 msgid "Guardar firma"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:58
+#: app/templates/documento_cambio/ver.html:56
+msgid "Ya has firmado. Esperando a que la otra parte firme también."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:62
 msgid "Notas para ilog"
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:59
+#: app/templates/documento_cambio/ver.html:63
 msgid ""
 "Copia cada texto en la nota del día correspondiente, en la planilla de "
 "cada trabajador."
 msgstr ""
 
-#: app/templates/documento_cambio/ver.html:65
+#: app/templates/documento_cambio/ver.html:69
 msgid "Copiado"
 msgstr ""
 
@@ -2161,7 +2190,7 @@ msgid "Me interesa"
 msgstr ""
 
 #: app/templates/main/cambios.html:283
-#: app/templates/notificaciones/avisos.html:35
+#: app/templates/notificaciones/avisos.html:50
 msgid "Contraoferta"
 msgstr ""
 
@@ -3017,16 +3046,21 @@ msgid "Borrar todos"
 msgstr ""
 
 #: app/templates/notificaciones/avisos.html:28
-#: app/templates/notificaciones/avisos.html:81
-#: app/templates/notificaciones/avisos.html:92
+#: app/templates/notificaciones/avisos.html:43
+#: app/templates/notificaciones/avisos.html:96
+#: app/templates/notificaciones/avisos.html:107
 msgid "Borrar aviso"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:37
+#: app/templates/notificaciones/avisos.html:39
+msgid "Ver hoja de cambio"
+msgstr ""
+
+#: app/templates/notificaciones/avisos.html:52
 msgid "Alerta"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:51
+#: app/templates/notificaciones/avisos.html:66
 #, python-format
 msgid ""
 "%(nombre)s acepta alguno de tus turnos pero los turnos no cuadran del "
@@ -3034,7 +3068,7 @@ msgid ""
 "si un compañero la acepta, el cambio a 3 se cerrará automáticamente."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:54
+#: app/templates/notificaciones/avisos.html:69
 #, python-format
 msgid ""
 "%(nombre)s forma parte de una cadena de cambio a 4 bandas que casi "
@@ -3042,35 +3076,35 @@ msgid ""
 "compañero la acepta, el cambio a 4 se cerrará automáticamente."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:59
+#: app/templates/notificaciones/avisos.html:74
 #, python-format
 msgid "Alerta: %(nombre)s"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:61
+#: app/templates/notificaciones/avisos.html:76
 msgid "Alerta de búsqueda guardada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:68
+#: app/templates/notificaciones/avisos.html:83
 msgid "Ver resultados"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:77
+#: app/templates/notificaciones/avisos.html:92
 msgid "Publicación ya cerrada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:89
+#: app/templates/notificaciones/avisos.html:104
 msgid "Publicación eliminada"
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:100
+#: app/templates/notificaciones/avisos.html:115
 msgid ""
 "No tienes avisos todavía. Sigue a compañeros desde el panel de "
 "Notificaciones para recibir avisos cuando publiquen, o recibe "
 "contraofertas a tus publicaciones de cambio."
 msgstr ""
 
-#: app/templates/notificaciones/avisos.html:104
+#: app/templates/notificaciones/avisos.html:119
 msgid "Gestionar notificaciones y seguimientos"
 msgstr ""
 
