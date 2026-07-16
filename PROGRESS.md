@@ -11,16 +11,39 @@ junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (parcial, ver
 paso anterior de esa fecha), (5) listado de "mis hojas de cambio" en la
 cuenta de cada usuario — HECHO, (6) enviar los cambios por email a los
 implicados — HECHO, (7) cuenta de supervisora con acceso a todos los
-cambios, (8) botón autorizar/denegar en la cuenta de supervisora que
-decide si se vuelca a las planillas, (9) cadenas a 3/4 bandas y juntes
-de noches, (10) enganche con el motor de matching vía `match_id` — el
-usuario matizó este punto (2026-07-16): la acción de **confirmar un
-match** (o el "Me interesa" sobre una publicación sintética) debe
-**aparejarse con la firma** del documento de cambio en el mismo gesto,
-en vez de tener dos ciclos separados (uno de confirmaciones del motor
-de matching, otro de firmas del documento) — o sea, confirmar un match
-YA firma la parte de quien confirma. Tenerlo en cuenta al diseñar el
-paso 10. Siguiente: (7) cuenta de supervisora.
+cambios — HECHO, (8) botón autorizar/denegar en la cuenta de
+supervisora que decide si se vuelca a las planillas, (9) cadenas a 3/4
+bandas y juntes de noches, (10) enganche con el motor de matching vía
+`match_id` — el usuario matizó este punto (2026-07-16): la acción de
+**confirmar un match** (o el "Me interesa" sobre una publicación
+sintética) debe **aparejarse con la firma** del documento de cambio en
+el mismo gesto, en vez de tener dos ciclos separados (uno de
+confirmaciones del motor de matching, otro de firmas del documento) —
+o sea, confirmar un match YA firma la parte de quien confirma. Tenerlo
+en cuenta al diseñar el paso 10. Siguiente: (8) botón
+autorizar/denegar — este paso ya deja el terreno preparado (rol
+`es_supervisora` + acceso de lectura a todos los cambios de su grupo),
+falta la acción de decisión.
+
+## Paso anterior
+feat(documento-cambio): cuenta de supervisora — nuevo campo
+`Usuario.es_supervisora` (booleano, mismo patrón que `es_admin`,
+migración `928e2599c80a`, `server_default='false'` seguro en un solo
+paso). Se concede desde el panel de administración (formulario de
+usuario, checkbox nuevo junto al de "Administrador" — no hay alta
+autoservicio, igual que `es_admin`). Nueva ruta
+`GET /documentos-cambio/supervisora`: 403 si `current_user.es_supervisora`
+es falso; si no, lista TODAS las hojas de cambio de su grupo de
+intercambio (join a través de `ParticipanteDocumentoCambio` → `Usuario`
+→ `Unidad.grupo_intercambio_id`, no solo las suyas propias), mostrando
+ambos participantes de cada una (a diferencia del listado personal, que
+da por hecho que uno de los dos eres tú). `_get_documento_validado`
+ampliado para que una supervisora también pueda abrir `ver`/`pdf` de
+cualquier documento de su grupo, no solo los suyos. Enlace "Supervisión
+de cambios" en el menú, solo visible si `es_supervisora`. 2 tests
+nuevos (una supervisora ve cambios ajenos de su grupo; un usuario
+normal recibe 403 al intentarlo) · 59 tests en la suite ampliada ·
+catálogo i18n actualizado.
 
 ## Paso anterior
 feat(documento-cambio): envío por email al completarse — reutiliza

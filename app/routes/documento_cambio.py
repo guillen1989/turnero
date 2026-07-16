@@ -38,13 +38,18 @@ def _franjas_disponibles():
 
 
 def _get_documento_validado(documento_id):
-    """Devuelve el documento o aborta 403/404. Solo puede verlo quien es
-    alguno de sus participantes (quien lo creó siempre es uno de ellos)."""
+    """Devuelve el documento o aborta 403/404. Puede verlo quien es alguno
+    de sus participantes (quien lo creó siempre es uno de ellos), o una
+    supervisora del mismo grupo de intercambio que alguno de ellos."""
     documento = db.get_or_404(DocumentoCambio, documento_id)
     ids_participantes = {p.usuario_id for p in documento.participantes}
-    if current_user.id not in ids_participantes:
-        abort(403)
-    return documento
+    if current_user.id in ids_participantes:
+        return documento
+    if current_user.es_supervisora:
+        grupos_documento = {p.usuario.grupo_intercambio.id for p in documento.participantes}
+        if current_user.grupo_intercambio.id in grupos_documento:
+            return documento
+    abort(403)
 
 
 @bp.get("/")
@@ -58,6 +63,25 @@ def lista():
         .all()
     )
     return render_template("documento_cambio/lista.html", documentos=documentos)
+
+
+@bp.get("/supervisora")
+@login_required
+def supervisora():
+    if not current_user.es_supervisora:
+        abort(403)
+    grupo_id = current_user.grupo_intercambio.id
+    documentos = (
+        DocumentoCambio.query
+        .join(ParticipanteDocumentoCambio, ParticipanteDocumentoCambio.documento_id == DocumentoCambio.id)
+        .join(Usuario, ParticipanteDocumentoCambio.usuario_id == Usuario.id)
+        .join(Unidad, Usuario.unidad_id == Unidad.id)
+        .filter(Unidad.grupo_intercambio_id == grupo_id)
+        .distinct()
+        .order_by(DocumentoCambio.id.desc())
+        .all()
+    )
+    return render_template("documento_cambio/supervisora.html", documentos=documentos)
 
 
 @bp.route("/nuevo", methods=["GET", "POST"])

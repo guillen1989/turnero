@@ -160,6 +160,7 @@ def usuario_nuevo():
                 unidad=unidad,
                 categoria=categoria,
                 es_admin=form.es_admin.data,
+                es_supervisora=form.es_supervisora.data,
             )
             u.set_password(form.password.data)
             db.session.add(u)
@@ -223,6 +224,7 @@ def usuario_editar(id):
             u.unidad = unidad
             u.categoria = categoria
             u.es_admin = form.es_admin.data
+            u.es_supervisora = form.es_supervisora.data
             if form.password.data:
                 u.set_password(form.password.data)
             db.session.commit()

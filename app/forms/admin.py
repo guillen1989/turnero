@@ -16,6 +16,7 @@ class AdminUsuarioForm(FlaskForm):
     categoria_id = SelectField(_l("Categoría"), coerce=int, choices=[], validators=[Optional()])
     categoria_nueva = StringField(_l("Nueva categoría"), validators=[Optional(), Length(max=100)])
     es_admin = BooleanField(_l("Administrador"))
+    es_supervisora = BooleanField(_l("Supervisora (ve todos los cambios de su unidad)"))
     submit = SubmitField(_l("Guardar"))
 
 

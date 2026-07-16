@@ -327,3 +327,37 @@ def test_lista_muestra_documentos_donde_soy_participante(db, client):
     resp = client.get("/documentos-cambio/")
     assert b"Claudia P\xc3\xa9rez" not in resp.data
     assert b"Juan Rodr\xc3\xadguez" not in resp.data
+
+
+def test_supervisora_ve_todos_los_cambios_de_su_grupo(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "ii")
+    claudia = crear_usuario("Claudia Pérez", "claudiaii@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanii@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaii@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    client.get("/auth/logout")
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora")
+    assert resp.status_code == 200
+    assert b"Claudia P\xc3\xa9rez" in resp.data
+    assert b"Juan Rodr\xc3\xadguez" in resp.data
+
+
+def test_no_supervisora_no_puede_ver_la_pagina_de_supervisora(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "jj")
+    claudia = crear_usuario("Claudia Pérez", "claudiajj@h.es")
+    _login(client, claudia.email)
+
+    resp = client.get("/documentos-cambio/supervisora")
+    assert resp.status_code == 403

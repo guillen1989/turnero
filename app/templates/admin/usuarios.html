@@ -17,6 +17,7 @@
       <th>{{ _('Unidad') }}</th>
       <th>{{ _('Categoría') }}</th>
       <th>{{ _('Admin') }}</th>
+      <th>{{ _('Supervisora') }}</th>
       <th>{{ _('Acciones') }}</th>
     </tr>
   </thead>
@@ -29,6 +30,7 @@
       <td>{{ u.unidad.nombre }}</td>
       <td>{{ u.categoria.nombre }}</td>
       <td>{% if u.es_admin %}<span class="badge badge-admin">{{ _('Sí') }}</span>{% else %}—{% endif %}</td>
+      <td>{% if u.es_supervisora %}<span class="badge badge-admin">{{ _('Sí') }}</span>{% else %}—{% endif %}</td>
       <td class="admin-actions">
         <a href="{{ url_for('admin.usuario_editar', id=u.id) }}" class="btn btn-secondary btn-xs">{{ _('Editar') }}</a>
         {% if u.id != current_user.id %}
@@ -37,7 +39,7 @@
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="7" class="empty-cell">{{ _('No hay usuarios.') }}</td></tr>
+    <tr><td colspan="8" class="empty-cell">{{ _('No hay usuarios.') }}</td></tr>
     {% endfor %}
   </tbody>
 </table>

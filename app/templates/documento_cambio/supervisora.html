@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Supervisión de cambios') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Supervisión de cambios') }}</h1>
+  <p>{{ _('Todas las hojas de cambio de tu grupo de intercambio.') }}</p>
+
+  {% if documentos %}
+  <section class="turnos-section">
+    {% for documento in documentos %}
+    <div class="card">
+      <strong>{{ _('Nº %(numero)s', numero=documento.id) }}</strong>
+      — {{ documento.fecha_creacion.strftime('%d/%m/%Y') }}
+      <br>
+      {% for p in documento.participantes %}
+      {{ p.usuario.nombre }}: {{ _('cede') }} {{ p.turno_cede_franja.nombre }} {{ p.turno_cede_fecha.strftime('%d/%m/%Y') }},
+      {{ _('recibe') }} {{ p.turno_recibe_franja.nombre }} {{ p.turno_recibe_fecha.strftime('%d/%m/%Y') }}<br>
+      {% endfor %}
+      {% if documento.estado == 'completo' %}
+        <span class="badge-success">{{ _('Completo') }}</span>
+      {% else %}
+        <span class="badge-draft">{{ _('Pendiente de firma') }}</span>
+      {% endif %}
+      {% if documento.factibilidad_estado == 'factible' %}
+        <span class="badge-success">{{ _('Factible') }}</span>
+      {% elif documento.factibilidad_estado == 'no_factible' %}
+        <span class="badge-draft">{{ _('No factible') }}</span>
+      {% endif %}
+      <br>
+      <a href="{{ url_for('documento_cambio.ver', documento_id=documento.id) }}" class="btn btn-secondary btn-sm">{{ _('Ver') }}</a>
+      {% if documento.estado == 'completo' %}
+      <a href="{{ url_for('documento_cambio.pdf', documento_id=documento.id) }}" class="btn btn-secondary btn-sm">{{ _('PDF') }}</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% else %}
+  <p class="empty-state">{{ _('Todavía no hay ninguna hoja de cambio en tu grupo de intercambio.') }}</p>
+  {% endif %}
+</div>
+{% endblock %}

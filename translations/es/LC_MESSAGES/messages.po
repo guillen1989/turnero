@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 14:38+0200\n"
+"POT-Creation-Date: 2026-07-16 14:49+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -26,17 +26,17 @@ msgstr "— Añadir nueva categoría —"
 msgid "— Sin categoría —"
 msgstr "— Sin categoría —"
 
-#: app/routes/admin.py:138 app/routes/admin.py:205 app/routes/auth.py:90
+#: app/routes/admin.py:138 app/routes/admin.py:206 app/routes/auth.py:90
 #: app/routes/auth.py:346
 msgid "Selecciona un hospital o escribe el nombre de uno nuevo."
 msgstr "Selecciona un hospital o escribe el nombre de uno nuevo."
 
-#: app/routes/admin.py:141 app/routes/admin.py:208 app/routes/auth.py:93
+#: app/routes/admin.py:141 app/routes/admin.py:209 app/routes/auth.py:93
 #: app/routes/auth.py:349
 msgid "Selecciona una unidad o escribe el nombre de una nueva."
 msgstr "Selecciona una unidad o escribe el nombre de una nueva."
 
-#: app/routes/admin.py:144 app/routes/admin.py:211 app/routes/auth.py:96
+#: app/routes/admin.py:144 app/routes/admin.py:212 app/routes/auth.py:96
 #: app/routes/auth.py:352
 msgid "Indica una categoría o escribe una nueva."
 msgstr "Indica una categoría o escribe una nueva."
@@ -45,173 +45,173 @@ msgstr "Indica una categoría o escribe una nueva."
 msgid "La contraseña es obligatoria para usuarios nuevos."
 msgstr "La contraseña es obligatoria para usuarios nuevos."
 
-#: app/routes/admin.py:167
+#: app/routes/admin.py:168
 msgid "Usuario creado."
 msgstr "Usuario creado."
 
-#: app/routes/admin.py:172
+#: app/routes/admin.py:173
 msgid "Nuevo usuario"
 msgstr "Nuevo usuario"
 
-#: app/routes/admin.py:229
+#: app/routes/admin.py:231
 msgid "Usuario actualizado."
 msgstr "Usuario actualizado."
 
-#: app/routes/admin.py:258
+#: app/routes/admin.py:260
 msgid "Editar usuario"
 msgstr "Editar usuario"
 
-#: app/routes/admin.py:277
+#: app/routes/admin.py:279
 msgid "No puedes eliminarte a ti mismo."
 msgstr "No puedes eliminarte a ti mismo."
 
-#: app/routes/admin.py:285
+#: app/routes/admin.py:287
 msgid "Usuario eliminado."
 msgstr "Usuario eliminado."
 
-#: app/routes/admin.py:300
+#: app/routes/admin.py:302
 msgid "País creado."
 msgstr "País creado."
 
-#: app/routes/admin.py:314
+#: app/routes/admin.py:316
 msgid "País actualizado."
 msgstr "País actualizado."
 
-#: app/routes/admin.py:316
+#: app/routes/admin.py:318
 msgid "Editar país"
 msgstr "Editar país"
 
-#: app/routes/admin.py:324
+#: app/routes/admin.py:326
 msgid "No se puede eliminar: el país tiene provincias asociadas."
 msgstr "No se puede eliminar: el país tiene provincias asociadas."
 
-#: app/routes/admin.py:328
+#: app/routes/admin.py:330
 msgid "País eliminado."
 msgstr "País eliminado."
 
-#: app/routes/admin.py:345
+#: app/routes/admin.py:347
 msgid "Provincia creada."
 msgstr "Provincia creada."
 
-#: app/routes/admin.py:361
+#: app/routes/admin.py:363
 msgid "Provincia actualizada."
 msgstr "Provincia actualizada."
 
-#: app/routes/admin.py:365
+#: app/routes/admin.py:367
 msgid "Editar provincia"
 msgstr "Editar provincia"
 
-#: app/routes/admin.py:373
+#: app/routes/admin.py:375
 msgid "No se puede eliminar: la provincia tiene ciudades asociadas."
 msgstr "No se puede eliminar: la provincia tiene ciudades asociadas."
 
-#: app/routes/admin.py:377
+#: app/routes/admin.py:379
 msgid "Provincia eliminada."
 msgstr "Provincia eliminada."
 
-#: app/routes/admin.py:394
+#: app/routes/admin.py:396
 msgid "Ciudad creada."
 msgstr "Ciudad creada."
 
-#: app/routes/admin.py:410
+#: app/routes/admin.py:412
 msgid "Ciudad actualizada."
 msgstr "Ciudad actualizada."
 
-#: app/routes/admin.py:414
+#: app/routes/admin.py:416
 msgid "Editar ciudad"
 msgstr "Editar ciudad"
 
-#: app/routes/admin.py:422
+#: app/routes/admin.py:424
 msgid "No se puede eliminar: la ciudad tiene hospitales asociados."
 msgstr "No se puede eliminar: la ciudad tiene hospitales asociados."
 
-#: app/routes/admin.py:426
+#: app/routes/admin.py:428
 msgid "Ciudad eliminada."
 msgstr "Ciudad eliminada."
 
-#: app/routes/admin.py:438 app/routes/admin.py:455
+#: app/routes/admin.py:440 app/routes/admin.py:457
 msgid "— Sin ciudad —"
 msgstr "— Sin ciudad —"
 
-#: app/routes/admin.py:444
+#: app/routes/admin.py:446
 msgid "Hospital creado."
 msgstr "Hospital creado."
 
-#: app/routes/admin.py:461
+#: app/routes/admin.py:463
 msgid "Hospital actualizado."
 msgstr "Hospital actualizado."
 
-#: app/routes/admin.py:465
+#: app/routes/admin.py:467
 msgid "Editar hospital"
 msgstr "Editar hospital"
 
-#: app/routes/admin.py:475
+#: app/routes/admin.py:477
 msgid "No se puede eliminar: alguna de sus unidades tiene usuarios asociados."
 msgstr "No se puede eliminar: alguna de sus unidades tiene usuarios asociados."
 
-#: app/routes/admin.py:483
+#: app/routes/admin.py:485
 #, python-format
 msgid "Hospital eliminado junto con sus %(n)s unidades."
 msgstr "Hospital eliminado junto con sus %(n)s unidades."
 
-#: app/routes/admin.py:485
+#: app/routes/admin.py:487
 msgid "Hospital eliminado."
 msgstr "Hospital eliminado."
 
-#: app/routes/admin.py:505
+#: app/routes/admin.py:507
 msgid "Unidad creada."
 msgstr "Unidad creada."
 
-#: app/routes/admin.py:524
+#: app/routes/admin.py:526
 msgid "Unidad actualizada."
 msgstr "Unidad actualizada."
 
-#: app/routes/admin.py:529
+#: app/routes/admin.py:531
 msgid "Editar unidad"
 msgstr "Editar unidad"
 
-#: app/routes/admin.py:537
+#: app/routes/admin.py:539
 msgid "No se puede eliminar: la unidad tiene usuarios asociados."
 msgstr "No se puede eliminar: la unidad tiene usuarios asociados."
 
-#: app/routes/admin.py:541
+#: app/routes/admin.py:543
 msgid "Unidad eliminada."
 msgstr "Unidad eliminada."
 
-#: app/routes/admin.py:556
+#: app/routes/admin.py:558
 msgid "Categoría creada."
 msgstr "Categoría creada."
 
-#: app/routes/admin.py:570
+#: app/routes/admin.py:572
 msgid "Categoría actualizada."
 msgstr "Categoría actualizada."
 
-#: app/routes/admin.py:572
+#: app/routes/admin.py:574
 msgid "Editar categoría"
 msgstr "Editar categoría"
 
-#: app/routes/admin.py:580
+#: app/routes/admin.py:582
 msgid "No se puede eliminar: la categoría tiene usuarios asociados."
 msgstr "No se puede eliminar: la categoría tiene usuarios asociados."
 
-#: app/routes/admin.py:584
+#: app/routes/admin.py:586
 msgid "Categoría eliminada."
 msgstr "Categoría eliminada."
 
-#: app/routes/admin.py:674 app/routes/publicaciones.py:356
+#: app/routes/admin.py:676 app/routes/publicaciones.py:356
 msgid "Publicación cancelada."
 msgstr "Publicación cancelada."
 
-#: app/routes/admin.py:683 app/routes/publicaciones.py:431
+#: app/routes/admin.py:685 app/routes/publicaciones.py:431
 msgid "Publicación eliminada."
 msgstr "Publicación eliminada."
 
-#: app/routes/admin.py:732
+#: app/routes/admin.py:734
 #, python-format
 msgid "No se encontró ningún usuario con el email %(email)s."
 msgstr "No se encontró ningún usuario con el email %(email)s."
 
-#: app/routes/admin.py:741
+#: app/routes/admin.py:743
 #, python-format
 msgid ""
 "Un administrador te ha restablecido la contraseña. Nueva contraseña "
@@ -220,7 +220,7 @@ msgstr ""
 "Un administrador te ha restablecido la contraseña. Nueva contraseña "
 "temporal: %(pwd)s"
 
-#: app/routes/admin.py:747
+#: app/routes/admin.py:749
 #, python-format
 msgid ""
 "Contraseña restablecida para %(email)s. Se le ha enviado un aviso con la "
@@ -229,32 +229,32 @@ msgstr ""
 "Contraseña restablecida para %(email)s. Se le ha enviado un aviso con la "
 "nueva contraseña."
 
-#: app/routes/admin.py:764
+#: app/routes/admin.py:766
 msgid "Unidad de demostración regenerada correctamente."
 msgstr "Unidad de demostración regenerada correctamente."
 
-#: app/routes/admin.py:767
+#: app/routes/admin.py:769
 #, python-format
 msgid "Error al regenerar la demo: %(error)s"
 msgstr "Error al regenerar la demo: %(error)s"
 
-#: app/routes/admin.py:830 app/routes/admin.py:859
+#: app/routes/admin.py:832 app/routes/admin.py:861
 msgid "Ya existe un turno con ese nombre en ese grupo."
 msgstr "Ya existe un turno con ese nombre en ese grupo."
 
-#: app/routes/admin.py:842
+#: app/routes/admin.py:844
 msgid "Turno creado."
 msgstr "Turno creado."
 
-#: app/routes/admin.py:866
+#: app/routes/admin.py:868
 msgid "Turno actualizado."
 msgstr "Turno actualizado."
 
-#: app/routes/admin.py:870
+#: app/routes/admin.py:872
 msgid "Editar turno"
 msgstr "Editar turno"
 
-#: app/routes/admin.py:879 app/routes/unidad.py:91
+#: app/routes/admin.py:881 app/routes/unidad.py:91
 msgid "Turno eliminado."
 msgstr "Turno eliminado."
 
@@ -398,27 +398,27 @@ msgstr "Oportunidad a 3"
 msgid "Oportunidad a 4"
 msgstr "Oportunidad a 4"
 
-#: app/routes/documento_cambio.py:89
+#: app/routes/documento_cambio.py:113
 msgid "Fechas incorrectas."
 msgstr "Fechas incorrectas."
 
-#: app/routes/documento_cambio.py:93
+#: app/routes/documento_cambio.py:117
 msgid "Selecciona un compañero válido."
 msgstr "Selecciona un compañero válido."
 
-#: app/routes/documento_cambio.py:95
+#: app/routes/documento_cambio.py:119
 msgid "Selecciona un turno válido."
 msgstr "Selecciona un turno válido."
 
-#: app/routes/documento_cambio.py:109
+#: app/routes/documento_cambio.py:133
 msgid "Hoja de cambio creada. Ahora recoge las dos firmas."
 msgstr "Hoja de cambio creada. Ahora recoge las dos firmas."
 
-#: app/routes/documento_cambio.py:153
+#: app/routes/documento_cambio.py:177
 msgid "Falta la firma. Dibújala en el recuadro antes de guardar."
 msgstr "Falta la firma. Dibújala en el recuadro antes de guardar."
 
-#: app/routes/documento_cambio.py:157
+#: app/routes/documento_cambio.py:181
 msgid "Firma guardada."
 msgstr "Firma guardada."
 
@@ -738,6 +738,7 @@ msgstr "Cambio de turnos"
 #: app/templates/base.html:14 app/templates/calendario/calendario.html:3
 #: app/templates/documento_cambio/lista.html:3
 #: app/templates/documento_cambio/nuevo.html:3
+#: app/templates/documento_cambio/supervisora.html:3
 #: app/templates/documento_cambio/ver.html:3
 #: app/templates/feedback/nuevo.html:3 app/templates/main/cambios.html:3
 #: app/templates/main/como_funciona.html:3
@@ -788,78 +789,83 @@ msgstr "Mi planilla"
 msgid "Hoja de cambio"
 msgstr "Hoja de cambio"
 
-#: app/templates/base.html:34 app/templates/notificaciones/panel.html:3
+#: app/templates/base.html:35 app/templates/documento_cambio/supervisora.html:3
+#: app/templates/documento_cambio/supervisora.html:7
+msgid "Supervisión de cambios"
+msgstr "Supervisión de cambios"
+
+#: app/templates/base.html:37 app/templates/notificaciones/panel.html:3
 #: app/templates/notificaciones/panel.html:7
 msgid "Notificaciones"
 msgstr "Notificaciones"
 
 #: app/templates/auth/perfil.html:3 app/templates/auth/perfil.html:7
 #: app/templates/auth/perfil_cuenta.html:3
-#: app/templates/auth/perfil_cuenta.html:7 app/templates/base.html:35
+#: app/templates/auth/perfil_cuenta.html:7 app/templates/base.html:38
 msgid "Mi perfil"
 msgstr "Mi perfil"
 
-#: app/templates/base.html:36 app/templates/main/como_funciona.html:3
+#: app/templates/base.html:39 app/templates/main/como_funciona.html:3
 msgid "Cómo funciona"
 msgstr "Cómo funciona"
 
-#: app/templates/base.html:38
+#: app/templates/base.html:41
 msgid "Administración"
 msgstr "Administración"
 
 #: app/templates/admin/base_admin.html:17 app/templates/admin/feedback.html:3
-#: app/templates/base.html:39
+#: app/templates/base.html:42
 msgid "Feedback"
 msgstr "Feedback"
 
-#: app/templates/base.html:42
+#: app/templates/base.html:45
 msgid "Cerrar sesión"
 msgstr "Cerrar sesión"
 
 #: app/templates/auth/login.html:3 app/templates/auth/login.html:7
-#: app/templates/base.html:46 app/templates/main/index.html:9
+#: app/templates/base.html:49 app/templates/main/index.html:9
 msgid "Entrar"
 msgstr "Entrar"
 
 #: app/templates/auth/registro.html:3 app/templates/auth/registro.html:7
-#: app/templates/base.html:47 app/templates/main/index.html:8
+#: app/templates/base.html:50 app/templates/main/index.html:8
 msgid "Crear cuenta"
 msgstr "Crear cuenta"
 
-#: app/templates/base.html:57 app/templates/base.html:72
+#: app/templates/base.html:60 app/templates/base.html:75
 msgid "Instala Turnero"
 msgstr "Instala Turnero"
 
-#: app/templates/base.html:58
+#: app/templates/base.html:61
 msgid "Accede más rápido desde tu pantalla de inicio"
 msgstr "Accede más rápido desde tu pantalla de inicio"
 
-#: app/templates/base.html:62
+#: app/templates/base.html:65
 msgid "Instalar"
 msgstr "Instalar"
 
-#: app/templates/base.html:63 app/templates/base.html:78
+#: app/templates/base.html:66 app/templates/base.html:81
 #: app/templates/calendario/calendario.html:200
 msgid "Cerrar"
 msgstr "Cerrar"
 
-#: app/templates/base.html:73 app/templates/main/como_funciona.html:208
+#: app/templates/base.html:76 app/templates/main/como_funciona.html:208
 msgid "Pulsa"
 msgstr "Pulsa"
 
-#: app/templates/base.html:75
+#: app/templates/base.html:78
 msgid "y luego \"Añadir a pantalla de inicio\""
 msgstr "y luego \"Añadir a pantalla de inicio\""
 
-#: app/templates/base.html:96
+#: app/templates/base.html:99
 msgid "¿Tienes algún problema o sugerencia?"
 msgstr "¿Tienes algún problema o sugerencia?"
 
-#: app/templates/base.html:190
+#: app/templates/base.html:193
 msgid "Notificaciones activas ✓"
 msgstr "Notificaciones activas ✓"
 
-#: app/templates/base.html:193
+#: app/templates/base.html:196
 msgid "Activar notificaciones"
 msgstr "Activar notificaciones"
 
@@ -1043,14 +1049,14 @@ msgstr "Categoría"
 #: app/templates/admin/franjas.html:16 app/templates/admin/hospitales.html:26
 #: app/templates/admin/paises.html:22 app/templates/admin/provincias.html:24
 #: app/templates/admin/publicaciones.html:25
-#: app/templates/admin/unidades.html:26 app/templates/admin/usuarios.html:20
+#: app/templates/admin/unidades.html:26 app/templates/admin/usuarios.html:21
 msgid "Acciones"
 msgstr "Acciones"
 
 #: app/templates/admin/categorias.html:31 app/templates/admin/ciudades.html:36
 #: app/templates/admin/franjas.html:26 app/templates/admin/hospitales.html:38
 #: app/templates/admin/paises.html:31 app/templates/admin/provincias.html:34
-#: app/templates/admin/unidades.html:37 app/templates/admin/usuarios.html:33
+#: app/templates/admin/unidades.html:37 app/templates/admin/usuarios.html:35
 #: app/templates/main/dashboard.html:157 app/templates/main/dashboard.html:170
 #: app/templates/main/dashboard.html:315
 msgid "Editar"
@@ -1064,7 +1070,7 @@ msgstr "¿Eliminar esta categoría?"
 #: app/templates/admin/franjas.html:30 app/templates/admin/hospitales.html:42
 #: app/templates/admin/paises.html:34 app/templates/admin/provincias.html:37
 #: app/templates/admin/publicaciones.html:71
-#: app/templates/admin/unidades.html:40 app/templates/admin/usuarios.html:35
+#: app/templates/admin/unidades.html:40 app/templates/admin/usuarios.html:37
 #: app/templates/main/cambios.html:41 app/templates/main/dashboard.html:320
 #: app/templates/main/dashboard.html:448 app/templates/unidad/turnos.html:41
 msgid "Eliminar"
@@ -1082,7 +1088,7 @@ msgstr "No hay categorías."
 #: app/templates/admin/publicaciones.html:66
 #: app/templates/admin/unidad_form.html:27
 #: app/templates/admin/usuario_eliminar_confirm.html:26
-#: app/templates/admin/usuario_form.html:144
+#: app/templates/admin/usuario_form.html:149
 #: app/templates/feedback/nuevo.html:49 app/templates/main/cambios.html:313
 #: app/templates/main/contraoferta.html:99
 #: app/templates/main/dashboard.html:447
@@ -1471,11 +1477,15 @@ msgstr "+ Nuevo usuario"
 msgid "Email"
 msgstr "Email"
 
-#: app/templates/admin/usuarios.html:31
+#: app/templates/admin/usuarios.html:20
+msgid "Supervisora"
+msgstr "Supervisora"
+
+#: app/templates/admin/usuarios.html:32 app/templates/admin/usuarios.html:33
 msgid "Sí"
 msgstr "Sí"
 
-#: app/templates/admin/usuarios.html:40
+#: app/templates/admin/usuarios.html:42
 msgid "No hay usuarios."
 msgstr "No hay usuarios."
 
@@ -1800,6 +1810,7 @@ msgid "Nueva hoja de cambio"
 msgstr "Nueva hoja de cambio"
 
 #: app/templates/documento_cambio/lista.html:22
+#: app/templates/documento_cambio/supervisora.html:14
 #: app/templates/documento_cambio/ver.html:7
 #, python-format
 msgid "Nº %(numero)s"
@@ -1811,27 +1822,33 @@ msgid "con %(nombre)s"
 msgstr "con %(nombre)s"
 
 #: app/templates/documento_cambio/lista.html:27
+#: app/templates/documento_cambio/supervisora.html:22
 msgid "Completo"
 msgstr "Completo"
 
 #: app/templates/documento_cambio/lista.html:29
+#: app/templates/documento_cambio/supervisora.html:24
 #: app/templates/documento_cambio/ver.html:13
 msgid "Pendiente de firma"
 msgstr "Pendiente de firma"
 
 #: app/templates/documento_cambio/lista.html:32
+#: app/templates/documento_cambio/supervisora.html:27
 msgid "Factible"
 msgstr "Factible"
 
 #: app/templates/documento_cambio/lista.html:34
+#: app/templates/documento_cambio/supervisora.html:29
 msgid "No factible"
 msgstr "No factible"
 
 #: app/templates/documento_cambio/lista.html:37
+#: app/templates/documento_cambio/supervisora.html:32
 msgid "Ver"
 msgstr "Ver"
 
 #: app/templates/documento_cambio/lista.html:39
+#: app/templates/documento_cambio/supervisora.html:34
 msgid "PDF"
 msgstr "PDF"
 
@@ -1889,6 +1906,22 @@ msgstr "El turno que recibes a cambio"
 #: app/templates/documento_cambio/nuevo.html:61
 msgid "Crear hoja de cambio"
 msgstr "Crear hoja de cambio"
+
+#: app/templates/documento_cambio/supervisora.html:8
+msgid "Todas las hojas de cambio de tu grupo de intercambio."
+msgstr "Todas las hojas de cambio de tu grupo de intercambio."
+
+#: app/templates/documento_cambio/supervisora.html:18
+msgid "cede"
+msgstr "cede"
+
+#: app/templates/documento_cambio/supervisora.html:19
+msgid "recibe"
+msgstr "recibe"
+
+#: app/templates/documento_cambio/supervisora.html:40
+msgid "Todavía no hay ninguna hoja de cambio en tu grupo de intercambio."
+msgstr "Todavía no hay ninguna hoja de cambio en tu grupo de intercambio."
 
 #: app/templates/documento_cambio/ver.html:10
 msgid "Las dos firmas están recogidas. La hoja de cambio está completa."
