@@ -4,6 +4,29 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+chore(deploy): `Procfile` pasa de `gunicorn run:app` (default: 1 worker
+síncrono, sin `-w`) a `gunicorn --workers 3 --timeout 60 run:app`. Tercer
+paso del plan de 4 para resolver los cuelgues de producción (ver pasos
+anteriores): con 1 solo worker, cualquier request lento (el motor de
+matching en el grupo de intercambio más activo, u otra cosa en el
+futuro) congelaba la app entera para todos los usuarios, no solo para
+quien la disparó — es la causa de que los 3 `WORKER TIMEOUT` de gunicorn
+vistos en producción (2026-07-14/15) se sintieran como "toda la app va
+lenta" en vez de "una acción en concreto tardó". Con 3 workers, ese mismo
+request lento deja de bloquear al resto. 60s de timeout (antes 30s,
+default de gunicorn) da margen mientras los pasos 1 y 2 ya aplicados
+reducen el tiempo real. 3 workers es un valor conservador para el plan
+de Railway actual; si tras el deploy aparece presión de memoria
+(reinicios por OOM en los logs, no `WORKER TIMEOUT`), habría que subir de
+plan antes de subir el nº de workers.
+
+Pendiente: **no se ha desplegado ni empujado (push) todavía** — el commit
+queda listo en local (rama `staging`) a la espera de que el usuario
+confirme el push/deploy. La verificación de este paso (confirmar en
+`railway logs` que arrancan 3 workers y que `/health` sigue respondiendo)
+solo se puede hacer después de ese deploy.
+
+## Paso anterior
 perf(matching): las 5 búsquedas de matching que se lanzan en cada
 publish/editar/contraoferta (`buscar_matches_para`, `buscar_cadenas_3_para`,
 `buscar_cadenas_4_para`, `buscar_cadenas_parciales_4_para`,
