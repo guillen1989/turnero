@@ -140,7 +140,11 @@ def crear_documento_cambio_desde_match(match):
     p1, p2 = match.participaciones
     u1, u2 = p1.publicacion.usuario, p2.publicacion.usuario
 
-    documento = DocumentoCambio(creado_por=u1, match=match)
+    documento = DocumentoCambio(
+        creado_por=u1, match=match,
+        unidad_id=u1.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(u1.unidad_id),
+    )
     db.session.add(documento)
     db.session.flush()
 
