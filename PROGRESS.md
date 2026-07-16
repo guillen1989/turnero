@@ -33,6 +33,15 @@ propio texto de la conversación si hace falta el detalle completo) sigue
 siendo válida para cuando se retome el paso 10.
 
 ## Paso anterior
+fix(documento-cambio): el PDF ya no corta el texto de los campos contra
+la línea impresa -- pedido explícito del usuario tras ver el resultado
+del paso anterior ("el texto queda demasiado abajo"). Los 12 `@frame`
+de campos de texto (no las firmas ni el número, que ya estaban bien)
+suben 2mm (su `top` baja 2mm en la coordenada de página, que crece
+hacia abajo). Sin test nuevo: es un ajuste visual de coordenadas, no de
+comportamiento, igual que el resto de retoques de maquetación de esta
+fase -- verificado con `pdftoppm` como los anteriores.
+
 feat(documento-cambio): numero_unidad -- numeración absoluta por unidad,
 no el id global de Postgres -- pedido explícito del usuario: "solo
 puede haber un cambio #3 del 7 de julio de 2026", es decir, cada unidad
