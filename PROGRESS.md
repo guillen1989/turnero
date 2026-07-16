@@ -4,7 +4,14 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
-B20 en marcha: firma digital al confirmar un match directo (1 a 1), a
+B20 completo (ver detalle en "Paso anterior" más abajo): firma digital al
+confirmar un match directo (1 a 1) + PDF descargable de la hoja de
+cambio. 912 tests passing. Sin siguiente paso decidido todavía — a la
+espera de que el usuario indique la próxima prioridad (posible extensión:
+firma también en cadenas de 3/4 bandas).
+
+## Paso anterior
+B20: firma digital al confirmar un match directo (1 a 1), a
 petición del usuario ("al confirmar un cambio el usuario debe poder
 firmarlo también, así queda todo listo por su parte") — pensando en el
 formulario físico "Solicitud de cambio de turno o guardia" del hospital
@@ -106,8 +113,27 @@ sitio donde aparece el botón). 910 tests unitarios+integración passing
 (suite completa, verificada en una BD de test privada para evitar
 interferencias de otros jobs/worktrees en paralelo — ver nota del paso 3).
 
-Siguiente paso: catálogo i18n (`pybabel extract/update/compile`) para los
-textos nuevos, y verificación final end-to-end.
+Paso 6 completado (cierre de B20): catálogo i18n actualizado (`pybabel
+extract/update/compile`) — 4 `#, fuzzy` corregidos a mano tras el
+`update` porque emparejó mal msgid nuevos con traducciones existentes que
+no correspondían (mismo problema ya visto en B19, paso 10): "Debes
+firmar el cambio antes de confirmarlo." emparejado con "No tienes
+cambios pendientes de confirmar.", "Descargar hoja de cambio" con
+"Indica la fecha del cambio.", "Firma para confirmar el cambio" con "Has
+retirado tu confirmación del cambio.", "Firmar y confirmar" con
+"Confirmar" — los 4 corregidos al texto correcto y sin `fuzzy`. `.mo`
+recompilado (no versionado, `*.mo` en `.gitignore`, se recompila en cada
+entorno). Verificación final: suite completa (910 unitarios/integración +
+2 E2E) en la BD de test privada, 912 passing sin fallos.
+
+**B20 completo: firma digital al confirmar un cambio directo.** Resumen
+del alcance entregado: canvas de firma obligatorio para confirmar
+matches `directo_2` (las cadenas de 3/4 bandas quedan fuera, tal y como
+se acordó con el usuario), firma guardada en `MatchParticipacion.firma_data`,
+y PDF descargable bajo demanda de la hoja de cambio con los datos del
+intercambio y ambas firmas — sin generarlo automáticamente al confirmar.
+Pendiente para el futuro, si el usuario lo pide: extender la firma a
+cadenas de 3/4 bandas.
 
 ## Paso anterior
 perf(db): `publicacion_cambio`, `usuario` y `unidad` no tenían más índice
