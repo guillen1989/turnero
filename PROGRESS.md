@@ -19,7 +19,8 @@ el arranque completo de la app si algo de sus dependencias nativas falla
 en el contenedor de destino, como mucho falla esa única ruta; (2) nuevo
 `nixpacks.toml` que declara los paquetes de sistema Nix que WeasyPrint
 necesita en tiempo de ejecución (`pango`, `cairo`, `gdk-pixbuf`, `glib`,
-`harfbuzz`, `fontconfig`) para que Railway los instale en el build. No
+`harfbuzz`, `fontconfig`, `shared-mime-info`) para que Railway los
+instale en el build. No
 hay forma de probar un build de Nixpacks real desde este entorno de
 desarrollo, así que el import perezoso es la red de seguridad real: si
 `nixpacks.toml` no basta o le faltase algún paquete, el resto de la app

@@ -6,7 +6,6 @@ en lenguaje natural que la ayudante copia y pega en ilog.
 import hashlib
 
 from flask import current_app, render_template
-from weasyprint import HTML
 
 from app.extensions import db
 from app.models import DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio
@@ -121,7 +120,14 @@ def generar_pdf_documento(documento):
     Renderiza la hoja de cambio rellena y firmada como PDF, fiel al impreso
     real (hojacambios.png). Se genera bajo demanda a partir de los datos
     guardados, no se persiste el binario en ningún sitio.
+
+    Import perezoso a propósito: weasyprint carga Pango/cairo/gdk-pixbuf
+    vía cffi en tiempo de import. Si esas librerías de sistema faltan en
+    el entorno de despliegue, un import a nivel de módulo tira abajo el
+    arranque completo de la app (ya pasó una vez en Railway); así, como
+    mucho, falla esta función con un 500 en la ruta del PDF.
     """
+    from weasyprint import HTML
     solicitante = documento.creado_por
     participante_solicitante = next(
         p for p in documento.participantes if p.usuario_id == solicitante.id

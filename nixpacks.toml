@@ -1,0 +1,15 @@
+# WeasyPrint (generación del PDF de la hoja de cambio) necesita estas
+# librerías nativas de sistema en tiempo de ejecución (Pango/cairo/
+# gdk-pixbuf vía cffi). Sin esto, el contenedor de Railway no las trae
+# y el import de weasyprint falla con OSError al cargar libgobject-2.0
+# (ver PROGRESS.md, Fase 10, incidente del 2026-07-16).
+[phases.setup]
+nixPkgs = [
+    "pango",
+    "cairo",
+    "gdk-pixbuf",
+    "glib",
+    "harfbuzz",
+    "fontconfig",
+    "shared-mime-info",
+]
