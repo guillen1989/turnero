@@ -1,14 +1,12 @@
 from datetime import date, datetime
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 
 from app.models import DocumentoCambio, FranjaHoraria, Unidad, Usuario
 from app.extensions import db
-from app.services.documento_cambio import (
-    crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
-)
+from app.services.documento_cambio import crear_documento_cambio, firmar_documento, generar_notas_ilog
 from app.services.registro import crear_franjas_default
 
 bp = Blueprint("documento_cambio", __name__, url_prefix="/documentos-cambio")
@@ -138,18 +136,3 @@ def firmar(documento_id, participante_id):
     firmar_documento(documento, participante.usuario, imagen_firma)
     flash(_("Firma guardada."), "success")
     return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
-
-
-@bp.get("/<int:documento_id>/pdf")
-@login_required
-def pdf(documento_id):
-    documento = _get_documento_validado(documento_id)
-    if documento.estado != "completo":
-        abort(409)
-
-    pdf_bytes = generar_pdf_documento(documento)
-    return Response(
-        pdf_bytes,
-        mimetype="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=hoja-cambio-{documento.id}.pdf"},
-    )
