@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 14:31+0200\n"
+"POT-Creation-Date: 2026-07-16 14:38+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -696,28 +696,29 @@ msgstr "Formato de hora no válido. Usa HH:MM."
 msgid "Turno «%(nombre)s» añadido."
 msgstr "Turno «%(nombre)s» añadido."
 
-#: app/services/documento_cambio.py:70
+#: app/services/documento_cambio.py:46 app/services/documento_cambio.py:133
+#: app/templates/email/documento_cambio_completo.html:2
+msgid "Hoja de cambio completa"
+msgstr "Hoja de cambio completa"
+
+#: app/services/documento_cambio.py:80
 msgid "Hoja de cambio pendiente de firma"
 msgstr "Hoja de cambio pendiente de firma"
 
-#: app/services/documento_cambio.py:71
+#: app/services/documento_cambio.py:81
 #, python-format
 msgid "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas."
 msgstr "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas."
 
-#: app/services/documento_cambio.py:123
-msgid "Hoja de cambio completa"
-msgstr "Hoja de cambio completa"
-
-#: app/services/documento_cambio.py:124
+#: app/services/documento_cambio.py:134
 msgid "Las dos firmas están recogidas. La hoja de cambio ya está completa."
 msgstr "Las dos firmas están recogidas. La hoja de cambio ya está completa."
 
-#: app/services/documento_cambio.py:133
+#: app/services/documento_cambio.py:145
 msgid "Falta tu firma en la hoja de cambio"
 msgstr "Falta tu firma en la hoja de cambio"
 
-#: app/services/documento_cambio.py:134
+#: app/services/documento_cambio.py:146
 #, python-format
 msgid ""
 "%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
@@ -1982,6 +1983,25 @@ msgstr ""
 msgid "Copiado"
 msgstr "Copiado"
 
+#: app/templates/email/documento_cambio_completo.html:3
+#: app/templates/email/recuperar_password.html:3
+#, python-format
+msgid "Hola %(nombre)s,"
+msgstr "Hola %(nombre)s,"
+
+#: app/templates/email/documento_cambio_completo.html:4
+#, python-format
+msgid "La hoja de cambio nº %(numero)s con %(companero)s ya tiene las dos firmas."
+msgstr "La hoja de cambio nº %(numero)s con %(companero)s ya tiene las dos firmas."
+
+#: app/templates/email/documento_cambio_completo.html:8
+msgid "Ver la hoja de cambio"
+msgstr "Ver la hoja de cambio"
+
+#: app/templates/email/documento_cambio_completo.html:11
+msgid "Desde ahí puedes descargar el PDF firmado cuando lo necesites."
+msgstr "Desde ahí puedes descargar el PDF firmado cuando lo necesites."
+
 #: app/templates/email/nuevo_feedback.html:3
 #: app/templates/feedback/nuevo.html:20
 msgid "Tipo"
@@ -1999,11 +2019,6 @@ msgstr "Ver en el panel de administración"
 #: app/templates/email/recuperar_password.html:2
 msgid "Recupera tu contraseña"
 msgstr "Recupera tu contraseña"
-
-#: app/templates/email/recuperar_password.html:3
-#, python-format
-msgid "Hola %(nombre)s,"
-msgstr "Hola %(nombre)s,"
 
 #: app/templates/email/recuperar_password.html:4
 msgid ""

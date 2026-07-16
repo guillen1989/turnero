@@ -13,6 +13,7 @@ from flask_babel import _
 from app.extensions import db
 from app.models import DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio, Notificacion
 from app.push.sender import enviar_push
+from app.services.email import enviar_email, url_absoluta
 from app.services.factibilidad_documento_cambio import comprobar_factibilidad
 
 _MESES = [
@@ -34,6 +35,15 @@ def _notificar(usuario, documento, tipo, titulo, cuerpo):
     db.session.add(Notificacion(usuario=usuario, documento_cambio=documento, tipo=tipo, mensaje=cuerpo))
     if usuario.push_activo:
         enviar_push(usuario, titulo, cuerpo, url=_url_documento(documento))
+
+
+def _enviar_email_completo(documento, usuario, companero):
+    enlace = url_absoluta("documento_cambio.ver", documento_id=documento.id)
+    cuerpo_html = render_template(
+        "email/documento_cambio_completo.html",
+        usuario=usuario, companero=companero, documento=documento, enlace=enlace,
+    )
+    enviar_email(usuario.email, _("Hoja de cambio completa"), cuerpo_html)
 
 
 def crear_documento_cambio(
@@ -123,6 +133,8 @@ def firmar_documento(documento, usuario, imagen_firma):
                 _("Hoja de cambio completa"),
                 _("Las dos firmas están recogidas. La hoja de cambio ya está completa."),
             )
+            otro = next(o for o in documento.participantes if o.usuario_id != p.usuario_id)
+            _enviar_email_completo(documento, p.usuario, otro.usuario)
     else:
         documento.estado = "pendiente_firmas"
         ids_firmantes = {f.usuario_id for f in documento.firmas}

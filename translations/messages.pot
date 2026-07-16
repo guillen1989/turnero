@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-07-16 14:31+0200\n"
+"POT-Creation-Date: 2026-07-16 14:38+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -680,28 +680,29 @@ msgstr ""
 msgid "Turno «%(nombre)s» añadido."
 msgstr ""
 
-#: app/services/documento_cambio.py:70
+#: app/services/documento_cambio.py:46 app/services/documento_cambio.py:133
+#: app/templates/email/documento_cambio_completo.html:2
+msgid "Hoja de cambio completa"
+msgstr ""
+
+#: app/services/documento_cambio.py:80
 msgid "Hoja de cambio pendiente de firma"
 msgstr ""
 
-#: app/services/documento_cambio.py:71
+#: app/services/documento_cambio.py:81
 #, python-format
 msgid "%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas."
 msgstr ""
 
-#: app/services/documento_cambio.py:123
-msgid "Hoja de cambio completa"
-msgstr ""
-
-#: app/services/documento_cambio.py:124
+#: app/services/documento_cambio.py:134
 msgid "Las dos firmas están recogidas. La hoja de cambio ya está completa."
 msgstr ""
 
-#: app/services/documento_cambio.py:133
+#: app/services/documento_cambio.py:145
 msgid "Falta tu firma en la hoja de cambio"
 msgstr ""
 
-#: app/services/documento_cambio.py:134
+#: app/services/documento_cambio.py:146
 #, python-format
 msgid ""
 "%(nombre)s ya ha firmado. Solo falta tu firma para completar la hoja de "
@@ -1921,6 +1922,25 @@ msgstr ""
 msgid "Copiado"
 msgstr ""
 
+#: app/templates/email/documento_cambio_completo.html:3
+#: app/templates/email/recuperar_password.html:3
+#, python-format
+msgid "Hola %(nombre)s,"
+msgstr ""
+
+#: app/templates/email/documento_cambio_completo.html:4
+#, python-format
+msgid "La hoja de cambio nº %(numero)s con %(companero)s ya tiene las dos firmas."
+msgstr ""
+
+#: app/templates/email/documento_cambio_completo.html:8
+msgid "Ver la hoja de cambio"
+msgstr ""
+
+#: app/templates/email/documento_cambio_completo.html:11
+msgid "Desde ahí puedes descargar el PDF firmado cuando lo necesites."
+msgstr ""
+
 #: app/templates/email/nuevo_feedback.html:3
 #: app/templates/feedback/nuevo.html:20
 msgid "Tipo"
@@ -1937,11 +1957,6 @@ msgstr ""
 
 #: app/templates/email/recuperar_password.html:2
 msgid "Recupera tu contraseña"
-msgstr ""
-
-#: app/templates/email/recuperar_password.html:3
-#, python-format
-msgid "Hola %(nombre)s,"
 msgstr ""
 
 #: app/templates/email/recuperar_password.html:4

@@ -10,17 +10,39 @@ que mejor convenga: (1) recomprobar factibilidad en la 2ª firma — HECHO,
 junto a la fecha — HECHO, (4) mejorar el PDF — HECHO (parcial, ver
 paso anterior de esa fecha), (5) listado de "mis hojas de cambio" en la
 cuenta de cada usuario — HECHO, (6) enviar los cambios por email a los
-implicados, (7) cuenta de supervisora con acceso a todos los cambios,
-(8) botón autorizar/denegar en la cuenta de supervisora que decide si
-se vuelca a las planillas, (9) cadenas a 3/4 bandas y juntes de noches,
-(10) enganche con el motor de matching vía `match_id` — el usuario
-matizó este punto (2026-07-16): la acción de **confirmar un match**
-(o el "Me interesa" sobre una publicación sintética) debe **aparejarse
-con la firma** del documento de cambio en el mismo gesto, en vez de
-tener dos ciclos separados (uno de confirmaciones del motor de
-matching, otro de firmas del documento) — o sea, confirmar un match
+implicados — HECHO, (7) cuenta de supervisora con acceso a todos los
+cambios, (8) botón autorizar/denegar en la cuenta de supervisora que
+decide si se vuelca a las planillas, (9) cadenas a 3/4 bandas y juntes
+de noches, (10) enganche con el motor de matching vía `match_id` — el
+usuario matizó este punto (2026-07-16): la acción de **confirmar un
+match** (o el "Me interesa" sobre una publicación sintética) debe
+**aparejarse con la firma** del documento de cambio en el mismo gesto,
+en vez de tener dos ciclos separados (uno de confirmaciones del motor
+de matching, otro de firmas del documento) — o sea, confirmar un match
 YA firma la parte de quien confirma. Tenerlo en cuenta al diseñar el
-paso 10. Siguiente: (6) envío por email.
+paso 10. Siguiente: (7) cuenta de supervisora.
+
+## Paso anterior
+feat(documento-cambio): envío por email al completarse — reutiliza
+`app/services/email.py` (Resend HTTPS API, ya usado para recuperar
+contraseña) en vez de montar nada nuevo. Al firmar la última parte, se
+envía un email a cada participante con un enlace a "Ver la hoja de
+cambio" (mismo patrón que el email de recuperación de contraseña:
+enlace + botón, no adjunto — el PDF se descarga desde la página, que ya
+queda accesible permanentemente gracias al listado del paso anterior).
+Nueva plantilla `email/documento_cambio_completo.html`. No se envía
+nada al crear el documento ni con una sola firma, solo al completarse
+del todo. 1 test nuevo (con `monkeypatch` sobre `enviar_email` para no
+depender de la API real de Resend, comprueba que se envía a los dos
+destinatarios y en el momento correcto) · 60 tests en la suite de
+`documento_cambio`+`notificaciones` · catálogo i18n actualizado.
+
+Nota: el intento de push anterior falló porque el hook de pre-push
+corrió sobre el árbol de trabajo mientras este paso todavía estaba a
+medias (test ya escrito, implementación aún no) — no era un bug real,
+solo una carrera entre el push en segundo plano y la edición en curso.
+El commit anterior (listado "mis hojas de cambio") sí llegó bien a
+`staging` en ese mismo intento.
 
 ## Paso anterior
 feat(documento-cambio): listado "mis hojas de cambio" — nueva ruta

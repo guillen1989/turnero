@@ -284,3 +284,32 @@ def test_firmar_documento_notifica_completo_a_ambos(db):
             usuario_id=usuario.id, documento_cambio_id=documento.id, tipo="documento_cambio_completo"
         ).all()
         assert len(notifs) == 1
+
+
+def test_firmar_documento_envia_email_a_ambos_al_completarse(db, monkeypatch):
+    enviados = []
+
+    def _fake_enviar_email(destinatario, asunto, cuerpo_html):
+        enviados.append((destinatario, asunto))
+        return True
+
+    monkeypatch.setattr("app.services.documento_cambio.enviar_email", _fake_enviar_email)
+
+    crear_usuario, manyana, tarde = _setup(db, "l")
+    claudia = crear_usuario("Claudia Pérez", "claudial@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanl@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    assert enviados == []  # no se envía email solo por crear el documento
+
+    firmar_documento(documento, claudia, "data:image/png;base64,AAA")
+    assert enviados == []  # tampoco con una sola firma
+
+    firmar_documento(documento, juan, "data:image/png;base64,BBB")
+
+    destinatarios = {d for d, _ in enviados}
+    assert destinatarios == {"claudial@h.es", "juanl@h.es"}
