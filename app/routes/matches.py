@@ -1,9 +1,12 @@
-from flask import Blueprint, abort, flash, redirect, url_for
+from flask import Blueprint, abort, flash, redirect, request, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 
 from app.extensions import db
-from app.models import MatchCambio
+from app.models import DocumentoCambio, MatchCambio
+from app.services.documento_cambio import (
+    crear_documento_cambio_desde_match, firmar_documento, match_admite_documento_cambio,
+)
 from app.services.matches import confirmar_participacion, desconfirmar_participacion, rechazar_match
 
 bp = Blueprint("matches", __name__)
@@ -26,6 +29,20 @@ def _get_match_validado(match_id):
 @login_required
 def confirmar(match_id):
     match = _get_match_validado(match_id)
+
+    if match_admite_documento_cambio(match):
+        firma = request.form.get("firma", "").strip()
+        if not firma.startswith("data:image/"):
+            flash(_("Debes firmar el cambio antes de confirmarlo."), "danger")
+            return redirect(url_for("main.index"))
+
+        documento = DocumentoCambio.query.filter_by(match_id=match.id).first()
+        if documento is None:
+            documento = crear_documento_cambio_desde_match(match)
+        ya_firmado = any(f.usuario_id == current_user.id for f in documento.firmas)
+        if not ya_firmado:
+            firmar_documento(documento, current_user, firma)
+
     confirmar_participacion(match, current_user.id)
     flash(_("Has confirmado tu parte del cambio."), "success")
     return redirect(url_for("main.index"))
