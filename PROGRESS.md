@@ -4,12 +4,31 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Queda actualizar `ESPECIFICACION.md` (ver nota de varios pasos atrás:
-el principio "no deja constancia oficial... no es un documento de RRHH"
-ya no es exacto con esta funcionalidad). Sin siguiente paso concreto
-más allá de eso — a definir con el usuario (posibles candidatos:
-cross-cuenta real en vez de mono-cuenta, cadenas a 3/4, juntes de
-noches, o enganchar el documento al motor de matching vía `match_id`).
+`ESPECIFICACION.md` actualizado (ver "Paso anterior"). Sin siguiente
+paso concreto decidido todavía — pendiente de que el usuario elija entre
+los candidatos anotados en la sección "Hoja de cambio digital — pendiente
+de fase futura" del propio `ESPECIFICACION.md`: firma cruzada entre
+cuentas reales (en vez de mono-cuenta), cadenas a 3/4 bandas y juntes de
+noches dentro del documento, recomprobación de factibilidad en la
+segunda firma, o enganche automático con el motor de matching vía
+`match_id`.
+
+## Paso anterior
+docs(especificacion): documenta la hoja de cambio digital en
+`ESPECIFICACION.md` — nuevas entidades `DocumentoCambio`/
+`ParticipanteDocumentoCambio`/`FirmaDocumentoCambio` en la sección 2,
+reglas de negocio 11-14 (flujo aparte del matching automático,
+mono-cuenta, factibilidad no bloqueante, fidelidad al impreso) en la
+sección 3, CU10 en la sección 4, decisión técnica de `xhtml2pdf` (con
+el porqué del incidente de WeasyPrint) en la sección 5, y 6 UAT nuevos
+(UAT-8.1 a UAT-8.6) en la sección 6. También corregidas las dos
+afirmaciones de la sección 1 ("no requiere aprobación de RRHH", "no
+deja constancia oficial") que ya no eran exactas con esta
+funcionalidad — matizadas para dejar claro que aplican al motor de
+matching automático, con la hoja de cambio digital como excepción
+explícita. Añadida nota en "Fuera de alcance del MVP" con los
+pendientes de esta feature (firma cruzada real, cadenas 3/4, juntes de
+noches, recomprobación en la segunda firma, enganche con matching).
 
 ## Paso anterior
 feat(documento-cambio): comprobación de factibilidad contra planillas —
