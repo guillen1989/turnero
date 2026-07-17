@@ -61,6 +61,11 @@ class DocumentoCambio(db.Model):
     anulado_por_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=True)
     fecha_anulacion = db.Column(db.DateTime(timezone=True), nullable=True)
     motivo_anulacion = db.Column(db.Text, nullable=True)
+    # Firma de la supervisora al autorizar o denegar (data URI, mismo formato
+    # que FirmaDocumentoCambio.imagen_firma). Vive aquí y no como fila en
+    # FirmaDocumentoCambio porque esa tabla es de los participantes del
+    # cambio -- la supervisora no cede ni recibe turno, solo decide.
+    firma_supervisora = db.Column(db.Text, nullable=True)
 
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
     supervisora = db.relationship("Usuario", foreign_keys=[supervisora_id])

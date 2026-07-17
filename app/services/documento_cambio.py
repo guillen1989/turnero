@@ -358,14 +358,20 @@ def volcar_documento_a_planillas(documento):
     db.session.commit()
 
 
-def autorizar_documento(documento, supervisora):
+def autorizar_documento(documento, supervisora, imagen_firma=None):
     """
     La supervisora autoriza un documento completo (dos firmas): se vuelca
     a las planillas de los implicados y se notifica a ambos.
+
+    `imagen_firma` es opcional aquí (para no atar este servicio a HTTP ni
+    romper los flujos internos que ya lo llaman sin firma); la ruta HTTP es
+    quien de verdad la exige antes de invocar esta función.
     """
     documento.decision_supervisora = "autorizado"
     documento.supervisora = supervisora
     documento.fecha_decision_supervisora = datetime.now(timezone.utc)
+    if imagen_firma:
+        documento.firma_supervisora = imagen_firma
     volcar_documento_a_planillas(documento)
 
     resumen = _resumen_cambio(documento)
@@ -380,16 +386,20 @@ def autorizar_documento(documento, supervisora):
     return documento
 
 
-def denegar_documento(documento, supervisora, motivo):
+def denegar_documento(documento, supervisora, motivo, imagen_firma=None):
     """
     La supervisora deniega un documento completo: no se toca ninguna
     planilla. `motivo` es obligatorio -- los participantes deben poder ver
     por qué se ha denegado, no solo que se ha denegado.
+
+    `imagen_firma` es opcional aquí, ver `autorizar_documento`.
     """
     documento.decision_supervisora = "denegado"
     documento.supervisora = supervisora
     documento.fecha_decision_supervisora = datetime.now(timezone.utc)
     documento.motivo_denegacion = motivo
+    if imagen_firma:
+        documento.firma_supervisora = imagen_firma
 
     resumen = _resumen_cambio(documento)
     for p in documento.participantes:

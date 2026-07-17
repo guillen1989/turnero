@@ -4,7 +4,33 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-"Nueva hoja de cambio" deja elegir entre esperar a la firma del compañero
+Petición del usuario: grabar el motivo de denegación en el PDF, que la
+supervisora también pueda firmar la hoja (autorizar/denegar), poder
+reutilizar su firma guardada como ya hacen los participantes, y mostrar
+el motivo de denegación en la tabla de "Supervisión de cambios".
+
+Hecho hasta ahora: columna `firma_supervisora` en `DocumentoCambio`
+(nullable, migración `7920cee19df7`) y `autorizar_documento`/
+`denegar_documento` (`app/services/documento_cambio.py`) aceptan un
+`imagen_firma` opcional que, si viene, se guarda ahí. Opcional a nivel de
+servicio a propósito: no ata el servicio a HTTP y no rompe los muchos
+tests que ya llaman a estas funciones directamente sin firma (flujos
+internos); es la ruta HTTP la que de verdad la exige.
+
+Siguiente: rutas `/autorizar` y `/denegar` (individuales) exigen
+`imagen_firma` igual que ya exige `firmar_documento` a los participantes,
+con la misma opción de "guardar esta firma"/"usar firma guardada"
+(`current_user.firma_guardada`, ya genérico en `Usuario` desde antes).
+Las acciones en bloque (`bloque_aceptar`/`bloque_denegar`) no piden
+firma por documento (inviable dibujar una por cada fila seleccionada):
+usan `current_user.firma_guardada` si existe, y si no, bloquean la
+acción pidiendo que la guarde antes (en `/perfil/cuenta` o firmando un
+documento individual con "guardar firma" marcado). Después: plantilla
+del PDF (nuevos @frame en el hueco "INFORME POR PARTE DE LA SUPERVISORA
+DE LA UNIDAD" del impreso — motivo, Favorable/Desfavorable, fecha,
+firma) y columna "Motivo" en la tabla de supervisión.
+
+Antes de eso: "Nueva hoja de cambio" deja elegir entre esperar a la firma del compañero
 (como hasta ahora) o firmar los dos ya mismo desde el mismo dispositivo,
 para el caso de que estén rellenando el cambio juntos. Pensado también
 para facilitar la adopción gradual por parte de jefes reticentes: ya

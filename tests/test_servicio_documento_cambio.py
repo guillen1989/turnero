@@ -530,3 +530,30 @@ def test_denegar_documento_incluye_datos_del_cambio_en_la_notificacion(db):
     assert "07/07/2026" in notif.mensaje
     assert "28/07/2026" in notif.mensaje
     assert "Mañana" in notif.mensaje
+
+
+def test_autorizar_documento_guarda_la_firma_de_la_supervisora(db):
+    documento, claudia, juan, supervisora, manyana = _crear_documento_completo(db, "r")
+
+    autorizar_documento(documento, supervisora, imagen_firma=_FIRMA_PNG)
+
+    assert documento.firma_supervisora == _FIRMA_PNG
+
+
+def test_denegar_documento_guarda_la_firma_de_la_supervisora(db):
+    documento, claudia, juan, supervisora, manyana = _crear_documento_completo(db, "s")
+
+    denegar_documento(documento, supervisora, motivo="No cuadra.", imagen_firma=_FIRMA_PNG)
+
+    assert documento.firma_supervisora == _FIRMA_PNG
+
+
+def test_autorizar_documento_sin_firma_no_la_rellena(db):
+    """La firma es opcional a nivel de servicio (los tests/flujos internos
+    que no pasan por HTTP no tienen por qué firmar); es la ruta la que la
+    exige antes de llamar aquí."""
+    documento, claudia, juan, supervisora, manyana = _crear_documento_completo(db, "t")
+
+    autorizar_documento(documento, supervisora)
+
+    assert documento.firma_supervisora is None
