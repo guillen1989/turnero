@@ -5,9 +5,9 @@
 {% block content %}
 <div class="form-container">
   <h1>{{ _('Nueva hoja de cambio') }}</h1>
-  <p>{{ _('Rellena los datos del cambio. Podrás firmar tú y tu compañero/a desde este mismo dispositivo a continuación.') }}</p>
+  <p>{{ _('Rellena los datos del cambio. Por defecto, tu compañero/a firmará más tarde desde su propia cuenta.') }}</p>
 
-  <form method="post">
+  <form method="post" id="nueva-hoja-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <div class="form-group">
@@ -58,7 +58,91 @@
       </div>
     </section>
 
+    <section class="turnos-section">
+      <label class="form-check">
+        <input type="checkbox" id="firmar_ambos" name="firmar_ambos">
+        {{ _('Estamos juntos ahora mismo: firmar los dos ya') }}
+      </label>
+      <p class="form-hint">{{ _('Si no lo marcas, tu compañero/a firmará más tarde desde su propia cuenta.') }}</p>
+
+      <div id="firmas-ambos-box" style="display:none;">
+        <h2>{{ _('Tu firma') }}</h2>
+        <input type="hidden" name="imagen_firma_propia" value="">
+        <div class="firma-box">
+          <canvas id="firma-canvas-propia" class="firma-canvas" width="500" height="180"></canvas>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="firma-propia-limpiar">{{ _('Borrar') }}</button>
+        {% if current_user.firma_guardada %}
+        <button type="button" class="btn btn-secondary btn-sm" id="firma-propia-usar-guardada"
+                data-firma="{{ current_user.firma_guardada }}">{{ _('Usar mi firma guardada') }}</button>
+        {% else %}
+        <label class="firma-guardar-opcion" style="display:block; margin:0.5rem 0; font-size:0.9rem">
+          <input type="checkbox" name="guardar_firma" checked>
+          {{ _('Guardar mi firma para futuras firmas') }}
+        </label>
+        {% endif %}
+
+        <h2>{{ _('Firma de tu compañero/a') }}</h2>
+        <input type="hidden" name="imagen_firma_companero" value="">
+        <div class="firma-box">
+          <canvas id="firma-canvas-companero" class="firma-canvas" width="500" height="180"></canvas>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="firma-companero-limpiar">{{ _('Borrar') }}</button>
+      </div>
+    </section>
+
     <button type="submit" class="btn btn-primary">{{ _('Crear hoja de cambio') }}</button>
   </form>
 </div>
+
+<script src="{{ url_for('static', filename='js/firma-canvas.js') }}"></script>
+<script>
+(function () {
+  var checkbox = document.getElementById('firmar_ambos');
+  var box = document.getElementById('firmas-ambos-box');
+  var canvasPropia = document.getElementById('firma-canvas-propia');
+  var canvasCompanero = document.getElementById('firma-canvas-companero');
+  var form = document.getElementById('nueva-hoja-form');
+
+  setupFirmaCanvas(canvasPropia);
+  setupFirmaCanvas(canvasCompanero);
+
+  checkbox.addEventListener('change', function () {
+    box.style.display = checkbox.checked ? 'block' : 'none';
+  });
+
+  document.getElementById('firma-propia-limpiar').addEventListener('click', function () {
+    canvasPropia._limpiar();
+    form.querySelector('input[name="imagen_firma_propia"]').value = '';
+  });
+  document.getElementById('firma-companero-limpiar').addEventListener('click', function () {
+    canvasCompanero._limpiar();
+    form.querySelector('input[name="imagen_firma_companero"]').value = '';
+  });
+
+  var btnGuardada = document.getElementById('firma-propia-usar-guardada');
+  if (btnGuardada) {
+    btnGuardada.addEventListener('click', function () {
+      canvasPropia._limpiar();
+      form.querySelector('input[name="imagen_firma_propia"]').value = btnGuardada.dataset.firma;
+    });
+  }
+
+  form.addEventListener('submit', function (e) {
+    if (!checkbox.checked) return;
+    var inputPropia = form.querySelector('input[name="imagen_firma_propia"]');
+    var inputCompanero = form.querySelector('input[name="imagen_firma_companero"]');
+    if (canvasPropia._haFirmado()) {
+      inputPropia.value = canvasPropia.toDataURL('image/png');
+    }
+    if (canvasCompanero._haFirmado()) {
+      inputCompanero.value = canvasCompanero.toDataURL('image/png');
+    }
+    if (!inputPropia.value || !inputCompanero.value) {
+      e.preventDefault();
+      alert('{{ _("Dibujad las dos firmas antes de guardar.") }}');
+    }
+  });
+})();
+</script>
 {% endblock %}

@@ -4,10 +4,19 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Añadida la anulación de cambios ya autorizados (deshace planilla y, si
-viene de un match, reabre match/publicaciones) y la selección en bloque en
-"Supervisión de cambios" (PDF combinado, aceptar/denegar/anular en bloque).
-Sin siguiente paso concreto pendiente en esta parte de la fase.
+"Nueva hoja de cambio" deja elegir entre esperar a la firma del compañero
+(como hasta ahora) o firmar los dos ya mismo desde el mismo dispositivo,
+para el caso de que estén rellenando el cambio juntos. Pensado también
+para facilitar la adopción gradual por parte de jefes reticentes: ya
+pueden usar la hoja de cambio electrónica como sustituto simple del papel
+(cambios ordenados y fáciles de consultar) sin depender de que cuaje antes
+la comprobación de factibilidad contra planillas. Sin siguiente paso
+concreto pendiente en esta parte de la fase.
+
+Antes de eso: añadida la anulación de cambios ya autorizados (deshace
+planilla y, si viene de un match, reabre match/publicaciones) y la
+selección en bloque en "Supervisión de cambios" (PDF combinado,
+aceptar/denegar/anular en bloque).
 
 Antes de eso: firma guardada — feedback del usuario tras probarla en
 staging: la sección en `/perfil/cuenta` no se encuentra bien, se deja
@@ -1502,6 +1511,8 @@ mitigación preventiva independiente de la causa.
 - [x] feat(firma): ofrece guardar la firma en el momento de firmar, no solo desde `/perfil/cuenta` — feedback del usuario tras probar en staging: la sección de `/perfil/cuenta` "no se encuentra bien" (se deja donde está, no se mueve/promueve) · cuando el usuario dibuja una firma nueva (no usa el botón de firma guardada) y **no tiene** `firma_guardada` todavía, aparece un checkbox "Guardar esta firma para futuras firmas", marcado por defecto · `documento_cambio.firmar` y `matches.confirmar` leen el campo `guardar_firma` del POST: si viene marcado y el usuario aún no tiene firma guardada, la guardan de paso (`if request.form.get("guardar_firma") and not current_user.firma_guardada`) — nunca sobrescribe una ya existente por esta vía, aunque el checkbox no debería llegar a mostrarse en ese caso · en `ver.html` el checkbox es un campo más del mismo `<form>` (sin JS extra) · en el modal de `dashboard.html` (compartido entre todas las tarjetas de match) el checkbox vive fuera del `<form>` de cada match, así que se añade un input oculto `.guardar-firma-input` por formulario y el handler de "Firmar y confirmar" copia el estado del checkbox ahí antes de enviar, igual que ya hacía con `.firma-input` · catálogo i18n actualizado (1 cadena nueva) · 10 tests nuevos (backend de ambas rutas + render condicional del checkbox en `ver.html`/`dashboard.html`) · 1027 tests passing
 
 - [x] feat(documento-cambio): anular un cambio ya autorizado + selección en bloque en "Supervisión de cambios" · migración `93549d8020ab` (`anulado`, `anulado_por_id`, `fecha_anulacion`, `motivo_anulacion` en `documento_cambio`) · `anulado` es un dato aparte de `decision_supervisora`, que conserva el histórico ("esto se autorizó") · `puede_anularse(documento)` comprueba: ya autorizado y no anulado antes, ningún turno implicado ha pasado ya, y la planilla actual de cada participante sigue tal cual quedó tras autorizar (si otro cambio posterior la tocó, no se anula a ciegas) · `anular_documento()` deshace el volcado a planillas (espejo de `volcar_documento_a_planillas`) y, si el documento viene de un match del motor de matching (`match_id`), reabre ese match con `reabrir_match_de_documento()`: turnos vuelven a `abierto`, publicaciones recalculan estado, el match pasa a un estado nuevo `anulado` (distinto de `rechazado`, que es previo a la confirmación) · botón "Anular" en `ver.html` cuando aplica, motivo obligatorio, notifica a ambos implicados · selección en bloque en la tabla (checkboxes + "seleccionar todos", patrón `.fb-bulk-bar` ya usado en `admin/feedback`): un único `<form>` con varios botones `formaction` a 4 rutas (`bloque/pdf|aceptar|denegar|anular`), procesando cada id independientemente y reportando aplicados/omitidos en vez de fallar el lote entero · ids del formulario siempre filtrados contra el grupo de la supervisora antes de actuar · PDF en bloque fusiona con `pypdf` (nueva dependencia explícita en requirements.txt, antes solo transitiva de `xhtml2pdf`) en un único archivo · filtro nuevo "Anulado" en la tabla (excluido de `estado_decision=autorizado`, que ahora solo cuenta lo vigente) · 20 tests nuevos · 169 tests afectados passing (`pytest --testmon`)
+
+- [x] feat(documento-cambio): "Nueva hoja de cambio" ofrece firmar los dos a la vez, no solo esperar a que el compañero firme luego desde su cuenta · casilla "Estamos juntos ahora mismo: firmar los dos ya" en `nuevo.html` que revela un segundo lienzo de firma (reutiliza `setupFirmaCanvas`, ahora exportado desde `firma-canvas.js`) · excepción explícita y deliberada a la firma cruzada habitual (cada uno firma solo lo suyo desde su cuenta) — mismo patrón "mono-cuenta" de la Fase 1 original, ahora como opción en vez de único modo · si se marca, `nueva()` valida que ambas imágenes de firma lleguen y llama a `firmar_documento` dos veces tras crear el documento, dejándolo `completo` en el mismo POST · reutiliza `firma_guardada` del creador si existe (no la del compañero, que no tiene sesión abierta) · pensado también para adopción gradual: los jefes reticentes ya pueden sustituir el papel por la hoja electrónica sin depender de que cuaje antes la comprobación de factibilidad (que ya era puramente informativa, no bloqueaba nada) · la idea de que la supervisora suba la planilla de toda la unidad (en vez de depender de que cada usuario suba la suya) sigue anotada en `.backlog`, no implementada · 4 tests nuevos · 59 tests afectados passing (`pytest --testmon`)
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

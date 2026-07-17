@@ -71,6 +71,101 @@ def test_post_nuevo_crea_documento_y_redirige_a_ver(db, client):
     assert "/documentos-cambio/" in resp.headers["Location"]
 
 
+def test_post_nuevo_sin_firmar_ambos_deja_el_documento_sin_firmas(db, client):
+    """Comportamiento por defecto (sin marcar la casilla): igual que
+    siempre, nadie ha firmado todavía al crear el documento."""
+    from app.models import DocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "n2")
+    claudia = crear_usuario("Claudia Pérez", "claudian2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juann2@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.estado == "borrador"
+    assert len(documento.firmas) == 0
+
+
+def test_post_nuevo_firmando_ambos_completa_el_documento(db, client):
+    from app.models import DocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "o2")
+    claudia = crear_usuario("Claudia Pérez", "claudiao2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juano2@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+        "firmar_ambos": "on",
+        "imagen_firma_propia": _FIRMA_PNG,
+        "imagen_firma_companero": _FIRMA_PNG,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+
+    assert documento.estado == "completo"
+    assert {f.usuario_id for f in documento.firmas} == {claudia.id, juan.id}
+
+
+def test_post_nuevo_firmando_ambos_sin_alguna_firma_da_error(db, client):
+    from app.models import DocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "p2")
+    claudia = crear_usuario("Claudia Pérez", "claudiap2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanp2@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+        "firmar_ambos": "on",
+        "imagen_firma_propia": _FIRMA_PNG,
+        "imagen_firma_companero": "",
+    })
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0
+
+
+def test_post_nuevo_firmando_ambos_guarda_firma_propia_si_se_pide(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "q2")
+    claudia = crear_usuario("Claudia Pérez", "claudiaq2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanq2@h.es")
+    _login(client, claudia.email)
+
+    client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+        "firmar_ambos": "on",
+        "imagen_firma_propia": _FIRMA_PNG,
+        "imagen_firma_companero": _FIRMA_PNG,
+        "guardar_firma": "on",
+    })
+
+    db.session.refresh(claudia)
+    assert claudia.firma_guardada == _FIRMA_PNG
+    # No se ha guardado por error la firma del compañero en su cuenta.
+    db.session.refresh(juan)
+    assert juan.firma_guardada is None
+
+
 def test_ver_documento_ajeno_da_403(db, client):
     crear_usuario, manyana, tarde = _setup(db, "c")
     claudia = crear_usuario("Claudia Pérez", "claudiac@h.es")

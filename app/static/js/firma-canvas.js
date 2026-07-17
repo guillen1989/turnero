@@ -94,5 +94,6 @@
   }
 
   window.initFirmaForm = initFirmaForm;
+  window.setupFirmaCanvas = setupFirmaCanvas;
   window.copiarAlPortapapeles = copiarAlPortapapeles;
 })();

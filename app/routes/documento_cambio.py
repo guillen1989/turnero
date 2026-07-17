@@ -229,6 +229,9 @@ def nueva():
         cede_franja_id = request.form.get("turno_cede_franja_id", type=int)
         recibe_fecha_str = request.form.get("turno_recibe_fecha", "")
         recibe_franja_id = request.form.get("turno_recibe_franja_id", type=int)
+        firmar_ambos = request.form.get("firmar_ambos") == "on"
+        imagen_firma_propia = request.form.get("imagen_firma_propia", "")
+        imagen_firma_companero = request.form.get("imagen_firma_companero", "")
 
         companero = next((c for c in companeros if c.id == companero_id), None)
         franja_ids_validas = {f.id for f in franjas}
@@ -245,6 +248,11 @@ def nueva():
             error = _("Selecciona un compañero válido.")
         if not error and (cede_franja_id not in franja_ids_validas or recibe_franja_id not in franja_ids_validas):
             error = _("Selecciona un turno válido.")
+        if not error and firmar_ambos and (
+            not imagen_firma_propia.startswith("data:image/")
+            or not imagen_firma_companero.startswith("data:image/")
+        ):
+            error = _("Faltan una o las dos firmas. Dibujad ambas antes de guardar.")
 
         if error:
             flash(error, "danger")
@@ -258,7 +266,20 @@ def nueva():
             turno_cede_fecha=cede_fecha, turno_cede_franja_id=cede_franja_id,
             turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=recibe_franja_id,
         )
-        flash(_("Hoja de cambio creada. Ahora recoge las dos firmas."), "success")
+
+        if firmar_ambos:
+            # Las dos partes están rellenando el cambio juntas, desde el
+            # mismo dispositivo -- excepción explícita a la firma cruzada
+            # habitual (cada uno firma solo lo suyo desde su cuenta).
+            firmar_documento(documento, current_user, imagen_firma_propia)
+            firmar_documento(documento, companero, imagen_firma_companero)
+            if request.form.get("guardar_firma") and not current_user.firma_guardada:
+                current_user.firma_guardada = imagen_firma_propia
+                db.session.commit()
+            flash(_("Hoja de cambio creada y firmada por los dos. Ya está completa."), "success")
+        else:
+            flash(_("Hoja de cambio creada. Ahora recoge las dos firmas."), "success")
+
         return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
 
     return render_template(
