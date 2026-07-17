@@ -129,6 +129,35 @@ def test_confirmar_simetrico_con_firma_registra_la_firma_de_quien_confirma(clien
     assert ids_firmantes == {ana.id}
 
 
+def test_confirmar_con_guardar_firma_marcado_guarda_la_firma_para_el_futuro(client, db):
+    ana, pedro, match = _setup_match_simetrico(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_ANA, "guardar_firma": "1"})
+
+    db.session.refresh(ana)
+    assert ana.firma_guardada == FIRMA_ANA
+
+
+def test_confirmar_sin_marcar_guardar_firma_no_guarda_nada(client, db):
+    ana, pedro, match = _setup_match_simetrico(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_ANA})
+
+    db.session.refresh(ana)
+    assert ana.firma_guardada is None
+
+
+def test_confirmar_con_guardar_firma_marcado_no_sobrescribe_firma_ya_guardada(client, db):
+    ana, pedro, match = _setup_match_simetrico(db)
+    ana.firma_guardada = "data:image/png;base64,ORIGINAL"
+    db.session.commit()
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_ANA, "guardar_firma": "1"})
+
+    db.session.refresh(ana)
+    assert ana.firma_guardada == "data:image/png;base64,ORIGINAL"
+
+
 def test_confirmar_simetrico_sigue_marcando_confirmado_parcial(client, db):
     ana, pedro, match = _setup_match_simetrico(db)
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})

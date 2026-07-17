@@ -3943,3 +3943,8 @@ msgstr ""
 msgid "Firmar con firma guardada"
 msgstr ""
 
+#: app/templates/documento_cambio/ver.html:85
+#: app/templates/main/dashboard.html:476
+msgid "Guardar esta firma para futuras firmas"
+msgstr ""
+

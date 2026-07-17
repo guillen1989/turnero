@@ -43,6 +43,10 @@ def confirmar(match_id):
         if not ya_firmado:
             firmar_documento(documento, current_user, firma)
 
+        if request.form.get("guardar_firma") and not current_user.firma_guardada:
+            current_user.firma_guardada = firma
+            db.session.commit()
+
     confirmar_participacion(match, current_user.id)
     flash(_("Has confirmado tu parte del cambio."), "success")
     return redirect(url_for("main.index"))

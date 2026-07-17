@@ -155,6 +155,7 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           {% if admite_documento %}
           <input type="hidden" name="firma" class="firma-input">
+          <input type="hidden" name="guardar_firma" class="guardar-firma-input">
           <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalFirma(this.closest('form'))">{{ _('Confirmar') }}</button>
           {% else %}
           <button type="submit" class="btn btn-primary btn-sm">{{ _('Confirmar') }}</button>
@@ -469,6 +470,11 @@
     <p id="firma-aviso" class="firma-aviso" style="display:none">{{ _('Dibuja tu firma antes de continuar.') }}</p>
     {% if current_user.is_authenticated and current_user.firma_guardada %}
     <button type="button" class="btn btn-secondary btn-sm" id="btn-firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Firmar con firma guardada') }}</button>
+    {% elif current_user.is_authenticated %}
+    <label class="firma-guardar-opcion" style="display:block; margin:0.5rem 0; font-size:0.9rem">
+      <input type="checkbox" id="chk-guardar-firma" checked>
+      {{ _('Guardar esta firma para futuras firmas') }}
+    </label>
     {% endif %}
     <div class="modal-actions">
       <button type="button" class="btn btn-secondary btn-sm" onclick="limpiarFirma()">{{ _('Borrar') }}</button>
@@ -570,6 +576,11 @@ document.getElementById('btn-firmar-confirmar').addEventListener('click', functi
   var dataUrl = canvas.toDataURL('image/png');
   if (_formFirmaPendiente) {
     _formFirmaPendiente.querySelector('.firma-input').value = dataUrl;
+    var chkGuardar = document.getElementById('chk-guardar-firma');
+    var guardarInput = _formFirmaPendiente.querySelector('.guardar-firma-input');
+    if (chkGuardar && guardarInput) {
+      guardarInput.value = chkGuardar.checked ? '1' : '';
+    }
     _formFirmaPendiente.submit();
   }
 });

@@ -4126,6 +4126,11 @@ msgstr "Guarda tu firma una vez y podrás usarla en las hojas de cambio sin volv
 msgid "Firmar con firma guardada"
 msgstr "Firmar con firma guardada"
 
+#: app/templates/documento_cambio/ver.html:85
+#: app/templates/main/dashboard.html:476
+msgid "Guardar esta firma para futuras firmas"
+msgstr "Guardar esta firma para futuras firmas"
+
 #~ msgid ""
 #~ "Hola %(nombre)s,\n"
 #~ "\n"

@@ -79,6 +79,11 @@
       <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
       {% if current_user.firma_guardada %}
       <button type="button" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Firmar con firma guardada') }}</button>
+      {% else %}
+      <label class="firma-guardar-opcion" style="display:block; margin:0.5rem 0; font-size:0.9rem">
+        <input type="checkbox" name="guardar_firma" checked>
+        {{ _('Guardar esta firma para futuras firmas') }}
+      </label>
       {% endif %}
       <button type="submit" class="btn btn-primary">{{ _('Guardar firma') }}</button>
     </form>

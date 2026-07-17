@@ -180,6 +180,65 @@ def test_dashboard_modal_firma_muestra_boton_de_firma_guardada_si_el_usuario_tie
     assert f'data-firma="{FIRMA_VALIDA}"' in html
 
 
+def test_dashboard_modal_firma_ofrece_guardarla_si_el_usuario_no_tiene_una(client, db):
+    ana = _usuario_y_login(client, email="ana@test.es")
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = _publicacion(ana, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
+    pub_pedro = _publicacion(pedro, franja, fecha_cedida=date(2026, 9, 2), fecha_aceptada=date(2026, 9, 1))
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_ana.id,
+        turno_cedido_id=pub_ana.turnos_cedidos[0].id, turno_aceptado_id=pub_ana.turnos_aceptados[0].id,
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_pedro.id,
+        turno_cedido_id=pub_pedro.turnos_cedidos[0].id, turno_aceptado_id=pub_pedro.turnos_aceptados[0].id,
+    ))
+    db.session.commit()
+
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert 'id="chk-guardar-firma"' in html
+    assert 'class="guardar-firma-input"' in html
+
+
+def test_dashboard_modal_firma_no_ofrece_guardarla_si_el_usuario_ya_tiene_una(client, db):
+    ana = _usuario_y_login(client, email="ana@test.es")
+    ana.firma_guardada = FIRMA_VALIDA
+    db.session.commit()
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = _publicacion(ana, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
+    pub_pedro = _publicacion(pedro, franja, fecha_cedida=date(2026, 9, 2), fecha_aceptada=date(2026, 9, 1))
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_ana.id,
+        turno_cedido_id=pub_ana.turnos_cedidos[0].id, turno_aceptado_id=pub_ana.turnos_aceptados[0].id,
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_pedro.id,
+        turno_cedido_id=pub_pedro.turnos_cedidos[0].id, turno_aceptado_id=pub_pedro.turnos_aceptados[0].id,
+    ))
+    db.session.commit()
+
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert 'id="chk-guardar-firma"' not in html
+
+
 def test_dashboard_match_asimetrico_confirmar_no_abre_modal_de_firma(client, db):
     """Un match asimétrico (regalo/petición) no admite DocumentoCambio: el
     botón Confirmar sigue enviando el formulario directamente, como antes."""

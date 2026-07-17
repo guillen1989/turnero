@@ -304,6 +304,11 @@ def firmar(documento_id, participante_id):
         return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
 
     firmar_documento(documento, participante.usuario, imagen_firma)
+
+    if request.form.get("guardar_firma") and not current_user.firma_guardada:
+        current_user.firma_guardada = imagen_firma
+        db.session.commit()
+
     flash(_("Firma guardada."), "success")
     return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
 
