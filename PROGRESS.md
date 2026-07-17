@@ -4,9 +4,9 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Pendiente de que el usuario decida entre "Supervisión de cambios" (tarjetas)
-y la nueva "Tabla de cambios" (una fila por cambio, pensada para ordenador)
-antes de retirar una de las dos vistas.
+El usuario decidió quedarse con la vista de tabla: "Supervisión de cambios"
+es ahora la única vista (una fila por cambio), con filtros y navegación
+por mes/año. Sin siguiente paso concreto pendiente en esta fase por ahora.
 
 Ya ejecutado contra el staging real (con confirmación explícita del
 usuario): `scripts/seed_staging.py` (ampliación de UCO) y las variables
@@ -1483,6 +1483,8 @@ mitigación preventiva independiente de la causa.
 - [x] fix(seed-staging): corrige colisión de emails entre la unidad de demostración aislada de producción (`flask seed-demo`, `DEMO_ENABLED=true` ya activo en staging) y la ampliación de UCO·La Paz·Enfermería — ambas reutilizaban los mismos `DEMO_ACCOUNTS`/`BOT_ACCOUNTS` de `app/services/demo.py`, y como `usuario.email` es único a nivel de toda la BD, `ampliar_uco_la_paz()` reventaba con un `IntegrityError` en cuanto la unidad demo ya existía (confirmado contra el staging real: la unidad "Urgencias de Demostración" ya tenía sembrados `demo1@turnero.com`/`bot.maria@demo.turnero.com`, y UCO seguía solo con sus 16 usuarios reales, sin rastro de la ampliación) · `sembrar_contenido_bot()` ahora acepta `cuentas_demo`/`cuentas_bot` opcionales · `scripts/seed_staging.py` define `UCO_DEMO_ACCOUNTS`/`UCO_BOT_ACCOUNTS` con emails propios (`uco.<email-base>@demo.turnero.com`) · test de regresión que ejecuta `reset_demo()` + `ampliar_uco_la_paz()` en la misma BD · 997 tests passing
 
 - [x] feat(documento-cambio): "Tabla de cambios" — vista alternativa de `/documentos-cambio/supervisora` pensada para ordenador · una fila por hoja de cambio, columnas atómicas (Nº, fecha, cada trabajador con su cede/recibe por separado, firmas, factibilidad, decisión) y botones Ver/PDF al final de la fila · nueva ruta `GET /documentos-cambio/supervisora/tabla` (misma consulta que `supervisora`, extraída a `_documentos_del_grupo_supervisora()`) · nuevo `.container--wide` (`{% block main_class %}`) para que la tabla no quede encajonada en los 640px del `.container` normal · `.table-scroll` con scroll horizontal si aún así no cabe · enlace cruzado entre ambas vistas ("Ver como tabla"/"Ver como tarjetas") — no se retira `supervisora.html`, coexisten mientras el usuario decide cuál prefiere · verificado visualmente con Playwright (ambas vistas, con datos en los 4 estados) · 3 tests nuevos · 1000 tests passing
+
+- [x] feat(documento-cambio): "Supervisión de cambios" pasa a ser una única vista de tabla (se retira la de tarjetas, `supervisora_tabla.html` se fusiona en `supervisora.html`) con filtros y navegación por mes/año · **regla nueva de negocio**: los cambios `pendiente_firmas` (aún sin las dos firmas) no le han "llegado" todavía a la supervisora — quedan excluidos de raíz de la consulta, no solo ocultos por un filtro; solo se listan documentos `completo` · filtros combinables por querystring (GET, bookmarkable): mes/año (por defecto el mes en curso), fecha exacta (si se indica, sustituye a mes/año), trabajador implicado (uno o dos — con dos, exige que sean justamente esas dos personas del mismo cambio), turno afectado (franja horaria — combinado con fecha exacta identifica un turno concreto: mismo día y misma franja, no dos condiciones independientes), estado de decisión (pendiente de decisión / aceptado / rechazado), factibilidad, número de hoja · todos los filtros implementados con subconsultas independientes (`DocumentoCambio.id.in_(...)`) en vez de un único JOIN con `ParticipanteDocumentoCambio`, para no acoplar entre sí condiciones que pueden recaer en participantes distintos del mismo documento · 9 tests nuevos/reescritos · 974 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

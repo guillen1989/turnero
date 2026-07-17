@@ -1,55 +1,156 @@
 {% extends "base.html" %}
 
 {% block title %}{{ _('Supervisión de cambios') }} — {{ _('Turnero') }}{% endblock %}
+{% block main_class %}container container--wide{% endblock %}
 
 {% block content %}
-<div class="form-container">
-  <div class="admin-section-header">
-    <h1>{{ _('Supervisión de cambios') }}</h1>
-    <a href="{{ url_for('documento_cambio.supervisora_tabla') }}" class="btn btn-secondary btn-sm">{{ _('Ver como tabla') }}</a>
-  </div>
-  <p>{{ _('Todas las hojas de cambio de tu grupo de intercambio.') }}</p>
-
-  {% if documentos %}
-  <section class="turnos-section">
-    {% for documento in documentos %}
-    <div class="card">
-      <strong>{{ _('Nº %(numero)s', numero=documento.numero_unidad) }}</strong>
-      — {{ documento.fecha_creacion.strftime('%d/%m/%Y') }}
-      <br>
-      {% for p in documento.participantes %}
-      {{ p.usuario.nombre }}: {{ _('cede') }} {{ p.turno_cede_franja.nombre }} {{ p.turno_cede_fecha.strftime('%d/%m/%Y') }},
-      {{ _('recibe') }} {{ p.turno_recibe_franja.nombre }} {{ p.turno_recibe_fecha.strftime('%d/%m/%Y') }}<br>
-      {% endfor %}
-      {% if documento.estado == 'completo' %}
-        <span class="badge-success">{{ _('Completo') }}</span>
-      {% else %}
-        <span class="badge-draft">{{ _('Pendiente de firma') }}</span>
-      {% endif %}
-      {% if documento.factibilidad_estado == 'factible' %}
-        <span class="badge-success">{{ _('Factible') }}</span>
-      {% elif documento.factibilidad_estado == 'no_factible' %}
-        <span class="badge-draft">{{ _('No factible') }}</span>
-      {% endif %}
-      {% if documento.estado == 'completo' %}
-        {% if documento.decision_supervisora == 'autorizado' %}
-          <span class="badge-success">{{ _('Autorizado') }}</span>
-        {% elif documento.decision_supervisora == 'denegado' %}
-          <span class="badge-draft">{{ _('Denegado') }}</span>
-        {% else %}
-          <span class="badge-draft">{{ _('Pendiente de decisión') }}</span>
-        {% endif %}
-      {% endif %}
-      <br>
-      <a href="{{ url_for('documento_cambio.ver', documento_id=documento.id) }}" class="btn btn-secondary btn-sm">{{ _('Ver') }}</a>
-      {% if documento.estado == 'completo' %}
-      <a href="{{ url_for('documento_cambio.pdf', documento_id=documento.id) }}" class="btn btn-secondary btn-sm">{{ _('PDF') }}</a>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </section>
-  {% else %}
-  <p class="empty-state">{{ _('Todavía no hay ninguna hoja de cambio en tu grupo de intercambio.') }}</p>
-  {% endif %}
+<div class="admin-section-header">
+  <h1>{{ _('Supervisión de cambios') }}</h1>
 </div>
+<p>{{ _('Hojas de cambio ya firmadas por las dos partes, de tu grupo de intercambio.') }}</p>
+
+{% set meses = [
+  (1, _('Enero')), (2, _('Febrero')), (3, _('Marzo')), (4, _('Abril')),
+  (5, _('Mayo')), (6, _('Junio')), (7, _('Julio')), (8, _('Agosto')),
+  (9, _('Septiembre')), (10, _('Octubre')), (11, _('Noviembre')), (12, _('Diciembre')),
+] %}
+
+<form method="GET" class="cambios-filtro">
+  <div class="cambios-filtro-fields">
+    <div class="form-group">
+      <label for="mes">{{ _('Mes') }}</label>
+      <select name="mes" id="mes">
+        {% for num, nombre in meses %}
+        <option value="{{ num }}" {% if filtros.mes == num %}selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="anyo">{{ _('Año') }}</label>
+      <input type="number" name="anyo" id="anyo" value="{{ filtros.anyo }}" min="2020" max="2100">
+    </div>
+    <div class="form-group">
+      <label for="fecha">{{ _('Fecha exacta') }}</label>
+      <input type="date" name="fecha" id="fecha" value="{{ filtros.fecha }}">
+    </div>
+    <div class="form-group">
+      <label for="franja_id">{{ _('Turno afectado') }}</label>
+      <select name="franja_id" id="franja_id">
+        <option value="">{{ _('Todos') }}</option>
+        {% for franja in franjas %}
+        <option value="{{ franja.id }}" {% if filtros.franja_id == franja.id %}selected{% endif %}>{{ franja.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <p class="form-hint">{{ _('Si indicas una fecha exacta, se usa en vez del mes/año.') }}</p>
+
+  <div class="cambios-filtro-fields">
+    <div class="form-group">
+      <label for="trabajador1_id">{{ _('Trabajador') }}</label>
+      <select name="trabajador1_id" id="trabajador1_id">
+        <option value="">{{ _('Cualquiera') }}</option>
+        {% for u in trabajadores %}
+        <option value="{{ u.id }}" {% if filtros.trabajador1_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="trabajador2_id">{{ _('Y también') }}</label>
+      <select name="trabajador2_id" id="trabajador2_id">
+        <option value="">{{ _('Sin segundo trabajador') }}</option>
+        {% for u in trabajadores %}
+        <option value="{{ u.id }}" {% if filtros.trabajador2_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="estado_decision">{{ _('Estado') }}</label>
+      <select name="estado_decision" id="estado_decision">
+        <option value="">{{ _('Todos') }}</option>
+        <option value="pendiente" {% if filtros.estado_decision == 'pendiente' %}selected{% endif %}>{{ _('Pendiente de decisión') }}</option>
+        <option value="autorizado" {% if filtros.estado_decision == 'autorizado' %}selected{% endif %}>{{ _('Aceptado') }}</option>
+        <option value="denegado" {% if filtros.estado_decision == 'denegado' %}selected{% endif %}>{{ _('Rechazado') }}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="factibilidad">{{ _('Factibilidad') }}</label>
+      <select name="factibilidad" id="factibilidad">
+        <option value="">{{ _('Todas') }}</option>
+        <option value="factible" {% if filtros.factibilidad == 'factible' %}selected{% endif %}>{{ _('Factible') }}</option>
+        <option value="no_factible" {% if filtros.factibilidad == 'no_factible' %}selected{% endif %}>{{ _('No factible') }}</option>
+        <option value="no_verificado" {% if filtros.factibilidad == 'no_verificado' %}selected{% endif %}>{{ _('Sin verificar') }}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="numero">{{ _('Nº de hoja') }}</label>
+      <input type="number" name="numero" id="numero" value="{{ filtros.numero or '' }}" min="1">
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-sm">{{ _('Filtrar') }}</button>
+  <a href="{{ url_for('documento_cambio.supervisora') }}" class="btn btn-secondary btn-sm">{{ _('Limpiar filtros') }}</a>
+</form>
+
+{% if documentos %}
+<div class="table-scroll">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>{{ _('Nº') }}</th>
+        <th>{{ _('Fecha') }}</th>
+        <th>{{ _('Trabajador 1') }}</th>
+        <th>{{ _('Cede') }}</th>
+        <th>{{ _('Recibe') }}</th>
+        <th>{{ _('Trabajador 2') }}</th>
+        <th>{{ _('Cede') }}</th>
+        <th>{{ _('Recibe') }}</th>
+        <th>{{ _('Factibilidad') }}</th>
+        <th>{{ _('Estado') }}</th>
+        <th>{{ _('Acciones') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for documento in documentos %}
+      {% set p1 = documento.participantes[0] %}
+      {% set p2 = documento.participantes[1] if documento.participantes|length > 1 else None %}
+      <tr>
+        <td>{{ documento.numero_unidad }}</td>
+        <td>{{ documento.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+        <td>{{ p1.usuario.nombre }}</td>
+        <td>{{ p1.turno_cede_franja.nombre }} {{ p1.turno_cede_fecha.strftime('%d/%m/%Y') }}</td>
+        <td>{{ p1.turno_recibe_franja.nombre }} {{ p1.turno_recibe_fecha.strftime('%d/%m/%Y') }}</td>
+        <td>{{ p2.usuario.nombre if p2 else '—' }}</td>
+        <td>{{ p2.turno_cede_franja.nombre ~ ' ' ~ p2.turno_cede_fecha.strftime('%d/%m/%Y') if p2 else '—' }}</td>
+        <td>{{ p2.turno_recibe_franja.nombre ~ ' ' ~ p2.turno_recibe_fecha.strftime('%d/%m/%Y') if p2 else '—' }}</td>
+        <td>
+          {% if documento.factibilidad_estado == 'factible' %}
+            <span class="badge-success">{{ _('Factible') }}</span>
+          {% elif documento.factibilidad_estado == 'no_factible' %}
+            <span class="badge-draft">{{ _('No factible') }}</span>
+          {% else %}
+            <span class="badge-draft">{{ _('Sin verificar') }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if documento.decision_supervisora == 'autorizado' %}
+            <span class="badge-success">{{ _('Aceptado') }}</span>
+          {% elif documento.decision_supervisora == 'denegado' %}
+            <span class="badge-draft">{{ _('Rechazado') }}</span>
+          {% else %}
+            <span class="badge-draft">{{ _('Pendiente de decisión') }}</span>
+          {% endif %}
+        </td>
+        <td class="admin-actions">
+          <a href="{{ url_for('documento_cambio.ver', documento_id=documento.id) }}" class="btn btn-secondary btn-xs">{{ _('Ver') }}</a>
+          <a href="{{ url_for('documento_cambio.pdf', documento_id=documento.id) }}" class="btn btn-secondary btn-xs">{{ _('PDF') }}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty-state">{{ _('No hay hojas de cambio completas que coincidan con estos filtros.') }}</p>
+{% endif %}
 {% endblock %}

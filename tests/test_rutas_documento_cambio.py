@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, time, timedelta
 from app.extensions import db
 from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario
 
@@ -388,7 +388,7 @@ def test_lista_muestra_documentos_donde_soy_participante(db, client):
     assert b"Juan Rodr\xc3\xadguez" not in resp.data
 
 
-def test_supervisora_ve_todos_los_cambios_de_su_grupo(db, client):
+def test_supervisora_ve_los_cambios_completos_de_su_grupo(db, client):
     crear_usuario, manyana, tarde = _setup(db, "ii")
     claudia = crear_usuario("Claudia Pérez", "claudiaii@h.es")
     juan = crear_usuario("Juan Rodríguez", "juanii@h.es")
@@ -396,21 +396,17 @@ def test_supervisora_ve_todos_los_cambios_de_su_grupo(db, client):
     supervisora.es_supervisora = True
     db.session.commit()
 
-    _login(client, claudia.email)
-    client.post("/documentos-cambio/nuevo", data={
-        "companero_id": juan.id,
-        "turno_cede_fecha": "2026-07-07",
-        "turno_cede_franja_id": manyana.id,
-        "turno_recibe_fecha": "2026-07-28",
-        "turno_recibe_franja_id": manyana.id,
-    })
-    client.get("/auth/logout")
+    fecha_este_mes, _ = _mes_actual_y_siguiente()
+    doc = _crear_documento_completo(db, claudia, juan, manyana, tarde,
+                                     fecha_este_mes, fecha_este_mes + timedelta(days=1))
 
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora")
     assert resp.status_code == 200
+    assert f"<td>{doc.numero_unidad}</td>".encode() in resp.data
     assert b"Claudia P\xc3\xa9rez" in resp.data
     assert b"Juan Rodr\xc3\xadguez" in resp.data
+    assert "<table".encode() in resp.data
 
 
 def test_no_supervisora_no_puede_ver_la_pagina_de_supervisora(db, client):
@@ -422,55 +418,232 @@ def test_no_supervisora_no_puede_ver_la_pagina_de_supervisora(db, client):
     assert resp.status_code == 403
 
 
-# --- Tabla de cambios (vista alternativa de supervisora, una fila por cambio) ---
+# --- Supervisión de cambios: filtros ---
 
-def test_supervisora_tabla_ve_todos_los_cambios_de_su_grupo(db, client):
-    crear_usuario, manyana, tarde = _setup(db, "kk")
-    claudia = crear_usuario("Claudia Pérez", "claudiakk@h.es")
-    juan = crear_usuario("Juan Rodríguez", "juankk@h.es")
-    supervisora = crear_usuario("Marta Supervisora", "martakk@h.es")
+def _mes_actual_y_siguiente():
+    hoy = date.today()
+    fecha_este_mes = date(hoy.year, hoy.month, 1)
+    anyo_sig, mes_sig = (hoy.year + 1, 1) if hoy.month == 12 else (hoy.year, hoy.month + 1)
+    fecha_mes_siguiente = date(anyo_sig, mes_sig, 1)
+    return fecha_este_mes, fecha_mes_siguiente
+
+
+def test_supervisora_no_ve_cambios_pendientes_de_firma(db, client):
+    """Un cambio con alguna firma pendiente todavía no le ha 'llegado' a la
+    supervisora -- no debe aparecer en su lista ni ser accionable."""
+    from app.services.documento_cambio import crear_documento_cambio
+
+    crear_usuario, manyana, tarde = _setup(db, "nn")
+    claudia = crear_usuario("Claudia Pérez", "claudiann@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juann@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martann@h.es")
     supervisora.es_supervisora = True
     db.session.commit()
 
-    _login(client, claudia.email)
-    client.post("/documentos-cambio/nuevo", data={
-        "companero_id": juan.id,
-        "turno_cede_fecha": "2026-07-07",
-        "turno_cede_franja_id": manyana.id,
-        "turno_recibe_fecha": "2026-07-28",
-        "turno_recibe_franja_id": manyana.id,
-    })
-    client.get("/auth/logout")
+    fecha_este_mes, _fecha_sig = _mes_actual_y_siguiente()
+    doc = crear_documento_cambio(
+        claudia, juan, fecha_este_mes, manyana.id,
+        fecha_este_mes + timedelta(days=7), tarde.id,
+    )
+    assert doc.estado == "borrador"
 
     _login(client, supervisora.email)
-    resp = client.get("/documentos-cambio/supervisora/tabla")
-    assert resp.status_code == 200
-    assert b"Claudia P\xc3\xa9rez" in resp.data
-    assert b"Juan Rodr\xc3\xadguez" in resp.data
-    assert "<table".encode() in resp.data
+    resp = client.get("/documentos-cambio/supervisora")
+    assert f"<td>{doc.numero_unidad}</td>".encode() not in resp.data
+    assert "No hay hojas de cambio completas".encode("utf-8") in resp.data
 
 
-def test_no_supervisora_no_puede_ver_la_tabla_de_cambios(db, client):
-    crear_usuario, manyana, tarde = _setup(db, "ll")
-    claudia = crear_usuario("Claudia Pérez", "claudiall@h.es")
-    _login(client, claudia.email)
-
-    resp = client.get("/documentos-cambio/supervisora/tabla")
-    assert resp.status_code == 403
-
-
-def test_paginas_supervisora_se_enlazan_entre_si(db, client):
-    crear_usuario, manyana, tarde = _setup(db, "mm")
-    supervisora = crear_usuario("Marta Supervisora", "martamm@h.es")
+def test_filtro_mes_por_defecto_es_el_mes_en_curso(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "oo")
+    claudia = crear_usuario("Claudia Pérez", "claudiaoo@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanoo@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaoo@h.es")
     supervisora.es_supervisora = True
     db.session.commit()
+
+    fecha_este_mes, fecha_mes_siguiente = _mes_actual_y_siguiente()
+    doc_este_mes = _crear_documento_completo(db, claudia, juan, manyana, tarde,
+                                              fecha_este_mes, fecha_este_mes + timedelta(days=3))
+    doc_mes_siguiente = _crear_documento_completo(db, claudia, juan, manyana, tarde,
+                                                   fecha_mes_siguiente, fecha_mes_siguiente + timedelta(days=3))
+
     _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora")
+    assert f"<td>{doc_este_mes.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>{doc_mes_siguiente.numero_unidad}</td>".encode() not in resp.data
 
-    resp_tarjetas = client.get("/documentos-cambio/supervisora")
-    assert "/documentos-cambio/supervisora/tabla".encode() in resp_tarjetas.data
 
-    resp_tabla = client.get("/documentos-cambio/supervisora/tabla")
-    assert b'href="/documentos-cambio/supervisora"' in resp_tabla.data
+def test_filtro_mes_anyo_navega_a_otro_mes(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "pp")
+    claudia = crear_usuario("Claudia Pérez", "claudiapp@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanpp@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martapp@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, fecha_mes_siguiente = _mes_actual_y_siguiente()
+    doc = _crear_documento_completo(db, claudia, juan, manyana, tarde,
+                                     fecha_mes_siguiente, fecha_mes_siguiente + timedelta(days=3))
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora",
+                       query_string={"mes": fecha_mes_siguiente.month, "anyo": fecha_mes_siguiente.year})
+    assert f"<td>{doc.numero_unidad}</td>".encode() in resp.data
+
+
+def test_filtro_fecha_exacta_ignora_mes_anyo(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "qq")
+    claudia = crear_usuario("Claudia Pérez", "claudiaqq@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanqq@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaqq@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, fecha_mes_siguiente = _mes_actual_y_siguiente()
+    doc = _crear_documento_completo(db, claudia, juan, manyana, tarde,
+                                     fecha_mes_siguiente, fecha_mes_siguiente + timedelta(days=10))
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora",
+                       query_string={"fecha": fecha_mes_siguiente.isoformat()})
+    assert f"<td>{doc.numero_unidad}</td>".encode() in resp.data
+
+
+def test_filtro_por_un_trabajador(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "rr")
+    claudia = crear_usuario("Claudia Pérez", "claudiarr@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanrr@h.es")
+    ana = crear_usuario("Ana Gómez", "anarr@h.es")
+    luis = crear_usuario("Luis Ibáñez", "luisrr@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martarr@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, _ = _mes_actual_y_siguiente()
+    doc_claudia = _crear_documento_completo(db, claudia, juan, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=1))
+    doc_ana = _crear_documento_completo(db, ana, luis, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=2))
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora", query_string={"trabajador1_id": claudia.id})
+    assert f"<td>{doc_claudia.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>{doc_ana.numero_unidad}</td>".encode() not in resp.data
+
+
+def test_filtro_por_dos_trabajadores_exige_el_cambio_exacto_entre_ambos(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "ss")
+    claudia = crear_usuario("Claudia Pérez", "claudiass@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanss@h.es")
+    ana = crear_usuario("Ana Gómez", "anass@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martass@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, _ = _mes_actual_y_siguiente()
+    doc_claudia_juan = _crear_documento_completo(db, claudia, juan, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=1))
+    doc_claudia_ana = _crear_documento_completo(db, claudia, ana, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=2))
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora",
+                       query_string={"trabajador1_id": claudia.id, "trabajador2_id": juan.id})
+    assert f"<td>{doc_claudia_juan.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>{doc_claudia_ana.numero_unidad}</td>".encode() not in resp.data
+
+
+def test_filtro_por_turno_afectado(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "tt")
+    claudia = crear_usuario("Claudia Pérez", "claudiatt@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juantt@h.es")
+    ana = crear_usuario("Ana Gómez", "anatt@h.es")
+    luis = crear_usuario("Luis Ibáñez", "luistt@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martatt@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, _ = _mes_actual_y_siguiente()
+    doc_manyana = _crear_documento_completo(db, claudia, juan, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=1))
+    doc_tarde = _crear_documento_completo(db, ana, luis, tarde, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=2))
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora", query_string={"franja_id": manyana.id})
+    assert f"<td>{doc_manyana.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>{doc_tarde.numero_unidad}</td>".encode() not in resp.data
+
+
+def test_filtro_por_estado_decision(db, client):
+    from app.services.documento_cambio import autorizar_documento, denegar_documento
+
+    crear_usuario, manyana, tarde = _setup(db, "uu")
+    claudia = crear_usuario("Claudia Pérez", "claudiauu@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanuu@h.es")
+    ana = crear_usuario("Ana Gómez", "anauu@h.es")
+    luis = crear_usuario("Luis Ibáñez", "luisuu@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martauu@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, _ = _mes_actual_y_siguiente()
+    doc_a = _crear_documento_completo(db, claudia, juan, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=1))
+    doc_b = _crear_documento_completo(db, ana, luis, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=2))
+    autorizar_documento(doc_a, supervisora)
+    denegar_documento(doc_b, supervisora, "motivo")
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora", query_string={"estado_decision": "autorizado"})
+    assert f"<td>{doc_a.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>{doc_b.numero_unidad}</td>".encode() not in resp.data
+
+
+def test_filtro_por_factibilidad(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "vv")
+    claudia = crear_usuario("Claudia Pérez", "claudiavv@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanvv@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martavv@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, _ = _mes_actual_y_siguiente()
+    doc = _crear_documento_completo(db, claudia, juan, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=1))
+    assert doc.factibilidad_estado == "no_verificado"
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora", query_string={"factibilidad": "no_verificado"})
+    assert f"<td>{doc.numero_unidad}</td>".encode() in resp.data
+    resp_factible = client.get("/documentos-cambio/supervisora", query_string={"factibilidad": "factible"})
+    assert f"<td>{doc.numero_unidad}</td>".encode() not in resp_factible.data
+
+
+def test_filtro_por_numero_de_hoja(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "ww")
+    claudia = crear_usuario("Claudia Pérez", "claudiaww@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanww@h.es")
+    ana = crear_usuario("Ana Gómez", "anaww@h.es")
+    luis = crear_usuario("Luis Ibáñez", "luisww@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaww@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, _ = _mes_actual_y_siguiente()
+    doc_a = _crear_documento_completo(db, claudia, juan, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=1))
+    doc_b = _crear_documento_completo(db, ana, luis, manyana, tarde, fecha_este_mes, fecha_este_mes + timedelta(days=2))
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora", query_string={"numero": doc_a.numero_unidad})
+    assert f"<td>{doc_a.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>{doc_b.numero_unidad}</td>".encode() not in resp.data
+
+
+def _crear_documento_completo(db, creado_por, companero, franja_cede, franja_recibe, fecha_cede, fecha_recibe):
+    """Crea y firma (con las dos partes) un documento directamente vía
+    servicio, sin pasar por el cliente HTTP -- útil cuando se necesitan
+    fechas/franjas concretas para probar filtros."""
+    from app.services.documento_cambio import crear_documento_cambio, firmar_documento
+
+    documento = crear_documento_cambio(
+        creado_por, companero, fecha_cede, franja_cede.id, fecha_recibe, franja_recibe.id,
+    )
+    firmar_documento(documento, creado_por, _FIRMA_PNG)
+    firmar_documento(documento, companero, _FIRMA_PNG)
+    return documento
 
 
 def _crear_documento_completo_via_client(client, claudia, juan, manyana):

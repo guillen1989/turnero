@@ -1,8 +1,10 @@
+import calendar
 from datetime import date, datetime
 
 from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
+from sqlalchemy import and_, or_
 
 from app.models import DocumentoCambio, FranjaHoraria, ParticipanteDocumentoCambio, Unidad, Usuario
 from app.extensions import db
@@ -13,6 +15,12 @@ from app.services.documento_cambio import (
 from app.services.registro import crear_franjas_default
 
 bp = Blueprint("documento_cambio", __name__, url_prefix="/documentos-cambio")
+
+# Decisiones de la supervisora que tienen sentido como filtro: los cambios
+# `pendiente_firmas` ni siquiera se ofrecen, no han "llegado" todavía a la
+# supervisora (nadie ha completado las dos firmas).
+_ESTADOS_DECISION_FILTRO = ("pendiente", "autorizado", "denegado")
+_FACTIBILIDAD_FILTRO = ("factible", "no_factible", "no_verificado")
 
 
 def _companeros_disponibles():
@@ -66,18 +74,120 @@ def lista():
     return render_template("documento_cambio/lista.html", documentos=documentos)
 
 
-def _documentos_del_grupo_supervisora():
-    grupo_id = current_user.grupo_intercambio.id
+def _usuarios_del_grupo(grupo_id):
     return (
-        DocumentoCambio.query
-        .join(ParticipanteDocumentoCambio, ParticipanteDocumentoCambio.documento_id == DocumentoCambio.id)
+        Usuario.query
+        .join(Unidad, Usuario.unidad_id == Unidad.id)
+        .filter(Unidad.grupo_intercambio_id == grupo_id)
+        .order_by(Usuario.nombre)
+        .all()
+    )
+
+
+def _subquery_ids_por_usuario_del_grupo(grupo_id):
+    return (
+        db.session.query(ParticipanteDocumentoCambio.documento_id)
         .join(Usuario, ParticipanteDocumentoCambio.usuario_id == Usuario.id)
         .join(Unidad, Usuario.unidad_id == Unidad.id)
         .filter(Unidad.grupo_intercambio_id == grupo_id)
-        .distinct()
-        .order_by(DocumentoCambio.id.desc())
-        .all()
     )
+
+
+def _subquery_ids_por_usuario(usuario_id):
+    return db.session.query(ParticipanteDocumentoCambio.documento_id).filter(
+        ParticipanteDocumentoCambio.usuario_id == usuario_id
+    )
+
+
+def _subquery_ids_por_fecha_y_franja(rango_inicio, rango_fin, franja_id=None):
+    """IDs de documentos con al menos un participante cuyo turno cedido o
+    recibido cae dentro de [rango_inicio, rango_fin] -- y, si se indica
+    franja_id, que además sea justo esa franja (día+turno identifican un
+    turno concreto, no dos filtros independientes)."""
+    if franja_id:
+        condicion = or_(
+            and_(
+                ParticipanteDocumentoCambio.turno_cede_fecha >= rango_inicio,
+                ParticipanteDocumentoCambio.turno_cede_fecha <= rango_fin,
+                ParticipanteDocumentoCambio.turno_cede_franja_id == franja_id,
+            ),
+            and_(
+                ParticipanteDocumentoCambio.turno_recibe_fecha >= rango_inicio,
+                ParticipanteDocumentoCambio.turno_recibe_fecha <= rango_fin,
+                ParticipanteDocumentoCambio.turno_recibe_franja_id == franja_id,
+            ),
+        )
+    else:
+        condicion = or_(
+            and_(
+                ParticipanteDocumentoCambio.turno_cede_fecha >= rango_inicio,
+                ParticipanteDocumentoCambio.turno_cede_fecha <= rango_fin,
+            ),
+            and_(
+                ParticipanteDocumentoCambio.turno_recibe_fecha >= rango_inicio,
+                ParticipanteDocumentoCambio.turno_recibe_fecha <= rango_fin,
+            ),
+        )
+    return db.session.query(ParticipanteDocumentoCambio.documento_id).filter(condicion)
+
+
+def _filtros_supervisora_desde_request():
+    """Filtros de la tabla de cambios a partir de la query string. mes/año
+    por defecto al mes en curso."""
+    hoy = date.today()
+    return {
+        "anyo": request.args.get("anyo", type=int) or hoy.year,
+        "mes": request.args.get("mes", type=int) or hoy.month,
+        "fecha": request.args.get("fecha", "").strip(),
+        "trabajador1_id": request.args.get("trabajador1_id", type=int),
+        "trabajador2_id": request.args.get("trabajador2_id", type=int),
+        "franja_id": request.args.get("franja_id", type=int),
+        "estado_decision": request.args.get("estado_decision", "").strip(),
+        "factibilidad": request.args.get("factibilidad", "").strip(),
+        "numero": request.args.get("numero", type=int),
+    }
+
+
+def _documentos_del_grupo_supervisora(filtros):
+    """Hojas de cambio completas (dos firmas) del grupo de intercambio de la
+    supervisora, aplicando los filtros dados. Los cambios `pendiente_firmas`
+    quedan siempre fuera: todavía no le han llegado a la supervisora."""
+    grupo_id = current_user.grupo_intercambio.id
+    query = DocumentoCambio.query.filter(
+        DocumentoCambio.estado == "completo",
+        DocumentoCambio.id.in_(_subquery_ids_por_usuario_del_grupo(grupo_id)),
+    )
+
+    fecha = None
+    if filtros["fecha"]:
+        try:
+            fecha = date.fromisoformat(filtros["fecha"])
+        except ValueError:
+            fecha = None
+
+    if fecha:
+        rango_inicio = rango_fin = fecha
+    else:
+        _, ultimo_dia = calendar.monthrange(filtros["anyo"], filtros["mes"])
+        rango_inicio = date(filtros["anyo"], filtros["mes"], 1)
+        rango_fin = date(filtros["anyo"], filtros["mes"], ultimo_dia)
+
+    query = query.filter(DocumentoCambio.id.in_(
+        _subquery_ids_por_fecha_y_franja(rango_inicio, rango_fin, filtros["franja_id"])
+    ))
+
+    if filtros["trabajador1_id"]:
+        query = query.filter(DocumentoCambio.id.in_(_subquery_ids_por_usuario(filtros["trabajador1_id"])))
+    if filtros["trabajador2_id"]:
+        query = query.filter(DocumentoCambio.id.in_(_subquery_ids_por_usuario(filtros["trabajador2_id"])))
+    if filtros["estado_decision"] in _ESTADOS_DECISION_FILTRO:
+        query = query.filter(DocumentoCambio.decision_supervisora == filtros["estado_decision"])
+    if filtros["factibilidad"] in _FACTIBILIDAD_FILTRO:
+        query = query.filter(DocumentoCambio.factibilidad_estado == filtros["factibilidad"])
+    if filtros["numero"]:
+        query = query.filter(DocumentoCambio.numero_unidad == filtros["numero"])
+
+    return query.order_by(DocumentoCambio.id.desc()).all()
 
 
 @bp.get("/supervisora")
@@ -85,21 +195,15 @@ def _documentos_del_grupo_supervisora():
 def supervisora():
     if not current_user.es_supervisora:
         abort(403)
-    documentos = _documentos_del_grupo_supervisora()
-    return render_template("documento_cambio/supervisora.html", documentos=documentos)
-
-
-@bp.get("/supervisora/tabla")
-@login_required
-def supervisora_tabla():
-    """Misma información que `supervisora`, en formato tabla (una fila por
-    hoja de cambio) pensado para pantallas de ordenador. Vista alternativa
-    mientras se decide cuál sustituye a la otra -- no se ha retirado
-    `supervisora.html`."""
-    if not current_user.es_supervisora:
-        abort(403)
-    documentos = _documentos_del_grupo_supervisora()
-    return render_template("documento_cambio/supervisora_tabla.html", documentos=documentos)
+    grupo_id = current_user.grupo_intercambio.id
+    filtros = _filtros_supervisora_desde_request()
+    documentos = _documentos_del_grupo_supervisora(filtros)
+    return render_template(
+        "documento_cambio/supervisora.html",
+        documentos=documentos, filtros=filtros,
+        trabajadores=_usuarios_del_grupo(grupo_id),
+        franjas=_franjas_disponibles(),
+    )
 
 
 @bp.route("/nuevo", methods=["GET", "POST"])
