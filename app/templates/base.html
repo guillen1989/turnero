@@ -81,7 +81,7 @@
     <button class="pwa-banner-close" onclick="cerrarBannerIOS()" aria-label="{{ _('Cerrar') }}">&#x2715;</button>
   </div>
 
-  <main class="container">
+  <main class="{% block main_class %}container{% endblock %}">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <ul class="flash-messages">

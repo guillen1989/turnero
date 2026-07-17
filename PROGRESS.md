@@ -4,12 +4,13 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Pendiente de ejecutar contra el staging real: `scripts/seed_staging.py`
-(la parte de ampliación de UCO) y fijar en Railway (entorno staging, no
-producción) las variables `DEMO_SUPERVISORA_LOGIN_EMAIL`/`_PASSWORD` para
-que aparezca la elección trabajador/supervisora en "Probar con una cuenta
-demo". Se hará solo con confirmación explícita del usuario (son escrituras
-sobre infraestructura real, aunque sea de staging).
+Pendiente de que el usuario decida entre "Supervisión de cambios" (tarjetas)
+y la nueva "Tabla de cambios" (una fila por cambio, pensada para ordenador)
+antes de retirar una de las dos vistas.
+
+Ya ejecutado contra el staging real (con confirmación explícita del
+usuario): `scripts/seed_staging.py` (ampliación de UCO) y las variables
+`DEMO_SUPERVISORA_LOGIN_EMAIL`/`_PASSWORD` en Railway (entorno staging).
 
 Antes de eso: retomado el paso 10 (enganche con el motor de matching),
 parcialmente: al confirmar un match directo **simétrico** (cambio↔cambio:
@@ -1480,6 +1481,8 @@ mitigación preventiva independiente de la causa.
 - [x] chore(seed-staging): `scripts/seed_staging.py` amplía de forma aditiva la unidad real UCO·Hospital Universitario La Paz·Enfermería (además de crear su propio conjunto de usuarios como hasta ahora) · `app/services/demo.py` refactorizado para extraer `sembrar_contenido_bot(unidad, categoria, incluir_planillas=True)` reutilizable (antes solo servía a la unidad de demostración aislada) · `BOT_ACCOUNTS` pasa a público · nuevo generador puro `generar_rota()` (14 plantillas semanales `_COMBOS_ROTA`/`_PLANTILLA_ROTA`, 7 fases × 2 variantes de noche) que cubre julio-agosto-septiembre 2026 garantizando cobertura diaria de las 5 franjas, descanso obligatorio (`EstadoDiaPlanilla`+`SalienteDia`) al día siguiente de Noche/Nocturno 12h, y 2 días libres/semana por trabajador · supervisora `supervisora.uco@demo.turnero.com` (sustituye a cualquier supervisora previa del mismo grupo de intercambio, salvo que ya tenga hojas de cambio decididas referenciándola) · hojas de cambio (agosto-septiembre 2026) en sus 4 estados posibles (pendiente de firma / completa pendiente de la supervisora / autorizada / denegada) para cada usuario (>=2), emparejando usuarios a "media vuelta" de distancia en el roster (emparejar contiguos fallaba: comparten fase de rota, solo difieren en la variante de turno nocturno, así que nunca hay hueco de intercambio) · usa los servicios reales (`crear_documento_cambio`/`firmar_documento`/`autorizar_documento`/`denegar_documento`) envueltos en `current_app.test_request_context()` (necesario fuera de una request real: Flask-Babel/`url_for` lo requieren) · nunca borra ni toca usuarios ya existentes de esa unidad (aditivo e idempotente, con su propia comprobación independiente de `_ya_sembrado()`) · 18 tests nuevos (`tests/test_seed_staging_rota.py`, `tests/test_seed_staging_uco.py`) · 996 tests passing
 
 - [x] fix(seed-staging): corrige colisión de emails entre la unidad de demostración aislada de producción (`flask seed-demo`, `DEMO_ENABLED=true` ya activo en staging) y la ampliación de UCO·La Paz·Enfermería — ambas reutilizaban los mismos `DEMO_ACCOUNTS`/`BOT_ACCOUNTS` de `app/services/demo.py`, y como `usuario.email` es único a nivel de toda la BD, `ampliar_uco_la_paz()` reventaba con un `IntegrityError` en cuanto la unidad demo ya existía (confirmado contra el staging real: la unidad "Urgencias de Demostración" ya tenía sembrados `demo1@turnero.com`/`bot.maria@demo.turnero.com`, y UCO seguía solo con sus 16 usuarios reales, sin rastro de la ampliación) · `sembrar_contenido_bot()` ahora acepta `cuentas_demo`/`cuentas_bot` opcionales · `scripts/seed_staging.py` define `UCO_DEMO_ACCOUNTS`/`UCO_BOT_ACCOUNTS` con emails propios (`uco.<email-base>@demo.turnero.com`) · test de regresión que ejecuta `reset_demo()` + `ampliar_uco_la_paz()` en la misma BD · 997 tests passing
+
+- [x] feat(documento-cambio): "Tabla de cambios" — vista alternativa de `/documentos-cambio/supervisora` pensada para ordenador · una fila por hoja de cambio, columnas atómicas (Nº, fecha, cada trabajador con su cede/recibe por separado, firmas, factibilidad, decisión) y botones Ver/PDF al final de la fila · nueva ruta `GET /documentos-cambio/supervisora/tabla` (misma consulta que `supervisora`, extraída a `_documentos_del_grupo_supervisora()`) · nuevo `.container--wide` (`{% block main_class %}`) para que la tabla no quede encajonada en los 640px del `.container` normal · `.table-scroll` con scroll horizontal si aún así no cabe · enlace cruzado entre ambas vistas ("Ver como tabla"/"Ver como tarjetas") — no se retira `supervisora.html`, coexisten mientras el usuario decide cuál prefiere · verificado visualmente con Playwright (ambas vistas, con datos en los 4 estados) · 3 tests nuevos · 1000 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

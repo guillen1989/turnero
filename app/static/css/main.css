@@ -146,6 +146,13 @@ body {
   padding: 0 1rem;
 }
 
+/* Páginas con tablas anchas (pensadas para ordenador, no para móvil): el
+   propio .table-scroll de dentro sigue añadiendo scroll horizontal si la
+   tabla no cabe ni con este ancho. */
+.container--wide {
+  max-width: 1200px;
+}
+
 /* Flash messages */
 .flash-messages { list-style: none; margin-bottom: 1.5rem; }
 .flash {
@@ -664,6 +671,8 @@ body {
 .admin-table th { background: #f5f5f5; text-align: left; padding: 0.6rem 0.85rem; font-size: 0.82rem; text-transform: uppercase; color: #555; }
 .admin-table td { padding: 0.6rem 0.85rem; border-top: 1px solid #e5e7eb; font-size: 0.92rem; vertical-align: middle; }
 .admin-table tr:hover td { background: #fafafa; }
+.table-scroll { overflow-x: auto; }
+.table-scroll .admin-table { min-width: 900px; }
 
 /* Feedback cards */
 .fb-bulk-bar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; background: #f5f7fa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.6rem 0.85rem; margin-top: 1.25rem; }

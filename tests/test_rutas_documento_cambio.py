@@ -422,6 +422,57 @@ def test_no_supervisora_no_puede_ver_la_pagina_de_supervisora(db, client):
     assert resp.status_code == 403
 
 
+# --- Tabla de cambios (vista alternativa de supervisora, una fila por cambio) ---
+
+def test_supervisora_tabla_ve_todos_los_cambios_de_su_grupo(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "kk")
+    claudia = crear_usuario("Claudia Pérez", "claudiakk@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juankk@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martakk@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    client.get("/auth/logout")
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora/tabla")
+    assert resp.status_code == 200
+    assert b"Claudia P\xc3\xa9rez" in resp.data
+    assert b"Juan Rodr\xc3\xadguez" in resp.data
+    assert "<table".encode() in resp.data
+
+
+def test_no_supervisora_no_puede_ver_la_tabla_de_cambios(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "ll")
+    claudia = crear_usuario("Claudia Pérez", "claudiall@h.es")
+    _login(client, claudia.email)
+
+    resp = client.get("/documentos-cambio/supervisora/tabla")
+    assert resp.status_code == 403
+
+
+def test_paginas_supervisora_se_enlazan_entre_si(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "mm")
+    supervisora = crear_usuario("Marta Supervisora", "martamm@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+    _login(client, supervisora.email)
+
+    resp_tarjetas = client.get("/documentos-cambio/supervisora")
+    assert "/documentos-cambio/supervisora/tabla".encode() in resp_tarjetas.data
+
+    resp_tabla = client.get("/documentos-cambio/supervisora/tabla")
+    assert b'href="/documentos-cambio/supervisora"' in resp_tabla.data
+
+
 def _crear_documento_completo_via_client(client, claudia, juan, manyana):
     resp = client.post("/documentos-cambio/nuevo", data={
         "companero_id": juan.id,

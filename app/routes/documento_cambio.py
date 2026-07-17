@@ -66,13 +66,9 @@ def lista():
     return render_template("documento_cambio/lista.html", documentos=documentos)
 
 
-@bp.get("/supervisora")
-@login_required
-def supervisora():
-    if not current_user.es_supervisora:
-        abort(403)
+def _documentos_del_grupo_supervisora():
     grupo_id = current_user.grupo_intercambio.id
-    documentos = (
+    return (
         DocumentoCambio.query
         .join(ParticipanteDocumentoCambio, ParticipanteDocumentoCambio.documento_id == DocumentoCambio.id)
         .join(Usuario, ParticipanteDocumentoCambio.usuario_id == Usuario.id)
@@ -82,7 +78,28 @@ def supervisora():
         .order_by(DocumentoCambio.id.desc())
         .all()
     )
+
+
+@bp.get("/supervisora")
+@login_required
+def supervisora():
+    if not current_user.es_supervisora:
+        abort(403)
+    documentos = _documentos_del_grupo_supervisora()
     return render_template("documento_cambio/supervisora.html", documentos=documentos)
+
+
+@bp.get("/supervisora/tabla")
+@login_required
+def supervisora_tabla():
+    """Misma información que `supervisora`, en formato tabla (una fila por
+    hoja de cambio) pensado para pantallas de ordenador. Vista alternativa
+    mientras se decide cuál sustituye a la otra -- no se ha retirado
+    `supervisora.html`."""
+    if not current_user.es_supervisora:
+        abort(403)
+    documentos = _documentos_del_grupo_supervisora()
+    return render_template("documento_cambio/supervisora_tabla.html", documentos=documentos)
 
 
 @bp.route("/nuevo", methods=["GET", "POST"])
