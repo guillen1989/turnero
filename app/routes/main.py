@@ -352,7 +352,12 @@ def index():
         response.headers["Cache-Control"] = "no-store"
         return response
     demo_login_enabled = bool(current_app.config.get("DEMO_LOGIN_EMAIL"))
-    return render_template("main/index.html", demo_login_enabled=demo_login_enabled)
+    demo_supervisora_login_enabled = bool(current_app.config.get("DEMO_SUPERVISORA_LOGIN_EMAIL"))
+    return render_template(
+        "main/index.html",
+        demo_login_enabled=demo_login_enabled,
+        demo_supervisora_login_enabled=demo_supervisora_login_enabled,
+    )
 
 
 @bp.get("/cambios")

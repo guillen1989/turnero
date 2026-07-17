@@ -4,20 +4,26 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Retomado el paso 10 (enganche con el motor de matching), parcialmente:
-al confirmar un match directo **simétrico** (cambio↔cambio: ambas partes
-ceden y reciben un turno con franja concreta, venga de publicación
-automática o de "Me interesa"), la app crea y firma el DocumentoCambio
-sola, sin ningún paso manual — el usuario dibuja su firma en el mismo
-momento de pulsar "Confirmar" y, en cuanto confirma la otra parte, el
-documento queda completo. `match_admite_documento_cambio` (app/services/documento_cambio.py)
-es la condición: solo `directo_2` con las 2 participaciones teniendo
-turno_cedido Y turno_aceptado con franja concreta (no "cualquier turno").
-Fuera de scope todavía, como ya estaba decidido: **cadenas de 3/4 bandas
-y coincidencias asimétricas (regalo/petición) siguen sin firma
-obligatoria ni documento automático** — para esos casos, y para cambios
-sin match de por medio, sigue disponible "Mis hojas de cambio > Nueva
-hoja de cambio" tal cual.
+Siguiente paso: en el botón "Probar con una cuenta demo" (login y portada),
+dejar elegir entre la cuenta demo de trabajador (ya implementada) y la de
+supervisora (`DEMO_SUPERVISORA_LOGIN_EMAIL`/`_PASSWORD`, pensada para
+`supervisora.uco@demo.turnero.com`, la que crea `scripts/seed_staging.py`).
+Solo en `staging`, sin tocar `main`/producción.
+
+Antes de eso: retomado el paso 10 (enganche con el motor de matching),
+parcialmente: al confirmar un match directo **simétrico** (cambio↔cambio:
+ambas partes ceden y reciben un turno con franja concreta, venga de
+publicación automática o de "Me interesa"), la app crea y firma el
+DocumentoCambio sola, sin ningún paso manual — el usuario dibuja su firma
+en el mismo momento de pulsar "Confirmar" y, en cuanto confirma la otra
+parte, el documento queda completo. `match_admite_documento_cambio`
+(app/services/documento_cambio.py) es la condición: solo `directo_2` con
+las 2 participaciones teniendo turno_cedido Y turno_aceptado con franja
+concreta (no "cualquier turno"). Fuera de scope todavía, como ya estaba
+decidido: **cadenas de 3/4 bandas y coincidencias asimétricas
+(regalo/petición) siguen sin firma obligatoria ni documento automático**
+— para esos casos, y para cambios sin match de por medio, sigue
+disponible "Mis hojas de cambio > Nueva hoja de cambio" tal cual.
 
 Contexto: petición del usuario en otra sesión en paralelo ("al confirmar
 un cambio el usuario debe poder firmarlo también, así queda todo listo
@@ -1469,6 +1475,8 @@ mitigación preventiva independiente de la causa.
 - [x] Fase 10, paso 7: firma cruzada entre cuentas reales · cada uno firma su propia fila desde su cuenta · notificaciones (push + campana) al crear y al firmar · migración `c2938aae9b98` · 12 tests + e2e actualizado
 - [x] Fase 10, paso 8: el aviso de autorización/denegación de la supervisora (`documento_cambio_autorizado`/`documento_cambio_denegado`) incluía solo el número de hoja (y, al denegar, el motivo) pero no los datos del cambio — nuevo `_resumen_cambio(documento)` en `app/services/documento_cambio.py` añade, para cada participante, quién libra qué turno/día y quién trabaja qué turno/día a cambio, y se concatena al mensaje ya existente en `autorizar_documento`/`denegar_documento` · 2 tests nuevos (`test_servicio_documento_cambio.py`)
 - [x] feat(avisos): el aviso de confirmación (`confirmado_total`) y de rechazo (`rechazo`) de un match del motor de matching (distinto del flujo de hoja de cambio del paso anterior) ahora se muestra también en `/avisos` con los datos del cambio — quiénes lo hacen y qué día/franja libra y trabaja cada participación — en vez de quedar invisible (esos dos tipos de `Notificacion` no entraban en la consulta de `/avisos`, solo generaban un push agregado sin detalle) · refactor: `_calcular_trabajas` se traslada de `app/routes/main.py` a `app/services/matches.py::calcular_trabajas` (lógica de dominio del match, no de la ruta) y se reutiliza desde ambos sitios · catálogo i18n actualizado (reutiliza los mismos msgid `libra:`/`trabaja:`/`cualquier turno` ya usados en el dashboard) · 2 tests nuevos · verificado con las suites de match/notificaciones/dashboard/cadenas (162 tests) limpias en una ventana sin contención de la BD de test compartida con otra sesión concurrente · 948 tests passing (suite completa, tras integrar con el trabajo paralelo de Fase 10)
+
+- [x] chore(seed-staging): `scripts/seed_staging.py` amplía de forma aditiva la unidad real UCO·Hospital Universitario La Paz·Enfermería (además de crear su propio conjunto de usuarios como hasta ahora) · `app/services/demo.py` refactorizado para extraer `sembrar_contenido_bot(unidad, categoria, incluir_planillas=True)` reutilizable (antes solo servía a la unidad de demostración aislada) · `BOT_ACCOUNTS` pasa a público · nuevo generador puro `generar_rota()` (14 plantillas semanales `_COMBOS_ROTA`/`_PLANTILLA_ROTA`, 7 fases × 2 variantes de noche) que cubre julio-agosto-septiembre 2026 garantizando cobertura diaria de las 5 franjas, descanso obligatorio (`EstadoDiaPlanilla`+`SalienteDia`) al día siguiente de Noche/Nocturno 12h, y 2 días libres/semana por trabajador · supervisora `supervisora.uco@demo.turnero.com` (sustituye a cualquier supervisora previa del mismo grupo de intercambio, salvo que ya tenga hojas de cambio decididas referenciándola) · hojas de cambio (agosto-septiembre 2026) en sus 4 estados posibles (pendiente de firma / completa pendiente de la supervisora / autorizada / denegada) para cada usuario (>=2), emparejando usuarios a "media vuelta" de distancia en el roster (emparejar contiguos fallaba: comparten fase de rota, solo difieren en la variante de turno nocturno, así que nunca hay hueco de intercambio) · usa los servicios reales (`crear_documento_cambio`/`firmar_documento`/`autorizar_documento`/`denegar_documento`) envueltos en `current_app.test_request_context()` (necesario fuera de una request real: Flask-Babel/`url_for` lo requieren) · nunca borra ni toca usuarios ya existentes de esa unidad (aditivo e idempotente, con su propia comprobación independiente de `_ya_sembrado()`) · 18 tests nuevos (`tests/test_seed_staging_rota.py`, `tests/test_seed_staging_uco.py`) · 996 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

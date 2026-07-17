@@ -166,7 +166,18 @@ def login():
         flash(_("Correo o contraseña incorrectos."), "danger")
 
     demo_login_enabled = bool(current_app.config.get("DEMO_LOGIN_EMAIL"))
-    return render_template("auth/login.html", form=form, demo_login_enabled=demo_login_enabled)
+    demo_supervisora_login_enabled = bool(current_app.config.get("DEMO_SUPERVISORA_LOGIN_EMAIL"))
+    return render_template(
+        "auth/login.html", form=form,
+        demo_login_enabled=demo_login_enabled,
+        demo_supervisora_login_enabled=demo_supervisora_login_enabled,
+    )
+
+
+_DEMO_LOGIN_CREDENCIALES = {
+    "trabajador": ("DEMO_LOGIN_EMAIL", "DEMO_LOGIN_PASSWORD"),
+    "supervisora": ("DEMO_SUPERVISORA_LOGIN_EMAIL", "DEMO_SUPERVISORA_LOGIN_PASSWORD"),
+}
 
 
 @bp.route("/login/demo", methods=["POST"])
@@ -174,8 +185,12 @@ def login_demo():
     if current_user.is_authenticated:
         return redirect(url_for("calendario.index"))
 
-    demo_email = current_app.config.get("DEMO_LOGIN_EMAIL")
-    demo_password = current_app.config.get("DEMO_LOGIN_PASSWORD")
+    tipo = request.form.get("tipo", "trabajador")
+    clave_email, clave_password = _DEMO_LOGIN_CREDENCIALES.get(
+        tipo, _DEMO_LOGIN_CREDENCIALES["trabajador"]
+    )
+    demo_email = current_app.config.get(clave_email)
+    demo_password = current_app.config.get(clave_password)
     if not demo_email or not demo_password:
         abort(404)
 

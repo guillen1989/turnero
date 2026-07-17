@@ -322,6 +322,16 @@ def test_portada_muestra_boton_demo_si_configurado(client, db, app, monkeypatch)
     assert "Probar con una cuenta demo".encode() in resp.data
 
 
+def test_portada_ofrece_eleccion_trabajador_supervisora_si_ambas_configuradas(client, db, app, monkeypatch):
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    monkeypatch.setitem(app.config, "DEMO_SUPERVISORA_LOGIN_EMAIL", "sup.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_SUPERVISORA_LOGIN_PASSWORD", "Staging2026!")
+    resp = client.get("/")
+    assert "trabajador".encode() in resp.data.lower()
+    assert "supervisora".encode() in resp.data.lower()
+
+
 def test_login_demo_exitoso_redirige(client, db, app, monkeypatch):
     client.post("/auth/registro", data=_datos_registro(db, email="ana.garcia@test.es", password="Staging2026!", password2="Staging2026!"))
     Usuario.query.filter_by(email="ana.garcia@test.es").update({"onboarding_visto": True})
@@ -403,3 +413,67 @@ def test_login_demo_ya_autenticado_redirige_a_calendario(client, db, app, monkey
     resp = client.post("/auth/login/demo", follow_redirects=False)
     assert resp.status_code == 302
     assert resp.headers["Location"].endswith("/calendario/")
+
+
+# --- Elegir cuenta demo de trabajador o de supervisora ---
+
+def _configurar_ambas_cuentas_demo(app, monkeypatch):
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    monkeypatch.setitem(app.config, "DEMO_SUPERVISORA_LOGIN_EMAIL", "sup.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_SUPERVISORA_LOGIN_PASSWORD", "Staging2026!")
+
+
+def test_login_no_ofrece_eleccion_supervisora_si_no_esta_configurada(client, db, app, monkeypatch):
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    resp = client.get("/auth/login")
+    assert "Probar con una cuenta demo".encode() in resp.data
+    assert "Supervisora".encode() not in resp.data
+
+
+def test_login_ofrece_eleccion_trabajador_supervisora_si_ambas_configuradas(client, db, app, monkeypatch):
+    _configurar_ambas_cuentas_demo(app, monkeypatch)
+    resp = client.get("/auth/login")
+    assert "Trabajador".encode() in resp.data
+    assert "Supervisora".encode() in resp.data
+
+
+def test_login_demo_tipo_supervisora_inicia_sesion_con_esa_cuenta(client, db, app, monkeypatch):
+    client.post("/auth/registro", data=_datos_registro(db, email="sup.garcia@test.es", password="Staging2026!", password2="Staging2026!"))
+    Usuario.query.filter_by(email="sup.garcia@test.es").update({"onboarding_visto": True})
+    db.session.commit()
+    client.get("/auth/logout")
+
+    _configurar_ambas_cuentas_demo(app, monkeypatch)
+    resp = client.post("/auth/login/demo", data={"tipo": "supervisora"}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/calendario/")
+
+    with client.session_transaction() as sess:
+        assert sess.get("_user_id") == str(
+            Usuario.query.filter_by(email="sup.garcia@test.es").first().id
+        )
+
+
+def test_login_demo_tipo_trabajador_por_defecto(client, db, app, monkeypatch):
+    """Sin indicar `tipo`, se conserva el comportamiento anterior (trabajador)."""
+    client.post("/auth/registro", data=_datos_registro(db, email="ana.garcia@test.es", password="Staging2026!", password2="Staging2026!"))
+    Usuario.query.filter_by(email="ana.garcia@test.es").update({"onboarding_visto": True})
+    db.session.commit()
+    client.get("/auth/logout")
+
+    _configurar_ambas_cuentas_demo(app, monkeypatch)
+    resp = client.post("/auth/login/demo", follow_redirects=False)
+    assert resp.status_code == 302
+    with client.session_transaction() as sess:
+        assert sess.get("_user_id") == str(
+            Usuario.query.filter_by(email="ana.garcia@test.es").first().id
+        )
+
+
+def test_login_demo_supervisora_deshabilitada_devuelve_404(client, db, app, monkeypatch):
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
+    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
+    resp = client.post("/auth/login/demo", data={"tipo": "supervisora"}, follow_redirects=False)
+    assert resp.status_code == 404

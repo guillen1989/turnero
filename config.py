@@ -39,6 +39,11 @@ class Config:
     # (p. ej. en staging, con el usuario creado por scripts/seed_staging.py).
     DEMO_LOGIN_EMAIL = os.environ.get("DEMO_LOGIN_EMAIL", "")
     DEMO_LOGIN_PASSWORD = os.environ.get("DEMO_LOGIN_PASSWORD", "")
+    # Variante de supervisora del mismo botón: solo aparece si están
+    # configuradas (p. ej. en staging, con la cuenta que crea
+    # scripts/seed_staging.py para UCO·La Paz·Enfermería).
+    DEMO_SUPERVISORA_LOGIN_EMAIL = os.environ.get("DEMO_SUPERVISORA_LOGIN_EMAIL", "")
+    DEMO_SUPERVISORA_LOGIN_PASSWORD = os.environ.get("DEMO_SUPERVISORA_LOGIN_PASSWORD", "")
 
 
 class DevelopmentConfig(Config):
