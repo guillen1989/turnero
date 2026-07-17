@@ -258,6 +258,86 @@ def test_perfil_cuenta_rechaza_contraseña_nueva_sin_actual(client, db):
     assert not usuario.check_password("nueva_clave_99")
 
 
+# --- Firma guardada ---
+
+_FIRMA_PNG = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4"
+    "2mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
+
+
+def test_guardar_firma_requiere_autenticacion(client):
+    resp = client.post("/auth/perfil/firma/guardar", data={"imagen_firma": _FIRMA_PNG}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
+def test_guardar_firma_almacena_imagen_en_el_usuario(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+
+    resp = client.post(
+        "/auth/perfil/firma/guardar",
+        data={"imagen_firma": _FIRMA_PNG},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert usuario.firma_guardada == _FIRMA_PNG
+
+
+def test_guardar_firma_rechaza_valor_que_no_es_imagen(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+
+    client.post(
+        "/auth/perfil/firma/guardar",
+        data={"imagen_firma": "no-es-una-imagen"},
+        follow_redirects=True,
+    )
+
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert usuario.firma_guardada is None
+
+
+def test_perfil_cuenta_muestra_formulario_para_dibujar_firma_si_no_hay_guardada(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/perfil/cuenta")
+    html = resp.data.decode()
+    assert 'id="firma-guardada-form"' in html
+    assert "firma-preview" not in html
+
+
+def test_perfil_cuenta_muestra_previsualizacion_si_ya_hay_firma_guardada(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    usuario.firma_guardada = _FIRMA_PNG
+    from app.extensions import db as _db
+    _db.session.commit()
+
+    resp = client.get("/auth/perfil/cuenta")
+    html = resp.data.decode()
+    assert "firma-preview" in html
+    assert _FIRMA_PNG in html
+
+
+def test_eliminar_firma_borra_la_imagen_guardada(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    usuario.firma_guardada = _FIRMA_PNG
+    from app.extensions import db as _db
+    _db.session.commit()
+
+    resp = client.post("/auth/perfil/firma/eliminar", follow_redirects=True)
+    assert resp.status_code == 200
+
+    _db.session.refresh(usuario)
+    assert usuario.firma_guardada is None
+
+
 # --- Ronda 2, Paso 6: el calendario pasa a ser la pantalla de inicio ---
 
 def test_login_exitoso_con_onboarding_visto_redirige_a_calendario(client, db):

@@ -53,22 +53,35 @@
     var canvas = form.querySelector('canvas.firma-canvas');
     var input = form.querySelector('input[name="imagen_firma"]');
     var btnLimpiar = form.querySelector('.firma-limpiar');
+    var btnGuardada = form.querySelector('.firma-usar-guardada');
 
     setupFirmaCanvas(canvas);
 
     if (btnLimpiar) {
       btnLimpiar.addEventListener('click', function () {
         canvas._limpiar();
+        input.value = '';
+      });
+    }
+
+    if (btnGuardada) {
+      btnGuardada.addEventListener('click', function () {
+        input.value = btnGuardada.dataset.firma;
+        if (form.requestSubmit) {
+          form.requestSubmit();
+        } else {
+          form.submit();
+        }
       });
     }
 
     form.addEventListener('submit', function (e) {
-      if (!canvas._haFirmado()) {
+      if (canvas._haFirmado()) {
+        input.value = canvas.toDataURL('image/png');
+      } else if (!input.value) {
         e.preventDefault();
         alert('Dibuja tu firma en el recuadro antes de guardar.');
-        return;
       }
-      input.value = canvas.toDataURL('image/png');
     });
   }
 

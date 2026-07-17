@@ -89,3 +89,21 @@ def test_usuario_es_flask_login_compatible(db):
     assert usuario.is_authenticated is True
     assert usuario.is_active is True
     assert usuario.get_id() == str(usuario.id)
+
+
+def test_firma_guardada_es_opcional_y_persiste(db):
+    unidad, categoria = _crear_contexto(db)
+
+    usuario = Usuario(nombre="Rosa Díaz", email="rosa@hospital.es", unidad=unidad, categoria=categoria)
+    usuario.set_password("pass")
+    db.session.add(usuario)
+    db.session.commit()
+
+    recuperado = db.session.get(Usuario, usuario.id)
+    assert recuperado.firma_guardada is None
+
+    recuperado.firma_guardada = "data:image/png;base64,AAA"
+    db.session.commit()
+
+    recuperado2 = db.session.get(Usuario, usuario.id)
+    assert recuperado2.firma_guardada == "data:image/png;base64,AAA"

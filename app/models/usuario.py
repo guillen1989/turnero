@@ -27,6 +27,7 @@ class Usuario(UserMixin, db.Model):
     es_admin = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     es_supervisora = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     onboarding_visto = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
+    firma_guardada = db.Column(db.Text, nullable=True)
     fecha_registro = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )

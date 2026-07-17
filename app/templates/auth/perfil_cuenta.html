@@ -68,6 +68,35 @@
     <a href="{{ url_for('main.index') }}">{{ _('← Volver al inicio') }}</a>
   </p>
 
+  <hr style="margin:1.25rem 0; border:none; border-top:1px solid #e5e7eb">
+  <h2 style="margin-bottom:0.5rem">{{ _('Firma guardada') }}</h2>
+  {% if current_user.firma_guardada %}
+  <p style="font-size:0.9rem; color:#666; margin-bottom:0.75rem">
+    {{ _('Se usará cuando pulses "Firmar con firma guardada" al firmar una hoja de cambio.') }}
+  </p>
+  <img class="firma-preview" src="{{ current_user.firma_guardada }}" alt="{{ _('Tu firma guardada') }}"
+       style="border:1px solid #e5e7eb; border-radius:4px; max-width:100%; height:auto; margin-bottom:0.75rem">
+  <form method="post" action="{{ url_for('auth.eliminar_firma') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-secondary btn-sm">{{ _('Eliminar firma guardada') }}</button>
+  </form>
+  {% else %}
+  <p style="font-size:0.9rem; color:#666; margin-bottom:0.75rem">
+    {{ _('Guarda tu firma una vez y podrás usarla en las hojas de cambio sin volver a dibujarla.') }}
+  </p>
+  <form method="post" id="firma-guardada-form" action="{{ url_for('auth.guardar_firma') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="imagen_firma" value="">
+    <div class="firma-box">
+      <canvas class="firma-canvas" width="500" height="180"></canvas>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
+    <button type="submit" class="btn btn-primary btn-sm">{{ _('Guardar firma') }}</button>
+  </form>
+  <script src="{{ url_for('static', filename='js/firma-canvas.js') }}"></script>
+  <script>initFirmaForm('firma-guardada-form');</script>
+  {% endif %}
+
   <div class="invite-section">
     <h2 class="invite-title">{{ _('Invitar a un compañero') }}</h2>
     <p class="invite-desc">

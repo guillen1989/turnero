@@ -77,6 +77,9 @@
         <canvas class="firma-canvas" width="500" height="180"></canvas>
       </div>
       <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
+      {% if current_user.firma_guardada %}
+      <button type="button" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Firmar con firma guardada') }}</button>
+      {% endif %}
       <button type="submit" class="btn btn-primary">{{ _('Guardar firma') }}</button>
     </form>
   </section>

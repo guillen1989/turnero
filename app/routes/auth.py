@@ -517,6 +517,33 @@ def perfil_cuenta():
 
 
 # ---------------------------------------------------------------------------
+# Firma guardada
+# ---------------------------------------------------------------------------
+
+@bp.post("/perfil/firma/guardar")
+@login_required
+def guardar_firma():
+    imagen_firma = request.form.get("imagen_firma", "").strip()
+    if not imagen_firma.startswith("data:image/"):
+        flash(_("No se pudo guardar la firma. Dibújala de nuevo e inténtalo otra vez."), "danger")
+        return redirect(url_for("auth.perfil_cuenta"))
+
+    current_user.firma_guardada = imagen_firma
+    db.session.commit()
+    flash(_("Firma guardada correctamente."), "success")
+    return redirect(url_for("auth.perfil_cuenta"))
+
+
+@bp.post("/perfil/firma/eliminar")
+@login_required
+def eliminar_firma():
+    current_user.firma_guardada = None
+    db.session.commit()
+    flash(_("Firma guardada eliminada."), "info")
+    return redirect(url_for("auth.perfil_cuenta"))
+
+
+# ---------------------------------------------------------------------------
 # Eliminar cuenta
 # ---------------------------------------------------------------------------
 

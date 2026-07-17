@@ -467,6 +467,9 @@
     <p class="modal-body">{{ _('Dibuja tu firma con el dedo o el ratón. Se guardará en la hoja de cambio de este intercambio.') }}</p>
     <canvas id="firma-canvas" class="firma-canvas"></canvas>
     <p id="firma-aviso" class="firma-aviso" style="display:none">{{ _('Dibuja tu firma antes de continuar.') }}</p>
+    {% if current_user.is_authenticated and current_user.firma_guardada %}
+    <button type="button" class="btn btn-secondary btn-sm" id="btn-firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Firmar con firma guardada') }}</button>
+    {% endif %}
     <div class="modal-actions">
       <button type="button" class="btn btn-secondary btn-sm" onclick="limpiarFirma()">{{ _('Borrar') }}</button>
       <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalFirma()">{{ _('Cancelar') }}</button>
@@ -573,6 +576,16 @@ document.getElementById('btn-firmar-confirmar').addEventListener('click', functi
 document.getElementById('modal-firma').addEventListener('click', function (e) {
   if (e.target === this) cerrarModalFirma();
 });
+
+var _btnFirmaUsarGuardada = document.getElementById('btn-firma-usar-guardada');
+if (_btnFirmaUsarGuardada) {
+  _btnFirmaUsarGuardada.addEventListener('click', function () {
+    if (_formFirmaPendiente) {
+      _formFirmaPendiente.querySelector('.firma-input').value = _btnFirmaUsarGuardada.dataset.firma;
+      _formFirmaPendiente.submit();
+    }
+  });
+}
 
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {

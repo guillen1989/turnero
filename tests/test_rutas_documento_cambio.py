@@ -278,6 +278,47 @@ def test_companero_puede_ver_el_documento_y_firmar_su_parte(db, client):
     assert resp.status_code == 200  # antes daba 403: solo el creador podía verlo
 
 
+def test_ver_muestra_boton_de_firma_guardada_si_el_usuario_tiene_una(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "hh")
+    claudia = crear_usuario("Claudia Pérez", "claudiahh@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanhh@h.es")
+    claudia.firma_guardada = "data:image/png;base64,AAA"
+    db.session.commit()
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+
+    resp = client.get(f"/documentos-cambio/{documento_id}")
+    assert b"firma-usar-guardada" in resp.data
+    assert b'data-firma="data:image/png;base64,AAA"' in resp.data
+
+
+def test_ver_no_muestra_boton_de_firma_guardada_si_el_usuario_no_tiene(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "ii")
+    claudia = crear_usuario("Claudia Pérez", "claudiaii@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanii@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-28",
+        "turno_recibe_franja_id": manyana.id,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+
+    resp = client.get(f"/documentos-cambio/{documento_id}")
+    assert b"firma-usar-guardada" not in resp.data
+
+
 def test_companero_ve_aviso_de_documento_pendiente(db, client):
     crear_usuario, manyana, tarde = _setup(db, "ff")
     claudia = crear_usuario("Claudia Pérez", "claudiaff@h.es")

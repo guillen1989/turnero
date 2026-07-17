@@ -4,9 +4,13 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-El usuario decidió quedarse con la vista de tabla: "Supervisión de cambios"
-es ahora la única vista (una fila por cambio), con filtros y navegación
-por mes/año. Sin siguiente paso concreto pendiente en esta fase por ahora.
+Firma guardada (paso más reciente) recién enviada a staging para probar en
+real; pendiente de feedback del usuario.
+
+Antes de eso: el usuario decidió quedarse con la vista de tabla:
+"Supervisión de cambios" es ahora la única vista (una fila por cambio),
+con filtros y navegación por mes/año. Sin siguiente paso concreto
+pendiente en esa parte de la fase.
 
 Ya ejecutado contra el staging real (con confirmación explícita del
 usuario): `scripts/seed_staging.py` (ampliación de UCO) y las variables
@@ -1485,6 +1489,8 @@ mitigación preventiva independiente de la causa.
 - [x] feat(documento-cambio): "Tabla de cambios" — vista alternativa de `/documentos-cambio/supervisora` pensada para ordenador · una fila por hoja de cambio, columnas atómicas (Nº, fecha, cada trabajador con su cede/recibe por separado, firmas, factibilidad, decisión) y botones Ver/PDF al final de la fila · nueva ruta `GET /documentos-cambio/supervisora/tabla` (misma consulta que `supervisora`, extraída a `_documentos_del_grupo_supervisora()`) · nuevo `.container--wide` (`{% block main_class %}`) para que la tabla no quede encajonada en los 640px del `.container` normal · `.table-scroll` con scroll horizontal si aún así no cabe · enlace cruzado entre ambas vistas ("Ver como tabla"/"Ver como tarjetas") — no se retira `supervisora.html`, coexisten mientras el usuario decide cuál prefiere · verificado visualmente con Playwright (ambas vistas, con datos en los 4 estados) · 3 tests nuevos · 1000 tests passing
 
 - [x] feat(documento-cambio): "Supervisión de cambios" pasa a ser una única vista de tabla (se retira la de tarjetas, `supervisora_tabla.html` se fusiona en `supervisora.html`) con filtros y navegación por mes/año · **regla nueva de negocio**: los cambios `pendiente_firmas` (aún sin las dos firmas) no le han "llegado" todavía a la supervisora — quedan excluidos de raíz de la consulta, no solo ocultos por un filtro; solo se listan documentos `completo` · filtros combinables por querystring (GET, bookmarkable): mes/año (por defecto el mes en curso), fecha exacta (si se indica, sustituye a mes/año), trabajador implicado (uno o dos — con dos, exige que sean justamente esas dos personas del mismo cambio), turno afectado (franja horaria — combinado con fecha exacta identifica un turno concreto: mismo día y misma franja, no dos condiciones independientes), estado de decisión (pendiente de decisión / aceptado / rechazado), factibilidad, número de hoja · todos los filtros implementados con subconsultas independientes (`DocumentoCambio.id.in_(...)`) en vez de un único JOIN con `ParticipanteDocumentoCambio`, para no acoplar entre sí condiciones que pueden recaer en participantes distintos del mismo documento · 9 tests nuevos/reescritos · 974 tests passing
+
+- [x] feat(firma): firma guardada reutilizable — el usuario dibuja su firma una vez en `/perfil/cuenta` y puede firmar hojas de cambio y confirmaciones de match sin repetir el garabato · columna `usuario.firma_guardada` (Text, nullable, sin patrón de 3 pasos por no ser NOT NULL) · migración `8ea99af48f5f`, un solo head · rutas `POST /perfil/firma/guardar` (valida `data:image/`) y `POST /perfil/firma/eliminar` · nueva sección "Firma guardada" en `perfil_cuenta.html` (canvas para dibujar/guardar si no hay una, previsualización + botón eliminar si ya hay) reutilizando `firma-canvas.js` sin cambios de backend · `firma-canvas.js::initFirmaForm` ampliado con un botón opcional `.firma-usar-guardada` que rellena el input oculto con la firma guardada (`data-firma`) y envía el formulario sin exigir dibujo nuevo — el listener de `submit` ahora solo sobrescribe el input con el canvas si se dibujó algo, si no deja el valor ya puesto; si no hay ni dibujo ni valor previo, bloquea igual que antes · botón "Firmar con firma guardada" añadido en `documento_cambio/ver.html` (mismo mecanismo) y, con JS independiente (esa vista no usa `firma-canvas.js`), en el modal de confirmación de match de `dashboard.html` · ambas rutas de firmado existentes (`documento_cambio.firmar`, `matches.confirmar`) no se tocan: ya aceptaban cualquier `data:image/...` válido, venga de un dibujo nuevo o de la firma guardada · catálogo i18n actualizado (solo las cadenas nuevas, sin arrastrar otras ya pendientes de sincronizar) · 10 tests nuevos (modelo, rutas de guardar/eliminar, render condicional en `perfil_cuenta`/`ver.html`/`dashboard.html`) · 1010 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
