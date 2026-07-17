@@ -40,10 +40,29 @@ Todo el bloque queda vacío mientras `decision_supervisora == 'pendiente'`,
 igual que el papel en blanco. Verificado visualmente generando PDFs de
 prueba (autorizado y denegado) y rasterizándolos con `pdftoppm`.
 
-Siguiente: columna "Motivo" en la tabla de "Supervisión de cambios"
-(`documento_cambio/supervisora.html`), con el motivo de denegación
-visible por fila cuando el estado es "Rechazado". Después, catálogo
-i18n (`pybabel extract/update/compile`) con las cadenas nuevas.
+Hecho también: columna "Motivo" en la tabla de "Supervisión de cambios"
+(`documento_cambio/supervisora.html`), con `documento.motivo_denegacion`
+visible por fila (vacía si no se ha denegado).
+
+Catálogo i18n: `pybabel extract -k _l` (el proyecto usa `_l` de
+Flask-Babel en varios formularios de `app/forms/`, aparte de `_`) más
+`pybabel update` regeneró un diff enorme (~1300 líneas, 67 entradas
+`fuzzy` mal emparejadas) porque el catálogo llevaba ya tiempo
+desincronizado de `app/routes/auth.py` (los números de línea en los
+comentarios `#:` no correspondían al archivo real, de alguna sesión
+anterior que no volvió a compilar el catálogo) -- arreglar eso de raíz
+no es parte de este cambio y mezclarlo habría hecho el diff imposible
+de revisar. En su lugar, añadidas a mano las ~9 cadenas nuevas de esta
+feature en `translations/messages.pot` y `translations/es/LC_MESSAGES/messages.po`
+(mismo formato y ubicación relativa que ya usa el archivo), y
+`pybabel compile` sin errores. Pendiente como deuda técnica aparte:
+regenerar el catálogo completo con cuidado (revisando cada fuzzy a
+mano) en su propio commit, no mezclado con una feature.
+
+Feature completa: PDF con motivo de denegación, firma de la
+supervisora (autorizar/denegar individual + acciones en bloque con
+firma guardada), y motivo visible en la tabla de supervisión. 1067
+tests unitarios/integración passing (11 nuevos de esta feature).
 
 Antes de eso: "Nueva hoja de cambio" deja elegir entre esperar a la firma del compañero
 (como hasta ahora) o firmar los dos ya mismo desde el mismo dispositivo,

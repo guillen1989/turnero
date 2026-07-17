@@ -422,6 +422,20 @@ msgstr ""
 msgid "Cambio denegado."
 msgstr ""
 
+#: app/routes/documento_cambio.py:388
+msgid "Falta tu firma. Dibújala o usa tu firma guardada antes de autorizar."
+msgstr ""
+
+#: app/routes/documento_cambio.py:406
+msgid "Falta tu firma. Dibújala o usa tu firma guardada antes de denegar."
+msgstr ""
+
+#: app/routes/documento_cambio.py:509
+msgid ""
+"Guarda tu firma (en tu perfil o al autorizar/denegar un cambio "
+"individual) antes de usar las acciones en bloque."
+msgstr ""
+
 #: app/routes/feedback.py:13
 msgid "Error en la app"
 msgstr ""
@@ -3946,5 +3960,22 @@ msgstr ""
 #: app/templates/documento_cambio/ver.html:85
 #: app/templates/main/dashboard.html:476
 msgid "Guardar esta firma para futuras firmas"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:57
+msgid "Tu firma queda recogida en la hoja, igual que la de los dos implicados."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:66
+msgid "Autorizar con firma guardada"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:70
+#: app/templates/documento_cambio/ver.html:91
+msgid "Guardar esta firma para futuras decisiones"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html:87
+msgid "Denegar con firma guardada"
 msgstr ""
 

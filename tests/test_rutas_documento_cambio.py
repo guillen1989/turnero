@@ -668,6 +668,27 @@ def test_supervisora_ve_los_cambios_completos_de_su_grupo(db, client):
     assert "<table".encode() in resp.data
 
 
+def test_supervisora_ve_el_motivo_de_denegacion_en_la_tabla(db, client):
+    from app.services.documento_cambio import denegar_documento
+
+    crear_usuario, manyana, tarde = _setup(db, "ii2")
+    claudia = crear_usuario("Claudia Pérez", "claudiaii2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanii2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaii2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, _ = _mes_actual_y_siguiente()
+    doc = _crear_documento_completo(db, claudia, juan, manyana, tarde,
+                                     fecha_este_mes, fecha_este_mes + timedelta(days=1))
+    denegar_documento(doc, supervisora, motivo="Pedro ya tenía otro cambio ese día.")
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora")
+    assert resp.status_code == 200
+    assert "Pedro ya tenía otro cambio ese día.".encode("utf-8") in resp.data
+
+
 def test_no_supervisora_no_puede_ver_la_pagina_de_supervisora(db, client):
     crear_usuario, manyana, tarde = _setup(db, "jj")
     claudia = crear_usuario("Claudia Pérez", "claudiajj@h.es")
