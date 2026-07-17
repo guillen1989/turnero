@@ -17,18 +17,33 @@ servicio a propósito: no ata el servicio a HTTP y no rompe los muchos
 tests que ya llaman a estas funciones directamente sin firma (flujos
 internos); es la ruta HTTP la que de verdad la exige.
 
-Siguiente: rutas `/autorizar` y `/denegar` (individuales) exigen
-`imagen_firma` igual que ya exige `firmar_documento` a los participantes,
-con la misma opción de "guardar esta firma"/"usar firma guardada"
-(`current_user.firma_guardada`, ya genérico en `Usuario` desde antes).
-Las acciones en bloque (`bloque_aceptar`/`bloque_denegar`) no piden
-firma por documento (inviable dibujar una por cada fila seleccionada):
-usan `current_user.firma_guardada` si existe, y si no, bloquean la
-acción pidiendo que la guarde antes (en `/perfil/cuenta` o firmando un
-documento individual con "guardar firma" marcado). Después: plantilla
-del PDF (nuevos @frame en el hueco "INFORME POR PARTE DE LA SUPERVISORA
-DE LA UNIDAD" del impreso — motivo, Favorable/Desfavorable, fecha,
-firma) y columna "Motivo" en la tabla de supervisión.
+Hecho también: rutas `/autorizar` y `/denegar` (individuales) exigen
+`imagen_firma` igual que ya exige `firmar_documento` a los
+participantes, con la misma opción de "guardar esta firma"/"usar firma
+guardada" (`current_user.firma_guardada`, ya genérico en `Usuario`
+desde antes) — canvas propio en cada uno de los dos formularios de
+`ver.html` (autorizar/denegar), mismo patrón visual que el resto
+(`.firma-canvas` + `initFirmaForm`). Las acciones en bloque
+(`bloque_aceptar`/`bloque_denegar`) no piden firma por documento
+(inviable dibujar una por cada fila seleccionada): usan
+`current_user.firma_guardada` si existe, y si no, bloquean la acción
+entera pidiendo que la guarde antes (en `/perfil/cuenta` o firmando un
+documento individual con "guardar firma" marcado).
+
+Hecho también: plantilla del PDF (`documento_cambio/pdf.html`) rellena
+el hueco real "INFORME POR PARTE DE LA SUPERVISORA DE LA UNIDAD:" del
+impreso (coordenadas calibradas contra el escaneo, igual que el resto
+de @frame de esta plantilla): motivo de denegación en las dos líneas en
+blanco del informe, marca "X" en Favorable/Desfavorable según
+`decision_supervisora`, fecha de la decisión y firma de la supervisora.
+Todo el bloque queda vacío mientras `decision_supervisora == 'pendiente'`,
+igual que el papel en blanco. Verificado visualmente generando PDFs de
+prueba (autorizado y denegado) y rasterizándolos con `pdftoppm`.
+
+Siguiente: columna "Motivo" en la tabla de "Supervisión de cambios"
+(`documento_cambio/supervisora.html`), con el motivo de denegación
+visible por fila cuando el estado es "Rechazado". Después, catálogo
+i18n (`pybabel extract/update/compile`) con las cadenas nuevas.
 
 Antes de eso: "Nueva hoja de cambio" deja elegir entre esperar a la firma del compañero
 (como hasta ahora) o firmar los dos ya mismo desde el mismo dispositivo,

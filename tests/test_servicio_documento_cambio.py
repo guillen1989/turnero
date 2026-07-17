@@ -258,6 +258,52 @@ def test_generar_pdf_documento_no_pierde_campos_con_nombres_largos(db):
     assert unidad.nombre in texto
 
 
+def test_generar_pdf_documento_incluye_motivo_de_denegacion(db):
+    crear_usuario, manyana, tarde = _setup(db, "h")
+    claudia = crear_usuario("Claudia Pérez", "claudiah@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanh@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martah@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, _FIRMA_PNG)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+    denegar_documento(documento, supervisora, motivo="No coincide con la planilla real.")
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    import pypdf
+    import io as _io
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    assert "No coincide con la planilla real." in texto
+
+
+def test_generar_pdf_documento_pendiente_no_muestra_informe_de_la_supervisora(db):
+    """Mientras no haya decisión, el hueco del informe de la supervisora
+    debe quedar igual de vacío que en el impreso de papel."""
+    crear_usuario, manyana, tarde = _setup(db, "i")
+    claudia = crear_usuario("Claudia Pérez", "claudiai@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juani@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, _FIRMA_PNG)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    import pypdf
+    import io as _io
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    # Ningún dato dinámico de este documento contiene "X": si aparece, es la
+    # marca de favorable/desfavorable renderizada de más.
+    assert "X" not in texto
+
+
 def test_crear_documento_cambio_calcula_factibilidad_no_verificado_por_defecto(db):
     crear_usuario, manyana, tarde = _setup(db, "g")
     claudia = crear_usuario("Claudia Pérez", "claudiag2@h.es")

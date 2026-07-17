@@ -373,11 +373,22 @@ def _get_documento_para_decision(documento_id):
     return documento
 
 
+def _guardar_firma_si_se_pide(imagen_firma):
+    if request.form.get("guardar_firma") and not current_user.firma_guardada:
+        current_user.firma_guardada = imagen_firma
+        db.session.commit()
+
+
 @bp.post("/<int:documento_id>/autorizar")
 @login_required
 def autorizar(documento_id):
     documento = _get_documento_para_decision(documento_id)
-    autorizar_documento(documento, current_user)
+    imagen_firma = request.form.get("imagen_firma", "")
+    if not imagen_firma.startswith("data:image/"):
+        flash(_("Falta tu firma. Dibújala o usa tu firma guardada antes de autorizar."), "danger")
+        return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
+    autorizar_documento(documento, current_user, imagen_firma=imagen_firma)
+    _guardar_firma_si_se_pide(imagen_firma)
     flash(_("Cambio autorizado y aplicado a las planillas."), "success")
     return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
 
@@ -390,7 +401,12 @@ def denegar(documento_id):
     if not motivo:
         flash(_("Indica el motivo de la denegación."), "danger")
         return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
-    denegar_documento(documento, current_user, motivo=motivo)
+    imagen_firma = request.form.get("imagen_firma", "")
+    if not imagen_firma.startswith("data:image/"):
+        flash(_("Falta tu firma. Dibújala o usa tu firma guardada antes de denegar."), "danger")
+        return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
+    denegar_documento(documento, current_user, motivo=motivo, imagen_firma=imagen_firma)
+    _guardar_firma_si_se_pide(imagen_firma)
     flash(_("Cambio denegado."), "info")
     return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
 
@@ -484,17 +500,33 @@ def bloque_pdf():
     )
 
 
+def _puede_operar_en_bloque_con_firma():
+    """Las acciones en bloque no piden dibujar una firma por cada fila
+    seleccionada (inviable). Reutilizan la firma guardada de la
+    supervisora; si no tiene ninguna, se bloquea la acción entera."""
+    if not current_user.firma_guardada:
+        flash(
+            _("Guarda tu firma (en tu perfil o al autorizar/denegar un cambio individual) "
+              "antes de usar las acciones en bloque."),
+            "danger",
+        )
+        return False
+    return True
+
+
 @bp.post("/supervisora/bloque/aceptar")
 @login_required
 def bloque_aceptar():
     if not current_user.es_supervisora:
         abort(403)
+    if not _puede_operar_en_bloque_con_firma():
+        return _redirect_a_supervisora_con_filtros()
     documentos = _documentos_seleccionados()
 
     aplicados = 0
     for documento in documentos:
         if documento.estado == "completo" and documento.decision_supervisora == "pendiente":
-            autorizar_documento(documento, current_user)
+            autorizar_documento(documento, current_user, imagen_firma=current_user.firma_guardada)
             aplicados += 1
 
     omitidos = len(documentos) - aplicados
@@ -515,12 +547,14 @@ def bloque_denegar():
     if not motivo:
         flash(_("Indica el motivo para denegar en bloque."), "danger")
         return _redirect_a_supervisora_con_filtros()
+    if not _puede_operar_en_bloque_con_firma():
+        return _redirect_a_supervisora_con_filtros()
 
     documentos = _documentos_seleccionados()
     aplicados = 0
     for documento in documentos:
         if documento.estado == "completo" and documento.decision_supervisora == "pendiente":
-            denegar_documento(documento, current_user, motivo=motivo)
+            denegar_documento(documento, current_user, motivo=motivo, imagen_firma=current_user.firma_guardada)
             aplicados += 1
 
     omitidos = len(documentos) - aplicados

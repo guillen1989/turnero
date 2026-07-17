@@ -33,6 +33,19 @@
     @frame firma_solicitante_frame { -pdf-frame-content: firma_solicitante_c; left: 22.51mm; top: 174.5mm; width: 77.27mm; height: 17mm; }
     @frame firma_companero_frame { -pdf-frame-content: firma_companero_c; left: 106.74mm; top: 174.5mm; width: 76.57mm; height: 17mm; }
     @frame numero_frame { -pdf-frame-content: numero_c; left: 146.19mm; top: 12.76mm; width: 37.13mm; height: 5.80mm; }
+
+    {# Hueco "INFORME POR PARTE DE LA SUPERVISORA DE LA UNIDAD" del impreso:
+       dos líneas en blanco para el informe/motivo, Favorable/Desfavorable,
+       fecha de la decisión y firma de la supervisora. Solo se rellena
+       cuando ya hay decisión (autorizado/denegado); en pendiente queda
+       igual de vacío que el impreso en papel. #}
+    @frame informe_supervisora_frame { -pdf-frame-content: informe_supervisora_c; left: 22.5mm; top: 200mm; width: 160mm; height: 20mm; }
+    @frame favorable_marca_frame { -pdf-frame-content: favorable_marca_c; left: 50mm; top: 222mm; width: 10mm; height: 6mm; }
+    @frame desfavorable_marca_frame { -pdf-frame-content: desfavorable_marca_c; left: 59mm; top: 232mm; width: 10mm; height: 6mm; }
+    @frame decision_dia_frame { -pdf-frame-content: decision_dia_c; left: 122.52mm; top: 242.5mm; width: 10.91mm; height: 8mm; }
+    @frame decision_mes_frame { -pdf-frame-content: decision_mes_c; left: 140.39mm; top: 242.5mm; width: 17.40mm; height: 8mm; }
+    @frame decision_anyo_frame { -pdf-frame-content: decision_anyo_c; left: 165.91mm; top: 242.5mm; width: 15.08mm; height: 8mm; }
+    @frame firma_supervisora_frame { -pdf-frame-content: firma_supervisora_c; left: 22.5mm; top: 260.5mm; width: 120mm; height: 17mm; }
   }
 
   #hospital_c, #unidad_c, #categoria_c, #ddna_c, #cede_franja_c, #cede_fecha_c,
@@ -42,6 +55,9 @@
     margin: 0; padding: 0 0 0 1mm;
   }
   #numero_c { font-family: Helvetica; font-size: 8pt; color: #555; text-align: right; margin: 0; }
+  #informe_supervisora_c { font-family: Helvetica; font-size: 8.5pt; color: #1a1a6e; margin: 0; }
+  #favorable_marca_c, #desfavorable_marca_c { font-family: Helvetica; font-size: 10pt; font-weight: bold; color: #1a1a6e; margin: 0; }
+  #decision_dia_c, #decision_mes_c, #decision_anyo_c { font-family: Helvetica; font-size: 9.5pt; color: #1a1a6e; margin: 0; padding: 0 0 0 1mm; }
   .firma-img { height: 15mm; }
 </style>
 </head>
@@ -61,5 +77,18 @@
   <div id="firma_solicitante_c"><img class="firma-img" src="{{ firma_solicitante.imagen_firma }}" alt=""></div>
   <div id="firma_companero_c"><img class="firma-img" src="{{ firma_companero.imagen_firma }}" alt=""></div>
   <div id="numero_c">Nº {{ numero_documento }}</div>
+  {% if decision_supervisora != 'pendiente' %}
+  <div id="informe_supervisora_c">{{ motivo_denegacion or '' }}</div>
+  <div id="favorable_marca_c">{{ 'X' if decision_supervisora == 'autorizado' else '' }}</div>
+  <div id="desfavorable_marca_c">{{ 'X' if decision_supervisora == 'denegado' else '' }}</div>
+  {% if fecha_decision_supervisora %}
+  <div id="decision_dia_c">{{ fecha_decision_supervisora.day }}</div>
+  <div id="decision_mes_c">{{ meses[fecha_decision_supervisora.month] }}</div>
+  <div id="decision_anyo_c">{{ fecha_decision_supervisora.year }}</div>
+  {% endif %}
+  {% if firma_supervisora %}
+  <div id="firma_supervisora_c"><img class="firma-img" src="{{ firma_supervisora }}" alt=""></div>
+  {% endif %}
+  {% endif %}
 </body>
 </html>

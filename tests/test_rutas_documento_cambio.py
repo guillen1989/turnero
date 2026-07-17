@@ -939,12 +939,13 @@ def test_supervisora_autoriza_y_vuelca_a_planillas(db, client):
 
     client.get("/auth/logout")
     _login(client, supervisora.email)
-    resp = client.post(f"/documentos-cambio/{documento_id}/autorizar")
+    resp = client.post(f"/documentos-cambio/{documento_id}/autorizar", data={"imagen_firma": _FIRMA_PNG})
     assert resp.status_code == 302
 
     documento = db.session.get(DocumentoCambio, documento_id)
     assert documento.decision_supervisora == "autorizado"
     assert documento.supervisora_id == supervisora.id
+    assert documento.firma_supervisora == _FIRMA_PNG
     assert TurnoPlanilla.query.filter_by(
         usuario_id=claudia.id, fecha=date(2026, 7, 28), franja_horaria_id=manyana.id
     ).first() is not None
@@ -967,13 +968,14 @@ def test_supervisora_deniega_sin_tocar_planillas(db, client):
     _login(client, supervisora.email)
     resp = client.post(
         f"/documentos-cambio/{documento_id}/denegar",
-        data={"motivo": "No coincide con la planilla real de ese mes."},
+        data={"motivo": "No coincide con la planilla real de ese mes.", "imagen_firma": _FIRMA_PNG},
     )
     assert resp.status_code == 302
 
     documento = db.session.get(DocumentoCambio, documento_id)
     assert documento.decision_supervisora == "denegado"
     assert documento.motivo_denegacion == "No coincide con la planilla real de ese mes."
+    assert documento.firma_supervisora == _FIRMA_PNG
     assert TurnoPlanilla.query.filter_by(usuario_id=claudia.id).count() == 0
 
 
@@ -1013,7 +1015,7 @@ def test_participante_ve_el_motivo_de_denegacion(db, client):
     _login(client, supervisora.email)
     client.post(
         f"/documentos-cambio/{documento_id}/denegar",
-        data={"motivo": "Pedro ya tenía otro cambio ese día."},
+        data={"motivo": "Pedro ya tenía otro cambio ese día.", "imagen_firma": _FIRMA_PNG},
     )
 
     client.get("/auth/logout")
@@ -1048,9 +1050,71 @@ def test_no_se_puede_autorizar_dos_veces(db, client):
 
     client.get("/auth/logout")
     _login(client, supervisora.email)
-    client.post(f"/documentos-cambio/{documento_id}/autorizar")
-    resp = client.post(f"/documentos-cambio/{documento_id}/autorizar")
+    client.post(f"/documentos-cambio/{documento_id}/autorizar", data={"imagen_firma": _FIRMA_PNG})
+    resp = client.post(f"/documentos-cambio/{documento_id}/autorizar", data={"imagen_firma": _FIRMA_PNG})
     assert resp.status_code == 409
+
+
+def test_autorizar_sin_firma_no_autoriza(db, client):
+    from app.models import DocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "n2")
+    claudia = crear_usuario("Claudia Pérez", "claudian2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juann2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martan2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    client.post(f"/documentos-cambio/{documento_id}/autorizar")
+
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.decision_supervisora == "pendiente"
+
+
+def test_denegar_sin_firma_no_deniega(db, client):
+    from app.models import DocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "n3")
+    claudia = crear_usuario("Claudia Pérez", "claudian3@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juann3@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martan3@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    client.post(f"/documentos-cambio/{documento_id}/denegar", data={"motivo": "motivo"})
+
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.decision_supervisora == "pendiente"
+
+
+def test_autorizar_guarda_la_firma_si_se_pide_y_no_habia_ninguna(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "n4")
+    claudia = crear_usuario("Claudia Pérez", "claudian4@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juann4@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martan4@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    client.post(f"/documentos-cambio/{documento_id}/autorizar",
+                data={"imagen_firma": _FIRMA_PNG, "guardar_firma": "on"})
+
+    db.session.refresh(supervisora)
+    assert supervisora.firma_guardada == _FIRMA_PNG
 
 
 # --- Anular un cambio ya autorizado ---
@@ -1236,6 +1300,9 @@ def test_bloque_aceptar_aplica_a_pendientes_y_omite_el_resto(db, client):
 
     from app.services.documento_cambio import autorizar_documento
 
+    supervisora.firma_guardada = _FIRMA_PNG
+    db.session.commit()
+
     doc_pendiente = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
     doc_ya_autorizado = _crear_documento_completo(db, ana, luis, manyana, manyana, _fecha_futura(10), _fecha_futura(21))
     autorizar_documento(doc_ya_autorizado, supervisora)
@@ -1246,7 +1313,23 @@ def test_bloque_aceptar_aplica_a_pendientes_y_omite_el_resto(db, client):
                        follow_redirects=True)
     assert resp.status_code == 200
     assert doc_pendiente.decision_supervisora == "autorizado"
+    assert doc_pendiente.firma_supervisora == _FIRMA_PNG
     assert "1 aceptados".encode("utf-8") in resp.data
+
+
+def test_bloque_aceptar_requiere_firma_guardada(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "f3")
+    claudia = crear_usuario("Claudia Pérez", "claudiaf3@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanf3@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaf3@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
+
+    _login(client, supervisora.email)
+    client.post("/documentos-cambio/supervisora/bloque/aceptar", data={"documento_ids": [doc.id]})
+    assert doc.decision_supervisora == "pendiente"
 
 
 def test_bloque_denegar_requiere_motivo(db, client):
@@ -1273,6 +1356,7 @@ def test_bloque_denegar_aplica_el_mismo_motivo_a_todos(db, client):
     luis = crear_usuario("Luis Ibáñez", "luish2@h.es")
     supervisora = crear_usuario("Marta Supervisora", "martah2@h.es")
     supervisora.es_supervisora = True
+    supervisora.firma_guardada = _FIRMA_PNG
     db.session.commit()
 
     doc1 = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
@@ -1284,8 +1368,25 @@ def test_bloque_denegar_aplica_el_mismo_motivo_a_todos(db, client):
 
     assert doc1.decision_supervisora == "denegado"
     assert doc1.motivo_denegacion == "Motivo compartido"
+    assert doc1.firma_supervisora == _FIRMA_PNG
     assert doc2.decision_supervisora == "denegado"
     assert doc2.motivo_denegacion == "Motivo compartido"
+
+
+def test_bloque_denegar_requiere_firma_guardada(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "h3")
+    claudia = crear_usuario("Claudia Pérez", "claudiah3@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanh3@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martah3@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
+
+    _login(client, supervisora.email)
+    client.post("/documentos-cambio/supervisora/bloque/denegar",
+               data={"documento_ids": [doc.id], "motivo": "motivo"})
+    assert doc.decision_supervisora == "pendiente"
 
 
 def test_bloque_anular_aplica_solo_a_elegibles(db, client):

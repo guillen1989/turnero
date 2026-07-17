@@ -328,6 +328,13 @@ def generar_pdf_documento(documento):
         firma_solicitante=firmas_por_usuario.get(solicitante.id),
         firma_companero=firmas_por_usuario.get(companero.id),
         fondo_path=f"{current_app.static_folder}/img/hoja-cambio-fondo.png",
+        decision_supervisora=documento.decision_supervisora,
+        motivo_denegacion=documento.motivo_denegacion,
+        fecha_decision_supervisora=(
+            documento.fecha_decision_supervisora.date()
+            if documento.fecha_decision_supervisora else None
+        ),
+        firma_supervisora=documento.firma_supervisora,
     )
 
     buffer = io.BytesIO()
