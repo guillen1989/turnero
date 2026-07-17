@@ -956,3 +956,309 @@ def test_no_se_puede_autorizar_dos_veces(db, client):
     client.post(f"/documentos-cambio/{documento_id}/autorizar")
     resp = client.post(f"/documentos-cambio/{documento_id}/autorizar")
     assert resp.status_code == 409
+
+
+# --- Anular un cambio ya autorizado ---
+
+def _fecha_futura(dias=10):
+    return date.today() + timedelta(days=dias)
+
+
+def _crear_y_autorizar(db, client, claudia, juan, supervisora, manyana):
+    from app.services.documento_cambio import autorizar_documento
+
+    doc = _crear_documento_completo(
+        db, claudia, juan, manyana, manyana,
+        _fecha_futura(10), _fecha_futura(20),
+    )
+    autorizar_documento(doc, supervisora)
+    return doc
+
+
+def test_anular_requiere_supervisora(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "xx")
+    claudia = crear_usuario("Claudia Pérez", "claudiaxx@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanxx@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaxx@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc = _crear_y_autorizar(db, client, claudia, juan, supervisora, manyana)
+
+    _login(client, claudia.email)
+    resp = client.post(f"/documentos-cambio/{doc.id}/anular", data={"motivo": "x"})
+    assert resp.status_code == 403
+
+
+def test_anular_exitoso_marca_anulado_y_deshace_planilla(db, client):
+    from app.models import TurnoPlanilla
+
+    crear_usuario, manyana, tarde = _setup(db, "yy")
+    claudia = crear_usuario("Claudia Pérez", "claudiayy@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanyy@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martayy@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_cede, fecha_recibe = _fecha_futura(10), _fecha_futura(20)
+    from app.services.documento_cambio import autorizar_documento
+    doc = _crear_documento_completo(db, claudia, juan, manyana, manyana, fecha_cede, fecha_recibe)
+    autorizar_documento(doc, supervisora)
+
+    _login(client, supervisora.email)
+    resp = client.post(f"/documentos-cambio/{doc.id}/anular",
+                       data={"motivo": "Ya no hace falta"}, follow_redirects=True)
+    assert resp.status_code == 200
+
+    assert doc.anulado is True
+    assert doc.motivo_anulacion == "Ya no hace falta"
+    assert TurnoPlanilla.query.filter_by(
+        usuario_id=claudia.id, fecha=fecha_cede, franja_horaria_id=manyana.id
+    ).first() is not None
+
+
+def test_anular_sin_motivo_no_anula(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "zz")
+    claudia = crear_usuario("Claudia Pérez", "claudiazz@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanzz@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martazz@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc = _crear_y_autorizar(db, client, claudia, juan, supervisora, manyana)
+
+    _login(client, supervisora.email)
+    client.post(f"/documentos-cambio/{doc.id}/anular", data={"motivo": ""})
+    assert doc.anulado is False
+
+
+def test_no_se_puede_anular_si_el_turno_ya_paso(db, client):
+    from app.services.documento_cambio import autorizar_documento
+
+    crear_usuario, manyana, tarde = _setup(db, "a2")
+    claudia = crear_usuario("Claudia Pérez", "claudiaa2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juana2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaa2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    hoy = date.today()
+    doc = _crear_documento_completo(
+        db, claudia, juan, manyana, manyana, hoy - timedelta(days=3), hoy + timedelta(days=10),
+    )
+    autorizar_documento(doc, supervisora)
+
+    _login(client, supervisora.email)
+    client.post(f"/documentos-cambio/{doc.id}/anular", data={"motivo": "motivo"})
+    assert doc.anulado is False
+
+
+def test_no_se_puede_anular_dos_veces(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "b2")
+    claudia = crear_usuario("Claudia Pérez", "claudiab2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanb2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martab2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc = _crear_y_autorizar(db, client, claudia, juan, supervisora, manyana)
+
+    _login(client, supervisora.email)
+    client.post(f"/documentos-cambio/{doc.id}/anular", data={"motivo": "primera"})
+    client.post(f"/documentos-cambio/{doc.id}/anular", data={"motivo": "segunda"})
+    assert doc.motivo_anulacion == "primera"
+
+
+def test_ver_muestra_boton_anular_cuando_es_elegible(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c2")
+    claudia = crear_usuario("Claudia Pérez", "claudiac2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanc2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martac2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc = _crear_y_autorizar(db, client, claudia, juan, supervisora, manyana)
+
+    _login(client, supervisora.email)
+    resp = client.get(f"/documentos-cambio/{doc.id}")
+    assert "Anular".encode("utf-8") in resp.data
+    assert f'action="/documentos-cambio/{doc.id}/anular"'.encode() in resp.data
+
+
+def test_supervisora_filtra_por_anulado(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "d2")
+    claudia = crear_usuario("Claudia Pérez", "claudiad2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juand2@h.es")
+    ana = crear_usuario("Ana Gómez", "anad2@h.es")
+    luis = crear_usuario("Luis Ibáñez", "luisd2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martad2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    from app.services.documento_cambio import autorizar_documento, anular_documento
+
+    doc_anulado = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
+    autorizar_documento(doc_anulado, supervisora)
+    anular_documento(doc_anulado, supervisora, "motivo")
+
+    doc_vigente = _crear_documento_completo(db, ana, luis, manyana, manyana, _fecha_futura(10), _fecha_futura(21))
+    autorizar_documento(doc_vigente, supervisora)
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora",
+                       query_string={"anyo": _fecha_futura(10).year, "mes": _fecha_futura(10).month,
+                                     "estado_decision": "anulado"})
+    assert f"<td>{doc_anulado.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>{doc_vigente.numero_unidad}</td>".encode() not in resp.data
+
+    resp_autorizado = client.get("/documentos-cambio/supervisora",
+                                  query_string={"anyo": _fecha_futura(10).year, "mes": _fecha_futura(10).month,
+                                                "estado_decision": "autorizado"})
+    assert f"<td>{doc_vigente.numero_unidad}</td>".encode() in resp_autorizado.data
+    assert f"<td>{doc_anulado.numero_unidad}</td>".encode() not in resp_autorizado.data
+
+
+# --- Selección en bloque en la tabla de supervisión ---
+
+def test_bloque_requiere_supervisora(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "e2")
+    claudia = crear_usuario("Claudia Pérez", "claudiae2@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/supervisora/bloque/aceptar", data={"documento_ids": []})
+    assert resp.status_code == 403
+
+
+def test_bloque_aceptar_aplica_a_pendientes_y_omite_el_resto(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "f2")
+    claudia = crear_usuario("Claudia Pérez", "claudiaf2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanf2@h.es")
+    ana = crear_usuario("Ana Gómez", "anaf2@h.es")
+    luis = crear_usuario("Luis Ibáñez", "luisf2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaf2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    from app.services.documento_cambio import autorizar_documento
+
+    doc_pendiente = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
+    doc_ya_autorizado = _crear_documento_completo(db, ana, luis, manyana, manyana, _fecha_futura(10), _fecha_futura(21))
+    autorizar_documento(doc_ya_autorizado, supervisora)
+
+    _login(client, supervisora.email)
+    resp = client.post("/documentos-cambio/supervisora/bloque/aceptar",
+                       data={"documento_ids": [doc_pendiente.id, doc_ya_autorizado.id]},
+                       follow_redirects=True)
+    assert resp.status_code == 200
+    assert doc_pendiente.decision_supervisora == "autorizado"
+    assert "1 aceptados".encode("utf-8") in resp.data
+
+
+def test_bloque_denegar_requiere_motivo(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "g2")
+    claudia = crear_usuario("Claudia Pérez", "claudiag2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juang2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martag2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
+
+    _login(client, supervisora.email)
+    client.post("/documentos-cambio/supervisora/bloque/denegar",
+               data={"documento_ids": [doc.id], "motivo": ""})
+    assert doc.decision_supervisora == "pendiente"
+
+
+def test_bloque_denegar_aplica_el_mismo_motivo_a_todos(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "h2")
+    claudia = crear_usuario("Claudia Pérez", "claudiah2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanh2@h.es")
+    ana = crear_usuario("Ana Gómez", "anah2@h.es")
+    luis = crear_usuario("Luis Ibáñez", "luish2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martah2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc1 = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
+    doc2 = _crear_documento_completo(db, ana, luis, manyana, manyana, _fecha_futura(10), _fecha_futura(21))
+
+    _login(client, supervisora.email)
+    client.post("/documentos-cambio/supervisora/bloque/denegar",
+               data={"documento_ids": [doc1.id, doc2.id], "motivo": "Motivo compartido"})
+
+    assert doc1.decision_supervisora == "denegado"
+    assert doc1.motivo_denegacion == "Motivo compartido"
+    assert doc2.decision_supervisora == "denegado"
+    assert doc2.motivo_denegacion == "Motivo compartido"
+
+
+def test_bloque_anular_aplica_solo_a_elegibles(db, client):
+    from app.services.documento_cambio import autorizar_documento
+
+    crear_usuario, manyana, tarde = _setup(db, "i2")
+    claudia = crear_usuario("Claudia Pérez", "claudiai2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juani2@h.es")
+    ana = crear_usuario("Ana Gómez", "anai2@h.es")
+    luis = crear_usuario("Luis Ibáñez", "luisi2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martai2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc_autorizado = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
+    autorizar_documento(doc_autorizado, supervisora)
+
+    doc_pendiente = _crear_documento_completo(db, ana, luis, manyana, manyana, _fecha_futura(10), _fecha_futura(21))
+
+    _login(client, supervisora.email)
+    client.post("/documentos-cambio/supervisora/bloque/anular",
+               data={"documento_ids": [doc_autorizado.id, doc_pendiente.id], "motivo": "motivo"})
+
+    assert doc_autorizado.anulado is True
+    assert doc_pendiente.anulado is False
+
+
+def test_bloque_ignora_ids_que_no_pertenecen_al_grupo(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "j2")
+    claudia = crear_usuario("Claudia Pérez", "claudiaj2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanj2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaj2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    crear_usuario_otro, manyana_otro, tarde_otro = _setup(db, "k2")
+    ana = crear_usuario_otro("Ana Gómez", "anak2@h.es")
+    luis = crear_usuario_otro("Luis Ibáñez", "luisk2@h.es")
+    doc_otro_grupo = _crear_documento_completo(db, ana, luis, manyana_otro, manyana_otro, _fecha_futura(10), _fecha_futura(20))
+
+    _login(client, supervisora.email)
+    resp = client.post("/documentos-cambio/supervisora/bloque/aceptar",
+                       data={"documento_ids": [doc_otro_grupo.id]}, follow_redirects=True)
+    assert resp.status_code == 200
+    assert doc_otro_grupo.decision_supervisora == "pendiente"
+
+
+def test_bloque_pdf_combina_los_seleccionados(db, client):
+    import io
+    from pypdf import PdfReader
+
+    crear_usuario, manyana, tarde = _setup(db, "l2")
+    claudia = crear_usuario("Claudia Pérez", "claudial2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanl2@h.es")
+    ana = crear_usuario("Ana Gómez", "anal2@h.es")
+    luis = crear_usuario("Luis Ibáñez", "luisl2@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martal2@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    doc1 = _crear_documento_completo(db, claudia, juan, manyana, manyana, _fecha_futura(10), _fecha_futura(20))
+    doc2 = _crear_documento_completo(db, ana, luis, manyana, manyana, _fecha_futura(10), _fecha_futura(21))
+
+    _login(client, supervisora.email)
+    resp = client.post("/documentos-cambio/supervisora/bloque/pdf",
+                       data={"documento_ids": [doc1.id, doc2.id]})
+    assert resp.status_code == 200
+    assert resp.headers["Content-Type"] == "application/pdf"
+
+    lector = PdfReader(io.BytesIO(resp.data))
+    assert len(lector.pages) == 2

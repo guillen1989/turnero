@@ -52,9 +52,19 @@ class DocumentoCambio(db.Model):
     fecha_decision_supervisora = db.Column(db.DateTime(timezone=True), nullable=True)
     # Solo se rellena al denegar; los participantes deben poder ver por qué.
     motivo_denegacion = db.Column(db.Text, nullable=True)
+    # Anular deshace un cambio ya autorizado (planilla + match/publicaciones
+    # si vino del motor de matching). Es un dato aparte de decision_supervisora
+    # a propósito: decision_supervisora conserva el histórico ("esto se
+    # autorizó"), anulado registra que luego se deshizo, sin perder ese rastro.
+    # server_default porque documento_cambio ya tiene filas reales en staging.
+    anulado = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
+    anulado_por_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=True)
+    fecha_anulacion = db.Column(db.DateTime(timezone=True), nullable=True)
+    motivo_anulacion = db.Column(db.Text, nullable=True)
 
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
     supervisora = db.relationship("Usuario", foreign_keys=[supervisora_id])
+    anulado_por = db.relationship("Usuario", foreign_keys=[anulado_por_id])
     unidad = db.relationship("Unidad")
     match = db.relationship("MatchCambio", back_populates="documento_cambio")
     participantes = db.relationship(

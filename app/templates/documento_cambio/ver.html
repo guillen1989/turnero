@@ -21,9 +21,31 @@
     <p><span class="badge-draft">{{ _('Factibilidad no verificada') }}</span> {{ _('Falta la planilla publicada de alguna de las dos personas para ese mes. Comprueba manualmente que no haya conflictos.') }}</p>
   {% endif %}
 
-  {% if documento.estado == 'completo' %}
+  {% if documento.anulado %}
+    <div class="flash flash--danger">
+      <strong>{{ _('Cambio anulado') }}</strong>
+      {% if documento.motivo_anulacion %}<p>{{ _('Motivo') }}: {{ documento.motivo_anulacion }}</p>{% endif %}
+    </div>
+  {% elif documento.estado == 'completo' %}
     {% if documento.decision_supervisora == 'autorizado' %}
       <p><span class="badge-success">{{ _('Autorizado por la supervisora') }}</span> {{ _('Ya se ha aplicado a las planillas.') }}</p>
+      {% if current_user.es_supervisora %}
+      <section class="turnos-section">
+        <h2>{{ _('Anular este cambio') }}</h2>
+        {% if puede_anular %}
+        <form method="post" action="{{ url_for('documento_cambio.anular', documento_id=documento.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="form-group">
+            <label for="motivo_anulacion">{{ _('Motivo de la anulación') }}</label>
+            <textarea id="motivo_anulacion" name="motivo" rows="2" required placeholder="{{ _('Explica por qué se anula, lo verán los dos implicados.') }}"></textarea>
+          </div>
+          <button type="submit" class="btn btn-danger">{{ _('Anular') }}</button>
+        </form>
+        {% else %}
+        <p class="form-hint">{{ motivo_no_anulable }}</p>
+        {% endif %}
+      </section>
+      {% endif %}
     {% elif documento.decision_supervisora == 'denegado' %}
       <div class="flash flash--danger">
         <strong>{{ _('Denegado por la supervisora') }}</strong>

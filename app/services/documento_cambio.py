@@ -6,13 +6,16 @@ y pega en ilog.
 """
 import hashlib
 import io
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from flask import current_app, render_template
 from flask_babel import _
 
 from app.extensions import db
-from app.models import DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio, Notificacion
+from app.models import (
+    DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio, Notificacion,
+    TurnoPlanilla,
+)
 from app.push.sender import enviar_push
 from app.services.email import enviar_email, url_absoluta
 from app.services.factibilidad_documento_cambio import comprobar_factibilidad
@@ -395,6 +398,113 @@ def denegar_documento(documento, supervisora, motivo):
             _("Cambio denegado"),
             _(
                 "La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: %(motivo)s",
+                numero=documento.numero_unidad, motivo=motivo,
+            )
+            + " " + resumen,
+        )
+    db.session.commit()
+    return documento
+
+
+def _fechas_turno(documento):
+    """Las fechas de turno implicadas en el cambio (como mucho 2 distintas:
+    la que cede y la que recibe cada participante son la misma pareja de
+    fechas vista desde el otro lado)."""
+    fechas = set()
+    for p in documento.participantes:
+        fechas.add(p.turno_cede_fecha)
+        fechas.add(p.turno_recibe_fecha)
+    return fechas
+
+
+def puede_anularse(documento):
+    """
+    (bool, motivo_si_no_es_anulable). Un cambio solo se puede anular si:
+    - ya está autorizado (nada que deshacer en pendiente/denegado) y no
+      anulado ya de antes,
+    - ningún turno implicado ha pasado todavía (deshacer un turno que ya
+      se trabajó de verdad falsearía el historial, no lo corregiría),
+    - la planilla actual de cada participante sigue tal cual quedó tras
+      autorizar: tiene el turno que ganó y el que cedió sigue libre --
+      si algo más lo ha tocado desde entonces (otro cambio posterior),
+      deshacer a ciegas pisaría o duplicaría datos.
+    No muta nada; solo consulta.
+    """
+    if documento.decision_supervisora != "autorizado":
+        return False, _("Solo se puede anular un cambio ya autorizado.")
+    if documento.anulado:
+        return False, _("Este cambio ya está anulado.")
+
+    hoy = date.today()
+    if any(fecha < hoy for fecha in _fechas_turno(documento)):
+        return False, _("No se puede anular: alguno de los turnos ya ha pasado.")
+
+    for p in documento.participantes:
+        recibido = TurnoPlanilla.query.filter_by(
+            usuario_id=p.usuario_id, fecha=p.turno_recibe_fecha,
+            franja_horaria_id=p.turno_recibe_franja_id,
+        ).first()
+        if recibido is None:
+            return False, _("No se puede anular: la planilla ya no coincide con este cambio.")
+        conflicto = TurnoPlanilla.query.filter_by(
+            usuario_id=p.usuario_id, fecha=p.turno_cede_fecha,
+            franja_horaria_id=p.turno_cede_franja_id,
+        ).first()
+        if conflicto is not None:
+            return False, _("No se puede anular: el turno original ya está ocupado por otro cambio.")
+
+    return True, None
+
+
+def reabrir_match_de_documento(match):
+    """
+    Reabre un match ya confirmado_total cuyo DocumentoCambio se anula: los
+    turnos implicados vuelven a 'abierto' y las publicaciones recalculan su
+    estado, quedando de nuevo disponibles para nuevos cambios. El match
+    pasa a 'anulado' -- distinto de 'rechazado' (un rechazo antes de
+    confirmar, nunca llegó a resolver ningún turno).
+    """
+    match.estado = "anulado"
+    for p in match.participaciones:
+        if p.turno_cedido_id is not None:
+            p.turno_cedido.estado = "abierto"
+            p.publicacion.actualizar_estado()
+        else:
+            p.publicacion.estado = "abierta"
+        if p.turno_aceptado_id is not None:
+            p.turno_aceptado.estado = "abierto"
+
+
+def anular_documento(documento, supervisora, motivo):
+    """
+    Deshace un cambio ya autorizado: revierte la planilla de cada
+    participante (le quita lo que ganó, le devuelve lo que cedió) y, si el
+    documento viene de un match del motor de matching, reabre ese match y
+    sus publicaciones. No comprueba elegibilidad -- responsabilidad del
+    llamador (ver puede_anularse), igual que autorizar_documento/
+    denegar_documento.
+    """
+    from app.services.planilla import añadir_turno, eliminar_turno
+
+    for p in documento.participantes:
+        eliminar_turno(p.usuario, p.turno_recibe_fecha, p.turno_recibe_franja_id)
+        añadir_turno(p.usuario, p.turno_cede_fecha, p.turno_cede_franja_id)
+
+    if documento.match_id is not None:
+        reabrir_match_de_documento(documento.match)
+
+    documento.anulado = True
+    documento.anulado_por = supervisora
+    documento.fecha_anulacion = datetime.now(timezone.utc)
+    documento.motivo_anulacion = motivo
+
+    resumen = _resumen_cambio(documento)
+    for p in documento.participantes:
+        _notificar(
+            p.usuario, documento, "documento_cambio_anulado",
+            _("Cambio anulado"),
+            _(
+                "La supervisora ha anulado tu hoja de cambio nº %(numero)s. Motivo: %(motivo)s",
                 numero=documento.numero_unidad, motivo=motivo,
             )
             + " " + resumen,

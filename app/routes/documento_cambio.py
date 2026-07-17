@@ -1,4 +1,5 @@
 import calendar
+import io
 from datetime import date, datetime
 
 from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
@@ -10,7 +11,7 @@ from app.models import DocumentoCambio, FranjaHoraria, ParticipanteDocumentoCamb
 from app.extensions import db
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
-    autorizar_documento, denegar_documento,
+    autorizar_documento, denegar_documento, anular_documento, puede_anularse,
 )
 from app.services.registro import crear_franjas_default
 
@@ -180,8 +181,13 @@ def _documentos_del_grupo_supervisora(filtros):
         query = query.filter(DocumentoCambio.id.in_(_subquery_ids_por_usuario(filtros["trabajador1_id"])))
     if filtros["trabajador2_id"]:
         query = query.filter(DocumentoCambio.id.in_(_subquery_ids_por_usuario(filtros["trabajador2_id"])))
-    if filtros["estado_decision"] in _ESTADOS_DECISION_FILTRO:
-        query = query.filter(DocumentoCambio.decision_supervisora == filtros["estado_decision"])
+    if filtros["estado_decision"] == "anulado":
+        query = query.filter(DocumentoCambio.anulado.is_(True))
+    elif filtros["estado_decision"] in _ESTADOS_DECISION_FILTRO:
+        query = query.filter(
+            DocumentoCambio.decision_supervisora == filtros["estado_decision"],
+            DocumentoCambio.anulado.is_(False),
+        )
     if filtros["factibilidad"] in _FACTIBILIDAD_FILTRO:
         query = query.filter(DocumentoCambio.factibilidad_estado == filtros["factibilidad"])
     if filtros["numero"]:
@@ -275,10 +281,14 @@ def ver(documento_id):
         if documento.estado == "completo" and current_user.es_supervisora
         else []
     )
+    puede_anular, motivo_no_anulable = (
+        puede_anularse(documento) if current_user.es_supervisora else (False, None)
+    )
     return render_template(
         "documento_cambio/ver.html", documento=documento,
         ids_firmantes=ids_firmantes, mi_participante=mi_participante, puedo_firmar=puedo_firmar,
         notas_ilog=notas_ilog,
+        puede_anular=puede_anular, motivo_no_anulable=motivo_no_anulable,
     )
 
 
@@ -362,3 +372,167 @@ def denegar(documento_id):
     denegar_documento(documento, current_user, motivo=motivo)
     flash(_("Cambio denegado."), "info")
     return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
+
+
+def _get_documento_para_anular(documento_id):
+    """Devuelve (documento, None) o (None, motivo_de_error): solo una
+    supervisora del grupo, y solo si `puede_anularse` lo permite."""
+    documento = _get_documento_validado(documento_id)
+    if not current_user.es_supervisora:
+        abort(403)
+    ok, motivo = puede_anularse(documento)
+    if not ok:
+        return None, motivo
+    return documento, None
+
+
+@bp.post("/<int:documento_id>/anular")
+@login_required
+def anular(documento_id):
+    documento, error = _get_documento_para_anular(documento_id)
+    if error:
+        flash(error, "danger")
+        return redirect(url_for("documento_cambio.ver", documento_id=documento_id))
+
+    motivo = request.form.get("motivo", "").strip()
+    if not motivo:
+        flash(_("Indica el motivo de la anulación."), "danger")
+        return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
+
+    anular_documento(documento, current_user, motivo=motivo)
+    flash(_("Cambio anulado."), "info")
+    return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
+
+
+# ─── Selección en bloque desde la tabla de supervisión ─────────────────────
+
+_CAMPOS_FILTRO_BLOQUE = (
+    "anyo", "mes", "fecha", "trabajador1_id", "trabajador2_id",
+    "franja_id", "estado_decision", "factibilidad", "numero",
+)
+
+
+def _redirect_a_supervisora_con_filtros():
+    args = {campo: request.form.get(campo, "").strip() for campo in _CAMPOS_FILTRO_BLOQUE}
+    args = {k: v for k, v in args.items() if v}
+    return redirect(url_for("documento_cambio.supervisora", **args))
+
+
+def _documentos_seleccionados():
+    """Documentos de los ids marcados en el formulario que de verdad
+    pertenecen al grupo de la supervisora -- nunca se confía en los ids tal
+    cual vienen del cliente."""
+    ids = request.form.getlist("documento_ids", type=int)
+    if not ids:
+        return []
+    grupo_id = current_user.grupo_intercambio.id
+    return (
+        DocumentoCambio.query
+        .filter(
+            DocumentoCambio.id.in_(ids),
+            DocumentoCambio.id.in_(_subquery_ids_por_usuario_del_grupo(grupo_id)),
+        )
+        .all()
+    )
+
+
+@bp.post("/supervisora/bloque/pdf")
+@login_required
+def bloque_pdf():
+    if not current_user.es_supervisora:
+        abort(403)
+    documentos = _documentos_seleccionados()
+    elegibles = [d for d in documentos if d.estado == "completo"]
+
+    if not elegibles:
+        flash(_("Ningún cambio seleccionado tiene el PDF disponible (deben estar completos)."), "danger")
+        return _redirect_a_supervisora_con_filtros()
+
+    from pypdf import PdfWriter
+
+    writer = PdfWriter()
+    for documento in elegibles:
+        writer.append(io.BytesIO(generar_pdf_documento(documento)))
+    buffer = io.BytesIO()
+    writer.write(buffer)
+    buffer.seek(0)
+
+    return Response(
+        buffer.read(), mimetype="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=hojas-cambio.pdf"},
+    )
+
+
+@bp.post("/supervisora/bloque/aceptar")
+@login_required
+def bloque_aceptar():
+    if not current_user.es_supervisora:
+        abort(403)
+    documentos = _documentos_seleccionados()
+
+    aplicados = 0
+    for documento in documentos:
+        if documento.estado == "completo" and documento.decision_supervisora == "pendiente":
+            autorizar_documento(documento, current_user)
+            aplicados += 1
+
+    omitidos = len(documentos) - aplicados
+    flash(
+        _("%(aplicados)s aceptados. %(omitidos)s omitidos (no estaban pendientes de decisión).",
+          aplicados=aplicados, omitidos=omitidos),
+        "success" if aplicados else "info",
+    )
+    return _redirect_a_supervisora_con_filtros()
+
+
+@bp.post("/supervisora/bloque/denegar")
+@login_required
+def bloque_denegar():
+    if not current_user.es_supervisora:
+        abort(403)
+    motivo = request.form.get("motivo", "").strip()
+    if not motivo:
+        flash(_("Indica el motivo para denegar en bloque."), "danger")
+        return _redirect_a_supervisora_con_filtros()
+
+    documentos = _documentos_seleccionados()
+    aplicados = 0
+    for documento in documentos:
+        if documento.estado == "completo" and documento.decision_supervisora == "pendiente":
+            denegar_documento(documento, current_user, motivo=motivo)
+            aplicados += 1
+
+    omitidos = len(documentos) - aplicados
+    flash(
+        _("%(aplicados)s denegados. %(omitidos)s omitidos (no estaban pendientes de decisión).",
+          aplicados=aplicados, omitidos=omitidos),
+        "success" if aplicados else "info",
+    )
+    return _redirect_a_supervisora_con_filtros()
+
+
+@bp.post("/supervisora/bloque/anular")
+@login_required
+def bloque_anular():
+    if not current_user.es_supervisora:
+        abort(403)
+    motivo = request.form.get("motivo", "").strip()
+    if not motivo:
+        flash(_("Indica el motivo para anular en bloque."), "danger")
+        return _redirect_a_supervisora_con_filtros()
+
+    documentos = _documentos_seleccionados()
+    aplicados = 0
+    for documento in documentos:
+        ok, _motivo_rechazo = puede_anularse(documento)
+        if ok:
+            anular_documento(documento, current_user, motivo=motivo)
+            aplicados += 1
+
+    omitidos = len(documentos) - aplicados
+    flash(
+        _("%(aplicados)s anulados. %(omitidos)s omitidos (no se podían anular).",
+          aplicados=aplicados, omitidos=omitidos),
+        "success" if aplicados else "info",
+    )
+    return _redirect_a_supervisora_con_filtros()

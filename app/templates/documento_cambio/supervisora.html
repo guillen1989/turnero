@@ -71,6 +71,7 @@
         <option value="pendiente" {% if filtros.estado_decision == 'pendiente' %}selected{% endif %}>{{ _('Pendiente de decisión') }}</option>
         <option value="autorizado" {% if filtros.estado_decision == 'autorizado' %}selected{% endif %}>{{ _('Aceptado') }}</option>
         <option value="denegado" {% if filtros.estado_decision == 'denegado' %}selected{% endif %}>{{ _('Rechazado') }}</option>
+        <option value="anulado" {% if filtros.estado_decision == 'anulado' %}selected{% endif %}>{{ _('Anulado') }}</option>
       </select>
     </div>
     <div class="form-group">
@@ -93,64 +94,121 @@
 </form>
 
 {% if documentos %}
-<div class="table-scroll">
-  <table class="admin-table">
-    <thead>
-      <tr>
-        <th>{{ _('Nº') }}</th>
-        <th>{{ _('Fecha') }}</th>
-        <th>{{ _('Trabajador 1') }}</th>
-        <th>{{ _('Cede') }}</th>
-        <th>{{ _('Recibe') }}</th>
-        <th>{{ _('Trabajador 2') }}</th>
-        <th>{{ _('Cede') }}</th>
-        <th>{{ _('Recibe') }}</th>
-        <th>{{ _('Factibilidad') }}</th>
-        <th>{{ _('Estado') }}</th>
-        <th>{{ _('Acciones') }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for documento in documentos %}
-      {% set p1 = documento.participantes[0] %}
-      {% set p2 = documento.participantes[1] if documento.participantes|length > 1 else None %}
-      <tr>
-        <td>{{ documento.numero_unidad }}</td>
-        <td>{{ documento.fecha_creacion.strftime('%d/%m/%Y') }}</td>
-        <td>{{ p1.usuario.nombre }}</td>
-        <td>{{ p1.turno_cede_franja.nombre }} {{ p1.turno_cede_fecha.strftime('%d/%m/%Y') }}</td>
-        <td>{{ p1.turno_recibe_franja.nombre }} {{ p1.turno_recibe_fecha.strftime('%d/%m/%Y') }}</td>
-        <td>{{ p2.usuario.nombre if p2 else '—' }}</td>
-        <td>{{ p2.turno_cede_franja.nombre ~ ' ' ~ p2.turno_cede_fecha.strftime('%d/%m/%Y') if p2 else '—' }}</td>
-        <td>{{ p2.turno_recibe_franja.nombre ~ ' ' ~ p2.turno_recibe_fecha.strftime('%d/%m/%Y') if p2 else '—' }}</td>
-        <td>
-          {% if documento.factibilidad_estado == 'factible' %}
-            <span class="badge-success">{{ _('Factible') }}</span>
-          {% elif documento.factibilidad_estado == 'no_factible' %}
-            <span class="badge-draft">{{ _('No factible') }}</span>
-          {% else %}
-            <span class="badge-draft">{{ _('Sin verificar') }}</span>
-          {% endif %}
-        </td>
-        <td>
-          {% if documento.decision_supervisora == 'autorizado' %}
-            <span class="badge-success">{{ _('Aceptado') }}</span>
-          {% elif documento.decision_supervisora == 'denegado' %}
-            <span class="badge-draft">{{ _('Rechazado') }}</span>
-          {% else %}
-            <span class="badge-draft">{{ _('Pendiente de decisión') }}</span>
-          {% endif %}
-        </td>
-        <td class="admin-actions">
-          <a href="{{ url_for('documento_cambio.ver', documento_id=documento.id) }}" class="btn btn-secondary btn-xs">{{ _('Ver') }}</a>
-          <a href="{{ url_for('documento_cambio.pdf', documento_id=documento.id) }}" class="btn btn-secondary btn-xs">{{ _('PDF') }}</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<form method="post" id="bloque-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% for campo in ('anyo', 'mes', 'fecha', 'trabajador1_id', 'trabajador2_id', 'franja_id', 'estado_decision', 'factibilidad', 'numero') %}
+  <input type="hidden" name="{{ campo }}" value="{{ filtros[campo] or '' }}">
+  {% endfor %}
+
+  <div class="fb-bulk-bar">
+    <label class="fb-select-all-label">
+      <input type="checkbox" id="bloque-select-all"> {{ _('Seleccionar todos') }}
+    </label>
+    <button type="submit" formaction="{{ url_for('documento_cambio.bloque_pdf') }}"
+            class="btn btn-secondary btn-sm bloque-btn" disabled>{{ _('Descargar PDFs') }}</button>
+    <button type="submit" formaction="{{ url_for('documento_cambio.bloque_aceptar') }}"
+            class="btn btn-primary btn-sm bloque-btn" disabled>{{ _('Aceptar seleccionados') }}</button>
+    <button type="submit" formaction="{{ url_for('documento_cambio.bloque_denegar') }}"
+            class="btn btn-danger btn-sm bloque-btn" disabled>{{ _('Denegar seleccionados') }}</button>
+    <button type="submit" formaction="{{ url_for('documento_cambio.bloque_anular') }}"
+            class="btn btn-danger btn-sm bloque-btn" disabled>{{ _('Anular seleccionados') }}</button>
+    <div class="form-group">
+      <label for="bloque-motivo">{{ _('Motivo (para denegar/anular en bloque)') }}</label>
+      <input type="text" id="bloque-motivo" name="motivo">
+    </div>
+  </div>
+
+  <div class="table-scroll">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>{{ _('Nº') }}</th>
+          <th>{{ _('Fecha') }}</th>
+          <th>{{ _('Trabajador 1') }}</th>
+          <th>{{ _('Cede') }}</th>
+          <th>{{ _('Recibe') }}</th>
+          <th>{{ _('Trabajador 2') }}</th>
+          <th>{{ _('Cede') }}</th>
+          <th>{{ _('Recibe') }}</th>
+          <th>{{ _('Factibilidad') }}</th>
+          <th>{{ _('Estado') }}</th>
+          <th>{{ _('Acciones') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for documento in documentos %}
+        {% set p1 = documento.participantes[0] %}
+        {% set p2 = documento.participantes[1] if documento.participantes|length > 1 else None %}
+        <tr>
+          <td><input type="checkbox" name="documento_ids" value="{{ documento.id }}" class="bloque-checkbox"></td>
+          <td>{{ documento.numero_unidad }}</td>
+          <td>{{ documento.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+          <td>{{ p1.usuario.nombre }}</td>
+          <td>{{ p1.turno_cede_franja.nombre }} {{ p1.turno_cede_fecha.strftime('%d/%m/%Y') }}</td>
+          <td>{{ p1.turno_recibe_franja.nombre }} {{ p1.turno_recibe_fecha.strftime('%d/%m/%Y') }}</td>
+          <td>{{ p2.usuario.nombre if p2 else '—' }}</td>
+          <td>{{ p2.turno_cede_franja.nombre ~ ' ' ~ p2.turno_cede_fecha.strftime('%d/%m/%Y') if p2 else '—' }}</td>
+          <td>{{ p2.turno_recibe_franja.nombre ~ ' ' ~ p2.turno_recibe_fecha.strftime('%d/%m/%Y') if p2 else '—' }}</td>
+          <td>
+            {% if documento.factibilidad_estado == 'factible' %}
+              <span class="badge-success">{{ _('Factible') }}</span>
+            {% elif documento.factibilidad_estado == 'no_factible' %}
+              <span class="badge-draft">{{ _('No factible') }}</span>
+            {% else %}
+              <span class="badge-draft">{{ _('Sin verificar') }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if documento.anulado %}
+              <span class="badge-draft">{{ _('Anulado') }}</span>
+            {% elif documento.decision_supervisora == 'autorizado' %}
+              <span class="badge-success">{{ _('Aceptado') }}</span>
+            {% elif documento.decision_supervisora == 'denegado' %}
+              <span class="badge-draft">{{ _('Rechazado') }}</span>
+            {% else %}
+              <span class="badge-draft">{{ _('Pendiente de decisión') }}</span>
+            {% endif %}
+          </td>
+          <td class="admin-actions">
+            <a href="{{ url_for('documento_cambio.ver', documento_id=documento.id) }}" class="btn btn-secondary btn-xs">{{ _('Ver') }}</a>
+            <a href="{{ url_for('documento_cambio.pdf', documento_id=documento.id) }}" class="btn btn-secondary btn-xs">{{ _('PDF') }}</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</form>
 {% else %}
 <p class="empty-state">{{ _('No hay hojas de cambio completas que coincidan con estos filtros.') }}</p>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var selectAll = document.getElementById('bloque-select-all');
+  if (!selectAll) return;
+
+  var checkboxes = document.querySelectorAll('.bloque-checkbox');
+  var botones = document.querySelectorAll('.bloque-btn');
+
+  function actualizarBotones() {
+    var alguno = Array.from(checkboxes).some(function (cb) { return cb.checked; });
+    botones.forEach(function (btn) { btn.disabled = !alguno; });
+    selectAll.indeterminate = alguno && !Array.from(checkboxes).every(function (cb) { return cb.checked; });
+    selectAll.checked = Array.from(checkboxes).every(function (cb) { return cb.checked; });
+  }
+
+  selectAll.addEventListener('change', function () {
+    checkboxes.forEach(function (cb) { cb.checked = selectAll.checked; });
+    actualizarBotones();
+  });
+
+  checkboxes.forEach(function (cb) {
+    cb.addEventListener('change', actualizarBotones);
+  });
+})();
+</script>
 {% endblock %}

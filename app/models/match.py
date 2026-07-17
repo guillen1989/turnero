@@ -15,7 +15,10 @@ class MatchCambio(db.Model):
     tipo = db.Column(db.String(20), nullable=False, default="directo_2")
     estado = db.Column(db.String(30), nullable=False, default="propuesto")
     # tipo:  directo_2 | cadena_3 | cadena_4 | cadena_n
-    # estado: propuesto | confirmado_parcial | confirmado_total | rechazado
+    # estado: propuesto | confirmado_parcial | confirmado_total | rechazado | anulado
+    # 'anulado': una supervisora deshizo un DocumentoCambio ya autorizado que
+    # venía de este match (ver anular_documento) -- distinto de 'rechazado',
+    # que es un rechazo previo a la confirmación, nunca llegó a resolver turnos.
     fecha_creacion = db.Column(
         db.DateTime, nullable=True, default=lambda: datetime.now(timezone.utc)
     )

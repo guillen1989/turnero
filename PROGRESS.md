@@ -4,16 +4,20 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Firma guardada — feedback del usuario tras probarla en staging: la sección
-en `/perfil/cuenta` no se encuentra bien, se deja donde está (no se mueve),
-pero además se ofrece guardar la firma en el momento de firmar (ver
-siguiente entrada del changelog). Recién enviado a staging, pendiente de
-feedback del usuario sobre esta segunda iteración.
+Añadida la anulación de cambios ya autorizados (deshace planilla y, si
+viene de un match, reabre match/publicaciones) y la selección en bloque en
+"Supervisión de cambios" (PDF combinado, aceptar/denegar/anular en bloque).
+Sin siguiente paso concreto pendiente en esta parte de la fase.
+
+Antes de eso: firma guardada — feedback del usuario tras probarla en
+staging: la sección en `/perfil/cuenta` no se encuentra bien, se deja
+donde está (no se mueve), pero además se ofrece guardar la firma en el
+momento de firmar (ver siguiente entrada del changelog). Recién enviado a
+staging, pendiente de feedback del usuario sobre esta segunda iteración.
 
 Antes de eso: el usuario decidió quedarse con la vista de tabla:
 "Supervisión de cambios" es ahora la única vista (una fila por cambio),
-con filtros y navegación por mes/año. Sin siguiente paso concreto
-pendiente en esa parte de la fase.
+con filtros y navegación por mes/año.
 
 Ya ejecutado contra el staging real (con confirmación explícita del
 usuario): `scripts/seed_staging.py` (ampliación de UCO) y las variables
@@ -1496,6 +1500,8 @@ mitigación preventiva independiente de la causa.
 - [x] feat(firma): firma guardada reutilizable — el usuario dibuja su firma una vez en `/perfil/cuenta` y puede firmar hojas de cambio y confirmaciones de match sin repetir el garabato · columna `usuario.firma_guardada` (Text, nullable, sin patrón de 3 pasos por no ser NOT NULL) · migración `8ea99af48f5f`, un solo head · rutas `POST /perfil/firma/guardar` (valida `data:image/`) y `POST /perfil/firma/eliminar` · nueva sección "Firma guardada" en `perfil_cuenta.html` (canvas para dibujar/guardar si no hay una, previsualización + botón eliminar si ya hay) reutilizando `firma-canvas.js` sin cambios de backend · `firma-canvas.js::initFirmaForm` ampliado con un botón opcional `.firma-usar-guardada` que rellena el input oculto con la firma guardada (`data-firma`) y envía el formulario sin exigir dibujo nuevo — el listener de `submit` ahora solo sobrescribe el input con el canvas si se dibujó algo, si no deja el valor ya puesto; si no hay ni dibujo ni valor previo, bloquea igual que antes · botón "Firmar con firma guardada" añadido en `documento_cambio/ver.html` (mismo mecanismo) y, con JS independiente (esa vista no usa `firma-canvas.js`), en el modal de confirmación de match de `dashboard.html` · ambas rutas de firmado existentes (`documento_cambio.firmar`, `matches.confirmar`) no se tocan: ya aceptaban cualquier `data:image/...` válido, venga de un dibujo nuevo o de la firma guardada · catálogo i18n actualizado (solo las cadenas nuevas, sin arrastrar otras ya pendientes de sincronizar) · 10 tests nuevos (modelo, rutas de guardar/eliminar, render condicional en `perfil_cuenta`/`ver.html`/`dashboard.html`) · 1010 tests passing
 
 - [x] feat(firma): ofrece guardar la firma en el momento de firmar, no solo desde `/perfil/cuenta` — feedback del usuario tras probar en staging: la sección de `/perfil/cuenta` "no se encuentra bien" (se deja donde está, no se mueve/promueve) · cuando el usuario dibuja una firma nueva (no usa el botón de firma guardada) y **no tiene** `firma_guardada` todavía, aparece un checkbox "Guardar esta firma para futuras firmas", marcado por defecto · `documento_cambio.firmar` y `matches.confirmar` leen el campo `guardar_firma` del POST: si viene marcado y el usuario aún no tiene firma guardada, la guardan de paso (`if request.form.get("guardar_firma") and not current_user.firma_guardada`) — nunca sobrescribe una ya existente por esta vía, aunque el checkbox no debería llegar a mostrarse en ese caso · en `ver.html` el checkbox es un campo más del mismo `<form>` (sin JS extra) · en el modal de `dashboard.html` (compartido entre todas las tarjetas de match) el checkbox vive fuera del `<form>` de cada match, así que se añade un input oculto `.guardar-firma-input` por formulario y el handler de "Firmar y confirmar" copia el estado del checkbox ahí antes de enviar, igual que ya hacía con `.firma-input` · catálogo i18n actualizado (1 cadena nueva) · 10 tests nuevos (backend de ambas rutas + render condicional del checkbox en `ver.html`/`dashboard.html`) · 1027 tests passing
+
+- [x] feat(documento-cambio): anular un cambio ya autorizado + selección en bloque en "Supervisión de cambios" · migración `93549d8020ab` (`anulado`, `anulado_por_id`, `fecha_anulacion`, `motivo_anulacion` en `documento_cambio`) · `anulado` es un dato aparte de `decision_supervisora`, que conserva el histórico ("esto se autorizó") · `puede_anularse(documento)` comprueba: ya autorizado y no anulado antes, ningún turno implicado ha pasado ya, y la planilla actual de cada participante sigue tal cual quedó tras autorizar (si otro cambio posterior la tocó, no se anula a ciegas) · `anular_documento()` deshace el volcado a planillas (espejo de `volcar_documento_a_planillas`) y, si el documento viene de un match del motor de matching (`match_id`), reabre ese match con `reabrir_match_de_documento()`: turnos vuelven a `abierto`, publicaciones recalculan estado, el match pasa a un estado nuevo `anulado` (distinto de `rechazado`, que es previo a la confirmación) · botón "Anular" en `ver.html` cuando aplica, motivo obligatorio, notifica a ambos implicados · selección en bloque en la tabla (checkboxes + "seleccionar todos", patrón `.fb-bulk-bar` ya usado en `admin/feedback`): un único `<form>` con varios botones `formaction` a 4 rutas (`bloque/pdf|aceptar|denegar|anular`), procesando cada id independientemente y reportando aplicados/omitidos en vez de fallar el lote entero · ids del formulario siempre filtrados contra el grupo de la supervisora antes de actuar · PDF en bloque fusiona con `pypdf` (nueva dependencia explícita en requirements.txt, antes solo transitiva de `xhtml2pdf`) en un único archivo · filtro nuevo "Anulado" en la tabla (excluido de `estado_decision=autorizado`, que ahora solo cuenta lo vigente) · 20 tests nuevos · 169 tests afectados passing (`pytest --testmon`)
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
