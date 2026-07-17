@@ -12,14 +12,14 @@ from app.models import (
     Categoria, DocumentoCambio, ParticipanteDocumentoCambio, PlanillaMes,
     TurnoPlanilla, Usuario, insertar_categorias_semilla,
 )
-from app.services.demo import BOT_ACCOUNTS, DEMO_ACCOUNTS
+from app.services.demo import BOT_ACCOUNTS, DEMO_ACCOUNTS, reset_demo
 from app.services.registro import (
     encontrar_o_crear_ciudad, encontrar_o_crear_hospital, encontrar_o_crear_pais,
     encontrar_o_crear_provincia, encontrar_o_crear_unidad,
 )
 from scripts.seed_staging import (
-    UCO_CATEGORIA, UCO_HOSPITAL, UCO_SUPERVISORA_EMAIL, UCO_SUPERVISORA_PASSWORD,
-    UCO_UNIDAD, ampliar_uco_la_paz,
+    UCO_BOT_ACCOUNTS, UCO_CATEGORIA, UCO_DEMO_ACCOUNTS, UCO_HOSPITAL,
+    UCO_SUPERVISORA_EMAIL, UCO_SUPERVISORA_PASSWORD, UCO_UNIDAD, ampliar_uco_la_paz,
 )
 
 
@@ -44,6 +44,23 @@ def _crear_usuario_real(unidad, cat, nombre="Usuario Real", email="real@test.es"
 
 def test_crea_las_23_cuentas_sinteticas(db):
     ampliar_uco_la_paz()
+    for _, email in UCO_DEMO_ACCOUNTS + UCO_BOT_ACCOUNTS:
+        assert Usuario.query.filter_by(email=email).first() is not None
+
+
+def test_cuentas_uco_no_chocan_con_las_de_la_unidad_demo_aislada(db):
+    """Regresión: reset_demo() (flask seed-demo, DEMO_ENABLED=true, ya activo
+    en staging) siembra su propia unidad con DEMO_ACCOUNTS/BOT_ACCOUNTS.
+    Como el email es único a nivel de toda la BD, ampliar_uco_la_paz() debe
+    usar emails distintos o revienta con un IntegrityError en cuanto ambas
+    convivan en la misma base de datos -- exactamente lo que le pasó al
+    usuario en el staging real."""
+    reset_demo()
+
+    ampliar_uco_la_paz()
+
+    for _, email in UCO_DEMO_ACCOUNTS + UCO_BOT_ACCOUNTS:
+        assert Usuario.query.filter_by(email=email).first() is not None
     for _, email in DEMO_ACCOUNTS + BOT_ACCOUNTS:
         assert Usuario.query.filter_by(email=email).first() is not None
 
@@ -116,7 +133,7 @@ def test_supervisora_con_decisiones_no_se_borra(db):
 
 def test_rota_publicada_para_jul_ago_sep_2026(db):
     ampliar_uco_la_paz()
-    usuarios = Usuario.query.filter_by(email=BOT_ACCOUNTS[0][1]).all()
+    usuarios = Usuario.query.filter_by(email=UCO_BOT_ACCOUNTS[0][1]).all()
     assert usuarios
     bot = usuarios[0]
     for mes in (7, 8, 9):

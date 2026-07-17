@@ -4,11 +4,12 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Siguiente paso: en el botón "Probar con una cuenta demo" (login y portada),
-dejar elegir entre la cuenta demo de trabajador (ya implementada) y la de
-supervisora (`DEMO_SUPERVISORA_LOGIN_EMAIL`/`_PASSWORD`, pensada para
-`supervisora.uco@demo.turnero.com`, la que crea `scripts/seed_staging.py`).
-Solo en `staging`, sin tocar `main`/producción.
+Pendiente de ejecutar contra el staging real: `scripts/seed_staging.py`
+(la parte de ampliación de UCO) y fijar en Railway (entorno staging, no
+producción) las variables `DEMO_SUPERVISORA_LOGIN_EMAIL`/`_PASSWORD` para
+que aparezca la elección trabajador/supervisora en "Probar con una cuenta
+demo". Se hará solo con confirmación explícita del usuario (son escrituras
+sobre infraestructura real, aunque sea de staging).
 
 Antes de eso: retomado el paso 10 (enganche con el motor de matching),
 parcialmente: al confirmar un match directo **simétrico** (cambio↔cambio:
@@ -1477,6 +1478,8 @@ mitigación preventiva independiente de la causa.
 - [x] feat(avisos): el aviso de confirmación (`confirmado_total`) y de rechazo (`rechazo`) de un match del motor de matching (distinto del flujo de hoja de cambio del paso anterior) ahora se muestra también en `/avisos` con los datos del cambio — quiénes lo hacen y qué día/franja libra y trabaja cada participación — en vez de quedar invisible (esos dos tipos de `Notificacion` no entraban en la consulta de `/avisos`, solo generaban un push agregado sin detalle) · refactor: `_calcular_trabajas` se traslada de `app/routes/main.py` a `app/services/matches.py::calcular_trabajas` (lógica de dominio del match, no de la ruta) y se reutiliza desde ambos sitios · catálogo i18n actualizado (reutiliza los mismos msgid `libra:`/`trabaja:`/`cualquier turno` ya usados en el dashboard) · 2 tests nuevos · verificado con las suites de match/notificaciones/dashboard/cadenas (162 tests) limpias en una ventana sin contención de la BD de test compartida con otra sesión concurrente · 948 tests passing (suite completa, tras integrar con el trabajo paralelo de Fase 10)
 
 - [x] chore(seed-staging): `scripts/seed_staging.py` amplía de forma aditiva la unidad real UCO·Hospital Universitario La Paz·Enfermería (además de crear su propio conjunto de usuarios como hasta ahora) · `app/services/demo.py` refactorizado para extraer `sembrar_contenido_bot(unidad, categoria, incluir_planillas=True)` reutilizable (antes solo servía a la unidad de demostración aislada) · `BOT_ACCOUNTS` pasa a público · nuevo generador puro `generar_rota()` (14 plantillas semanales `_COMBOS_ROTA`/`_PLANTILLA_ROTA`, 7 fases × 2 variantes de noche) que cubre julio-agosto-septiembre 2026 garantizando cobertura diaria de las 5 franjas, descanso obligatorio (`EstadoDiaPlanilla`+`SalienteDia`) al día siguiente de Noche/Nocturno 12h, y 2 días libres/semana por trabajador · supervisora `supervisora.uco@demo.turnero.com` (sustituye a cualquier supervisora previa del mismo grupo de intercambio, salvo que ya tenga hojas de cambio decididas referenciándola) · hojas de cambio (agosto-septiembre 2026) en sus 4 estados posibles (pendiente de firma / completa pendiente de la supervisora / autorizada / denegada) para cada usuario (>=2), emparejando usuarios a "media vuelta" de distancia en el roster (emparejar contiguos fallaba: comparten fase de rota, solo difieren en la variante de turno nocturno, así que nunca hay hueco de intercambio) · usa los servicios reales (`crear_documento_cambio`/`firmar_documento`/`autorizar_documento`/`denegar_documento`) envueltos en `current_app.test_request_context()` (necesario fuera de una request real: Flask-Babel/`url_for` lo requieren) · nunca borra ni toca usuarios ya existentes de esa unidad (aditivo e idempotente, con su propia comprobación independiente de `_ya_sembrado()`) · 18 tests nuevos (`tests/test_seed_staging_rota.py`, `tests/test_seed_staging_uco.py`) · 996 tests passing
+
+- [x] fix(seed-staging): corrige colisión de emails entre la unidad de demostración aislada de producción (`flask seed-demo`, `DEMO_ENABLED=true` ya activo en staging) y la ampliación de UCO·La Paz·Enfermería — ambas reutilizaban los mismos `DEMO_ACCOUNTS`/`BOT_ACCOUNTS` de `app/services/demo.py`, y como `usuario.email` es único a nivel de toda la BD, `ampliar_uco_la_paz()` reventaba con un `IntegrityError` en cuanto la unidad demo ya existía (confirmado contra el staging real: la unidad "Urgencias de Demostración" ya tenía sembrados `demo1@turnero.com`/`bot.maria@demo.turnero.com`, y UCO seguía solo con sus 16 usuarios reales, sin rastro de la ampliación) · `sembrar_contenido_bot()` ahora acepta `cuentas_demo`/`cuentas_bot` opcionales · `scripts/seed_staging.py` define `UCO_DEMO_ACCOUNTS`/`UCO_BOT_ACCOUNTS` con emails propios (`uco.<email-base>@demo.turnero.com`) · test de regresión que ejecuta `reset_demo()` + `ampliar_uco_la_paz()` en la misma BD · 997 tests passing
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).

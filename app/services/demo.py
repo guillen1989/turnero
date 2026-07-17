@@ -307,7 +307,8 @@ def _borrar_demo():
 
 # ─── seed ────────────────────────────────────────────────────────────────────
 
-def sembrar_contenido_bot(unidad, categoria, incluir_planillas=True):
+def sembrar_contenido_bot(unidad, categoria, incluir_planillas=True,
+                           cuentas_demo=None, cuentas_bot=None):
     """Crea las 23 cuentas sintéticas (3 demo navegables + 20 bots) dentro de
     `unidad`, con publicaciones abiertas y matches en varios estados. No hace
     commit ni toca a los usuarios ya existentes de `unidad` -- responsabilidad
@@ -320,7 +321,17 @@ def sembrar_contenido_bot(unidad, categoria, incluir_planillas=True):
     (pensadas para la demo aislada, siempre "hoy"); úsalo cuando el llamador
     vaya a generar sus propias planillas con fechas fijas para todo el
     grupo, evitando turnos duplicados el mismo día.
+
+    `cuentas_demo`/`cuentas_bot`: por defecto DEMO_ACCOUNTS/BOT_ACCOUNTS,
+    pero un llamador que siembre en una base de datos donde ya exista la
+    unidad de demostración aislada (mismo email = mismo `Usuario`, columna
+    única) debe pasar sus propias listas para no chocar con ella -- ver
+    scripts/seed_staging.py, que usa emails distintos para su propia
+    ampliación de UCO·La Paz·Enfermería.
     """
+    cuentas_demo = cuentas_demo if cuentas_demo is not None else DEMO_ACCOUNTS
+    cuentas_bot  = cuentas_bot if cuentas_bot is not None else BOT_ACCOUNTS
+
     g = unidad.grupo_intercambio
     man  = _franja(g, "Mañana")
     tar  = _franja(g, "Tarde")
@@ -331,12 +342,12 @@ def sembrar_contenido_bot(unidad, categoria, incluir_planillas=True):
     # Cuentas demo
     ana, carlos, elena = [
         _usuario(nombre, email, unidad, categoria)
-        for nombre, email in DEMO_ACCOUNTS
+        for nombre, email in cuentas_demo
     ]
     # Bots
     bots = [
         _usuario(nombre, email, unidad, categoria)
-        for nombre, email in BOT_ACCOUNTS
+        for nombre, email in cuentas_bot
     ]
     maria, javier, sofia, pedro, laura = bots[:5]
     marta, diego, lucia, alejandro, carmen, raul = bots[5:11]

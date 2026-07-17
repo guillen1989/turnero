@@ -49,7 +49,7 @@ from app.services.registro import (
     encontrar_o_crear_hospital,
     encontrar_o_crear_unidad,
 )
-from app.services.demo import BOT_ACCOUNTS, sembrar_contenido_bot
+from app.services.demo import BOT_ACCOUNTS, DEMO_ACCOUNTS, sembrar_contenido_bot
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, autorizar_documento, denegar_documento,
 )
@@ -627,9 +627,26 @@ UCO_HOJAS_INICIO = date(2026, 8, 1)
 UCO_HOJAS_FIN    = date(2026, 9, 30)
 
 
+def _cuentas_uco(cuentas):
+    """Mismo nombre, email distinto: evita chocar con la unidad de
+    demostración aislada de producción (`flask seed-demo`, activa también
+    en staging vía DEMO_ENABLED), que usa los mismos nombres/emails base de
+    DEMO_ACCOUNTS/BOT_ACCOUNTS -- el email es único a nivel de toda la base
+    de datos, así que reutilizarlos tal cual revienta con un
+    IntegrityError en cuanto ambas unidades conviven en la misma BD."""
+    return [
+        (nombre, f"uco.{email.split('@')[0]}@demo.turnero.com")
+        for nombre, email in cuentas
+    ]
+
+
+UCO_DEMO_ACCOUNTS = _cuentas_uco(DEMO_ACCOUNTS)
+UCO_BOT_ACCOUNTS  = _cuentas_uco(BOT_ACCOUNTS)
+
+
 def _ya_ampliada_uco(unidad):
     return Usuario.query.filter_by(
-        unidad_id=unidad.id, email=BOT_ACCOUNTS[0][1]
+        unidad_id=unidad.id, email=UCO_BOT_ACCOUNTS[0][1]
     ).first() is not None
 
 
@@ -789,7 +806,10 @@ def ampliar_uco_la_paz():
         return
 
     print(f"Ampliando {UCO_UNIDAD}·{UCO_HOSPITAL}·{UCO_CATEGORIA}...")
-    sembrar_contenido_bot(unidad, cat_enf, incluir_planillas=False)
+    sembrar_contenido_bot(
+        unidad, cat_enf, incluir_planillas=False,
+        cuentas_demo=UCO_DEMO_ACCOUNTS, cuentas_bot=UCO_BOT_ACCOUNTS,
+    )
     db.session.flush()
 
     supervisora = _upsert_supervisora_uco(unidad)
