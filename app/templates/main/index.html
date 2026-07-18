@@ -26,4 +26,45 @@
     {% endif %}
   </div>
 </div>
+
+<div class="landing-section">
+  <h2 class="landing-section-title">{{ _('Así de fácil') }}</h2>
+  <div class="onboarding-steps">
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📢</div>
+      <div class="onboarding-step-body">
+        <h3>{{ _('1. Publica tu cambio') }}</h3>
+        <p>{{ _('Di qué turno cedes y cuál quieres a cambio.') }}</p>
+      </div>
+    </div>
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">🤝</div>
+      <div class="onboarding-step-body">
+        <h3>{{ _('2. Turnero busca el encaje') }}</h3>
+        <p>{{ _('Encuentra compañeros compatibles de tu misma categoría y unidad, incluso cambios a tres bandas.') }}</p>
+      </div>
+    </div>
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">✅</div>
+      <div class="onboarding-step-body">
+        <h3>{{ _('3. Confirmáis y listo') }}</h3>
+        <p>{{ _('Nada se cierra sin que todas las partes confirmen. La hoja de cambio queda firmada digitalmente.') }}</p>
+      </div>
+    </div>
+  </div>
+  <p class="landing-section-link">
+    <a href="{{ url_for('main.como_funciona') }}">{{ _('Ver todos los detalles') }} →</a>
+  </p>
+</div>
+
+<div class="landing-section">
+  <h2 class="landing-section-title">{{ _('Por qué Turnero') }}</h2>
+  <ul class="landing-features">
+    <li>🔒 {{ _('Solo casas con compañeros de tu misma categoría y unidad') }}</li>
+    <li>🔁 {{ _('Encuentra cambios directos, a tres bandas y coincidencias parciales') }}</li>
+    <li>✍️ {{ _('Hoja de cambio digital con firma, sin papeleo') }}</li>
+    <li>🔔 {{ _('Avisos al instante cuando aparece un cambio compatible') }}</li>
+    <li>📲 {{ _('Instálala en tu móvil como una app, sin pasar por tiendas de aplicaciones') }}</li>
+  </ul>
+</div>
 {% endblock %}

@@ -4164,6 +4164,62 @@ msgstr "Guardar esta firma para futuras decisiones"
 msgid "Denegar con firma guardada"
 msgstr "Denegar con firma guardada"
 
+#: app/templates/main/index.html
+msgid "Así de fácil"
+msgstr "Así de fácil"
+
+#: app/templates/main/index.html
+msgid "1. Publica tu cambio"
+msgstr "1. Publica tu cambio"
+
+#: app/templates/main/index.html
+msgid "Di qué turno cedes y cuál quieres a cambio."
+msgstr "Di qué turno cedes y cuál quieres a cambio."
+
+#: app/templates/main/index.html
+msgid "2. Turnero busca el encaje"
+msgstr "2. Turnero busca el encaje"
+
+#: app/templates/main/index.html
+msgid "Encuentra compañeros compatibles de tu misma categoría y unidad, incluso cambios a tres bandas."
+msgstr "Encuentra compañeros compatibles de tu misma categoría y unidad, incluso cambios a tres bandas."
+
+#: app/templates/main/index.html
+msgid "3. Confirmáis y listo"
+msgstr "3. Confirmáis y listo"
+
+#: app/templates/main/index.html
+msgid "Nada se cierra sin que todas las partes confirmen. La hoja de cambio queda firmada digitalmente."
+msgstr "Nada se cierra sin que todas las partes confirmen. La hoja de cambio queda firmada digitalmente."
+
+#: app/templates/main/index.html
+msgid "Ver todos los detalles"
+msgstr "Ver todos los detalles"
+
+#: app/templates/main/index.html
+msgid "Por qué Turnero"
+msgstr "Por qué Turnero"
+
+#: app/templates/main/index.html
+msgid "Solo casas con compañeros de tu misma categoría y unidad"
+msgstr "Solo casas con compañeros de tu misma categoría y unidad"
+
+#: app/templates/main/index.html
+msgid "Encuentra cambios directos, a tres bandas y coincidencias parciales"
+msgstr "Encuentra cambios directos, a tres bandas y coincidencias parciales"
+
+#: app/templates/main/index.html
+msgid "Hoja de cambio digital con firma, sin papeleo"
+msgstr "Hoja de cambio digital con firma, sin papeleo"
+
+#: app/templates/main/index.html
+msgid "Avisos al instante cuando aparece un cambio compatible"
+msgstr "Avisos al instante cuando aparece un cambio compatible"
+
+#: app/templates/main/index.html
+msgid "Instálala en tu móvil como una app, sin pasar por tiendas de aplicaciones"
+msgstr "Instálala en tu móvil como una app, sin pasar por tiendas de aplicaciones"
+
 #~ msgid ""
 #~ "Hola %(nombre)s,\n"
 #~ "\n"

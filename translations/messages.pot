@@ -3979,3 +3979,59 @@ msgstr ""
 msgid "Denegar con firma guardada"
 msgstr ""
 
+#: app/templates/main/index.html
+msgid "Así de fácil"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "1. Publica tu cambio"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Di qué turno cedes y cuál quieres a cambio."
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "2. Turnero busca el encaje"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Encuentra compañeros compatibles de tu misma categoría y unidad, incluso cambios a tres bandas."
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "3. Confirmáis y listo"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Nada se cierra sin que todas las partes confirmen. La hoja de cambio queda firmada digitalmente."
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Ver todos los detalles"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Por qué Turnero"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Solo casas con compañeros de tu misma categoría y unidad"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Encuentra cambios directos, a tres bandas y coincidencias parciales"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Hoja de cambio digital con firma, sin papeleo"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Avisos al instante cuando aparece un cambio compatible"
+msgstr ""
+
+#: app/templates/main/index.html
+msgid "Instálala en tu móvil como una app, sin pasar por tiendas de aplicaciones"
+msgstr ""
+

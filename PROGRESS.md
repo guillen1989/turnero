@@ -4,6 +4,25 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
+Paso aparte, fuera de la Fase 10 (a petición del usuario): landing
+pública ampliada. `main.index` (anónimo) ya solo mostraba el `.hero`
+con título/CTA; se añaden dos secciones a `main/index.html` — "Así de
+fácil" (resumen de 3 pasos, reutilizando `.onboarding-steps` de
+`como_funciona.html`, con enlace "Ver todos los detalles" hacia esa
+página) y "Por qué Turnero" (5 bullets de propuesta de valor). CSS
+nuevo (`.landing-section`, `.landing-section-title`,
+`.landing-section-link`, `.landing-features`) en `main.css`. Cubierto
+por `tests/test_landing.py` (contenido presente para anónimos, enlace a
+"Cómo funciona", ausente para usuarios autenticados, que van directos a
+su hero sin las secciones nuevas). Catálogo i18n: 14 cadenas nuevas
+añadidas a mano en `messages.po`/`messages.pot` (mismo criterio que la
+entrada de deuda técnica de más abajo: un `extract`+`update` completo
+sigue arrastrando el desfase histórico del catálogo), `pybabel compile`
+sin errores. No toca el flujo de matching ni el modelo de datos.
+Verificado con el cliente de test de Flask (200 OK, HTML bien formado);
+sin verificación visual en navegador real por ser una sesión en
+background.
+
 Petición del usuario: grabar el motivo de denegación en el PDF, que la
 supervisora también pueda firmar la hoja (autorizar/denegar), poder
 reutilizar su firma guardada como ya hacen los participantes, y mostrar
