@@ -4220,6 +4220,48 @@ msgstr "Avisos al instante cuando aparece un cambio compatible"
 msgid "Instálala en tu móvil como una app, sin pasar por tiendas de aplicaciones"
 msgstr "Instálala en tu móvil como una app, sin pasar por tiendas de aplicaciones"
 
+#: app/templates/main/funcionalidades.html:9
+msgid "Todo lo que puedes hacer con Turnero, paso a paso."
+msgstr "Todo lo que puedes hacer con Turnero, paso a paso."
+
+#: app/templates/main/funcionalidades.html:20
+msgid "Tres modos, un selector arriba:"
+msgstr "Tres modos, un selector arriba:"
+
+#: app/templates/main/funcionalidades.html:51
+msgid "Hay cinco tipos de publicación:"
+msgstr "Hay cinco tipos de publicación:"
+
+#: app/templates/main/funcionalidades.html:111
+msgid "Revisas el match en tu panel de \"Mis cambios\" y"
+msgstr "Revisas el match en tu panel de \"Mis cambios\" y"
+
+#: app/templates/main/funcionalidades.html:112
+msgid "lo confirmas o lo rechazas"
+msgstr "lo confirmas o lo rechazas"
+
+#: app/templates/main/funcionalidades.html:167
+msgid "8. Formaliza el cambio con una hoja digital"
+msgstr "8. Formaliza el cambio con una hoja digital"
+
+#: app/templates/main/funcionalidades.html:169
+msgid ""
+"Cuando el cambio esté confirmado, genera la hoja de cambio digital "
+"para que la supervisora la autorice desde la app: sin papel, sin idas "
+"y vueltas."
+msgstr ""
+"Cuando el cambio esté confirmado, genera la hoja de cambio digital "
+"para que la supervisora la autorice desde la app: sin papel, sin idas "
+"y vueltas."
+
+#: app/templates/main/funcionalidades.html:177
+msgid "9. Instala Turnero en tu móvil"
+msgstr "9. Instala Turnero en tu móvil"
+
+#: app/templates/main/funcionalidades.html:213
+msgid "Crear cuenta gratis"
+msgstr "Crear cuenta gratis"
+
 #~ msgid ""
 #~ "Hola %(nombre)s,\n"
 #~ "\n"

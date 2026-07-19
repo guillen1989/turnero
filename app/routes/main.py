@@ -45,6 +45,13 @@ def como_funciona():
     return render_template("main/como_funciona.html")
 
 
+@bp.get("/funcionalidades")
+def funcionalidades():
+    """Página pública con el detalle de todas las funcionalidades, enlazada
+    desde la portada para quien todavía no tiene cuenta."""
+    return render_template("main/funcionalidades.html")
+
+
 def _mi_participacion(match, usuario_id):
     return next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
 

@@ -4,7 +4,27 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Paso aparte, fuera de la Fase 10 (a petición del usuario): landing
+Paso aparte, fuera de la Fase 10 (a petición del usuario): el enlace
+"Ver todos los detalles" de la landing pública apuntaba a `/como-funciona`,
+que exige login (`@login_required`) — un visitante anónimo acababa en el
+formulario de login en vez de ver el contenido. Se crea una página nueva
+y pública, `main.funcionalidades` (`/funcionalidades`, sin
+`@login_required`), con plantilla propia `main/funcionalidades.html` que
+reutiliza el contenido de `como_funciona.html` (los mismos 9 pasos, con
+un paso nuevo sobre la hoja de cambio digital) pero sin los enlaces a
+páginas privadas (calendario, publicar, planilla, buscar cambios) —
+sustituidos por un único CTA final a `auth.registro`/`auth.login`. Se
+deja intacta `main.como_funciona` (onboarding post-login, ya cubierta
+por `tests/test_onboarding.py`) y solo se actualiza el `href` de
+"Ver todos los detalles" en `main/index.html`. Cubierto por 5 tests
+nuevos en `tests/test_landing.py` (accesible sin login, contiene las
+secciones clave, no enlaza a páginas privadas, no toca `current_user`).
+Catálogo i18n: 9 cadenas nuevas añadidas a mano en
+`messages.po`/`messages.pot` (mismo criterio que las entradas de deuda
+técnica de más abajo), `pybabel compile` sin errores. No toca el flujo
+de matching ni el modelo de datos.
+
+Paso anterior, también fuera de la Fase 10: landing
 pública ampliada. `main.index` (anónimo) ya solo mostraba el `.hero`
 con título/CTA; se añaden dos secciones a `main/index.html` — "Así de
 fácil" (resumen de 3 pasos, reutilizando `.onboarding-steps` de

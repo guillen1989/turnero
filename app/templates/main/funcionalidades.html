@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Cómo funciona Turnero') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('Cómo funciona Turnero') }}</h1>
+  <p style="color:#374151;margin-top:-0.5rem">
+    {{ _('Todo lo que puedes hacer con Turnero, paso a paso.') }}
+  </p>
+
+  <div class="onboarding-steps">
+
+    <div class="onboarding-step" id="calendario">
+      <div class="onboarding-step-icon" aria-hidden="true">🗓️</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('1. Descubre cambios en el calendario') }}</h2>
+        <p>
+          {{ _('El calendario te muestra de un vistazo, día a día, qué turnos ofrecen o necesitan tus compañeros.') }}
+          {{ _('Tres modos, un selector arriba:') }}
+        </p>
+        <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.8">
+          <li>
+            <strong>{{ _('Ofertas') }}</strong> —
+            {{ _('turnos que otros compañeros trabajarían.') }}
+          </li>
+          <li>
+            <strong>{{ _('Peticiones') }}</strong> —
+            {{ _('turnos que otros compañeros quieren librar.') }}
+          </li>
+          <li>
+            <strong>{{ _('Juntes de noches') }}</strong> —
+            {{ _('noches de compañeros que buscan complementar su junte.') }}
+          </li>
+        </ul>
+        <p>
+          {{ _('Toca un día para ver qué franjas hay disponibles y acceder a la publicación completa.') }}
+          {{ _('Si el día está vacío, puedes publicar tu propio cambio directamente desde ahí.') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📢</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('2. Publica tu cambio') }}</h2>
+        <p>
+          {{ _('Dile a tus compañeros qué turno quieres ceder y cuál te interesa a cambio.') }}
+          {{ _('Puedes pedir una fecha y turno concreto, o dejar abierto cualquier turno.') }}
+        </p>
+        <p>{{ _('Hay cinco tipos de publicación:') }}</p>
+        <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.8">
+          <li>
+            <strong>{{ _('Cambio') }}</strong> —
+            {{ _('cedes un turno (o varios) y pides otro (u otros) a cambio.') }}
+          </li>
+          <li>
+            <strong>{{ _('Regalo') }}</strong> —
+            {{ _('trabajas un turno sin pedir nada a cambio. Ideal si ya no lo necesitas.') }}
+          </li>
+          <li>
+            <strong>{{ _('Petición') }}</strong> —
+            {{ _('quieres que alguien te cubra un día sin darte ningún turno a cambio, o hacer la devolución a convenir.') }}
+          </li>
+          <li>
+            <strong>{{ _('Junte de noches') }}</strong> —
+            {{ _('intercambias noches sueltas de una semana para juntarlas y librar días consecutivos.') }}
+          </li>
+          <li>
+            <strong>{{ _('Cambio de turno en el día') }}</strong> —
+            {{ _('por ejemplo, cambiar tu turno de mañana por el de tarde el día 16.') }}
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📅</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('3. Publica tu planilla mensual') }}</h2>
+        <p>
+          {{ _('Publica tu cuadrante del mes, con tus turnos y libranzas.') }}
+          {{ _('Al publicarla, tus compañeros pueden saber si estás disponible para hacerles el cambio que buscan, y tú puedes ver quién libra o tiene turno compatible el día que quieres ceder.') }}
+        </p>
+        <p>{{ _('Rellenar el mes es rápido gracias a tres herramientas:') }}</p>
+        <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.9">
+          <li>
+            <strong>{{ _('Relleno por rango') }}</strong> —
+            {{ _('elige "del día X al día Y" y el turno o estado, y se rellenan todos los días de ese bloque de un solo clic. Ideal para semanas de vacaciones o bloques de mañanas consecutivos.') }}
+          </li>
+          <li>
+            <strong>{{ _('Selección múltiple') }}</strong> —
+            {{ _('marca los días que quieras con los checkbox de cada fila; aparece una barra en la parte inferior para aplicar el mismo turno o estado a todos a la vez. Perfecto para las mañanas o noches sueltas repartidas por el mes.') }}
+          </li>
+          <li>
+            <strong>{{ _('Rellenar días vacíos') }}</strong> —
+            {{ _('te permite asignar de un solo clic el mismo estado (por ejemplo, Libre) a todos los días que aún no tienen nada.') }}
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">🤝</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('4. Si hay match, te avisamos') }}</h2>
+        <p>
+          {{ _('Cuando otra persona de tu unidad publique un cambio compatible con el tuyo, recibirás una notificación.') }}
+        </p>
+        <p>
+          {{ _('Revisas el match en tu panel de "Mis cambios" y') }}
+          <strong>{{ _('lo confirmas o lo rechazas') }}</strong>.
+          {{ _('El cambio sólo se cierra cuando todos los implicados lo confirman.') }}
+        </p>
+        <p>
+          {{ _('El detector va más allá del cruce directo entre dos personas:') }}
+          {{ _('también encuentra') }} <strong>{{ _('cambios a tres bandas') }}</strong>
+          {{ _('(A da a B, B da a C, C da a A) y') }}
+          <strong>{{ _('match parciales') }}</strong>
+          {{ _('(se resuelve parte de un cambio múltiple aunque el resto quede pendiente).') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">🔍</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('5. Consulta lo que publican tus compañeros') }}</h2>
+        <p>
+          {{ _('En "Buscar cambios" ves todas las publicaciones abiertas de tu unidad.') }}
+          {{ _('Puedes filtrar por mes, día o turno.') }}
+        </p>
+        <p>
+          {{ _('Guarda tus filtros favoritos como') }} <strong>{{ _('búsquedas guardadas') }}</strong>
+          {{ _('y activa las notificaciones: te avisaremos cada vez que aparezca una publicación que encaje con esa búsqueda.') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">🔔</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('6. Suscríbete a un compañero') }}</h2>
+        <p>
+          {{ _('¿Hay alguien con quien te resulte fácil cambiar? Suscríbete a sus publicaciones y te avisaremos cada vez que publique algo nuevo.') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📲</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('7. Comparte tu cambio por WhatsApp') }}</h2>
+        <p>
+          {{ _('¿Conoces a alguien que puede encajarte pero aún no usa Turnero? Desde cualquier publicación tuya puedes') }}
+          <strong>{{ _('compartir el enlace directo por WhatsApp') }}</strong>.
+        </p>
+        <p>
+          {{ _('La persona que lo recibe ve los detalles del cambio y puede registrarse en el momento para responderlo.') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📝</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('8. Formaliza el cambio con una hoja digital') }}</h2>
+        <p>
+          {{ _('Cuando el cambio esté confirmado, genera la hoja de cambio digital para que la supervisora la autorice desde la app: sin papel, sin idas y vueltas.') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="onboarding-step">
+      <div class="onboarding-step-icon" aria-hidden="true">📲</div>
+      <div class="onboarding-step-body">
+        <h2>{{ _('9. Instala Turnero en tu móvil') }}</h2>
+        <p>
+          {{ _('Puedes instalar Turnero como una app normal en tu móvil: sin pasar por la App Store ni Google Play, directamente desde el navegador.') }}
+          {{ _('Una vez instalada, abre como cualquier otra app, sin barras del navegador.') }}
+        </p>
+
+        <details style="margin-top:0.75rem">
+          <summary style="cursor:pointer;font-weight:600;color:#1d4ed8;list-style:none;display:flex;align-items:center;gap:0.4rem">
+            <span>🤖</span> {{ _('Instalar en Android') }}
+          </summary>
+          <ol style="margin:0.6rem 0 0 1.25rem;line-height:2;color:#374151">
+            <li>{{ _('Abre Turnero en') }} <strong>Chrome</strong>.</li>
+            <li>{{ _('Pulsa el icono de los tres puntos') }} <strong>(⋮)</strong> {{ _('arriba a la derecha.') }}</li>
+            <li>{{ _('Toca') }} <strong>{{ _('«Añadir a pantalla de inicio»') }}</strong>.</li>
+            <li>{{ _('Confirma pulsando') }} <strong>{{ _('«Instalar»') }}</strong>.</li>
+          </ol>
+        </details>
+
+        <details style="margin-top:0.5rem">
+          <summary style="cursor:pointer;font-weight:600;color:#1d4ed8;list-style:none;display:flex;align-items:center;gap:0.4rem">
+            <span>🍎</span> {{ _('Instalar en iPhone / iPad') }}
+          </summary>
+          <ol style="margin:0.6rem 0 0 1.25rem;line-height:2;color:#374151">
+            <li>{{ _('Abre Turnero en') }} <strong>Safari</strong>. {{ _('(En Chrome para iOS no funciona la instalación.)') }}</li>
+            <li>{{ _('Pulsa el botón de compartir') }} <strong>{{ _('(la flecha hacia arriba que hay en la barra inferior).') }}</strong></li>
+            <li>{{ _('Desplázate en el menú y toca') }} <strong>{{ _('«Añadir a pantalla de inicio»') }}</strong>.</li>
+            <li>{{ _('Pulsa') }} <strong>{{ _('«Añadir»') }}</strong> {{ _('en la esquina superior derecha.') }}</li>
+          </ol>
+        </details>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="text-align:center;margin-top:2.5rem">
+    <a href="{{ url_for('auth.registro') }}" class="btn btn-primary">
+      {{ _('Crear cuenta gratis') }}
+    </a>
+    <p style="margin-top:0.75rem;font-size:0.875rem;color:#6b7280">
+      {{ _('¿Ya tienes cuenta?') }} <a href="{{ url_for('auth.login') }}">{{ _('Entra aquí') }}</a>.
+    </p>
+  </div>
+</div>
+{% endblock %}
