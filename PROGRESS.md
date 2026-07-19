@@ -4,7 +4,27 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Paso aparte, fuera de la Fase 10 (a petición del usuario): el enlace
+Paso aparte, fuera de la Fase 10 (fix de infraestructura de tests):
+la suite de tests compartía la misma base de datos Postgres local
+(`cambiaturnos_test`, nombre heredado del directorio del proyecto antes
+de renombrarse a `turnero`) entre distintos checkouts/worktrees cuando
+había varios agentes trabajando en paralelo. Sus `TRUNCATE`/
+`create_all`/`drop_all` concurrentes colisionaban entre sí, causando
+deadlocks, tablas inexistentes a mitad de test y ejecuciones
+anormalmente lentas (37m45s frente a los ~18min normales). Se modifica
+`tests/conftest.py`: la fixture `app` deriva ahora un nombre de base de
+datos único por checkout (sufijo = hash SHA1 de los 8 primeros
+caracteres del path absoluto del proyecto) y crea esa base de datos si
+no existe (conexión de mantenimiento con `psycopg2` a la base
+`postgres`, ignorando `DuplicateDatabase`). Mismo checkout → misma base
+de datos (se reutiliza entre ejecuciones), checkouts distintos → bases
+de datos distintas (sin colisión posible). No requiere tocar `.env` ni
+configuración manual. Compatible con CI (`.github/workflows/ci.yml`),
+que ya fija `TEST_DATABASE_URL` a una base efímera propia — el sufijo
+simplemente se añade a lo que ya esté configurado. Verificado con la
+suite completa sin `--testmon`: 1078 passed, 0 regresiones.
+
+Paso anterior, también fuera de la Fase 10 (a petición del usuario): el enlace
 "Ver todos los detalles" de la landing pública apuntaba a `/como-funciona`,
 que exige login (`@login_required`) — un visitante anónimo acababa en el
 formulario de login en vez de ver el contenido. Se crea una página nueva
