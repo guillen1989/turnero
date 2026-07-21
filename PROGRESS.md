@@ -122,6 +122,43 @@ Pendiente para completar la funcionalidad (no empezado):
   todavía no se ha empezado; pendiente de que el usuario aclare qué
   reglas son imprescindibles para el MVP.
 
+---
+
+Nueva sub-iniciativa (mismo dominio de planilla, independiente de la
+anterior): visor tipo calendario para que la supervisora vea, en una
+matriz trabajador x día del mes, quién trabaja qué turno cada día y qué
+días vinieron de un cambio ya autorizado. Puntos débiles identificados
+con el usuario antes de implementar: ámbito por `unidad` (no
+`grupo_intercambio`, que puede abarcar varias unidades); evitar N+1 con
+consultas batch por unidad+mes en vez de usuario a usuario; no duplicar
+el turno "antes/después" del cambio (la planilla ya refleja el estado
+final tras `volcar_documento_a_planillas`, solo hace falta una
+marca/badge con enlace al documento); densidad de la celda (turno +
+estado + saliente + nota no caben todos inline con decenas de filas x
+~30 columnas, se deja para un popover/tooltip). `anular_documento`
+(servicio ya existente, ver Fase 10) ya cubre la futura necesidad de
+"anular un cambio" que planteó el usuario — no hace falta construirla.
+La futura "modificación unilateral de un turno de un trabajador" (p.ej.
+dar el día libre) no encaja en `ParticipanteDocumentoCambio` (no hay
+contraparte) y se deja pendiente de decidir su propio modelo, para que
+sea igual de anulable/trazable que un cambio normal.
+
+Paso 1 (servicios batch, hecho): `app/services/planilla_supervision.py`
+— `get_turnos_mes_unidad`, `get_estados_mes_unidad` y
+`get_cambios_autorizados_mes_unidad`, cada uno con una única consulta
+por unidad+mes (agrupadas en un dict por `(usuario_id, fecha)` en
+Python) en vez de un bucle por trabajador.
+`get_cambios_autorizados_mes_unidad` solo incluye `DocumentoCambio` con
+`decision_supervisora == "autorizado"` y `anulado == False`, y considera
+tanto `turno_cede_fecha` como `turno_recibe_fecha` de cada participante
+(pueden caer en meses distintos si el cambio cruza el mes). 11 tests
+nuevos (`tests/test_servicio_planilla_supervision.py`), sin regresiones
+en el resto de la suite de planilla/documento_cambio.
+
+Siguiente paso: ruta HTTP (blueprint protegido por `es_supervisora`,
+mismo patrón que `planilla_import.py`) + plantilla con la matriz
+trabajador x día, reutilizando estos tres servicios.
+
 
 ## Paso anterior
 Paso aparte, fuera de la Fase 10 (fix de infraestructura de tests):
