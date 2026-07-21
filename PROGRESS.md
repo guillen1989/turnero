@@ -173,11 +173,29 @@ no es supervisora, filtrado por unidad, turno/estado visibles, enlace
 al documento de un cambio autorizado. 124 tests pasando sin
 regresiones en toda la suite de planilla/documento_cambio.
 
-Siguiente paso: a decidir con el usuario. Pendientes de esta
-sub-iniciativa: (a) densidad de la celda si hace falta mostrar
-también saliente/nota (popover/tooltip en vez de inline); (b) decidir
-el modelo de datos para la modificación unilateral de un turno de un
-trabajador (día libre, etc.), que no encaja en `ParticipanteDocumentoCambio`.
+Paso 3 (modificación unilateral de turno, modelo + servicio, hecho):
+nuevo modelo `AjustePlanillaSupervisora` (`app/models/planilla.py`,
+migración `b9d6698355e6`) que registra usuario afectado, quién hizo el
+cambio, la fecha, una descripción legible del antes/después (p. ej.
+"Mañana" → "libre") y un motivo opcional. No usa
+`ParticipanteDocumentoCambio` porque aquí no hay dos partes que se
+ceden turno entre sí, es una decisión unilateral de la supervisora.
+Nuevo servicio `ajustar_turno_trabajador(supervisora, trabajador,
+fecha, tipo_estado=None, franja_id=None, motivo=None)` en
+`planilla_supervision.py`: sustituye por completo el turno/estado del
+día (borra turnos + estado existentes, aplica el nuevo si se indica) y
+deja el `AjustePlanillaSupervisora` como rastro. 5 tests nuevos cubren
+asignar estado sobre día vacío, reemplazar turno existente, asignar
+turno sobre estado existente, vaciar el día sin nada, y guardar el
+motivo. 137 tests pasando sin regresiones.
+
+Siguiente paso: ruta HTTP + UI en la matriz de supervisión para
+disparar `ajustar_turno_trabajador` desde una celda (click en la celda
+→ panel/modal con selector de turno/estado + motivo → POST), con el
+enlace al `AjustePlanillaSupervisora` visible en la celda tras el
+cambio (igual que el badge de cambios autorizados). Pendiente también
+de esta sub-iniciativa: densidad de la celda si hace falta mostrar
+también saliente/nota (popover/tooltip en vez de inline).
 
 
 ## Paso anterior

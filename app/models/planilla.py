@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from app.extensions import db
 
 TIPOS_ESTADO_DIA = ("libre", "vacaciones", "no_disponible")
@@ -135,3 +137,29 @@ class NotaDia(db.Model):
 
     def __repr__(self):
         return f"<NotaDia {self.fecha}>"
+
+
+class AjustePlanillaSupervisora(db.Model):
+    """Rastro de auditoría de una modificación unilateral de la supervisora
+    sobre el turno/estado del día de un trabajador (p. ej. asignarle un día
+    libre). No encaja en ParticipanteDocumentoCambio porque aquí no hay dos
+    partes que se ceden turno entre sí -- por eso necesita su propio registro.
+    """
+    __tablename__ = "ajuste_planilla_supervisora"
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    realizado_por_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    fecha = db.Column(db.Date, nullable=False)
+    descripcion_anterior = db.Column(db.String(200), nullable=False)
+    descripcion_nueva = db.Column(db.String(200), nullable=False)
+    motivo = db.Column(db.Text, nullable=True)
+    fecha_creacion = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+
+    usuario = db.relationship("Usuario", foreign_keys=[usuario_id])
+    realizado_por = db.relationship("Usuario", foreign_keys=[realizado_por_id])
+
+    def __repr__(self):
+        return f"<AjustePlanillaSupervisora usuario={self.usuario_id} fecha={self.fecha}>"

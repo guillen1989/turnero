@@ -2,11 +2,12 @@ from datetime import date, time
 
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario,
-    DocumentoCambio, ParticipanteDocumentoCambio,
+    DocumentoCambio, ParticipanteDocumentoCambio, AjustePlanillaSupervisora,
 )
 from app.services.planilla import añadir_turno, establecer_estado_dia
 from app.services.planilla_supervision import (
     get_turnos_mes_unidad, get_estados_mes_unidad, get_cambios_autorizados_mes_unidad,
+    ajustar_turno_trabajador,
 )
 
 
@@ -172,3 +173,91 @@ def test_get_cambios_autorizados_mes_unidad_filtra_por_mes_cuando_cruza_mes(db):
     assert (ana.id, date(2026, 7, 31)) in cambios_julio
     assert (ana.id, date(2026, 8, 1)) not in cambios_julio
     assert (ana.id, date(2026, 8, 1)) in cambios_agosto
+
+
+# ── ajustar_turno_trabajador ──────────────────────────────────────────────────
+
+def test_ajustar_turno_trabajador_asigna_estado_libre_sobre_dia_vacio(db):
+    unidad, _, ana, _, _, _, _ = _setup(db, "l")
+    super_ = Usuario(nombre="Super", email="super_l@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+
+    ajuste = ajustar_turno_trabajador(super_, ana, date(2026, 7, 1), tipo_estado="libre")
+
+    assert ajuste.usuario_id == ana.id
+    assert ajuste.realizado_por_id == super_.id
+    assert ajuste.fecha == date(2026, 7, 1)
+    assert ajuste.descripcion_anterior == "(vacío)"
+    assert ajuste.descripcion_nueva == "libre"
+
+
+def test_ajustar_turno_trabajador_reemplaza_turno_existente_por_libre(db):
+    unidad, _, ana, _, _, franja_m, _ = _setup(db, "m")
+    super_ = Usuario(nombre="Super", email="super_m@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+
+    ajuste = ajustar_turno_trabajador(super_, ana, date(2026, 7, 1), tipo_estado="libre")
+
+    turnos = get_turnos_mes_unidad(unidad, 2026, 7)
+    estados = get_estados_mes_unidad(unidad, 2026, 7)
+    assert (ana.id, date(2026, 7, 1)) not in turnos
+    assert estados[(ana.id, date(2026, 7, 1))].tipo == "libre"
+    assert ajuste.descripcion_anterior == "Mañana"
+    assert ajuste.descripcion_nueva == "libre"
+
+
+def test_ajustar_turno_trabajador_asigna_turno_sobre_estado_existente(db):
+    unidad, _, ana, _, _, franja_m, _ = _setup(db, "n")
+    super_ = Usuario(nombre="Super", email="super_n@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    establecer_estado_dia(ana, date(2026, 7, 1), "vacaciones")
+
+    ajuste = ajustar_turno_trabajador(super_, ana, date(2026, 7, 1), franja_id=franja_m.id)
+
+    turnos = get_turnos_mes_unidad(unidad, 2026, 7)
+    estados = get_estados_mes_unidad(unidad, 2026, 7)
+    assert (ana.id, date(2026, 7, 1)) not in estados
+    assert turnos[(ana.id, date(2026, 7, 1))][0].franja_horaria_id == franja_m.id
+    assert ajuste.descripcion_anterior == "vacaciones"
+    assert ajuste.descripcion_nueva == "Mañana"
+
+
+def test_ajustar_turno_trabajador_vacia_el_dia_sin_estado_ni_turno(db):
+    unidad, _, ana, _, _, franja_m, _ = _setup(db, "o")
+    super_ = Usuario(nombre="Super", email="super_o@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+
+    ajuste = ajustar_turno_trabajador(super_, ana, date(2026, 7, 1))
+
+    turnos = get_turnos_mes_unidad(unidad, 2026, 7)
+    estados = get_estados_mes_unidad(unidad, 2026, 7)
+    assert (ana.id, date(2026, 7, 1)) not in turnos
+    assert (ana.id, date(2026, 7, 1)) not in estados
+    assert ajuste.descripcion_anterior == "Mañana"
+    assert ajuste.descripcion_nueva == "(vacío)"
+
+
+def test_ajustar_turno_trabajador_guarda_motivo(db):
+    unidad, _, ana, _, _, _, _ = _setup(db, "p")
+    super_ = Usuario(nombre="Super", email="super_p@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+
+    ajuste = ajustar_turno_trabajador(
+        super_, ana, date(2026, 7, 1), tipo_estado="libre", motivo="Se le concede el día libre."
+    )
+
+    assert ajuste.motivo == "Se le concede el día libre."
+    recuperado = db.session.get(AjustePlanillaSupervisora, ajuste.id)
+    assert recuperado.motivo == "Se le concede el día libre."

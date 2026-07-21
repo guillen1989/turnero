@@ -17,7 +17,8 @@ from app.models.event import Event
 from app.models.busqueda_guardada import BusquedaGuardada
 from app.models.audit import AuditEliminacion
 from app.models.planilla import (
-    TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, CompatibilidadPlanilla, NotaDia, SalienteDia, TIPOS_ESTADO_DIA
+    TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, CompatibilidadPlanilla, NotaDia, SalienteDia,
+    AjustePlanillaSupervisora, TIPOS_ESTADO_DIA,
 )
 from app.models.planilla_import import MapeoCodigoTurno, MapeoTrabajadorPlanilla
 from app.models.documento_cambio import (

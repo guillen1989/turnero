@@ -2,8 +2,9 @@ from datetime import date
 
 from app.extensions import db
 from app.models.documento_cambio import DocumentoCambio, ParticipanteDocumentoCambio
-from app.models.planilla import EstadoDiaPlanilla, TurnoPlanilla
+from app.models.planilla import AjustePlanillaSupervisora, EstadoDiaPlanilla, TurnoPlanilla
 from app.models.usuario import Usuario
+from app.services.planilla import añadir_turno, establecer_estado_dia
 
 
 def get_turnos_mes_unidad(unidad, anyo: int, mes: int) -> dict[tuple[int, date], list[TurnoPlanilla]]:
@@ -72,3 +73,46 @@ def get_cambios_autorizados_mes_unidad(
             if fecha.year == anyo and fecha.month == mes:
                 resultado[(p.usuario_id, fecha)] = p.documento
     return resultado
+
+
+def _describir_dia(trabajador, fecha: date) -> str:
+    estado = EstadoDiaPlanilla.query.filter_by(usuario_id=trabajador.id, fecha=fecha).first()
+    if estado:
+        return estado.tipo
+    turnos = TurnoPlanilla.query.filter_by(usuario_id=trabajador.id, fecha=fecha).all()
+    if turnos:
+        return ", ".join(t.franja_horaria.nombre for t in turnos)
+    return "(vacío)"
+
+
+def ajustar_turno_trabajador(
+    supervisora, trabajador, fecha: date, tipo_estado: str | None = None,
+    franja_id: int | None = None, motivo: str | None = None,
+) -> AjustePlanillaSupervisora:
+    """Sustituye el turno/estado del día de un trabajador por decisión
+    unilateral de la supervisora (p. ej. asignarle un día libre) y deja
+    un AjustePlanillaSupervisora con el antes/después para poder auditarlo.
+    tipo_estado y franja_id son excluyentes; si ambos son None, el día
+    queda sin turno ni estado.
+    """
+    descripcion_anterior = _describir_dia(trabajador, fecha)
+
+    TurnoPlanilla.query.filter_by(usuario_id=trabajador.id, fecha=fecha).delete()
+    EstadoDiaPlanilla.query.filter_by(usuario_id=trabajador.id, fecha=fecha).delete()
+    db.session.commit()
+
+    if tipo_estado:
+        establecer_estado_dia(trabajador, fecha, tipo_estado)
+    elif franja_id:
+        añadir_turno(trabajador, fecha, franja_id)
+
+    descripcion_nueva = _describir_dia(trabajador, fecha)
+
+    ajuste = AjustePlanillaSupervisora(
+        usuario=trabajador, realizado_por=supervisora, fecha=fecha,
+        descripcion_anterior=descripcion_anterior, descripcion_nueva=descripcion_nueva,
+        motivo=motivo,
+    )
+    db.session.add(ajuste)
+    db.session.commit()
+    return ajuste
