@@ -116,3 +116,28 @@ def ajustar_turno_trabajador(
     db.session.add(ajuste)
     db.session.commit()
     return ajuste
+
+
+def get_ajustes_mes_unidad(
+    unidad, anyo: int, mes: int
+) -> dict[tuple[int, date], AjustePlanillaSupervisora]:
+    """Último ajuste unilateral de la supervisora sobre el turno/estado del
+    día de cada trabajador de la unidad este mes, agrupados por
+    (usuario_id, fecha) -- para señalar en la matriz qué días se tocaron
+    a mano y poder ver el motivo.
+    """
+    ajustes = (
+        AjustePlanillaSupervisora.query
+        .join(Usuario, AjustePlanillaSupervisora.usuario_id == Usuario.id)
+        .filter(
+            Usuario.unidad_id == unidad.id,
+            db.func.extract("year", AjustePlanillaSupervisora.fecha) == anyo,
+            db.func.extract("month", AjustePlanillaSupervisora.fecha) == mes,
+        )
+        .order_by(AjustePlanillaSupervisora.fecha_creacion)
+        .all()
+    )
+    resultado: dict[tuple[int, date], AjustePlanillaSupervisora] = {}
+    for ajuste in ajustes:
+        resultado[(ajuste.usuario_id, ajuste.fecha)] = ajuste
+    return resultado

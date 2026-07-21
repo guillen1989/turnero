@@ -2,7 +2,7 @@ from datetime import date, time
 
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario,
-    DocumentoCambio, ParticipanteDocumentoCambio,
+    DocumentoCambio, ParticipanteDocumentoCambio, AjustePlanillaSupervisora,
 )
 from app.services.planilla import añadir_turno, establecer_estado_dia
 
@@ -120,3 +120,118 @@ def test_index_enlaza_a_documento_de_cambio_autorizado(db, client):
     resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
     assert resp.status_code == 200
     assert f"/documentos-cambio/{documento.id}" in resp.data.decode("utf-8")
+
+
+# ── ajustar ────────────────────────────────────────────────────────────────────
+
+def test_ajustar_requiere_login(client):
+    resp = client.post("/planilla/supervision/ajustar", data={})
+    assert resp.status_code == 302
+
+
+def test_ajustar_prohibido_si_no_es_supervisora(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "f")
+    normal = crear_usuario("Normal", "normal_f@h.es")
+    ana = crear_usuario("Ana", "ana_f@h.es")
+    _login(client, normal.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": "libre",
+    })
+    assert resp.status_code == 403
+
+
+def test_ajustar_prohibido_si_trabajador_de_otra_unidad(db, client):
+    crear_usuario, unidad, otra_unidad, franja_m = _setup(db, "g")
+    supervisora = crear_usuario("Super", "super_g@h.es", supervisora=True)
+    cris = crear_usuario("Cris", "cris_g@h.es", u=otra_unidad)
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": cris.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": "libre",
+    })
+    assert resp.status_code == 403
+    assert AjustePlanillaSupervisora.query.count() == 0
+
+
+def test_ajustar_asigna_estado(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "h")
+    supervisora = crear_usuario("Super", "super_h@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_h@h.es")
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": "libre", "motivo": "Día libre concedido",
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+
+    ajuste = AjustePlanillaSupervisora.query.filter_by(usuario_id=ana.id).first()
+    assert ajuste is not None
+    assert ajuste.descripcion_nueva == "libre"
+    assert ajuste.realizado_por_id == supervisora.id
+    assert ajuste.motivo == "Día libre concedido"
+
+
+def test_ajustar_asigna_turno(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "i")
+    supervisora = crear_usuario("Super", "super_i@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_i@h.es")
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": str(franja_m.id),
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+
+    ajuste = AjustePlanillaSupervisora.query.filter_by(usuario_id=ana.id).first()
+    assert ajuste.descripcion_nueva == "Mañana"
+
+
+def test_ajustar_vacia_dia(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "j")
+    supervisora = crear_usuario("Super", "super_j@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_j@h.es")
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": "vaciar",
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+
+    ajuste = AjustePlanillaSupervisora.query.filter_by(usuario_id=ana.id).first()
+    assert ajuste.descripcion_nueva == "(vacío)"
+
+
+def test_ajustar_seleccion_invalida_no_crea_ajuste(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "k")
+    supervisora = crear_usuario("Super", "super_k@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_k@h.es")
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": "cosa-rara",
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    assert AjustePlanillaSupervisora.query.count() == 0
+
+
+def test_ajustar_franja_de_otro_grupo_rechazada(db, client):
+    crear_usuario, unidad, _, _ = _setup(db, "l")
+    _, otra_unidad2, _, franja_otro_grupo = _setup(db, "m")
+    supervisora = crear_usuario("Super", "super_l@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_l@h.es")
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": str(franja_otro_grupo.id),
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    assert AjustePlanillaSupervisora.query.count() == 0

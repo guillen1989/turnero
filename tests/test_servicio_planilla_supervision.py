@@ -7,7 +7,7 @@ from app.models import (
 from app.services.planilla import añadir_turno, establecer_estado_dia
 from app.services.planilla_supervision import (
     get_turnos_mes_unidad, get_estados_mes_unidad, get_cambios_autorizados_mes_unidad,
-    ajustar_turno_trabajador,
+    ajustar_turno_trabajador, get_ajustes_mes_unidad,
 )
 
 
@@ -261,3 +261,41 @@ def test_ajustar_turno_trabajador_guarda_motivo(db):
     assert ajuste.motivo == "Se le concede el día libre."
     recuperado = db.session.get(AjustePlanillaSupervisora, ajuste.id)
     assert recuperado.motivo == "Se le concede el día libre."
+
+
+# ── get_ajustes_mes_unidad ─────────────────────────────────────────────────────
+
+def test_get_ajustes_mes_unidad_agrupa_por_usuario_y_fecha(db):
+    unidad, _, ana, bea, _, _, _ = _setup(db, "q")
+    super_ = Usuario(nombre="Super", email="super_q@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    ajuste = ajustar_turno_trabajador(super_, ana, date(2026, 7, 1), tipo_estado="libre")
+
+    ajustes = get_ajustes_mes_unidad(unidad, 2026, 7)
+
+    assert ajustes[(ana.id, date(2026, 7, 1))].id == ajuste.id
+    assert (bea.id, date(2026, 7, 1)) not in ajustes
+
+
+def test_get_ajustes_mes_unidad_no_incluye_otro_mes(db):
+    unidad, _, ana, _, _, _, _ = _setup(db, "r")
+    super_ = Usuario(nombre="Super", email="super_r@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    ajustar_turno_trabajador(super_, ana, date(2026, 8, 1), tipo_estado="libre")
+
+    assert get_ajustes_mes_unidad(unidad, 2026, 7) == {}
+
+
+def test_get_ajustes_mes_unidad_no_incluye_otra_unidad(db):
+    unidad, _, _, _, cris, _, _ = _setup(db, "s")
+    super_ = Usuario(nombre="Super", email="super_s@test.es", unidad=unidad, categoria=cris.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    ajustar_turno_trabajador(super_, cris, date(2026, 7, 1), tipo_estado="libre")
+
+    assert get_ajustes_mes_unidad(unidad, 2026, 7) == {}

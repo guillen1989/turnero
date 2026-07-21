@@ -189,13 +189,31 @@ asignar estado sobre día vacío, reemplazar turno existente, asignar
 turno sobre estado existente, vaciar el día sin nada, y guardar el
 motivo. 137 tests pasando sin regresiones.
 
-Siguiente paso: ruta HTTP + UI en la matriz de supervisión para
-disparar `ajustar_turno_trabajador` desde una celda (click en la celda
-→ panel/modal con selector de turno/estado + motivo → POST), con el
-enlace al `AjustePlanillaSupervisora` visible en la celda tras el
-cambio (igual que el badge de cambios autorizados). Pendiente también
-de esta sub-iniciativa: densidad de la celda si hace falta mostrar
-también saliente/nota (popover/tooltip en vez de inline).
+Paso 4 (ruta HTTP + UI de modificación, hecho): nuevo servicio batch
+`get_ajustes_mes_unidad` (último ajuste por (usuario_id, fecha), mismo
+patrón que `get_cambios_autorizados_mes_unidad`). Ruta `POST
+/planilla/supervision/ajustar` en el mismo blueprint: valida que el
+trabajador sea de `current_user.unidad`, resuelve la `seleccion` del
+formulario (estado, id de franja del grupo, o `"vaciar"` explícito) y
+llama a `ajustar_turno_trabajador`. En la plantilla, cada celda de la
+matriz es ahora un botón que abre un modal (JS puro, sin dependencias)
+con un select turno/estado/vaciar + motivo opcional, que hace POST al
+mismo sitio y redirige de vuelta al mes que se estaba viendo. Las
+celdas con un `AjustePlanillaSupervisora` muestran un icono con
+tooltip (antes → después + motivo) -- sin enlace propio, a diferencia
+del badge de cambios autorizados, porque no hay página de detalle para
+un ajuste individual (no la necesita, es MVP). Migración
+`b9d6698355e6` aplicada también en la base de datos de desarrollo
+(`flask db upgrade`) -- si se despliega, aplicarla igual en
+staging/producción antes o durante el deploy. 8 tests nuevos + 3 de
+`get_ajustes_mes_unidad`: 148 tests pasando sin regresiones. Probado a
+mano en el navegador (vía curl) contra la base de datos de desarrollo
+real: la celda cambia de turno a "Libre", aparece el icono con el
+tooltip correcto y el flash de confirmación.
+
+Siguiente paso: a decidir con el usuario. Pendiente de esta
+sub-iniciativa: densidad de la celda si hace falta mostrar también
+saliente/nota (popover/tooltip en vez de inline).
 
 
 ## Paso anterior

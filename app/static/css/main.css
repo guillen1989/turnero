@@ -1154,9 +1154,30 @@ thead .supervision-col-trabajador { background: #f5f7fa; z-index: 2; }
 .supervision-col-dia--finde, .supervision-celda--finde { background: #f9fafb; }
 .supervision-celda { min-height: 2.2rem; }
 .supervision-celda .supervision-chip { display: block; margin-bottom: 0.15rem; white-space: nowrap; }
-.supervision-cambio-badge {
-  display: inline-block; margin-left: 0.15rem; color: #7c3aed; text-decoration: none;
-  font-weight: 700;
+.supervision-celda-btn {
+  display: block; width: 100%; background: none; border: none; cursor: pointer;
+  padding: 0; margin: 0; text-align: left; font-family: inherit; min-height: 1.4rem;
+  border-radius: 4px;
 }
+.supervision-celda-btn:hover { background: #f1f5f9; }
+.supervision-cambio-badge, .supervision-ajuste-badge {
+  display: inline-block; margin-left: 0.15rem; text-decoration: none; font-weight: 700;
+}
+.supervision-cambio-badge { color: #7c3aed; }
 .supervision-cambio-badge:hover { text-decoration: underline; }
+.supervision-ajuste-badge { color: #b45309; cursor: help; }
+
+/* Modal de modificación de turno (matriz de supervisión) */
+.sup-ajuste-modal {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+  align-items: center; justify-content: center; z-index: 50; padding: 1rem;
+}
+.sup-ajuste-panel {
+  background: #fff; border-radius: 10px; padding: 1.25rem; width: 100%; max-width: 380px;
+  display: flex; flex-direction: column; gap: 0.6rem;
+}
+.sup-ajuste-panel h3 { margin: 0; font-size: 1.05rem; }
+.sup-ajuste-quien { margin: 0; color: #475569; font-size: 0.9rem; }
+.sup-ajuste-panel form { display: flex; flex-direction: column; gap: 0.6rem; }
+.sup-ajuste-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 .documento-numero { font-size: 0.9rem; font-weight: normal; color: #6b7280; }
