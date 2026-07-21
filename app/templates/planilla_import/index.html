@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Importar planilla') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Importar planilla') }}</h1>
+
+  <form method="post" action="{{ url_for('planilla_import.subir') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-group">
+      <label for="archivo">{{ _('Archivo de planilla') }}</label>
+      <input type="file" id="archivo" name="archivo" required>
+    </div>
+    <button type="submit" class="btn btn-primary">{{ _('Subir e importar') }}</button>
+    <a href="{{ url_for('planilla_import.codigos') }}" class="btn btn-secondary">
+      {{ _('Configurar códigos de turno') }}
+    </a>
+  </form>
+
+  <h2>{{ _('Trabajadores sin cuenta vinculada') }}</h2>
+  {% if pendientes %}
+    <table class="tabla-datos">
+      <thead>
+        <tr>
+          <th>{{ _('Nombre en la planilla') }}</th>
+          <th>{{ _('Número de empleado') }}</th>
+          <th>{{ _('Vincular a') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pendiente in pendientes %}
+          <tr>
+            <td>{{ pendiente.nombre_planilla }}</td>
+            <td>{{ pendiente.numero_empleado }}</td>
+            <td>
+              <form method="post" action="{{ url_for('planilla_import.vincular', mapeo_id=pendiente.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="usuario_id" required>
+                  <option value="">{{ _('Selecciona una cuenta') }}</option>
+                  {% for usuario in usuarios %}
+                    <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm">{{ _('Vincular') }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>{{ _('No hay trabajadores pendientes de vincular.') }}</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -4262,6 +4262,63 @@ msgstr "9. Instala Turnero en tu móvil"
 msgid "Crear cuenta gratis"
 msgstr "Crear cuenta gratis"
 
+msgid "Importar planilla"
+msgstr "Importar planilla"
+
+msgid "Archivo de planilla"
+msgstr "Archivo de planilla"
+
+msgid "Subir e importar"
+msgstr "Subir e importar"
+
+msgid "Configurar códigos de turno"
+msgstr "Configurar códigos de turno"
+
+msgid "Trabajadores sin cuenta vinculada"
+msgstr "Trabajadores sin cuenta vinculada"
+
+msgid "Nombre en la planilla"
+msgstr "Nombre en la planilla"
+
+msgid "Número de empleado"
+msgstr "Número de empleado"
+
+msgid "Vincular a"
+msgstr "Vincular a"
+
+msgid "Selecciona una cuenta"
+msgstr "Selecciona una cuenta"
+
+msgid "Vincular"
+msgstr "Vincular"
+
+msgid "No hay trabajadores pendientes de vincular."
+msgstr "No hay trabajadores pendientes de vincular."
+
+msgid "Indica, para cada turno de la app, qué códigos usa el archivo de planilla (separados por comas). Por ejemplo, si la mañana con jornada reducida aparece como \"MC\", escríbelo junto a \"Mañana\"."
+msgstr "Indica, para cada turno de la app, qué códigos usa el archivo de planilla (separados por comas). Por ejemplo, si la mañana con jornada reducida aparece como \"MC\", escríbelo junto a \"Mañana\"."
+
+msgid "p. ej. M, MC"
+msgstr "p. ej. M, MC"
+
+msgid "Selecciona un archivo de planilla."
+msgstr "Selecciona un archivo de planilla."
+
+msgid "Faltan por configurar estos códigos de turno: %(codigos)s. Configúralos y vuelve a subir el archivo."
+msgstr "Faltan por configurar estos códigos de turno: %(codigos)s. Configúralos y vuelve a subir el archivo."
+
+msgid "%(actualizados)d trabajadores actualizados. %(pendientes)d sin vincular a una cuenta todavía."
+msgstr "%(actualizados)d trabajadores actualizados. %(pendientes)d sin vincular a una cuenta todavía."
+
+msgid "Códigos de turno configurados."
+msgstr "Códigos de turno configurados."
+
+msgid "Selecciona una cuenta válida."
+msgstr "Selecciona una cuenta válida."
+
+msgid "Trabajador vinculado a %(nombre)s."
+msgstr "Trabajador vinculado a %(nombre)s."
+
 #~ msgid ""
 #~ "Hola %(nombre)s,\n"
 #~ "\n"

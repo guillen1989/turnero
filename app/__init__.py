@@ -85,6 +85,9 @@ def create_app(config_name=None):
     from app.routes.documento_cambio import bp as documento_cambio_bp
     app.register_blueprint(documento_cambio_bp)
 
+    from app.routes.planilla_import import bp as planilla_import_bp
+    app.register_blueprint(planilla_import_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 

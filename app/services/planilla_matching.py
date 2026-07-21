@@ -6,6 +6,7 @@ empleado, estable entre cargas mensuales).
 """
 from app.extensions import db
 from app.models.planilla_import import MapeoCodigoTurno, MapeoTrabajadorPlanilla
+from app.models.usuario import Usuario
 
 
 def resolver_franja(grupo_intercambio, codigo: str):
@@ -67,3 +68,20 @@ def trabajadores_sin_vincular(unidad) -> list[MapeoTrabajadorPlanilla]:
     return MapeoTrabajadorPlanilla.query.filter_by(
         unidad_id=unidad.id, usuario_id=None
     ).all()
+
+
+def usuarios_disponibles_para_vincular(unidad) -> list:
+    """Usuarios de esa unidad que todavía no están vinculados a ningún
+    MapeoTrabajadorPlanilla, para ofrecerlos como opciones al confirmar
+    manualmente un vínculo."""
+    ya_vinculados = {
+        m.usuario_id
+        for m in MapeoTrabajadorPlanilla.query.filter(
+            MapeoTrabajadorPlanilla.unidad_id == unidad.id,
+            MapeoTrabajadorPlanilla.usuario_id.isnot(None),
+        ).all()
+    }
+    return [
+        u for u in Usuario.query.filter_by(unidad_id=unidad.id).all()
+        if u.id not in ya_vinculados
+    ]

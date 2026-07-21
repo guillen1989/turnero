@@ -113,3 +113,20 @@ def test_trabajadores_sin_vincular_excluye_los_ya_vinculados(db):
 
     pendientes = trabajadores_sin_vincular(unidad)
     assert pendientes == [sin_vincular]
+
+
+def test_usuarios_disponibles_para_vincular_excluye_ya_vinculados(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    ana = Usuario(nombre="Ana Pérez", email="ana@hospital.es", unidad=unidad, categoria=categoria)
+    ana.set_password("segura123")
+    luis = Usuario(nombre="Luis Gómez", email="luis@hospital.es", unidad=unidad, categoria=categoria)
+    luis.set_password("segura123")
+    db.session.add_all([ana, luis])
+    db.session.commit()
+
+    trabajador = resolver_o_crear_trabajador(unidad, "12345", "PÉREZ, ANA")
+    vincular_usuario(trabajador, ana)
+
+    from app.services.planilla_matching import usuarios_disponibles_para_vincular
+    disponibles = usuarios_disponibles_para_vincular(unidad)
+    assert disponibles == [luis]

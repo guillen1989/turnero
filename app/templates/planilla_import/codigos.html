@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Configurar códigos de turno') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Configurar códigos de turno') }}</h1>
+  <p>
+    {{ _('Indica, para cada turno de la app, qué códigos usa el archivo de planilla (separados por comas). Por ejemplo, si la mañana con jornada reducida aparece como "MC", escríbelo junto a "Mañana".') }}
+  </p>
+
+  <form method="post" action="{{ url_for('planilla_import.codigos') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for franja in franjas %}
+      <div class="form-group">
+        <label for="codigos_{{ franja.id }}">{{ franja.nombre }}</label>
+        <input
+          type="text"
+          id="codigos_{{ franja.id }}"
+          name="codigos_{{ franja.id }}"
+          placeholder="{{ _('p. ej. M, MC') }}"
+        >
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">{{ _('Guardar') }}</button>
+    <a href="{{ url_for('planilla_import.index') }}" class="btn btn-secondary">{{ _('Volver') }}</a>
+  </form>
+</div>
+{% endblock %}

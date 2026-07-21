@@ -78,11 +78,40 @@ Cubierto por `tests/test_importar_planilla.py` (4 tests). 109 tests
 pasan en el conjunto de archivos relacionados con planilla/factibilidad,
 sin regresiones.
 
+Hecho — paso 5 (ruta HTTP):
+`app/routes/planilla_import.py` (blueprint `planilla_import`, prefijo
+`/planilla/importar`, registrado en `app/__init__.py`), todas las rutas
+exigen `current_user.es_supervisora` (403 si no):
+- `GET /` (`index`): formulario de subida + tabla de
+  `trabajadores_sin_vincular` de la unidad, cada fila con un desplegable
+  (`usuarios_disponibles_para_vincular`, nueva función en
+  `planilla_matching.py`) para vincular manualmente.
+- `POST /` (`subir`): lee el archivo subido (decodificado como
+  `latin-1`, igual que el resto del parser ILOG) y llama a
+  `importar_planilla`. Si faltan códigos por mapear, redirige a
+  `codigos` con el aviso de qué códigos son; si no, aviso de cuántos
+  trabajadores se actualizaron y cuántos quedan pendientes de vincular.
+- `GET/POST /codigos` (`codigos`): formulario con un campo de texto por
+  `FranjaHoraria` del grupo (códigos separados por comas) que llama a
+  `establecer_mapeo_codigo` por cada código introducido.
+- `POST /<mapeo_id>/vincular` (`vincular`): vincula manualmente un
+  `MapeoTrabajadorPlanilla` pendiente a un `Usuario` de la misma unidad
+  (403 si el mapeo es de otra unidad, aviso si el usuario elegido no es
+  válido).
+
+Plantillas nuevas `planilla_import/index.html` y
+`planilla_import/codigos.html`, mismas convenciones que el resto del
+proyecto (`form-container`, `btn btn-primary`/`btn-secondary`,
+`csrf_token()` en cada formulario). Cubierto por
+`tests/test_rutas_importar_planilla.py` y el 10º test añadido a
+`tests/test_servicio_planilla_matching.py` (para
+`usuarios_disponibles_para_vincular`). Catálogo i18n: 19 cadenas nuevas
+añadidas a mano en `translations/es/LC_MESSAGES/messages.po` (mismo
+criterio que el resto de entradas de deuda técnica de este archivo: el
+catálogo lleva tiempo desincronizado, ver más abajo), `pybabel compile`
+sin errores.
+
 Pendiente para completar la funcionalidad (no empezado):
-- Ruta HTTP + plantilla para que la supervisora suba el archivo, vea
-  `codigos_sin_mapear` (con un formulario para configurarlos la primera
-  vez) y `trabajadores_pendientes` (para confirmar manualmente cada
-  asociación nombre_planilla -> Usuario, nunca automática).
 - Vincular retroactivamente cuando un trabajador de
   `trabajadores_pendientes` se registra días después (caso pedido
   explícitamente por el usuario): enganchar en el flujo de registro
