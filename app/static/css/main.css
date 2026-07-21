@@ -580,6 +580,7 @@ body {
 /* Publish / Edit form */
 .form-container { max-width: 660px; margin: 2rem auto; padding: 0 1rem; }
 .form-container > h1 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+.form-container--ancho { max-width: 100%; }
 
 .turnos-section {
   background: #fff;
@@ -1135,4 +1136,27 @@ body {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
 }
+
+/* Matriz de supervisión de planilla (trabajadores x días) */
+.supervision-matriz { border-collapse: collapse; white-space: nowrap; }
+.supervision-matriz th, .supervision-matriz td { border: 1px solid #e5e7eb; padding: 0.35rem 0.4rem; vertical-align: top; }
+.supervision-matriz thead th { background: #f5f7fa; font-size: 0.78rem; color: #555; text-align: center; }
+.supervision-col-trabajador {
+  position: sticky; left: 0; z-index: 1;
+  background: #fff; text-align: left; font-weight: 500;
+  min-width: 140px; max-width: 200px; white-space: normal;
+}
+thead .supervision-col-trabajador { background: #f5f7fa; z-index: 2; }
+.supervision-col-dia { min-width: 44px; }
+.supervision-dia-num { display: block; font-weight: 600; }
+.supervision-dia-semana { display: block; font-size: 0.7rem; color: #888; }
+.supervision-col-dia--hoy, .supervision-celda--hoy { background: #eff6ff; }
+.supervision-col-dia--finde, .supervision-celda--finde { background: #f9fafb; }
+.supervision-celda { min-height: 2.2rem; }
+.supervision-celda .supervision-chip { display: block; margin-bottom: 0.15rem; white-space: nowrap; }
+.supervision-cambio-badge {
+  display: inline-block; margin-left: 0.15rem; color: #7c3aed; text-decoration: none;
+  font-weight: 700;
+}
+.supervision-cambio-badge:hover { text-decoration: underline; }
 .documento-numero { font-size: 0.9rem; font-weight: normal; color: #6b7280; }

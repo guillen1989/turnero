@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Supervisión de planilla') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+{% set MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+{% set DIAS_SEMANA = ['L','M','X','J','V','S','D'] %}
+
+<div class="form-container form-container--ancho">
+
+  <div class="planilla-header">
+    <div class="planilla-header-titulo">
+      <h1>{{ _('Supervisión de planilla') }}</h1>
+    </div>
+
+    <div class="planilla-mes-nav">
+      <a href="{{ url_for('planilla_supervision.index', anyo=prev_anyo, mes=prev_mes) }}" class="btn btn-secondary btn-sm">&#8249;</a>
+      <span class="planilla-mes-titulo">{{ MESES[mes - 1] }} {{ anyo }}</span>
+      <a href="{{ url_for('planilla_supervision.index', anyo=next_anyo, mes=next_mes) }}" class="btn btn-secondary btn-sm">&#8250;</a>
+    </div>
+  </div>
+
+  {% if not trabajadores %}
+    <p class="form-hint">{{ _('No hay trabajadores en tu unidad todavía.') }}</p>
+  {% else %}
+  <div class="table-scroll">
+    <table class="supervision-matriz">
+      <thead>
+        <tr>
+          <th class="supervision-col-trabajador">{{ _('Trabajador') }}</th>
+          {% for dia in dias %}
+            <th class="supervision-col-dia{% if dia == hoy %} supervision-col-dia--hoy{% endif %}{% if dia.weekday() >= 5 %} supervision-col-dia--finde{% endif %}">
+              <span class="supervision-dia-num">{{ dia.day }}</span>
+              <span class="supervision-dia-semana">{{ DIAS_SEMANA[dia.weekday()] }}</span>
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for trabajador in trabajadores %}
+          <tr>
+            <td class="supervision-col-trabajador">{{ trabajador.nombre }}</td>
+            {% for dia in dias %}
+              {% set clave = (trabajador.id, dia) %}
+              {% set turnos_dia = turnos_por_usuario_dia.get(clave, []) %}
+              {% set estado_dia = estados_por_usuario_dia.get(clave) %}
+              {% set cambio = cambios_por_usuario_dia.get(clave) %}
+              <td class="supervision-celda{% if dia == hoy %} supervision-celda--hoy{% endif %}{% if dia.weekday() >= 5 %} supervision-celda--finde{% endif %}">
+                {% if estado_dia %}
+                  <span class="planilla-turno-chip planilla-turno-chip--{{ estado_dia.tipo }} supervision-chip">
+                    {{ etiquetas_estado[estado_dia.tipo] }}
+                  </span>
+                {% endif %}
+                {% for turno in turnos_dia %}
+                  <span class="planilla-turno-chip supervision-chip"
+                        style="background:{{ turno.franja_horaria.color or '#3B82F6' }}; color:{{ turno.franja_horaria.color_texto }};">
+                    {{ turno.franja_horaria.nombre }}
+                  </span>
+                {% endfor %}
+                {% if cambio %}
+                  <a href="{{ url_for('documento_cambio.ver', documento_id=cambio.id) }}"
+                     class="supervision-cambio-badge"
+                     title="{{ _('Día afectado por un cambio autorizado') }}">
+                    &#8646;
+                  </a>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

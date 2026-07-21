@@ -155,9 +155,29 @@ tanto `turno_cede_fecha` como `turno_recibe_fecha` de cada participante
 nuevos (`tests/test_servicio_planilla_supervision.py`), sin regresiones
 en el resto de la suite de planilla/documento_cambio.
 
-Siguiente paso: ruta HTTP (blueprint protegido por `es_supervisora`,
-mismo patrón que `planilla_import.py`) + plantilla con la matriz
-trabajador x día, reutilizando estos tres servicios.
+Paso 2 (ruta HTTP + plantilla, hecho): nuevo blueprint
+`app/routes/planilla_supervision.py` (`GET /planilla/supervision/`,
+protegido por `_exigir_supervisora()` igual que `planilla_import.py`;
+`anyo`/`mes` como query params con el mismo patrón prev/next que
+`planilla.index`). Plantilla `planilla_supervision/index.html`: tabla
+con los trabajadores de `current_user.unidad` como filas (columna de
+nombre fija con `position: sticky`) y un día del mes por columna,
+envuelta en `.table-scroll` para scroll horizontal. Cada celda muestra
+el/los turno(s) del día (chip con el color de la `FranjaHoraria`,
+soporta doblaje apilando chips), el estado del día si lo hay, y si el
+día está en `get_cambios_autorizados_mes_unidad` un badge enlazando a
+`documento_cambio.ver`. Enlace añadido al menú principal junto a
+"Supervisión de cambios". 6 tests nuevos
+(`tests/test_rutas_planilla_supervision.py`): login requerido, 403 si
+no es supervisora, filtrado por unidad, turno/estado visibles, enlace
+al documento de un cambio autorizado. 124 tests pasando sin
+regresiones en toda la suite de planilla/documento_cambio.
+
+Siguiente paso: a decidir con el usuario. Pendientes de esta
+sub-iniciativa: (a) densidad de la celda si hace falta mostrar
+también saliente/nota (popover/tooltip en vez de inline); (b) decidir
+el modelo de datos para la modificación unilateral de un turno de un
+trabajador (día libre, etc.), que no encaja en `ParticipanteDocumentoCambio`.
 
 
 ## Paso anterior

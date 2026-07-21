@@ -33,6 +33,7 @@
         <a href="{{ url_for('documento_cambio.lista') }}">{{ _('Hoja de cambio') }}</a>
         {% if current_user.es_supervisora %}
           <a href="{{ url_for('documento_cambio.supervisora') }}">{{ _('Supervisión de cambios') }}</a>
+          <a href="{{ url_for('planilla_supervision.index') }}">{{ _('Supervisión de planilla') }}</a>
         {% endif %}
         <a href="{{ url_for('notificaciones.panel') }}">{{ _('Notificaciones') }}</a>
         <a href="{{ url_for('auth.perfil') }}">{{ _('Mi perfil') }}</a>
