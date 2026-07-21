@@ -55,16 +55,36 @@ para el mapeo de trabajador. Cubierto por
 el conjunto de archivos relacionados con planilla/factibilidad, sin
 regresiones.
 
+Hecho — paso 4 (orquestador):
+`app/services/importar_planilla.py` (`importar_planilla`) une parser +
+`planilla_matching` + escritura real. Reglas de diseño:
+- Todo o nada respecto a códigos de turno: si falta el mapeo de algún
+  código usado en el archivo a `FranjaHoraria` para el grupo de la
+  unidad, no escribe nada y devuelve qué códigos faltan
+  (`codigos_sin_mapear`). Se decidió así para no importar unos turnos sí
+  y otros no de forma silenciosa.
+- Los trabajadores sin `Usuario` vinculado no bloquean el resto de la
+  importación: se registran/actualizan como pendientes
+  (`trabajadores_pendientes`) vía `resolver_o_crear_trabajador` y no se
+  les escribe ningún turno hasta que se vinculen.
+- Para los vinculados, escribe cada turno con `añadir_turno` y publica
+  el mes con `publicar_mes` (la carga de la supervisora hace de
+  publicación; no queda como borrador). Reutiliza el vínculo ya hecho en
+  cargas de meses anteriores sin repetir trabajo (verificado con una
+  carga de enero seguida de otra de febrero para el mismo trabajador:
+  no duplica `MapeoTrabajadorPlanilla`, sí escribe los turnos nuevos).
+
+Cubierto por `tests/test_importar_planilla.py` (4 tests). 109 tests
+pasan en el conjunto de archivos relacionados con planilla/factibilidad,
+sin regresiones.
+
 Pendiente para completar la funcionalidad (no empezado):
-- Ruta HTTP + plantilla para que la supervisora suba el archivo, vea los
-  trabajadores sin vincular y confirme manualmente cada asociación
-  nombre_planilla -> Usuario (nunca automática, ver riesgo ya discutido
-  con el usuario).
-- Orquestador que une parser + `planilla_matching` + escritura real en
-  `TurnoPlanilla`/`EstadoDiaPlanilla` (usando `añadir_turno`/
-  `establecer_estado_dia` de `app/services/planilla.py`).
+- Ruta HTTP + plantilla para que la supervisora suba el archivo, vea
+  `codigos_sin_mapear` (con un formulario para configurarlos la primera
+  vez) y `trabajadores_pendientes` (para confirmar manualmente cada
+  asociación nombre_planilla -> Usuario, nunca automática).
 - Vincular retroactivamente cuando un trabajador de
-  `trabajadores_sin_vincular` se registra días después (caso pedido
+  `trabajadores_pendientes` se registra días después (caso pedido
   explícitamente por el usuario): enganchar en el flujo de registro
   (`app/services/registro.py`) una sugerencia de vínculo por nombre
   parecido dentro de la misma unidad, a confirmar por el propio usuario
@@ -73,32 +93,6 @@ Pendiente para completar la funcionalidad (no empezado):
   todavía no se ha empezado; pendiente de que el usuario aclare qué
   reglas son imprescindibles para el MVP.
 
-Hecho — paso 1 (anonimización): `scripts/anonimizar_planilla.py` (script
-de un solo uso, no productivo) sustituye en el archivo real
-`planilla_ilog.xls` (nunca versionado, en `.gitignore`) el nombre y
-número de empleado de cada uno de los 136 trabajadores por datos
-ficticios (35 nombres reutilizados de la seed local de staging,
-`scripts/seed_staging.py`, formateados como `"APELLIDOS, NOMBRE"`; 101
-inventados con pools de nombres/apellidos españoles), sin repeticiones y
-sin tocar fechas, unidad ni códigos de turno. Genera
-`tests/fixtures/planilla_ejemplo.xls`, sí versionado. Verificado:
-mismo número de líneas/columnas que el original, 136 nombres y 136
-números únicos.
-
-Hecho — paso 2 (parser): `app/services/planilla_import.py`
-(`parsear_planilla_ilog`), módulo puro sin acceso a BD ni a `Usuario`
-—simétrico al motor de matching, que tampoco se acopla a la capa web ni
-de persistencia—. Traduce el texto separado por tabuladores a
-`PlanillaImportada` (unidad, año, mes) con una lista de
-`TrabajadorImportado` (nombre tal cual en la planilla, número de
-empleado, `dict[date, str]` de código de turno por día). Deriva las
-columnas de días de la propia fila "Dias" del archivo (no asume 28-31
-fijo), así que cubre meses de distinta longitud. Cubierto por
-`tests/test_planilla_import.py`: metadata del periodo, 136 trabajadores
-sin duplicados, turnos del primer trabajador comparados celda a celda
-contra el fixture real, códigos de turno dentro del conjunto conocido,
-filas sin número de empleado válido se ignoran, meses de distinta
-longitud. 6 tests, todos en verde.
 
 ## Paso anterior
 Paso aparte, fuera de la Fase 10 (fix de infraestructura de tests):
