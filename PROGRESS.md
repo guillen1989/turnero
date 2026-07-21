@@ -17,26 +17,61 @@ Se planificó en 3 pasos:
    texto separado por tabuladores con extensión `.xls`) para poder
    desarrollar sin usar datos reales de personal — HECHO (ver más abajo).
 2. Parser puro del formato ILOG — HECHO (ver más abajo).
-3. Siguiente paso concreto: dos piezas de matching, ambas persistentes
-   (para no repetir el trabajo manual cada mes, solo con el personal
-   nuevo):
-   - Código de turno de la planilla (M/T/N/MC/TC/D1) → `FranjaHoraria`
-     de la app. Equivalencias confirmadas con el usuario para el archivo
-     de ejemplo: M=mañana, T=tarde, N=noche, MC=mañana con jornada
-     reducida (mismo horario que M, menos días u horas), TC=tarde con
-     jornada reducida (ídem sobre T), D1=turno deslizante con horario
-     fijo en esta unidad (horas concretas aún por confirmar). MC/TC no
-     tienen hoy una `FranjaHoraria` propia — falta decidir si
-     necesitan una franja con horario reducido real o si basta con
-     tratarlas como M/T a efectos de turno trabajado/solapamiento.
-   - Nombre de la planilla (`"APELLIDOS, NOMBRE"`) → `Usuario.nombre`
-     (formato `"Nombre Apellido"`): en staging serán idénticos tras
-     invertir el orden, en producción no. Debe quedar guardado una vez
-     por trabajador, no repetirse en cada carga mensual. Caso a cubrir:
-     un trabajador aparece en la planilla sin cuenta en la app todavía
-     y se registra días después — su cuenta nueva debe poder enlazarse
-     con las filas de planilla ya importadas para ese nombre, no solo
-     con las futuras.
+3. D1 confirmado por el usuario: turno deslizante de 13:00 a 20:00 en
+   esta unidad. MC/TC se tratan igual que M/T a efectos de qué turno
+   trabaja y de solapamientos (la reducción de jornada no tiene un
+   horario propio fiable: unas veces son menos horas, otras menos días
+   al mes, pero ambas aparecen con el mismo código) — decisión
+   confirmada con el usuario, no modelamos horas reducidas por persona.
+
+Hecho — paso 3a (modelos de mapeo persistente):
+`app/models/planilla_import.py` — `MapeoCodigoTurno` (código de planilla
+-> `FranjaHoraria`, único por `grupo_intercambio_id` + `codigo`, se
+configura una vez por grupo) y `MapeoTrabajadorPlanilla` (número de
+empleado -> `Usuario`, único por `unidad_id` + `numero_empleado`,
+`usuario_id` nullable mientras no hay cuenta o no se ha confirmado la
+asociación). Migración `16d83172b341` (tablas nuevas, sin datos previos,
+no aplica el patrón de tres pasos). Nota de mantenimiento: al generarla,
+`flask db upgrade` falló porque la base de dev local (`cambiaturnos`,
+no la de test) tenía la columna `firma_supervisora` ya aplicada pero
+`alembic_version` desactualizada a la revisión anterior — desfase de
+bookkeeping preexistente, no relacionado con este cambio. Se resolvió
+con `flask db stamp 7920cee19df7` antes de migrar (no se re-ejecutó DDL,
+solo se corrigió el registro de versión). `flask db heads` da
+exactamente 1 head. Cubierto por `tests/test_models_planilla_import.py`
+(7 tests: creación, unicidad por grupo/unidad, mismo código o número en
+grupos/unidades distintas es válido, vínculo a `Usuario`).
+
+Hecho — paso 3b (servicio de resolución):
+`app/services/planilla_matching.py` — `resolver_franja`/
+`establecer_mapeo_codigo` (idempotente, permite reconfigurar) para el
+mapeo de código de turno, y `resolver_o_crear_trabajador` (por número de
+empleado; reutiliza el mapeo existente en cargas siguientes y solo crea
+fila nueva para números no vistos antes, actualiza `nombre_planilla` si
+cambió pero conserva `usuario_id` ya vinculado) / `vincular_usuario` /
+`trabajadores_sin_vincular` (para que la supervisora revise pendientes)
+para el mapeo de trabajador. Cubierto por
+`tests/test_servicio_planilla_matching.py` (9 tests). 105 tests pasan en
+el conjunto de archivos relacionados con planilla/factibilidad, sin
+regresiones.
+
+Pendiente para completar la funcionalidad (no empezado):
+- Ruta HTTP + plantilla para que la supervisora suba el archivo, vea los
+  trabajadores sin vincular y confirme manualmente cada asociación
+  nombre_planilla -> Usuario (nunca automática, ver riesgo ya discutido
+  con el usuario).
+- Orquestador que une parser + `planilla_matching` + escritura real en
+  `TurnoPlanilla`/`EstadoDiaPlanilla` (usando `añadir_turno`/
+  `establecer_estado_dia` de `app/services/planilla.py`).
+- Vincular retroactivamente cuando un trabajador de
+  `trabajadores_sin_vincular` se registra días después (caso pedido
+  explícitamente por el usuario): enganchar en el flujo de registro
+  (`app/services/registro.py`) una sugerencia de vínculo por nombre
+  parecido dentro de la misma unidad, a confirmar por el propio usuario
+  o por la supervisora.
+- Motor de reglas laborales (turnos consecutivos, descanso tras noche):
+  todavía no se ha empezado; pendiente de que el usuario aclare qué
+  reglas son imprescindibles para el MVP.
 
 Hecho — paso 1 (anonimización): `scripts/anonimizar_planilla.py` (script
 de un solo uso, no productivo) sustituye en el archivo real
