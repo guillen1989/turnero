@@ -4,6 +4,68 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
+Fuera de la Fase 10, nueva iniciativa: carga masiva de planilla por parte
+de la supervisora, sustituyendo (para las unidades que lo adopten) la
+cumplimentación manual día a día de `app/routes/planilla.py`. Motivación:
+reducir fricción a supervisoras y trabajadores, y permitir comprobar la
+factibilidad real de una hoja de cambio (ya existe `comprobar_factibilidad`
+en `app/services/factibilidad_documento_cambio.py`) contra los datos reales
+de la planilla en vez de depender de que cada usuario la rellene a mano.
+
+Se planificó en 3 pasos:
+1. Anonimizar un archivo real de ejemplo (formato de exportación "ILOG":
+   texto separado por tabuladores con extensión `.xls`) para poder
+   desarrollar sin usar datos reales de personal — HECHO (ver más abajo).
+2. Parser puro del formato ILOG — HECHO (ver más abajo).
+3. Siguiente paso concreto: dos piezas de matching, ambas persistentes
+   (para no repetir el trabajo manual cada mes, solo con el personal
+   nuevo):
+   - Código de turno de la planilla (M/T/N/MC/TC/D1) → `FranjaHoraria`
+     de la app. Equivalencias confirmadas con el usuario para el archivo
+     de ejemplo: M=mañana, T=tarde, N=noche, MC=mañana con jornada
+     reducida (mismo horario que M, menos días u horas), TC=tarde con
+     jornada reducida (ídem sobre T), D1=turno deslizante con horario
+     fijo en esta unidad (horas concretas aún por confirmar). MC/TC no
+     tienen hoy una `FranjaHoraria` propia — falta decidir si
+     necesitan una franja con horario reducido real o si basta con
+     tratarlas como M/T a efectos de turno trabajado/solapamiento.
+   - Nombre de la planilla (`"APELLIDOS, NOMBRE"`) → `Usuario.nombre`
+     (formato `"Nombre Apellido"`): en staging serán idénticos tras
+     invertir el orden, en producción no. Debe quedar guardado una vez
+     por trabajador, no repetirse en cada carga mensual. Caso a cubrir:
+     un trabajador aparece en la planilla sin cuenta en la app todavía
+     y se registra días después — su cuenta nueva debe poder enlazarse
+     con las filas de planilla ya importadas para ese nombre, no solo
+     con las futuras.
+
+Hecho — paso 1 (anonimización): `scripts/anonimizar_planilla.py` (script
+de un solo uso, no productivo) sustituye en el archivo real
+`planilla_ilog.xls` (nunca versionado, en `.gitignore`) el nombre y
+número de empleado de cada uno de los 136 trabajadores por datos
+ficticios (35 nombres reutilizados de la seed local de staging,
+`scripts/seed_staging.py`, formateados como `"APELLIDOS, NOMBRE"`; 101
+inventados con pools de nombres/apellidos españoles), sin repeticiones y
+sin tocar fechas, unidad ni códigos de turno. Genera
+`tests/fixtures/planilla_ejemplo.xls`, sí versionado. Verificado:
+mismo número de líneas/columnas que el original, 136 nombres y 136
+números únicos.
+
+Hecho — paso 2 (parser): `app/services/planilla_import.py`
+(`parsear_planilla_ilog`), módulo puro sin acceso a BD ni a `Usuario`
+—simétrico al motor de matching, que tampoco se acopla a la capa web ni
+de persistencia—. Traduce el texto separado por tabuladores a
+`PlanillaImportada` (unidad, año, mes) con una lista de
+`TrabajadorImportado` (nombre tal cual en la planilla, número de
+empleado, `dict[date, str]` de código de turno por día). Deriva las
+columnas de días de la propia fila "Dias" del archivo (no asume 28-31
+fijo), así que cubre meses de distinta longitud. Cubierto por
+`tests/test_planilla_import.py`: metadata del periodo, 136 trabajadores
+sin duplicados, turnos del primer trabajador comparados celda a celda
+contra el fixture real, códigos de turno dentro del conjunto conocido,
+filas sin número de empleado válido se ignoran, meses de distinta
+longitud. 6 tests, todos en verde.
+
+## Paso anterior
 Paso aparte, fuera de la Fase 10 (fix de infraestructura de tests):
 la suite de tests compartía la misma base de datos Postgres local
 (`cambiaturnos_test`, nombre heredado del directorio del proyecto antes
@@ -225,7 +287,6 @@ Siguiente paso: a definir con el usuario. Pendiente: los 3 E2E
 preexistentes que fallan (ver arriba) siguen sin arreglar, quedaron
 fuera de scope de este trabajo.
 
-## Paso anterior
 Cola de pendientes que el usuario pidió abordar seguidos, en el orden
 que mejor convenga: (1) recomprobar factibilidad en la 2ª firma — HECHO,
 (2) firma cruzada entre cuentas reales — HECHO, (3) número de cambio
