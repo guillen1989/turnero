@@ -152,6 +152,9 @@ body {
 .container--wide {
   max-width: 1200px;
 }
+.container--full {
+  max-width: none;
+}
 
 /* Flash messages */
 .flash-messages { list-style: none; margin-bottom: 1.5rem; }
