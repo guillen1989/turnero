@@ -169,7 +169,7 @@ def _documentos_del_grupo_supervisora(filtros):
     if fecha:
         rango_inicio = rango_fin = fecha
     else:
-        _, ultimo_dia = calendar.monthrange(filtros["anyo"], filtros["mes"])
+        _primer_dia_semana, ultimo_dia = calendar.monthrange(filtros["anyo"], filtros["mes"])
         rango_inicio = date(filtros["anyo"], filtros["mes"], 1)
         rango_fin = date(filtros["anyo"], filtros["mes"], ultimo_dia)
 
