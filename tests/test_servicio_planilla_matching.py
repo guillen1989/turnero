@@ -130,3 +130,51 @@ def test_usuarios_disponibles_para_vincular_excluye_ya_vinculados(db):
     from app.services.planilla_matching import usuarios_disponibles_para_vincular
     disponibles = usuarios_disponibles_para_vincular(unidad)
     assert disponibles == [luis]
+
+
+def test_sugerir_trabajador_planilla_encuentra_coincidencia_con_orden_distinto(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    pendiente = resolver_o_crear_trabajador(unidad, "12345", "PÉREZ, ANA")
+
+    from app.services.planilla_matching import sugerir_trabajador_planilla
+    sugerencia = sugerir_trabajador_planilla(unidad, "Ana Pérez")
+    assert sugerencia.id == pendiente.id
+
+
+def test_sugerir_trabajador_planilla_ignora_mayusculas_y_acentos(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    pendiente = resolver_o_crear_trabajador(unidad, "12345", "GÓMEZ RUIZ, LUIS")
+
+    from app.services.planilla_matching import sugerir_trabajador_planilla
+    sugerencia = sugerir_trabajador_planilla(unidad, "luis gomez ruiz")
+    assert sugerencia.id == pendiente.id
+
+
+def test_sugerir_trabajador_planilla_devuelve_none_si_no_coincide(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    resolver_o_crear_trabajador(unidad, "12345", "PÉREZ, ANA")
+
+    from app.services.planilla_matching import sugerir_trabajador_planilla
+    assert sugerir_trabajador_planilla(unidad, "Luis Gómez") is None
+
+
+def test_sugerir_trabajador_planilla_ignora_los_ya_vinculados(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    usuario = Usuario(nombre="Ana Pérez", email="ana@hospital.es", unidad=unidad, categoria=categoria)
+    usuario.set_password("segura123")
+    db.session.add(usuario)
+    db.session.commit()
+
+    vinculado = resolver_o_crear_trabajador(unidad, "12345", "PÉREZ, ANA")
+    vincular_usuario(vinculado, usuario)
+
+    from app.services.planilla_matching import sugerir_trabajador_planilla
+    assert sugerir_trabajador_planilla(unidad, "Ana Pérez") is None
+
+
+def test_sugerir_trabajador_planilla_no_sugiere_coincidencia_parcial(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    resolver_o_crear_trabajador(unidad, "12345", "PÉREZ GÓMEZ, ANA MARÍA")
+
+    from app.services.planilla_matching import sugerir_trabajador_planilla
+    assert sugerir_trabajador_planilla(unidad, "Ana Pérez") is None

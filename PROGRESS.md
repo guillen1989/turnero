@@ -111,13 +111,26 @@ criterio que el resto de entradas de deuda técnica de este archivo: el
 catálogo lleva tiempo desincronizado, ver más abajo), `pybabel compile`
 sin errores.
 
+Hecho — vinculación retroactiva al registrarse:
+`sugerir_trabajador_planilla(unidad, nombre_usuario)` en
+`planilla_matching.py` compara por tokens (minúsculas, sin acentos, sin
+importar orden ni comas) el nombre del usuario contra los
+`trabajadores_sin_vincular` de su unidad; solo sugiere si hay
+coincidencia exacta de tokens (evita vincular a la persona equivocada
+con una coincidencia parcial). `auth.registro()` la consulta justo
+tras crear la cuenta y, si hay sugerencia, redirige a la nueva ruta
+`GET/POST /auth/registro/vincular-planilla/<mapeo_id>`
+(`confirmar_vinculo_planilla`, requiere login, 403 si el mapeo es de
+otra unidad) donde el propio usuario confirma o descarta el vínculo
+antes de continuar al onboarding; si descarta o no hay sugerencia,
+sigue quedando pendiente para que la supervisora lo vincule a mano
+desde `/planilla/importar` como hasta ahora. Plantilla nueva
+`auth/confirmar_vinculo_planilla.html`. 11 tests nuevos (5 del
+matcher puro en `test_servicio_planilla_matching.py`, 6 de la ruta en
+`test_auth_routes.py`). Catálogo i18n actualizado a mano (7 cadenas
+nuevas), `pybabel compile` sin errores.
+
 Pendiente para completar la funcionalidad (no empezado):
-- Vincular retroactivamente cuando un trabajador de
-  `trabajadores_pendientes` se registra días después (caso pedido
-  explícitamente por el usuario): enganchar en el flujo de registro
-  (`app/services/registro.py`) una sugerencia de vínculo por nombre
-  parecido dentro de la misma unidad, a confirmar por el propio usuario
-  o por la supervisora.
 - Motor de reglas laborales (turnos consecutivos, descanso tras noche):
   todavía no se ha empezado; pendiente de que el usuario aclare qué
   reglas son imprescindibles para el MVP.

@@ -4319,6 +4319,27 @@ msgstr "Selecciona una cuenta válida."
 msgid "Trabajador vinculado a %(nombre)s."
 msgstr "Trabajador vinculado a %(nombre)s."
 
+msgid "¿Eres tú en la planilla?"
+msgstr "¿Eres tú en la planilla?"
+
+msgid "Hemos encontrado un trabajador pendiente de vincular en tu unidad cuyo nombre coincide con el tuyo:"
+msgstr "Hemos encontrado un trabajador pendiente de vincular en tu unidad cuyo nombre coincide con el tuyo:"
+
+msgid "nº de empleado"
+msgstr "nº de empleado"
+
+msgid "Si lo confirmas, tus turnos de la planilla se asignarán automáticamente a tu cuenta."
+msgstr "Si lo confirmas, tus turnos de la planilla se asignarán automáticamente a tu cuenta."
+
+msgid "Sí, soy yo"
+msgstr "Sí, soy yo"
+
+msgid "No soy yo"
+msgstr "No soy yo"
+
+msgid "Vinculado a tu planilla. Verás tus turnos automáticamente."
+msgstr "Vinculado a tu planilla. Verás tus turnos automáticamente."
+
 #~ msgid ""
 #~ "Hola %(nombre)s,\n"
 #~ "\n"

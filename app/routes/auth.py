@@ -13,6 +13,7 @@ from app.forms.auth import (
     SolicitarResetForm, RestablecerPasswordForm,
 )
 from app.models.usuario import Usuario
+from app.models.planilla_import import MapeoTrabajadorPlanilla
 from app.services.email import enviar_email, url_absoluta
 from app.services.password_reset import (
     TOKEN_TTL_MINUTOS, consumir_token, generar_token_reset, obtener_usuario_por_token,
@@ -22,6 +23,7 @@ from app.services.registro import (
     encontrar_o_crear_pais, encontrar_o_crear_provincia, encontrar_o_crear_ciudad,
     resolver_hospital, resolver_unidad,
 )
+from app.services.planilla_matching import sugerir_trabajador_planilla, vincular_usuario
 
 bp = Blueprint("auth", __name__)
 
@@ -131,6 +133,11 @@ def registro():
                 )
                 login_user(usuario, remember=True)
                 flash(_("¡Bienvenido/a, %(nombre)s!", nombre=usuario.nombre), "success")
+
+                sugerencia = sugerir_trabajador_planilla(usuario.unidad, usuario.nombre)
+                if sugerencia:
+                    return redirect(url_for("auth.confirmar_vinculo_planilla", mapeo_id=sugerencia.id))
+
                 if getattr(usuario, "_es_nueva_unidad", False):
                     flash(_("Tu unidad es nueva. Configura los turnos disponibles en tu servicio."), "info")
                     return redirect(url_for("unidad.turnos"))
@@ -145,6 +152,25 @@ def registro():
 
     paises = Pais.query.order_by(Pais.nombre).all()
     return render_template("auth/registro.html", form=form, paises=paises, inv=inv)
+
+
+@bp.route("/registro/vincular-planilla/<int:mapeo_id>", methods=["GET", "POST"])
+@login_required
+def confirmar_vinculo_planilla(mapeo_id):
+    """Tras registrarse, si su nombre coincide con un trabajador pendiente
+    de la planilla importada de su unidad, se le ofrece confirmar el
+    vínculo (en vez de esperar a que la supervisora lo haga a mano)."""
+    mapeo = MapeoTrabajadorPlanilla.query.get_or_404(mapeo_id)
+    if mapeo.unidad_id != current_user.unidad_id:
+        abort(403)
+
+    if request.method == "POST":
+        if mapeo.usuario_id is None and request.form.get("confirmar") == "si":
+            vincular_usuario(mapeo, current_user)
+            flash(_("Vinculado a tu planilla. Verás tus turnos automáticamente."), "success")
+        return redirect(url_for("main.como_funciona"))
+
+    return render_template("auth/confirmar_vinculo_planilla.html", mapeo=mapeo)
 
 
 @bp.route("/login", methods=["GET", "POST"])
