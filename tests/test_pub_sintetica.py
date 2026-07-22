@@ -316,22 +316,28 @@ def test_cancelar_pub_b_cancela_sintetica(db):
 
 def test_publicar_c_genera_cadena_3(client, db):
     """Al publicar C, si hay una sintética que coincide, se crea el match cadena_3."""
+    from datetime import timedelta
+
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     carlos = _usuario("Carlos", "carlos@test.es")
     m = _franja(ana.unidad.grupo_intercambio_id)
     t = _franja_tarde(ana.unidad.grupo_intercambio_id)
 
-    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
-    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+    d0 = date.today()
+    d11 = d0 + timedelta(days=11)
+    d24 = d0 + timedelta(days=24)
+
+    pub_a = _pub_cambio(ana, [(d0, m)], [(d24, t)])
+    pub_b = _pub_cambio(pedro, [(d11, m)], [(d0, m)])
     sint = crear_pub_sintetica(pub_a, pub_b)
 
     client.post("/auth/login", data={"email": "carlos@test.es", "password": "password123"})
     client.post("/publicar", data={
         "tipo": "cambio",
-        "fecha_cedida_0": "2026-08-03",
+        "fecha_cedida_0": d24.isoformat(),
         "franja_cedida_0": str(t.id),
-        "fecha_aceptada_0": "2026-07-21",
+        "fecha_aceptada_0": d11.isoformat(),
         "franja_aceptada_0": str(m.id),
     })
 
@@ -352,8 +358,7 @@ def test_publicar_c_genera_cadena_3(client, db):
 # ---------------------------------------------------------------------------
 
 def test_crear_sintetica_no_genera_notificaciones(db):
-    """crear_pub_sintetica crea la pub pero no genera notificaciones a Ana/Pedro; las
-    genera crear_aviso_oportunidad_3 llamada desde procesar_aviso_y_sintetica."""
+    """crear_pub_sintetica crea la pub pero no genera notificaciones a Ana/Pedro."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     m = _franja(ana.unidad.grupo_intercambio_id)
