@@ -7,7 +7,7 @@ from flask_login import current_user, login_required
 
 from app.extensions import db
 from app.models.franja_horaria import FranjaHoraria
-from app.models.planilla import TIPOS_ESTADO_DIA
+from app.models.planilla import ETIQUETAS_ESTADO, TIPOS_ESTADO_DIA
 from app.models.usuario import Usuario
 from app.services.planilla_supervision import (
     ajustar_turno_trabajador,
@@ -18,12 +18,6 @@ from app.services.planilla_supervision import (
 )
 
 bp = Blueprint("planilla_supervision", __name__, url_prefix="/planilla/supervision")
-
-ETIQUETAS_ESTADO = {
-    "libre":         "Libre",
-    "vacaciones":    "Vacaciones",
-    "no_disponible": "No disponible",
-}
 
 
 def _exigir_supervisora():
@@ -74,7 +68,7 @@ def index():
     anyo = request.args.get("anyo", hoy.year, type=int)
     mes = request.args.get("mes", hoy.month, type=int)
 
-    _, num_dias = calendar.monthrange(anyo, mes)
+    _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
     dias = [date(anyo, mes, d) for d in range(1, num_dias + 1)]
 
     trabajadores = unidad.usuarios.order_by("nombre").all()

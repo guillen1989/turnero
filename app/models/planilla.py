@@ -1,8 +1,16 @@
 from datetime import datetime, timezone
 
+from flask_babel import lazy_gettext as _l
+
 from app.extensions import db
 
 TIPOS_ESTADO_DIA = ("libre", "vacaciones", "no_disponible")
+
+ETIQUETAS_ESTADO = {
+    "libre": _l("Libre"),
+    "vacaciones": _l("Vacaciones"),
+    "no_disponible": _l("No disponible para cambios"),
+}
 
 
 class EstadoDiaPlanilla(db.Model):

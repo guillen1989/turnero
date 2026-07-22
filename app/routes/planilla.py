@@ -2,11 +2,12 @@ import calendar
 from datetime import date
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_babel import _
 from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.franja_horaria import FranjaHoraria
-from app.models.planilla import PlanillaMes, TIPOS_ESTADO_DIA
+from app.models.planilla import PlanillaMes, TIPOS_ESTADO_DIA, ETIQUETAS_ESTADO
 from app.services.planilla import (
     añadir_turno, eliminar_turno,
     establecer_estado_dia, limpiar_dia,
@@ -38,12 +39,6 @@ def _resolver_seleccion(seleccion):
 
 bp = Blueprint("planilla", __name__, url_prefix="/planilla")
 
-ETIQUETAS_ESTADO = {
-    "libre":         "Libre",
-    "vacaciones":    "Vacaciones",
-    "no_disponible": "No disponible para cambios",
-}
-
 
 @bp.route("/")
 @login_required
@@ -52,7 +47,7 @@ def index():
     anyo = request.args.get("anyo", hoy.year, type=int)
     mes  = request.args.get("mes",  hoy.month, type=int)
 
-    _, num_dias = calendar.monthrange(anyo, mes)
+    _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
     dias = [date(anyo, mes, d) for d in range(1, num_dias + 1)]
 
     turnos = get_turnos_mes(current_user, anyo, mes)
@@ -113,7 +108,7 @@ def dia_añadir():
     try:
         fecha = date.fromisoformat(fecha_str)
     except ValueError:
-        flash("Fecha inválida.", "error")
+        flash(_("Fecha inválida."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     if not seleccion:
@@ -127,12 +122,12 @@ def dia_añadir():
         try:
             franja_id = int(seleccion)
         except ValueError:
-            flash("Selección no válida.", "error")
+            flash(_("Selección no válida."), "error")
             return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
         franja = db.session.get(FranjaHoraria, franja_id)
         if not franja or franja.grupo_intercambio_id != current_user.grupo_intercambio.id:
-            flash("Turno no válido.", "error")
+            flash(_("Turno no válido."), "error")
             return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
         añadir_turno(current_user, fecha, franja_id)
@@ -198,8 +193,11 @@ def mes_publicar(anyo, mes):
         n = len(vacios)
         primero = vacios[0].strftime("%-d/%m")
         flash(
-            f"La planilla está incompleta: {n} día(s) sin cumplimentar "
-            f"(el primero: {primero}). Añade un turno o marca cada día antes de publicar.",
+            _(
+                "La planilla está incompleta: %(n)s día(s) sin cumplimentar "
+                "(el primero: %(primero)s). Añade un turno o marca cada día antes de publicar.",
+                n=n, primero=primero,
+            ),
             "error",
         )
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
@@ -207,7 +205,7 @@ def mes_publicar(anyo, mes):
     planilla = publicar_mes(current_user, anyo, mes)
     actualizar_compat_tras_publicar_planilla(current_user, anyo, mes)
     registrar_evento(current_user.id, "planilla_publicada", planilla.id)
-    flash("Planilla del mes publicada. Tus compañeros ya pueden ver tu disponibilidad.", "success")
+    flash(_("Planilla del mes publicada. Tus compañeros ya pueden ver tu disponibilidad."), "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
 
@@ -215,7 +213,7 @@ def mes_publicar(anyo, mes):
 @login_required
 def mes_despublicar(anyo, mes):
     despublicar_mes(current_user, anyo, mes)
-    flash("Planilla retirada. Tus compañeros ya no verán tu disponibilidad este mes.", "info")
+    flash(_("Planilla retirada. Tus compañeros ya no verán tu disponibilidad este mes."), "info")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
 
@@ -227,9 +225,9 @@ def toggle_mostrar_disponibilidad():
     db.session.commit()
 
     if current_user.mostrar_disponibilidad:
-        flash("Ahora tus compañeros pueden ver tus días libres.", "success")
+        flash(_("Ahora tus compañeros pueden ver tus días libres."), "success")
     else:
-        flash("Has ocultado tus días libres. Tus compañeros no verán cuándo estás libre.", "info")
+        flash(_("Has ocultado tus días libres. Tus compañeros no verán cuándo estás libre."), "info")
 
     anyo = request.form.get("anyo", type=int)
     mes = request.form.get("mes", type=int)
@@ -246,10 +244,10 @@ def rango_aplicar():
     anyo = request.form.get("anyo", type=int)
     mes  = request.form.get("mes",  type=int)
 
-    _, num_dias = calendar.monthrange(anyo, mes)
+    _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
 
     if not dia_inicio or not dia_fin or not seleccion:
-        flash("Completa todos los campos del relleno rápido.", "error")
+        flash(_("Completa todos los campos del relleno rápido."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     if dia_fin < dia_inicio:
@@ -260,7 +258,7 @@ def rango_aplicar():
 
     tipo_estado, franja_id = _resolver_seleccion(seleccion)
     if tipo_estado is None and franja_id is None:
-        flash("Selección no válida.", "error")
+        flash(_("Selección no válida."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     for d in range(dia_inicio, dia_fin + 1):
@@ -271,7 +269,7 @@ def rango_aplicar():
             añadir_turno(current_user, fecha, franja_id)
 
     n = dia_fin - dia_inicio + 1
-    flash(f"{n} día(s) actualizados.", "success")
+    flash(_("%(n)s día(s) actualizados.", n=n), "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
 
@@ -306,7 +304,7 @@ def multiples_aplicar():
             pass
 
     if count:
-        flash(f"{count} día(s) actualizados.", "success")
+        flash(_("%(count)s día(s) actualizados.", count=count), "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
 
@@ -347,7 +345,10 @@ def volcar_cambios():
         n = volcar_matches_a_planilla(current_user, ids)
         if n:
             flash(
-                f"{n} cambio(s) volcado(s) a tu planilla. Las notas de los días afectados han sido actualizadas.",
+                _(
+                    "%(n)s cambio(s) volcado(s) a tu planilla. Las notas de los días afectados han sido actualizadas.",
+                    n=n,
+                ),
                 "success",
             )
 
@@ -363,17 +364,17 @@ def vacios_aplicar():
     mes  = request.form.get("mes",  type=int)
 
     if not seleccion:
-        flash("Elige qué aplicar a los días vacíos.", "error")
+        flash(_("Elige qué aplicar a los días vacíos."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     tipo_estado, franja_id = _resolver_seleccion(seleccion)
     if tipo_estado is None and franja_id is None:
-        flash("Selección no válida.", "error")
+        flash(_("Selección no válida."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     vacios = dias_sin_cumplimentar(current_user, anyo, mes)
     if not vacios:
-        flash("No hay días vacíos en este mes.", "info")
+        flash(_("No hay días vacíos en este mes."), "info")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     for fecha in vacios:
@@ -382,7 +383,7 @@ def vacios_aplicar():
         else:
             añadir_turno(current_user, fecha, franja_id)
 
-    flash(f"{len(vacios)} día(s) vacío(s) rellenados.", "success")
+    flash(_("%(n)s día(s) vacío(s) rellenados.", n=len(vacios)), "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
 
@@ -398,16 +399,16 @@ def turno_añadir():
     try:
         fecha = date.fromisoformat(fecha_str)
     except ValueError:
-        flash("Fecha inválida.", "error")
+        flash(_("Fecha inválida."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     if not franja_id:
-        flash("Selecciona un turno.", "error")
+        flash(_("Selecciona un turno."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     franja = db.session.get(FranjaHoraria, franja_id)
     if not franja or franja.grupo_intercambio_id != current_user.grupo_intercambio.id:
-        flash("Turno no válido.", "error")
+        flash(_("Turno no válido."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     añadir_turno(current_user, fecha, franja_id)
