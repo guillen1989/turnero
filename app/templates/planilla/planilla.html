@@ -37,6 +37,19 @@
         </form>
       {% endif %}
     </div>
+
+    <div class="planilla-privacidad">
+      <form method="post" action="{{ url_for('planilla.toggle_mostrar_disponibilidad') }}" class="privacidad-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="anyo" value="{{ anyo }}">
+        <input type="hidden" name="mes" value="{{ mes }}">
+        <label class="privacidad-label">
+          <input type="checkbox" class="privacidad-checkbox" onchange="this.form.submit()"
+                 {% if current_user.mostrar_disponibilidad %}checked{% endif %}>
+          <span>{{ _('Permitir que mis compañeros vean mis días libres') }}</span>
+        </label>
+      </form>
+    </div>
   </div>
 
   {# ── Banner de bienvenida (primera visita, controlado por localStorage) ── #}

@@ -16,7 +16,8 @@ from dataclasses import dataclass, field
 
 from app.services.planilla_import import parsear_planilla_ilog
 from app.services.planilla_matching import resolver_franja, resolver_o_crear_trabajador
-from app.services.planilla import añadir_turno, publicar_mes
+from app.services.planilla import añadir_turno, publicar_mes, limpiar_mes_usuario
+from app.services.compat_planilla_persistente import actualizar_compat_tras_importar_mes
 
 
 @dataclass
@@ -51,10 +52,14 @@ def importar_planilla(contenido: str, unidad) -> ResultadoImportacionPlanilla:
             continue
 
         usuario = mapeo.usuario
+        limpiar_mes_usuario(usuario, planilla.anyo, planilla.mes)
         for fecha, codigo in trabajador.turnos.items():
             franja = franja_por_codigo[codigo]
             añadir_turno(usuario, fecha, franja.id)
         publicar_mes(usuario, planilla.anyo, planilla.mes)
         resultado.trabajadores_actualizados.append(usuario)
+
+    if resultado.trabajadores_actualizados:
+        actualizar_compat_tras_importar_mes(grupo, planilla.anyo, planilla.mes)
 
     return resultado

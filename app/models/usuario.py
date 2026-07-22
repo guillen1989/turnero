@@ -24,6 +24,7 @@ class Usuario(UserMixin, db.Model):
     notif_email_documento_cambio = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     mostrar_oportunidad_3 = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     mostrar_oportunidad_4 = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
+    mostrar_disponibilidad = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     es_admin = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     es_supervisora = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     onboarding_visto = db.Column(db.Boolean, nullable=False, default=False, server_default="false")

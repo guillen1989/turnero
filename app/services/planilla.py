@@ -181,6 +181,23 @@ def get_estados_mes(usuario, anyo: int, mes: int) -> dict[date, EstadoDiaPlanill
     return {e.fecha: e for e in estados}
 
 
+def limpiar_mes_usuario(usuario, anyo: int, mes: int):
+    """Elimina todos los TurnoPlanilla, EstadoDiaPlanilla y SalienteDia
+    del usuario para el mes indicado, sin commit."""
+    TurnoPlanilla.query.filter_by(usuario_id=usuario.id).filter(
+        db.func.extract("year", TurnoPlanilla.fecha) == anyo,
+        db.func.extract("month", TurnoPlanilla.fecha) == mes,
+    ).delete()
+    EstadoDiaPlanilla.query.filter_by(usuario_id=usuario.id).filter(
+        db.func.extract("year", EstadoDiaPlanilla.fecha) == anyo,
+        db.func.extract("month", EstadoDiaPlanilla.fecha) == mes,
+    ).delete()
+    SalienteDia.query.filter_by(usuario_id=usuario.id).filter(
+        db.func.extract("year", SalienteDia.fecha) == anyo,
+        db.func.extract("month", SalienteDia.fecha) == mes,
+    ).delete()
+
+
 def get_notas_mes(usuario, anyo: int, mes: int) -> dict[date, NotaDia]:
     """Devuelve un dict {fecha: NotaDia} con las notas del mes."""
     notas = (

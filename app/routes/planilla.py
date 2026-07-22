@@ -219,6 +219,23 @@ def mes_despublicar(anyo, mes):
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
 
+@bp.route("/mostrar-disponibilidad/toggle", methods=["POST"])
+@login_required
+def toggle_mostrar_disponibilidad():
+    """Alterna si los compañeros pueden ver los días libres del usuario."""
+    current_user.mostrar_disponibilidad = not current_user.mostrar_disponibilidad
+    db.session.commit()
+
+    if current_user.mostrar_disponibilidad:
+        flash("Ahora tus compañeros pueden ver tus días libres.", "success")
+    else:
+        flash("Has ocultado tus días libres. Tus compañeros no verán cuándo estás libre.", "info")
+
+    anyo = request.form.get("anyo", type=int)
+    mes = request.form.get("mes", type=int)
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+
+
 @bp.route("/rango/aplicar", methods=["POST"])
 @login_required
 def rango_aplicar():
