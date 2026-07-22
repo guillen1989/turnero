@@ -4,6 +4,9 @@ planilla: código de turno -> FranjaHoraria (por grupo de intercambio) y
 trabajador de planilla -> Usuario (por unidad, identificado por su número de
 empleado, estable entre cargas mensuales).
 """
+import re
+import unicodedata
+
 from app.extensions import db
 from app.models.planilla_import import MapeoCodigoTurno, MapeoTrabajadorPlanilla
 from app.models.usuario import Usuario
@@ -85,3 +88,29 @@ def usuarios_disponibles_para_vincular(unidad) -> list:
         u for u in Usuario.query.filter_by(unidad_id=unidad.id).all()
         if u.id not in ya_vinculados
     ]
+
+
+def _tokens_nombre(nombre: str) -> set[str]:
+    """Tokens en minúsculas y sin acentos, ignorando comas y espacios extra.
+    Permite comparar "PÉREZ, ANA" (formato ILOG) con "Ana Pérez" (nombre
+    libre del usuario) sin importar el orden de nombre/apellidos."""
+    sin_acentos = "".join(
+        c for c in unicodedata.normalize("NFKD", nombre)
+        if not unicodedata.combining(c)
+    )
+    return set(re.findall(r"[a-z]+", sin_acentos.lower()))
+
+
+def sugerir_trabajador_planilla(unidad, nombre_usuario: str) -> MapeoTrabajadorPlanilla | None:
+    """Busca, entre los trabajadores de planilla sin vincular de la unidad, uno
+    cuyo nombre coincida exactamente (por tokens) con el de un usuario recién
+    registrado. Solo se sugieren coincidencias exactas de tokens para evitar
+    vincular a la persona equivocada -- la confirmación final la hace siempre
+    una persona (el propio usuario o la supervisora)."""
+    tokens_usuario = _tokens_nombre(nombre_usuario)
+    if not tokens_usuario:
+        return None
+    for trabajador in trabajadores_sin_vincular(unidad):
+        if _tokens_nombre(trabajador.nombre_planilla) == tokens_usuario:
+            return trabajador
+    return None

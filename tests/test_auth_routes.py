@@ -73,6 +73,103 @@ def test_registro_con_categoria_nueva(client, db):
     assert Categoria.query.filter_by(nombre="Técnico/a de farmacia").count() == 1
 
 
+def _crear_unidad_existente(db, categoria_id, nombre_hospital="Hospital Test", nombre_unidad="Urgencias"):
+    from app.models import Hospital, Unidad, Categoria, GrupoIntercambio
+    categoria = db.session.get(Categoria, categoria_id)
+    hospital = Hospital(nombre=nombre_hospital)
+    grupo = GrupoIntercambio()
+    db.session.add_all([hospital, grupo])
+    db.session.commit()
+    unidad = Unidad(nombre=nombre_unidad, hospital=hospital, grupo_intercambio=grupo, categoria=categoria)
+    db.session.add(unidad)
+    db.session.commit()
+    return unidad
+
+
+def test_registro_con_trabajador_pendiente_redirige_a_confirmar_vinculo(client, db):
+    from app.services.planilla_matching import resolver_o_crear_trabajador
+    categoria_id = _cat_id(db)
+    unidad = _crear_unidad_existente(db, categoria_id)
+    pendiente = resolver_o_crear_trabajador(unidad, "12345", "GARCÍA, ANA")
+
+    resp = client.post(
+        "/auth/registro", data=_datos_registro(db, categoria_id=categoria_id), follow_redirects=False
+    )
+    assert resp.status_code == 302
+    assert f"/auth/registro/vincular-planilla/{pendiente.id}" in resp.headers["Location"]
+
+
+def test_registro_sin_trabajador_pendiente_no_redirige_a_confirmar_vinculo(client, db):
+    categoria_id = _cat_id(db)
+    _crear_unidad_existente(db, categoria_id)
+
+    resp = client.post(
+        "/auth/registro", data=_datos_registro(db, categoria_id=categoria_id), follow_redirects=False
+    )
+    assert resp.status_code == 302
+    assert "vincular-planilla" not in resp.headers["Location"]
+
+
+def test_confirmar_vinculo_planilla_get_muestra_el_nombre_de_planilla(client, db):
+    from app.services.planilla_matching import resolver_o_crear_trabajador
+    categoria_id = _cat_id(db)
+    unidad = _crear_unidad_existente(db, categoria_id)
+    pendiente = resolver_o_crear_trabajador(unidad, "12345", "GARCÍA, ANA")
+    client.post("/auth/registro", data=_datos_registro(db, categoria_id=categoria_id))
+
+    resp = client.get(f"/auth/registro/vincular-planilla/{pendiente.id}")
+    assert resp.status_code == 200
+    assert "GARCÍA, ANA".encode() in resp.data
+
+
+def test_confirmar_vinculo_planilla_post_si_vincula(client, db):
+    from app.models.planilla_import import MapeoTrabajadorPlanilla
+    from app.services.planilla_matching import resolver_o_crear_trabajador
+    categoria_id = _cat_id(db)
+    unidad = _crear_unidad_existente(db, categoria_id)
+    pendiente = resolver_o_crear_trabajador(unidad, "12345", "GARCÍA, ANA")
+    client.post("/auth/registro", data=_datos_registro(db, categoria_id=categoria_id))
+
+    resp = client.post(
+        f"/auth/registro/vincular-planilla/{pendiente.id}",
+        data={"confirmar": "si"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    actualizado = db.session.get(MapeoTrabajadorPlanilla, pendiente.id)
+    assert actualizado.usuario_id is not None
+    assert actualizado.usuario.email == "ana@test.es"
+
+
+def test_confirmar_vinculo_planilla_post_no_no_vincula(client, db):
+    from app.models.planilla_import import MapeoTrabajadorPlanilla
+    from app.services.planilla_matching import resolver_o_crear_trabajador
+    categoria_id = _cat_id(db)
+    unidad = _crear_unidad_existente(db, categoria_id)
+    pendiente = resolver_o_crear_trabajador(unidad, "12345", "GARCÍA, ANA")
+    client.post("/auth/registro", data=_datos_registro(db, categoria_id=categoria_id))
+
+    resp = client.post(
+        f"/auth/registro/vincular-planilla/{pendiente.id}",
+        data={},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    actualizado = db.session.get(MapeoTrabajadorPlanilla, pendiente.id)
+    assert actualizado.usuario_id is None
+
+
+def test_confirmar_vinculo_planilla_de_otra_unidad_da_403(client, db):
+    from app.services.planilla_matching import resolver_o_crear_trabajador
+    categoria_id = _cat_id(db)
+    unidad = _crear_unidad_existente(db, categoria_id, nombre_hospital="Otro Hospital", nombre_unidad="Otra Unidad")
+    ajeno = resolver_o_crear_trabajador(unidad, "99999", "OTRO, TRABAJADOR")
+    client.post("/auth/registro", data=_datos_registro(db, categoria_id=categoria_id))
+
+    resp = client.post(f"/auth/registro/vincular-planilla/{ajeno.id}", data={"confirmar": "si"})
+    assert resp.status_code == 403
+
+
 def test_get_login_devuelve_200(client, db):
     resp = client.get("/auth/login")
     assert resp.status_code == 200
