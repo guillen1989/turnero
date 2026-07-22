@@ -1876,6 +1876,7 @@ mitigación preventiva independiente de la causa.
 - [x] feat(planilla): en `/planilla/supervision`, clic en el nombre del trabajador resalta (amarillo) toda su fila para no perder la línea al revisar turnos cerca de fin de mes — toggle vía `classList`, sin persistencia (estado puramente de cliente, se pierde al recargar), varias filas pueden estar resaltadas a la vez.
 
 - [x] fix(documento-cambio): `numero_unidad` es correlativo por unidad, no globalmente único, así que dos hojas de cambio de distintas unidades (o incluso reutilizado tras mucho tiempo en la misma) podían mostrar el mismo "Nº X" y confundir a quien lo lee. Todo punto donde se muestra el número de hoja al usuario (tabla de supervisión, `ver.html`, PDF, email de "hoja completa", notificaciones de autorizar/denegar/anular) ahora añade la fecha de creación (`cambio #%(numero)s del %(fecha)s`) para desambiguar · tests actualizados a juego (89 tests).
+- [x] test(e2e): el golden path sintético (`test_golden_path_staging`) dejaba cuentas de prueba (Ana/Pedro/Carlos) huérfanas en staging en cada ejecución; se envuelve en try/finally con un nuevo helper `_eliminar_cuenta()` que borra las tres cuentas vía UI al terminar (best-effort: si el test falla a medio registro, el cleanup no oculta el fallo real).
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
