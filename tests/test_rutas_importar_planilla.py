@@ -69,6 +69,16 @@ def test_index_muestra_pendientes(db, client):
     assert "GÓMEZ, LUIS" in resp.data.decode("utf-8")
 
 
+def test_menu_enlaza_a_importar_planilla_para_supervisora(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "menu")
+    supervisora = crear_usuario("Super", "super_menu@h.es", supervisora=True)
+    _login(client, supervisora.email)
+
+    resp = client.get("/calendario/")
+    assert resp.status_code == 200
+    assert 'href="/planilla/importar/"' in resp.data.decode("utf-8")
+
+
 def test_subir_sin_codigos_mapeados_redirige_a_configurar_codigos(db, client):
     crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "c")
     supervisora = crear_usuario("Super", "super_c@h.es", supervisora=True)

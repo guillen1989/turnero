@@ -211,6 +211,33 @@ mano en el navegador (vía curl) contra la base de datos de desarrollo
 real: la celda cambia de turno a "Libre", aparece el icono con el
 tooltip correcto y el flash de confirmación.
 
+Fix (hecho): el usuario reportó no encontrar la carga de planilla en la
+app ("ya estuvimos trabajando en esto pero no lo veo"). Diagnóstico: la
+funcionalidad estaba completa (parser, mapeo, orquestador, ruta
+`planilla_import` con formulario de subida y configuración de códigos,
+137+ tests) pero nunca se enlazó desde el menú -- `base.html` solo tenía
+el enlace a "Supervisión de planilla" (el visor de calendario,
+`planilla_supervision.index`), no a "Importar planilla"
+(`planilla_import.index`, donde está el formulario de subida). Añadido
+el enlace que faltaba junto a los demás de supervisora en `base.html`.
+1 test nuevo (`test_menu_enlaza_a_importar_planilla_para_supervisora`
+en `tests/test_rutas_importar_planilla.py`): confirma que una
+supervisora ve el enlace en el menú; rojo antes del cambio, verde
+después. La cadena "Importar planilla" ya existía en el catálogo i18n
+(añadida en el paso 5 de esta misma iniciativa aunque no se usara
+todavía), no hizo falta tocar `messages.po`.
+
+Nota de entorno de test detectada durante este arreglo: el intérprete
+`/usr/bin/python3` (python3.8, el que resuelve el binario
+`~/.local/bin/pytest`) no puede ejecutar la suite -- el código usa
+sintaxis `list[X]` (PEP 585) que requiere Python 3.9+, y además tenía
+Flask-Login/Flask-WTF desactualizados respecto a `requirements.txt`
+(rotos contra el Werkzeug/Flask instalados). Los tests de este cambio
+se ejecutaron con `/home/portatil/anaconda3/bin/python -m pytest`, que
+sí trae Python 3.12. Pendiente de confirmar con el usuario cuál es el
+intérprete correcto para este proyecto en esta máquina (no había un
+venv dedicado en el repo ni referenciado en `.python-version`).
+
 Siguiente paso: a decidir con el usuario. Pendiente de esta
 sub-iniciativa: densidad de la celda si hace falta mostrar también
 saliente/nota (popover/tooltip en vez de inline).
