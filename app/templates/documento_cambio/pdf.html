@@ -76,7 +76,7 @@
   <div id="madrid_anyo_c">{{ fecha_documento.year }}</div>
   <div id="firma_solicitante_c"><img class="firma-img" src="{{ firma_solicitante.imagen_firma }}" alt=""></div>
   <div id="firma_companero_c"><img class="firma-img" src="{{ firma_companero.imagen_firma }}" alt=""></div>
-  <div id="numero_c">Nº {{ numero_documento }}</div>
+  <div id="numero_c">{{ _('cambio #%(numero)s del %(fecha)s', numero=numero_documento, fecha=fecha_documento.strftime('%d/%m/%Y')) }}</div>
   {% if decision_supervisora != 'pendiente' %}
   <div id="informe_supervisora_c">{{ motivo_denegacion or '' }}</div>
   <div id="favorable_marca_c">{{ 'X' if decision_supervisora == 'autorizado' else '' }}</div>

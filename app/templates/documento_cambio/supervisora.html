@@ -143,7 +143,7 @@
         {% set p2 = documento.participantes[1] if documento.participantes|length > 1 else None %}
         <tr>
           <td><input type="checkbox" name="documento_ids" value="{{ documento.id }}" class="bloque-checkbox"></td>
-          <td>{{ documento.numero_unidad }}</td>
+          <td>{{ _('cambio #%(numero)s del %(fecha)s', numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y')) }}</td>
           <td>{{ documento.fecha_creacion.strftime('%d/%m/%Y') }}</td>
           <td>{{ p1.usuario.nombre }}</td>
           <td>{{ p1.turno_cede_franja.nombre }} {{ p1.turno_cede_fecha.strftime('%d/%m/%Y') }}</td>

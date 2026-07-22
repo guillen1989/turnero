@@ -574,13 +574,13 @@ def test_ver_muestra_numero_de_documento(db, client):
     documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
 
     resp = client.get(f"/documentos-cambio/{documento_id}")
-    assert b"N\xc2\xba 1" in resp.data
+    assert b"cambio #1 del" in resp.data
 
 
 def test_numero_de_documento_es_por_unidad_no_el_id_global(db, client):
     """
     Si otra unidad ya ha creado hojas de cambio antes (id global más alto),
-    la primera hoja de una unidad nueva tiene que seguir mostrando "Nº 1",
+    la primera hoja de una unidad nueva tiene que seguir mostrando "cambio #1 del",
     no arrastrar el id autoincremental compartido por toda la app.
     """
     crear_usuario_otra, manyana_otra, _ = _setup(db, "hh-otra")
@@ -612,7 +612,7 @@ def test_numero_de_documento_es_por_unidad_no_el_id_global(db, client):
     assert documento_id > 1  # el id global ya iba por delante por la otra unidad
 
     resp = client.get(f"/documentos-cambio/{documento_id}")
-    assert b"N\xc2\xba 1" in resp.data
+    assert b"cambio #1 del" in resp.data
 
 
 def test_lista_muestra_documentos_donde_soy_participante(db, client):
@@ -662,7 +662,7 @@ def test_supervisora_ve_los_cambios_completos_de_su_grupo(db, client):
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora")
     assert resp.status_code == 200
-    assert f"<td>{doc.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc.numero_unidad} del {doc.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
     assert b"Claudia P\xc3\xa9rez" in resp.data
     assert b"Juan Rodr\xc3\xadguez" in resp.data
     assert "<table".encode() in resp.data
@@ -729,7 +729,7 @@ def test_supervisora_no_ve_cambios_pendientes_de_firma(db, client):
 
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora")
-    assert f"<td>{doc.numero_unidad}</td>".encode() not in resp.data
+    assert f"<td>cambio #{doc.numero_unidad} del {doc.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp.data
     assert "No hay hojas de cambio completas".encode("utf-8") in resp.data
 
 
@@ -749,8 +749,8 @@ def test_filtro_mes_por_defecto_es_el_mes_en_curso(db, client):
 
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora")
-    assert f"<td>{doc_este_mes.numero_unidad}</td>".encode() in resp.data
-    assert f"<td>{doc_mes_siguiente.numero_unidad}</td>".encode() not in resp.data
+    assert f"<td>cambio #{doc_este_mes.numero_unidad} del {doc_este_mes.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc_mes_siguiente.numero_unidad} del {doc_mes_siguiente.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp.data
 
 
 def test_filtro_mes_anyo_navega_a_otro_mes(db, client):
@@ -768,7 +768,7 @@ def test_filtro_mes_anyo_navega_a_otro_mes(db, client):
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora",
                        query_string={"mes": fecha_mes_siguiente.month, "anyo": fecha_mes_siguiente.year})
-    assert f"<td>{doc.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc.numero_unidad} del {doc.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
 
 
 def test_filtro_fecha_exacta_ignora_mes_anyo(db, client):
@@ -786,7 +786,7 @@ def test_filtro_fecha_exacta_ignora_mes_anyo(db, client):
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora",
                        query_string={"fecha": fecha_mes_siguiente.isoformat()})
-    assert f"<td>{doc.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc.numero_unidad} del {doc.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
 
 
 def test_filtro_por_un_trabajador(db, client):
@@ -805,8 +805,8 @@ def test_filtro_por_un_trabajador(db, client):
 
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora", query_string={"trabajador1_id": claudia.id})
-    assert f"<td>{doc_claudia.numero_unidad}</td>".encode() in resp.data
-    assert f"<td>{doc_ana.numero_unidad}</td>".encode() not in resp.data
+    assert f"<td>cambio #{doc_claudia.numero_unidad} del {doc_claudia.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc_ana.numero_unidad} del {doc_ana.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp.data
 
 
 def test_filtro_por_dos_trabajadores_exige_el_cambio_exacto_entre_ambos(db, client):
@@ -825,8 +825,8 @@ def test_filtro_por_dos_trabajadores_exige_el_cambio_exacto_entre_ambos(db, clie
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora",
                        query_string={"trabajador1_id": claudia.id, "trabajador2_id": juan.id})
-    assert f"<td>{doc_claudia_juan.numero_unidad}</td>".encode() in resp.data
-    assert f"<td>{doc_claudia_ana.numero_unidad}</td>".encode() not in resp.data
+    assert f"<td>cambio #{doc_claudia_juan.numero_unidad} del {doc_claudia_juan.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc_claudia_ana.numero_unidad} del {doc_claudia_ana.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp.data
 
 
 def test_filtro_por_turno_afectado(db, client):
@@ -845,8 +845,8 @@ def test_filtro_por_turno_afectado(db, client):
 
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora", query_string={"franja_id": manyana.id})
-    assert f"<td>{doc_manyana.numero_unidad}</td>".encode() in resp.data
-    assert f"<td>{doc_tarde.numero_unidad}</td>".encode() not in resp.data
+    assert f"<td>cambio #{doc_manyana.numero_unidad} del {doc_manyana.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc_tarde.numero_unidad} del {doc_tarde.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp.data
 
 
 def test_filtro_por_estado_decision(db, client):
@@ -869,8 +869,8 @@ def test_filtro_por_estado_decision(db, client):
 
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora", query_string={"estado_decision": "autorizado"})
-    assert f"<td>{doc_a.numero_unidad}</td>".encode() in resp.data
-    assert f"<td>{doc_b.numero_unidad}</td>".encode() not in resp.data
+    assert f"<td>cambio #{doc_a.numero_unidad} del {doc_a.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc_b.numero_unidad} del {doc_b.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp.data
 
 
 def test_filtro_por_factibilidad(db, client):
@@ -887,9 +887,9 @@ def test_filtro_por_factibilidad(db, client):
 
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora", query_string={"factibilidad": "no_verificado"})
-    assert f"<td>{doc.numero_unidad}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc.numero_unidad} del {doc.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
     resp_factible = client.get("/documentos-cambio/supervisora", query_string={"factibilidad": "factible"})
-    assert f"<td>{doc.numero_unidad}</td>".encode() not in resp_factible.data
+    assert f"<td>cambio #{doc.numero_unidad} del {doc.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp_factible.data
 
 
 def test_filtro_por_numero_de_hoja(db, client):
@@ -908,8 +908,8 @@ def test_filtro_por_numero_de_hoja(db, client):
 
     _login(client, supervisora.email)
     resp = client.get("/documentos-cambio/supervisora", query_string={"numero": doc_a.numero_unidad})
-    assert f"<td>{doc_a.numero_unidad}</td>".encode() in resp.data
-    assert f"<td>{doc_b.numero_unidad}</td>".encode() not in resp.data
+    assert f"<td>cambio #{doc_a.numero_unidad} del {doc_a.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc_b.numero_unidad} del {doc_b.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp.data
 
 
 def _crear_documento_completo(db, creado_por, companero, franja_cede, franja_recibe, fecha_cede, fecha_recibe):
@@ -1288,14 +1288,14 @@ def test_supervisora_filtra_por_anulado(db, client):
     resp = client.get("/documentos-cambio/supervisora",
                        query_string={"anyo": _fecha_futura(10).year, "mes": _fecha_futura(10).month,
                                      "estado_decision": "anulado"})
-    assert f"<td>{doc_anulado.numero_unidad}</td>".encode() in resp.data
-    assert f"<td>{doc_vigente.numero_unidad}</td>".encode() not in resp.data
+    assert f"<td>cambio #{doc_anulado.numero_unidad} del {doc_anulado.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp.data
+    assert f"<td>cambio #{doc_vigente.numero_unidad} del {doc_vigente.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp.data
 
     resp_autorizado = client.get("/documentos-cambio/supervisora",
                                   query_string={"anyo": _fecha_futura(10).year, "mes": _fecha_futura(10).month,
                                                 "estado_decision": "autorizado"})
-    assert f"<td>{doc_vigente.numero_unidad}</td>".encode() in resp_autorizado.data
-    assert f"<td>{doc_anulado.numero_unidad}</td>".encode() not in resp_autorizado.data
+    assert f"<td>cambio #{doc_vigente.numero_unidad} del {doc_vigente.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() in resp_autorizado.data
+    assert f"<td>cambio #{doc_anulado.numero_unidad} del {doc_anulado.fecha_creacion.strftime('%d/%m/%Y')}</td>".encode() not in resp_autorizado.data
 
 
 # --- Selección en bloque en la tabla de supervisión ---

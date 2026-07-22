@@ -19,8 +19,7 @@
     {% for documento in documentos %}
     {% set companero = documento.participantes | rejectattr('usuario_id', 'equalto', current_user.id) | first %}
     <div class="card">
-      <strong>{{ _('Nº %(numero)s', numero=documento.numero_unidad) }}</strong>
-      — {{ documento.fecha_creacion.strftime('%d/%m/%Y') }}
+      <strong>{{ _('cambio #%(numero)s del %(fecha)s', numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y')) }}</strong>
       {% if companero %}— {{ _('con %(nombre)s', nombre=companero.usuario.nombre) }}{% endif %}
       <br>
       {% if documento.estado == 'completo' %}

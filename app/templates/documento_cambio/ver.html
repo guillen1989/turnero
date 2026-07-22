@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="form-container">
-  <h1>{{ _('Hoja de cambio') }} <span class="documento-numero">{{ _('Nº %(numero)s', numero=documento.numero_unidad) }}</span></h1>
+  <h1>{{ _('Hoja de cambio') }} <span class="documento-numero">{{ _('cambio #%(numero)s del %(fecha)s', numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y')) }}</span></h1>
 
   {% if documento.estado == 'completo' %}
     <div class="flash flash--success documento-completo-banner">{{ _('Las dos firmas están recogidas. La hoja de cambio está completa.') }}</div>

@@ -1875,6 +1875,8 @@ mitigación preventiva independiente de la causa.
 - [x] fix(documento-cambio): `/documentos-cambio/supervisora` usaba `.container--wide` (1200px) y obligaba a scroll horizontal en pantallas de escritorio; pasa a `.container--full` (max-width: none, mismo patrón ya usado en `/planilla/supervision`) para aprovechar toda la anchura disponible.
 - [x] feat(planilla): en `/planilla/supervision`, clic en el nombre del trabajador resalta (amarillo) toda su fila para no perder la línea al revisar turnos cerca de fin de mes — toggle vía `classList`, sin persistencia (estado puramente de cliente, se pierde al recargar), varias filas pueden estar resaltadas a la vez.
 
+- [x] fix(documento-cambio): `numero_unidad` es correlativo por unidad, no globalmente único, así que dos hojas de cambio de distintas unidades (o incluso reutilizado tras mucho tiempo en la misma) podían mostrar el mismo "Nº X" y confundir a quien lo lee. Todo punto donde se muestra el número de hoja al usuario (tabla de supervisión, `ver.html`, PDF, email de "hoja completa", notificaciones de autorizar/denegar/anular) ahora añade la fecha de creación (`cambio #%(numero)s del %(fecha)s`) para desambiguar · tests actualizados a juego (89 tests).
+
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
 - FranjaHoraria se define a nivel de GrupoDeIntercambio, no de Unidad individual.

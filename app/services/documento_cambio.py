@@ -386,7 +386,7 @@ def autorizar_documento(documento, supervisora, imagen_firma=None):
         _notificar(
             p.usuario, documento, "documento_cambio_autorizado",
             _("Cambio autorizado"),
-            _("La supervisora ha autorizado tu hoja de cambio nº %(numero)s. Ya se ha aplicado a tu planilla.", numero=documento.numero_unidad)
+            _("La supervisora ha autorizado tu hoja de cambio nº %(numero)s del %(fecha)s. Ya se ha aplicado a tu planilla.", numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y'))
             + " " + resumen,
         )
     db.session.commit()
@@ -414,8 +414,8 @@ def denegar_documento(documento, supervisora, motivo, imagen_firma=None):
             p.usuario, documento, "documento_cambio_denegado",
             _("Cambio denegado"),
             _(
-                "La supervisora ha denegado tu hoja de cambio nº %(numero)s. Motivo: %(motivo)s",
-                numero=documento.numero_unidad, motivo=motivo,
+                "La supervisora ha denegado tu hoja de cambio nº %(numero)s del %(fecha)s. Motivo: %(motivo)s",
+                numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y'), motivo=motivo,
             )
             + " " + resumen,
         )
@@ -521,8 +521,8 @@ def anular_documento(documento, supervisora, motivo):
             p.usuario, documento, "documento_cambio_anulado",
             _("Cambio anulado"),
             _(
-                "La supervisora ha anulado tu hoja de cambio nº %(numero)s. Motivo: %(motivo)s",
-                numero=documento.numero_unidad, motivo=motivo,
+                "La supervisora ha anulado tu hoja de cambio nº %(numero)s del %(fecha)s. Motivo: %(motivo)s",
+                numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y'), motivo=motivo,
             )
             + " " + resumen,
         )
