@@ -42,7 +42,7 @@
       <tbody>
         {% for trabajador in trabajadores %}
           <tr>
-            <td class="supervision-col-trabajador">{{ trabajador.nombre }}</td>
+            <td class="supervision-col-trabajador" onclick="this.closest('tr').classList.toggle('supervision-fila-resaltada')" title="{{ _('Resaltar fila') }}">{{ trabajador.nombre }}</td>
             {% for dia in dias %}
               {% set clave = (trabajador.id, dia) %}
               {% set turnos_dia = turnos_por_usuario_dia.get(clave, []) %}
