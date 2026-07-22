@@ -11,7 +11,7 @@ from app.models import (
     TurnoAceptado,
     insertar_categorias_semilla,
 )
-from app.matching.service import buscar_avisos_interes_para, crear_aviso_oportunidad_3
+from app.matching.service import buscar_avisos_interes_para
 from app.services.registro import registrar_usuario
 
 
@@ -113,44 +113,11 @@ def test_cedido_b_en_aceptados_a_devuelve_candidata(db):
     assert pub_pedro in result
 
 
-# --- crear_aviso_oportunidad_3 ---
+# --- Integración: aviso NO generado al publicar ---
 
-def test_crea_notificaciones_para_ambos_usuarios(db):
-    ana = _usuario("Ana", "ana@test.es")
-    pedro = _usuario("Pedro", "pedro@test.es")
-    franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 7, 10), date(2026, 8, 3))
-    pub_pedro = _pub_cambio(pedro, franja, date(2026, 7, 21), date(2026, 7, 10))
-
-    crear_aviso_oportunidad_3(pub_ana, pub_pedro)
-
-    assert Notificacion.query.filter_by(
-        usuario_id=ana.id, publicacion_id=pub_pedro.id, tipo="aviso_oportunidad_3"
-    ).count() == 1
-    assert Notificacion.query.filter_by(
-        usuario_id=pedro.id, publicacion_id=pub_ana.id, tipo="aviso_oportunidad_3"
-    ).count() == 1
-
-
-def test_no_duplica_notificaciones(db):
-    ana = _usuario("Ana", "ana@test.es")
-    pedro = _usuario("Pedro", "pedro@test.es")
-    franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 7, 10), date(2026, 8, 3))
-    pub_pedro = _pub_cambio(pedro, franja, date(2026, 7, 21), date(2026, 7, 10))
-
-    crear_aviso_oportunidad_3(pub_ana, pub_pedro)
-    crear_aviso_oportunidad_3(pub_ana, pub_pedro)
-
-    assert Notificacion.query.filter_by(
-        usuario_id=ana.id, publicacion_id=pub_pedro.id, tipo="aviso_oportunidad_3"
-    ).count() == 1
-
-
-# --- Integración: aviso generado al publicar ---
-
-def test_aviso_generado_al_publicar(client, db):
-    """Al publicar un cambio con solapamiento unilateral, ambos reciben aviso."""
+def test_aviso_no_generado_al_publicar(client, db):
+    """Al publicar un cambio con solapamiento unilateral, NO se generan avisos
+    de oportunidad a 3 (el sintético se crea pero sin notificar)."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
@@ -171,33 +138,12 @@ def test_aviso_generado_al_publicar(client, db):
 
     pub_pedro = PublicacionCambio.query.filter_by(usuario_id=pedro.id).first()
     assert pub_pedro is not None
-    assert Notificacion.query.filter_by(usuario_id=pedro.id, tipo="aviso_oportunidad_3").count() >= 1
-    assert Notificacion.query.filter_by(usuario_id=ana.id, tipo="aviso_oportunidad_3").count() >= 1
+    # La publicación sintética se crea, pero sin notificaciones de aviso
+    assert Notificacion.query.filter_by(usuario_id=pedro.id, tipo="aviso_oportunidad_3").count() == 0
+    assert Notificacion.query.filter_by(usuario_id=ana.id, tipo="aviso_oportunidad_3").count() == 0
 
 
-# --- Vista de avisos: el enlace debe llevar al panel de oportunidades, no a un callejón sin salida ---
-
-def test_aviso_oportunidad_3_enlaza_al_panel_no_al_otro_usuario(client, db):
-    """
-    El botón «Ver publicación» de un aviso_oportunidad_3 debe llevar al panel
-    (donde vive la sección de oportunidades a 3), no al listado de /cambios
-    filtrado por el nombre del otro usuario original (que no le sirve de nada
-    a quien recibe el aviso: no puede aceptar su propio puente).
-    """
-    ana = _usuario("Ana", "ana@test.es")
-    pedro = _usuario("Pedro", "pedro@test.es")
-    franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 7, 10), date(2026, 8, 3))
-    pub_pedro = _pub_cambio(pedro, franja, date(2026, 7, 21), date(2026, 7, 10))
-
-    crear_aviso_oportunidad_3(pub_ana, pub_pedro)
-
-    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    resp = client.get("/avisos")
-    body = resp.data.decode()
-
-    assert f"usuario={pedro.nombre}" not in body
-    assert 'href="/"' in body
+# --- Vista de avisos: aviso_oportunidad_3 ya no se genera, no hay enlace que comprobar ---
 
 
 # --- Multi-turno: todos los cedidos y aceptados participan en la búsqueda de oportunidades ---
