@@ -87,6 +87,14 @@ body {
 }
 .main-nav a:hover { background: rgba(255,255,255,0.12); text-decoration: none; }
 
+/* Enlaces solo-supervisora: color propio para distinguirlos de un vistazo
+   de las opciones de usuario normal de la fila/sección de arriba. */
+.nav-supervisora-row a {
+  background: rgba(255, 176, 32, 0.22);
+  border: 1px solid rgba(255, 176, 32, 0.45);
+}
+.nav-supervisora-row a:hover { background: rgba(255, 176, 32, 0.38); }
+
 .main-nav .nav-section-sep {
   border: none;
   border-top: 1px solid rgba(255,255,255,0.15);
@@ -1207,4 +1215,18 @@ tr.supervision-fila-resaltada .supervision-col-trabajador {
 .sup-ajuste-quien { margin: 0; color: #475569; font-size: 0.9rem; }
 .sup-ajuste-panel form { display: flex; flex-direction: column; gap: 0.6rem; }
 .sup-ajuste-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.sup-ajuste-checkbox {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.85rem; color: #475569;
+}
+.sup-ajuste-papel-link { text-align: center; }
 .documento-numero { font-size: 0.9rem; font-weight: normal; color: #6b7280; }
+
+/* Botón de "Registrar cambio desde papel": color propio para que destaque
+   frente a las acciones secundarias grises de alrededor. */
+.btn-registrar-papel {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+.btn-registrar-papel:hover { background: #fde68a; }
