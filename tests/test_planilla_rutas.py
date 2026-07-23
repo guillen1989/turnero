@@ -71,6 +71,33 @@ def test_añadir_turno_via_ruta(client, db):
     assert TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 1)).count() == 1
 
 
+def test_dia_anadir_permite_turno_extra_sin_sustituir_el_existente(client, db):
+    """Un trabajador que se queda doblando (p.ej. mañana + tarde) debe poder
+    añadir el segundo turno sin que el primero desaparezca."""
+    usuario, franja_m = _crear_usuario_y_login(client, db, "doblaje@test.es")
+    franja_t = FranjaHoraria(
+        nombre="Tarde", hora_inicio=time(15, 0), hora_fin=time(22, 0),
+        grupo_intercambio=usuario.grupo_intercambio,
+    )
+    db.session.add(franja_t)
+    db.session.commit()
+
+    client.post("/planilla/dia/a%C3%B1adir", data={
+        "fecha": "2026-07-01", "seleccion": franja_m.id, "anyo": 2026, "mes": 7,
+    })
+    client.post("/planilla/dia/a%C3%B1adir", data={
+        "fecha": "2026-07-01", "seleccion": franja_t.id, "anyo": 2026, "mes": 7,
+    })
+
+    turnos = TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 1)).all()
+    assert {t.franja_horaria_id for t in turnos} == {franja_m.id, franja_t.id}
+
+    resp = client.get("/planilla/?anyo=2026&mes=7")
+    html = resp.data.decode("utf-8")
+    assert f">{franja_m.nombre}<" in html
+    assert f">{franja_t.nombre}<" in html
+
+
 def test_eliminar_turno_via_ruta(client, db):
     usuario, franja = _crear_usuario_y_login(client, db, "del@test.es")
     añadir_turno(usuario, date(2026, 7, 1), franja.id)

@@ -82,8 +82,21 @@ ninguno salvo que haga falta una decisión del usuario.
   referencias). 2 tests nuevos de ruta + 1 de servicio + 1 de servicio
   actualizado (`.id` -> `.documento.id`). 167 tests passing
   (`pytest --testmon`, ventana limpia sin contención de la BD compartida).
-  Siguiente: item #3 de la lista (añadir un turno extra a un día sin
-  sustituir el que ya hay).
+- [x] Item #3 (añadir un turno extra a un día -p.ej. quedarse doblando de
+  mañana a tarde- sin sustituir el que ya hay): comprobado que ya estaba
+  implementado en toda la pila -- `añadir_turno` (servicio) es idempotente
+  por `(usuario_id, fecha, franja_horaria_id)` y solo limpia el *estado
+  especial* del día (libre/vacaciones/no_disponible), nunca otros turnos ya
+  puestos; la ruta `POST /planilla/dia/añadir` y su alias legacy
+  `/planilla/turno/añadir` delegan directamente en él; el selector "+
+  Añadir" de `planilla/planilla.html` ya excluye del desplegable las franjas
+  ya asignadas (`ids_asignados`) pero deja el resto disponibles sin límite
+  de turnos por día. Añadido test de regresión de extremo a extremo
+  (`test_dia_anadir_permite_turno_extra_sin_sustituir_el_existente` en
+  `tests/test_planilla_rutas.py`) sin ningún cambio de código de
+  producción. 11 tests passing (`test_planilla_rutas.py`).
+  Siguiente: item #5 de la lista (pantalla de configuración de reglas de
+  comprobación: máx. días consecutivos + descanso tras noche/nocturno).
 
 Fuera de la Fase 10, iniciativa pendiente sin retomar aún: carga masiva de
 planilla por parte de la supervisora, sustituyendo (para las unidades que lo
