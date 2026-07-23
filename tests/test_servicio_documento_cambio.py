@@ -1,9 +1,14 @@
+import pytest
 from datetime import date, time
 from app.extensions import db
-from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario, TurnoPlanilla, NotaDia
+from app.models import (
+    Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario, TurnoPlanilla,
+    NotaDia, DocumentoCambio, PlanillaMes,
+)
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, registrar_documento_cambio_papel,
+    CambioNoFactibleError,
 )
 
 _FIRMA_PNG = (
@@ -625,6 +630,34 @@ def test_registrar_documento_cambio_papel_queda_completo_y_autorizado(db):
     assert TurnoPlanilla.query.filter_by(
         usuario_id=juan.id, fecha=date(2026, 7, 7), franja_horaria_id=manyana.id
     ).first() is not None
+
+
+def test_registrar_documento_cambio_papel_no_factible_no_se_aplica(db):
+    """Si la comprobación descubre que el cambio no es factible (p.ej. quien
+    dice ceder un turno en realidad no lo trabaja según su planilla
+    publicada), no se debe crear ni aplicar el documento."""
+    crear_usuario, manyana, tarde = _setup(db, "v")
+    claudia = crear_usuario("Claudia Pérez", "claudiav@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanv@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martav@h.es")
+    db.session.add_all([
+        PlanillaMes(usuario=claudia, anyo=2026, mes=7, publicada=True),
+        PlanillaMes(usuario=juan, anyo=2026, mes=7, publicada=True),
+    ])
+    db.session.commit()
+    # Ninguno tiene turnos reales en planilla: Claudia no puede ceder el
+    # turno de mañana del 7/7 que dice ceder.
+
+    numero_antes = DocumentoCambio.query.count()
+    with pytest.raises(CambioNoFactibleError):
+        registrar_documento_cambio_papel(
+            supervisora=supervisora, usuario1=claudia, usuario2=juan,
+            turno1_cede_fecha=date(2026, 7, 7), turno1_cede_franja_id=manyana.id,
+            turno1_recibe_fecha=date(2026, 7, 28), turno1_recibe_franja_id=manyana.id,
+        )
+
+    assert DocumentoCambio.query.count() == numero_antes
+    assert TurnoPlanilla.query.filter_by(usuario_id=claudia.id).count() == 0
 
 
 def test_autorizar_documento_sin_firma_no_la_rellena(db):

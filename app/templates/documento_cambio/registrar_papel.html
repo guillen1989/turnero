@@ -15,7 +15,7 @@
       <select id="usuario1_id" name="usuario1_id" required>
         <option value="">{{ _('— Selecciona —') }}</option>
         {% for u in trabajadores %}
-        <option value="{{ u.id }}">{{ u.nombre }}</option>
+        <option value="{{ u.id }}"{% if prefill_usuario1_id and u.id == prefill_usuario1_id %} selected{% endif %}>{{ u.nombre }}</option>
         {% endfor %}
       </select>
     </div>
@@ -35,7 +35,7 @@
       <div class="turno-row">
         <div class="turno-row-campo">
           <label for="turno_cede_fecha">{{ _('Día') }}</label>
-          <input type="date" id="turno_cede_fecha" name="turno_cede_fecha" required>
+          <input type="date" id="turno_cede_fecha" name="turno_cede_fecha" value="{{ prefill_fecha or '' }}" required>
         </div>
         <div class="turno-row-campo">
           <label for="turno_cede_franja_id">{{ _('Turno') }}</label>

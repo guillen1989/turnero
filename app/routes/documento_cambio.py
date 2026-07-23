@@ -12,7 +12,7 @@ from app.extensions import db
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, anular_documento, puede_anularse,
-    registrar_documento_cambio_papel,
+    registrar_documento_cambio_papel, CambioNoFactibleError,
 )
 from app.services.registro import crear_franjas_default
 
@@ -263,17 +263,31 @@ def registrar_papel():
                 trabajadores=trabajadores, franjas=franjas, today=hoy.isoformat(),
             )
 
-        documento = registrar_documento_cambio_papel(
-            supervisora=current_user, usuario1=usuario1, usuario2=usuario2,
-            turno1_cede_fecha=cede_fecha, turno1_cede_franja_id=cede_franja_id,
-            turno1_recibe_fecha=recibe_fecha, turno1_recibe_franja_id=recibe_franja_id,
-        )
+        try:
+            documento = registrar_documento_cambio_papel(
+                supervisora=current_user, usuario1=usuario1, usuario2=usuario2,
+                turno1_cede_fecha=cede_fecha, turno1_cede_franja_id=cede_franja_id,
+                turno1_recibe_fecha=recibe_fecha, turno1_recibe_franja_id=recibe_franja_id,
+            )
+        except CambioNoFactibleError:
+            flash(
+                _("Este cambio no es factible según las planillas ya publicadas: "
+                  "alguna de las partes no puede ceder o recibir el turno indicado. "
+                  "No se ha aplicado."),
+                "danger",
+            )
+            return render_template(
+                "documento_cambio/registrar_papel.html",
+                trabajadores=trabajadores, franjas=franjas, today=hoy.isoformat(),
+            )
         flash(_("Cambio registrado desde papel y aplicado a las planillas."), "success")
         return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
 
     return render_template(
         "documento_cambio/registrar_papel.html",
         trabajadores=trabajadores, franjas=franjas, today=hoy.isoformat(),
+        prefill_usuario1_id=request.args.get("usuario1_id", type=int),
+        prefill_fecha=request.args.get("fecha", ""),
     )
 
 

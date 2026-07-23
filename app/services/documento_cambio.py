@@ -128,6 +128,12 @@ def crear_documento_cambio(
     return documento
 
 
+class CambioNoFactibleError(Exception):
+    """Se lanza cuando el cambio que se intenta registrar desde papel no es
+    factible según las planillas ya publicadas (alguna de las partes no
+    puede ceder o recibir el turno indicado)."""
+
+
 def registrar_documento_cambio_papel(
     supervisora, usuario1, usuario2,
     turno1_cede_fecha, turno1_cede_franja_id,
@@ -142,6 +148,12 @@ def registrar_documento_cambio_papel(
     mantenerlas al día para que la comprobación de factibilidad de futuros
     cambios sea correcta). `origen_papel=True` lo distingue de los cambios
     creados y firmados desde la app.
+
+    Si la comprobación de factibilidad determina que el cambio no es
+    factible (con las planillas ya publicadas), no se crea ni se aplica:
+    se lanza CambioNoFactibleError para que quien llame avise a la
+    supervisora en vez de dejar la planilla inconsistente con lo que de
+    verdad tienen firmado los dos trabajadores en papel.
     """
     documento = DocumentoCambio(
         creado_por=usuario1,
@@ -165,7 +177,12 @@ def registrar_documento_cambio_papel(
     ))
     db.session.flush()
 
-    documento.factibilidad_estado = comprobar_factibilidad(documento)
+    factibilidad = comprobar_factibilidad(documento)
+    if factibilidad == "no_factible":
+        db.session.rollback()
+        raise CambioNoFactibleError()
+
+    documento.factibilidad_estado = factibilidad
     db.session.commit()
 
     return autorizar_documento(documento, supervisora)
