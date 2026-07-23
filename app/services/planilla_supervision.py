@@ -1,9 +1,14 @@
+from collections import namedtuple
 from datetime import date
+
+from flask_babel import gettext as _
 
 from app.extensions import db
 from app.models.documento_cambio import DocumentoCambio, ParticipanteDocumentoCambio
 from app.models.planilla import AjustePlanillaSupervisora, EstadoDiaPlanilla, TurnoPlanilla
 from app.models.usuario import Usuario
+
+CambioDia = namedtuple("CambioDia", ["documento", "descripcion"])
 from app.services.planilla import añadir_turno, establecer_estado_dia
 
 
@@ -46,15 +51,36 @@ def get_estados_mes_unidad(unidad, anyo: int, mes: int) -> dict[tuple[int, date]
     return {(e.usuario_id, e.fecha): e for e in estados}
 
 
+def _describir_cambio_dia(participante, fecha: date) -> str:
+    """Describe un cambio autorizado desde el punto de vista de un
+    participante concreto en un día concreto: con quién fue, qué turno y de
+    qué fecha -- para que la supervisora no tenga que abrir el documento
+    solo para saber de qué se trata al pasar el ratón por encima."""
+    companeros = [
+        p.usuario.nombre for p in participante.documento.participantes
+        if p.usuario_id != participante.usuario_id
+    ]
+    companero = ", ".join(companeros) if companeros else "?"
+    franja = (
+        participante.turno_cede_franja if fecha == participante.turno_cede_fecha
+        else participante.turno_recibe_franja
+    )
+    return _(
+        "Cambio con %(companero)s (turno %(franja)s) del %(fecha)s",
+        companero=companero, franja=franja.nombre, fecha=fecha.strftime("%d/%m/%Y"),
+    )
+
+
 def get_cambios_autorizados_mes_unidad(
     unidad, anyo: int, mes: int
-) -> dict[tuple[int, date], DocumentoCambio]:
+) -> dict[tuple[int, date], CambioDia]:
     """Cambios ya autorizados (y no anulados) que afectan a la planilla de
     algún trabajador de la unidad este mes, agrupados por (usuario_id, fecha).
     Tanto el día cedido como el recibido cuentan como 'afectados' para ese
     participante -- la planilla ya refleja el estado final (ver
     volcar_documento_a_planillas), esto solo sirve para marcar en la matriz
-    de la supervisora qué días vinieron de un cambio, con enlace al documento.
+    de la supervisora qué días vinieron de un cambio, con enlace al documento
+    y una descripción de con quién/qué turno/qué fecha fue el cambio.
     """
     participantes = (
         ParticipanteDocumentoCambio.query
@@ -67,11 +93,14 @@ def get_cambios_autorizados_mes_unidad(
         )
         .all()
     )
-    resultado: dict[tuple[int, date], DocumentoCambio] = {}
+    resultado: dict[tuple[int, date], CambioDia] = {}
     for p in participantes:
         for fecha in (p.turno_cede_fecha, p.turno_recibe_fecha):
             if fecha.year == anyo and fecha.month == mes:
-                resultado[(p.usuario_id, fecha)] = p.documento
+                resultado[(p.usuario_id, fecha)] = CambioDia(
+                    documento=p.documento,
+                    descripcion=_describir_cambio_dia(p, fecha),
+                )
     return resultado
 
 

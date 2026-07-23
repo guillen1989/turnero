@@ -235,3 +235,66 @@ def test_ajustar_franja_de_otro_grupo_rechazada(db, client):
     }, follow_redirects=True)
     assert resp.status_code == 200
     assert AjustePlanillaSupervisora.query.count() == 0
+
+
+def test_index_muestra_doblaje_con_dos_turnos_el_mismo_dia(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "f")
+    franja_t = FranjaHoraria(
+        nombre="Tarde", hora_inicio=time(15, 0), hora_fin=time(22, 0),
+        grupo_intercambio=unidad.grupo_intercambio,
+    )
+    db.session.add(franja_t)
+    db.session.commit()
+
+    supervisora = crear_usuario("Super", "super_f@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_f@h.es")
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    añadir_turno(ana, date(2026, 7, 1), franja_t.id)
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert html.count(f">{franja_m.nombre}<") == 1
+    assert html.count(f">{franja_t.nombre}<") == 1
+
+
+def test_index_tooltip_del_cambio_describe_companero_turno_y_fecha(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "g")
+    franja_t = FranjaHoraria(
+        nombre="Tarde", hora_inicio=time(15, 0), hora_fin=time(22, 0),
+        grupo_intercambio=unidad.grupo_intercambio,
+    )
+    db.session.add(franja_t)
+    db.session.commit()
+
+    supervisora = crear_usuario("Super", "super_g@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_g@h.es")
+    claudia = crear_usuario("Claudia Pérez", "claudia_g@h.es")
+
+    documento = DocumentoCambio(
+        creado_por=ana, unidad=unidad, numero_unidad=1,
+        decision_supervisora="autorizado", anulado=False,
+    )
+    db.session.add(documento)
+    db.session.flush()
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=ana,
+        turno_cede_fecha=date(2026, 7, 10), turno_cede_franja=franja_m,
+        turno_recibe_fecha=date(2026, 7, 11), turno_recibe_franja=franja_t,
+    ))
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=claudia,
+        turno_cede_fecha=date(2026, 7, 11), turno_cede_franja=franja_t,
+        turno_recibe_fecha=date(2026, 7, 10), turno_recibe_franja=franja_m,
+    ))
+    db.session.commit()
+
+    _login(client, supervisora.email)
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert "Claudia Pérez" in html
+    assert "10/07/2026" in html
+    assert franja_m.nombre in html
+    assert "Día afectado por un cambio autorizado" not in html

@@ -132,10 +132,27 @@ def test_get_cambios_autorizados_mes_unidad_incluye_cede_y_recibe(db):
 
     cambios = get_cambios_autorizados_mes_unidad(unidad, 2026, 7)
 
-    assert cambios[(ana.id, date(2026, 7, 25))].id == documento.id
-    assert cambios[(ana.id, date(2026, 7, 26))].id == documento.id
-    assert cambios[(pedro.id, date(2026, 7, 25))].id == documento.id
-    assert cambios[(pedro.id, date(2026, 7, 26))].id == documento.id
+    assert cambios[(ana.id, date(2026, 7, 25))].documento.id == documento.id
+    assert cambios[(ana.id, date(2026, 7, 26))].documento.id == documento.id
+    assert cambios[(pedro.id, date(2026, 7, 25))].documento.id == documento.id
+    assert cambios[(pedro.id, date(2026, 7, 26))].documento.id == documento.id
+
+
+def test_get_cambios_autorizados_mes_unidad_describe_companero_turno_y_fecha(db):
+    unidad, _, ana, pedro, _, franja_m, franja_t = _setup(db, "g2")
+    _crear_documento(db, ana, pedro, unidad, franja_m, franja_t, "g2")
+
+    cambios = get_cambios_autorizados_mes_unidad(unidad, 2026, 7)
+
+    descripcion_ana = cambios[(ana.id, date(2026, 7, 25))].descripcion
+    assert pedro.nombre in descripcion_ana
+    assert franja_m.nombre in descripcion_ana
+    assert "25/07/2026" in descripcion_ana
+
+    descripcion_pedro = cambios[(pedro.id, date(2026, 7, 25))].descripcion
+    assert ana.nombre in descripcion_pedro
+    assert franja_m.nombre in descripcion_pedro
+    assert "25/07/2026" in descripcion_pedro
 
 
 def test_get_cambios_autorizados_mes_unidad_excluye_no_autorizado(db):

@@ -70,9 +70,9 @@
                   {% endfor %}
                 </button>
                 {% if cambio %}
-                  <a href="{{ url_for('documento_cambio.ver', documento_id=cambio.id) }}"
+                  <a href="{{ url_for('documento_cambio.ver', documento_id=cambio.documento.id) }}"
                      class="supervision-cambio-badge"
-                     title="{{ _('Día afectado por un cambio autorizado') }}">
+                     title="{{ cambio.descripcion }}">
                     &#8646;
                   </a>
                 {% endif %}

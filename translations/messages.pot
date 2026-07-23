@@ -4459,8 +4459,8 @@ msgstr ""
 msgid "Modificar turno"
 msgstr ""
 
-#: app/templates/planilla_supervision/index.html:75
-msgid "Día afectado por un cambio autorizado"
+#: app/services/planilla_supervision.py
+msgid "Cambio con %(companero)s (turno %(franja)s) del %(fecha)s"
 msgstr ""
 
 #: app/templates/planilla_supervision/index.html:81

@@ -61,9 +61,29 @@ ninguno salvo que haga falta una decisión del usuario.
   errores. 107 tests pasando en
   `test_rutas_documento_cambio.py`+`test_servicio_documento_cambio.py`+`test_models_documento_cambio.py`,
   sin regresiones (90 tests de auth/dashboard también verificados).
-  Siguiente: item #2 de la lista (visibilidad de doblajes para la
-  supervisora -- comprobar si ya está hecho en
-  `/planilla/supervisión`).
+- [x] Item #2 (visibilidad de doblajes para la supervisora en
+  `/planilla/supervisión`): comprobado que ya estaba implementado -- el bucle
+  `{% for turno in turnos_dia %}` de `planilla_supervision/index.html` junto
+  con `get_turnos_mes_unidad` (agrupa por `(usuario_id, fecha)` permitiendo
+  varios turnos) y el CSS `.supervision-celda .supervision-chip { display:
+  block; ... }` ya renderizan cada franja como un chip apilado visible. Añadido
+  test de regresión (`test_index_muestra_doblaje_con_dos_turnos_el_mismo_dia`)
+  sin ningún cambio de código de producción.
+- [x] Item #4 (tooltip del badge de cambio en `/planilla/supervisión` con
+  datos concretos en vez de un texto genérico): `get_cambios_autorizados_mes_unidad`
+  pasa a devolver un `CambioDia = namedtuple("documento", "descripcion")` en
+  vez de un `DocumentoCambio` a secas -- `_describir_cambio_dia(participante,
+  fecha)` (nuevo, en `app/services/planilla_supervision.py`) navega a
+  `participante.documento.participantes` para encontrar al compañero del
+  cambio y compone "Cambio con X (turno Y) del dd/mm/aaaa". El template solo
+  cambia `cambio.id` -> `cambio.documento.id` y `title="Día afectado por..."`
+  -> `title="{{ cambio.descripcion }}"`. Catálogo i18n actualizado (msgid
+  nuevo con placeholders con nombre, msgid viejo retirado por quedar sin
+  referencias). 2 tests nuevos de ruta + 1 de servicio + 1 de servicio
+  actualizado (`.id` -> `.documento.id`). 167 tests passing
+  (`pytest --testmon`, ventana limpia sin contención de la BD compartida).
+  Siguiente: item #3 de la lista (añadir un turno extra a un día sin
+  sustituir el que ya hay).
 
 Fuera de la Fase 10, iniciativa pendiente sin retomar aún: carga masiva de
 planilla por parte de la supervisora, sustituyendo (para las unidades que lo
