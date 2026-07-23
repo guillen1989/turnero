@@ -53,7 +53,7 @@
     var canvas = form.querySelector('canvas.firma-canvas');
     var input = form.querySelector('input[name="imagen_firma"]');
     var btnLimpiar = form.querySelector('.firma-limpiar');
-    var btnGuardada = form.querySelector('.firma-usar-guardada');
+    var botonesGuardada = form.querySelectorAll('.firma-usar-guardada');
 
     setupFirmaCanvas(canvas);
 
@@ -64,16 +64,11 @@
       });
     }
 
-    if (btnGuardada) {
+    botonesGuardada.forEach(function (btnGuardada) {
       btnGuardada.addEventListener('click', function () {
         input.value = btnGuardada.dataset.firma;
-        if (form.requestSubmit) {
-          form.requestSubmit();
-        } else {
-          form.submit();
-        }
       });
-    }
+    });
 
     form.addEventListener('submit', function (e) {
       if (canvas._haFirmado()) {

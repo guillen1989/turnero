@@ -55,43 +55,28 @@
       <section class="turnos-section">
         <h2>{{ _('Decisión de la supervisora') }}</h2>
         <p>{{ _('Tu firma queda recogida en la hoja, igual que la de los dos implicados.') }}</p>
-        <form method="post" id="autorizar-form" action="{{ url_for('documento_cambio.autorizar', documento_id=documento.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="hidden" name="imagen_firma" value="">
-          <div class="firma-box">
-            <canvas class="firma-canvas" width="500" height="180"></canvas>
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
-          {% if current_user.firma_guardada %}
-          <button type="button" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Autorizar con firma guardada') }}</button>
-          {% else %}
-          <label class="firma-guardar-opcion" style="display:block; margin:0.5rem 0; font-size:0.9rem">
-            <input type="checkbox" name="guardar_firma" checked>
-            {{ _('Guardar esta firma para futuras decisiones') }}
-          </label>
-          {% endif %}
-          <button type="submit" class="btn btn-primary">{{ _('Autorizar') }}</button>
-        </form>
-        <form method="post" id="denegar-form" action="{{ url_for('documento_cambio.denegar', documento_id=documento.id) }}">
+        <form method="post" id="decision-form" action="{{ url_for('documento_cambio.autorizar', documento_id=documento.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="imagen_firma" value="">
           <div class="form-group">
             <label for="motivo">{{ _('Motivo de la denegación') }}</label>
-            <textarea id="motivo" name="motivo" rows="2" required placeholder="{{ _('Explica por qué se deniega, lo verán los dos implicados.') }}"></textarea>
+            <textarea id="motivo" name="motivo" rows="2" placeholder="{{ _('Solo necesario si deniegas. Explica por qué, lo verán los dos implicados.') }}"></textarea>
           </div>
           <div class="firma-box">
             <canvas class="firma-canvas" width="500" height="180"></canvas>
           </div>
           <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
           {% if current_user.firma_guardada %}
-          <button type="button" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Denegar con firma guardada') }}</button>
+          <button type="submit" formaction="{{ url_for('documento_cambio.autorizar', documento_id=documento.id) }}" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Autorizar con firma guardada') }}</button>
+          <button type="submit" formaction="{{ url_for('documento_cambio.denegar', documento_id=documento.id) }}" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Denegar con firma guardada') }}</button>
           {% else %}
           <label class="firma-guardar-opcion" style="display:block; margin:0.5rem 0; font-size:0.9rem">
             <input type="checkbox" name="guardar_firma" checked>
             {{ _('Guardar esta firma para futuras decisiones') }}
           </label>
           {% endif %}
-          <button type="submit" class="btn btn-danger">{{ _('Denegar') }}</button>
+          <button type="submit" formaction="{{ url_for('documento_cambio.autorizar', documento_id=documento.id) }}" class="btn btn-primary">{{ _('Autorizar') }}</button>
+          <button type="submit" formaction="{{ url_for('documento_cambio.denegar', documento_id=documento.id) }}" class="btn btn-danger">{{ _('Denegar') }}</button>
         </form>
       </section>
     {% else %}
@@ -127,7 +112,7 @@
       </div>
       <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
       {% if current_user.firma_guardada %}
-      <button type="button" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Firmar con firma guardada') }}</button>
+      <button type="submit" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Firmar con firma guardada') }}</button>
       {% else %}
       <label class="firma-guardar-opcion" style="display:block; margin:0.5rem 0; font-size:0.9rem">
         <input type="checkbox" name="guardar_firma" checked>
@@ -167,9 +152,6 @@
 <script>initFirmaForm('firma-form');</script>
 {% endif %}
 {% if documento.estado == 'completo' and not documento.anulado and documento.decision_supervisora == 'pendiente' and current_user.es_supervisora %}
-<script>
-initFirmaForm('autorizar-form');
-initFirmaForm('denegar-form');
-</script>
+<script>initFirmaForm('decision-form');</script>
 {% endif %}
 {% endblock %}

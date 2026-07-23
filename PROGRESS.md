@@ -4,13 +4,28 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Fuera de la Fase 10, nueva iniciativa: carga masiva de planilla por parte
-de la supervisora, sustituyendo (para las unidades que lo adopten) la
-cumplimentación manual día a día de `app/routes/planilla.py`. Motivación:
-reducir fricción a supervisoras y trabajadores, y permitir comprobar la
-factibilidad real de una hoja de cambio (ya existe `comprobar_factibilidad`
-en `app/services/factibilidad_documento_cambio.py`) contra los datos reales
-de la planilla en vez de depender de que cada usuario la rellene a mano.
+Trabajando la lista de 9 mejoras pedidas por el usuario sobre `documento_cambio`/
+`planilla_supervision` (registro manual de cambios en papel, visibilidad de
+doblajes, añadir turno sin sustituir, tooltip con datos del cambio, reglas de
+comprobación configurables — días consecutivos + descanso tras noche/nocturno—,
+contadores de presencia por franja, reordenar nav de supervisora en 2 filas,
+firma duplicada al decidir, y arrancar la comprobación de factibilidad de esas
+reglas nuevas). Se resuelve en el orden que parezca mejor, sin bloquear en
+ninguno salvo que haga falta una decisión del usuario.
+
+- [x] Corregido el recuadro de firma duplicado al autorizar/denegar (ver más
+  abajo, último paso completado). Siguiente: registro manual de cambios en
+  papel por la supervisora (nº de cambio asignado, visible en
+  `/documentos-cambio/supervisora`, marcado como "de papel").
+
+Fuera de la Fase 10, iniciativa pendiente sin retomar aún: carga masiva de
+planilla por parte de la supervisora, sustituyendo (para las unidades que lo
+adopten) la cumplimentación manual día a día de `app/routes/planilla.py`.
+Motivación: reducir fricción a supervisoras y trabajadores, y permitir
+comprobar la factibilidad real de una hoja de cambio (ya existe
+`comprobar_factibilidad` en `app/services/factibilidad_documento_cambio.py`)
+contra los datos reales de la planilla en vez de depender de que cada usuario
+la rellene a mano.
 
 Se planificó en 3 pasos:
 1. Anonimizar un archivo real de ejemplo (formato de exportación "ILOG":
@@ -1911,3 +1926,5 @@ mitigación preventiva independiente de la causa.
 - Plantilla: HTML/Jinja2 + renderizado a PDF con WeasyPrint (no Word/LibreOffice), generado bajo demanda (no se persiste el PDF, evita el problema de disco efímero en Railway) — pendiente de implementar.
 - `ESPECIFICACION.md` pendiente de actualizar (ver nota en el paso anterior): el principio "no deja constancia oficial... no es un documento de RRHH" queda desactualizado con esta funcionalidad.
 - Bug preexistente encontrado en `app/templates/publicaciones/publicar.html` (no arreglado, fuera de alcance de esta fase): usa clases `alert`/`alert--{{cat}}` para los flash messages, que no existen en `main.css` (solo `flash`/`flash--*` están definidas), y además duplica el bloque `get_flashed_messages` que `base.html` ya renderiza globalmente — el mensaje sale dos veces, una con estilo y otra en texto plano sin caja. Las plantillas nuevas de `documento_cambio` no repiten el patrón. Pendiente decidir si merece su propio paso de limpieza.
+
+- [x] fix(documento-cambio): la decisión de la supervisora (autorizar/denegar en `ver.html`) mostraba dos recuadros de firma duplicados, uno por cada `<form>` independiente (`autorizar-form`/`denegar-form`) · fusionados en un único `<form id="decision-form">` con un solo lienzo de firma y dos acciones vía `formaction` en los botones "Autorizar"/"Denegar" (y en sus respectivos "usar firma guardada") · el textarea de motivo pasa a ser común a ambas acciones (ya no `required` en HTML: el servidor ya validaba y redirigía con flash si faltaba, sin esa validación ninguna ruta se rompe) · `firma-canvas.js::initFirmaForm` generalizado para soportar varios botones `.firma-usar-guardada` en el mismo formulario (antes asumía uno solo) y estos pasan a ser botones `type="submit"` reales con `formaction` propio en vez de disparar `form.requestSubmit()`/`form.submit()` a mano (se simplifica el JS: el navegador ya respeta `formaction` al hacer clic) · mismo cambio aplicado al botón "Firmar con firma guardada" de la sección de firma del participante, por coherencia con el nuevo mecanismo · 1 test nuevo (`test_decision_supervisora_muestra_un_unico_recuadro_de_firma`) · 65 tests de `test_rutas_documento_cambio.py` + 90 de auth/dashboard passing

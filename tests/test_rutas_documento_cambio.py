@@ -1118,6 +1118,27 @@ def test_denegar_sin_firma_no_deniega(db, client):
     assert documento.decision_supervisora == "pendiente"
 
 
+def test_decision_supervisora_muestra_un_unico_recuadro_de_firma(db, client):
+    """La supervisora firma una sola vez para autorizar o denegar: no debe
+    haber dos lienzos de firma duplicados en la misma pantalla de decisión."""
+    crear_usuario, manyana, tarde = _setup(db, "n5")
+    claudia = crear_usuario("Claudia Pérez", "claudian5@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juann5@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martan5@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    _login(client, claudia.email)
+    documento_id = _crear_documento_completo_via_client(client, claudia, juan, manyana)
+
+    client.get("/auth/logout")
+    _login(client, supervisora.email)
+    resp = client.get(f"/documentos-cambio/{documento_id}")
+    html = resp.data.decode("utf-8")
+
+    assert html.count('class="firma-canvas"') == 1
+
+
 def test_autorizar_guarda_la_firma_si_se_pide_y_no_habia_ninguna(db, client):
     crear_usuario, manyana, tarde = _setup(db, "n4")
     claudia = crear_usuario("Claudia Pérez", "claudian4@h.es")
