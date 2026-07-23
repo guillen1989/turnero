@@ -6,6 +6,10 @@
 <div class="form-container">
   <h1>{{ _('Hoja de cambio') }} <span class="documento-numero">{{ _('cambio #%(numero)s del %(fecha)s', numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y')) }}</span></h1>
 
+  {% if documento.origen_papel %}
+    <p><span class="badge-draft">{{ _('Registrado desde hoja de papel') }}</span> {{ _('Este cambio se firmó en papel; la supervisora lo registró manualmente en el sistema.') }}</p>
+  {% endif %}
+
   {% if documento.estado == 'completo' %}
     <div class="flash flash--success documento-completo-banner">{{ _('Las dos firmas están recogidas. La hoja de cambio está completa.') }}</div>
     <a href="{{ url_for('documento_cambio.pdf', documento_id=documento.id) }}" class="btn btn-primary">{{ _('Generar PDF') }}</a>
@@ -91,7 +95,9 @@
       <strong>{{ p.usuario.nombre }}</strong>
       <p>{{ _('Cede') }}: {{ p.turno_cede_franja.nombre }} — {{ p.turno_cede_fecha.strftime('%d/%m/%Y') }}</p>
       <p>{{ _('Recibe') }}: {{ p.turno_recibe_franja.nombre }} — {{ p.turno_recibe_fecha.strftime('%d/%m/%Y') }}</p>
-      {% if p.usuario_id in ids_firmantes %}
+      {% if documento.origen_papel %}
+        <span class="badge-draft">{{ _('Firmado en papel') }}</span>
+      {% elif p.usuario_id in ids_firmantes %}
         <span class="badge-success">{{ _('Firmado') }}</span>
       {% else %}
         <span class="badge-draft">{{ _('Sin firmar') }}</span>

@@ -128,6 +128,49 @@ def crear_documento_cambio(
     return documento
 
 
+def registrar_documento_cambio_papel(
+    supervisora, usuario1, usuario2,
+    turno1_cede_fecha, turno1_cede_franja_id,
+    turno1_recibe_fecha, turno1_recibe_franja_id,
+):
+    """
+    Registra un cambio que un pequeño número de trabajadores sigue
+    formalizando en papel en vez de con la app. Como ya se firmó a mano
+    entre los dos implicados, no tiene sentido pedir firmas digitales ni
+    dejarlo pendiente de decisión: queda directamente `completo` y
+    `autorizado`, aplicándose ya a las planillas (el objetivo real es
+    mantenerlas al día para que la comprobación de factibilidad de futuros
+    cambios sea correcta). `origen_papel=True` lo distingue de los cambios
+    creados y firmados desde la app.
+    """
+    documento = DocumentoCambio(
+        creado_por=usuario1,
+        unidad_id=usuario1.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(usuario1.unidad_id),
+        estado="completo",
+        origen_papel=True,
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=usuario1,
+        turno_cede_fecha=turno1_cede_fecha, turno_cede_franja_id=turno1_cede_franja_id,
+        turno_recibe_fecha=turno1_recibe_fecha, turno_recibe_franja_id=turno1_recibe_franja_id,
+    ))
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=usuario2,
+        turno_cede_fecha=turno1_recibe_fecha, turno_cede_franja_id=turno1_recibe_franja_id,
+        turno_recibe_fecha=turno1_cede_fecha, turno_recibe_franja_id=turno1_cede_franja_id,
+    ))
+    db.session.flush()
+
+    documento.factibilidad_estado = comprobar_factibilidad(documento)
+    db.session.commit()
+
+    return autorizar_documento(documento, supervisora)
+
+
 def match_admite_documento_cambio(match) -> bool:
     """
     Un match solo puede generar su propio DocumentoCambio si es un

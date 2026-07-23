@@ -3,7 +3,7 @@ from app.extensions import db
 from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario, TurnoPlanilla, NotaDia
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
-    autorizar_documento, denegar_documento,
+    autorizar_documento, denegar_documento, registrar_documento_cambio_papel,
 )
 
 _FIRMA_PNG = (
@@ -592,6 +592,39 @@ def test_denegar_documento_guarda_la_firma_de_la_supervisora(db):
     denegar_documento(documento, supervisora, motivo="No cuadra.", imagen_firma=_FIRMA_PNG)
 
     assert documento.firma_supervisora == _FIRMA_PNG
+
+
+def test_registrar_documento_cambio_papel_queda_completo_y_autorizado(db):
+    """El cambio ya se firmó a mano en papel: no tiene sentido pedir firmas
+    digitales, así que queda directamente completo y autorizado, aplicado a
+    las planillas de los dos implicados."""
+    crear_usuario, manyana, tarde = _setup(db, "u")
+    claudia = crear_usuario("Claudia Pérez", "claudiau@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanu@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martau@h.es")
+
+    documento = registrar_documento_cambio_papel(
+        supervisora=supervisora, usuario1=claudia, usuario2=juan,
+        turno1_cede_fecha=date(2026, 7, 7), turno1_cede_franja_id=manyana.id,
+        turno1_recibe_fecha=date(2026, 7, 28), turno1_recibe_franja_id=manyana.id,
+    )
+
+    assert documento.origen_papel is True
+    assert documento.estado == "completo"
+    assert documento.decision_supervisora == "autorizado"
+    assert documento.supervisora_id == supervisora.id
+    assert documento.numero_unidad >= 1
+    assert len(documento.firmas) == 0  # no hay firma digital, se firmó en papel
+
+    assert TurnoPlanilla.query.filter_by(
+        usuario_id=claudia.id, fecha=date(2026, 7, 28), franja_horaria_id=manyana.id
+    ).first() is not None
+    assert TurnoPlanilla.query.filter_by(
+        usuario_id=claudia.id, fecha=date(2026, 7, 7), franja_horaria_id=manyana.id
+    ).first() is None
+    assert TurnoPlanilla.query.filter_by(
+        usuario_id=juan.id, fecha=date(2026, 7, 7), franja_horaria_id=manyana.id
+    ).first() is not None
 
 
 def test_autorizar_documento_sin_firma_no_la_rellena(db):

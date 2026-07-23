@@ -296,7 +296,11 @@ def ver(documento_id):
     mi_participante = next(
         (p for p in documento.participantes if p.usuario_id == current_user.id), None
     )
-    puedo_firmar = mi_participante is not None and mi_participante.usuario_id not in ids_firmantes
+    puedo_firmar = (
+        mi_participante is not None
+        and mi_participante.usuario_id not in ids_firmantes
+        and documento.estado != "completo"
+    )
     notas_ilog = (
         generar_notas_ilog(documento)
         if documento.estado == "completo" and current_user.es_supervisora

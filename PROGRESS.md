@@ -26,10 +26,25 @@ ninguno salvo que haga falta una decisión del usuario.
   factibilidad de futuros cambios sea correcta). Paso 1a (hecho): columna
   `origen_papel` (bool, `server_default='false'`, un solo paso porque tiene
   default de servidor) en `DocumentoCambio` -- migración
-  `4b1f1eeadd91_add_origen_papel_to_documento_cambio`. Siguiente: servicio
-  `registrar_documento_cambio_papel` (crea documento + participantes,
-  reutiliza `autorizar_documento` para volcar a planillas y notificar) y
-  luego la ruta/plantilla para que la supervisora la use.
+  `4b1f1eeadd91_add_origen_papel_to_documento_cambio`. Paso 1b (hecho):
+  `registrar_documento_cambio_papel(supervisora, usuario1, usuario2, ...)`
+  en `app/services/documento_cambio.py` -- crea el documento con
+  `estado='completo'`/`origen_papel=True` directamente (sin pasar por
+  `pendiente_firmas`) y reutiliza `autorizar_documento` para volcarlo a
+  planillas y notificar a los dos implicados, igual que un cambio digital ya
+  autorizado. De paso, arreglado un bug latente que este caso destapó:
+  `puedo_firmar` en `documento_cambio.ver()` solo miraba
+  `ids_firmantes`, así que un documento `completo` sin ninguna
+  `FirmaDocumentoCambio` (como los de papel) ofrecía firmar digitalmente un
+  cambio que ya estaba cerrado -- ahora exige también
+  `documento.estado != 'completo'`. `ver.html` añade un banner "Registrado
+  desde hoja de papel" y cambia el badge por participante a "Firmado en
+  papel" cuando `origen_papel` es `True`. 3 tests nuevos (columna, servicio,
+  plantilla), sin regresiones (92 tests en
+  `test_rutas_documento_cambio.py` + `test_servicio_documento_cambio.py`).
+  Siguiente: la ruta/plantilla `/documentos-cambio/registrar-papel` (solo
+  supervisora) para que pueda usar este servicio desde la interfaz, más
+  marcarlo visible en `/documentos-cambio/supervisora`.
 
 Fuera de la Fase 10, iniciativa pendiente sin retomar aún: carga masiva de
 planilla por parte de la supervisora, sustituyendo (para las unidades que lo

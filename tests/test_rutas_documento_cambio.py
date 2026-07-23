@@ -577,6 +577,34 @@ def test_ver_muestra_numero_de_documento(db, client):
     assert b"cambio #1 del" in resp.data
 
 
+def test_ver_no_ofrece_firmar_ni_muestra_sin_firmar_en_un_cambio_de_papel(db, client):
+    """Un cambio registrado desde papel ya se firmó a mano y ya quedó
+    autorizado -- no debe ofrecer firmar digitalmente ni mostrar "Sin
+    firmar" a los implicados."""
+    from app.services.documento_cambio import registrar_documento_cambio_papel
+
+    crear_usuario, manyana, tarde = _setup(db, "papel")
+    claudia = crear_usuario("Claudia Pérez", "claudiapapel@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanpapel@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martapapel@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    documento = registrar_documento_cambio_papel(
+        supervisora=supervisora, usuario1=claudia, usuario2=juan,
+        turno1_cede_fecha=date(2026, 7, 7), turno1_cede_franja_id=manyana.id,
+        turno1_recibe_fecha=date(2026, 7, 28), turno1_recibe_franja_id=manyana.id,
+    )
+
+    _login(client, claudia.email)
+    resp = client.get(f"/documentos-cambio/{documento.id}")
+
+    assert resp.status_code == 200
+    assert "Registrado desde hoja de papel".encode("utf-8") in resp.data
+    assert "Sin firmar".encode("utf-8") not in resp.data
+    assert ">Tu firma<".encode("utf-8") not in resp.data
+
+
 def test_numero_de_documento_es_por_unidad_no_el_id_global(db, client):
     """
     Si otra unidad ya ha creado hojas de cambio antes (id global más alto),
