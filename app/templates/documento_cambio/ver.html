@@ -92,7 +92,7 @@
     <h2>{{ _('Datos del cambio') }}</h2>
     {% for p in documento.participantes %}
     <div class="card">
-      <strong>{{ p.usuario.nombre }}</strong>
+      <strong>{{ p.nombre_mostrar }}</strong>
       <p>{{ _('Cede') }}: {{ p.turno_cede_franja.nombre }} — {{ p.turno_cede_fecha.strftime('%d/%m/%Y') }}</p>
       <p>{{ _('Recibe') }}: {{ p.turno_recibe_franja.nombre }} — {{ p.turno_recibe_fecha.strftime('%d/%m/%Y') }}</p>
       {% if documento.origen_papel %}
@@ -140,7 +140,7 @@
     <p>{{ _('Copia cada texto en la nota del día correspondiente, en la planilla de cada trabajador.') }}</p>
     {% for nota in notas_ilog %}
     <div class="card">
-      <strong>{{ nota.usuario.nombre }} — {{ nota.fecha.strftime('%d/%m/%Y') }}</strong>
+      <strong>{{ nota.nombre }} — {{ nota.fecha.strftime('%d/%m/%Y') }}</strong>
       <textarea class="nota-ilog-texto" readonly rows="2" id="nota-ilog-{{ loop.index }}">{{ nota.texto }}</textarea>
       <button type="button" class="btn btn-secondary btn-sm"
         data-copiado-label="{{ _('Copiado') }}"

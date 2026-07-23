@@ -720,6 +720,32 @@ def test_supervisora_ve_los_cambios_completos_de_su_grupo(db, client):
     assert "<table".encode() in resp.data
 
 
+def test_supervisora_sigue_viendo_el_nombre_real_tras_eliminar_la_cuenta(db, client):
+    """Una hoja de cambio completa hace de equivalente firmado en papel: si
+    uno de los participantes elimina luego su cuenta, el nombre congelado
+    en el momento de completarse debe seguir viéndose, en vez de caer al
+    'Usuario eliminado' de la cuenta anonimizada."""
+    from app.services.registro import eliminar_cuenta
+
+    crear_usuario, manyana, tarde = _setup(db, "ii3")
+    claudia = crear_usuario("Claudia Pérez", "claudiaii3@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanii3@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaii3@h.es")
+    supervisora.es_supervisora = True
+    db.session.commit()
+
+    fecha_este_mes, _ = _mes_actual_y_siguiente()
+    doc = _crear_documento_completo(db, claudia, juan, manyana, tarde,
+                                     fecha_este_mes, fecha_este_mes + timedelta(days=1))
+
+    eliminar_cuenta(claudia)
+
+    _login(client, supervisora.email)
+    resp = client.get("/documentos-cambio/supervisora")
+    assert resp.status_code == 200
+    assert "<td>Claudia Pérez</td>".encode("utf-8") in resp.data
+
+
 def test_supervisora_ve_el_motivo_de_denegacion_en_la_tabla(db, client):
     from app.services.documento_cambio import denegar_documento
 

@@ -124,6 +124,12 @@ class ParticipanteDocumentoCambio(db.Model):
     turno_recibe_franja_id = db.Column(
         db.Integer, db.ForeignKey("franja_horaria.id"), nullable=False
     )
+    # Copia del nombre del usuario tomada cuando el documento se completa.
+    # Si luego se elimina la cuenta, la hoja de cambio (equivalente a un
+    # papel firmado) sigue mostrando quién firmó de verdad, en vez de caer
+    # al nombre en vivo de Usuario ("Usuario eliminado"). Nulo mientras el
+    # documento no está completo (borrador/pendiente_firmas).
+    nombre_congelado = db.Column(db.String(120), nullable=True)
 
     documento = db.relationship("DocumentoCambio", back_populates="participantes")
     usuario = db.relationship("Usuario")
@@ -133,6 +139,10 @@ class ParticipanteDocumentoCambio(db.Model):
     turno_recibe_franja = db.relationship(
         "FranjaHoraria", foreign_keys=[turno_recibe_franja_id]
     )
+
+    @property
+    def nombre_mostrar(self):
+        return self.nombre_congelado or self.usuario.nombre
 
     __table_args__ = (
         db.UniqueConstraint(

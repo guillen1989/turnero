@@ -46,7 +46,7 @@ def _resumen_cambio(documento):
         _(
             "%(nombre)s libra %(turno_cede)s del %(fecha_cede)s y trabaja "
             "%(turno_recibe)s del %(fecha_recibe)s.",
-            nombre=p.usuario.nombre,
+            nombre=p.nombre_mostrar,
             turno_cede=p.turno_cede_franja.nombre,
             fecha_cede=p.turno_cede_fecha.strftime("%d/%m/%Y"),
             turno_recibe=p.turno_recibe_franja.nombre,
@@ -183,6 +183,7 @@ def registrar_documento_cambio_papel(
         raise CambioNoFactibleError()
 
     documento.factibilidad_estado = factibilidad
+    _congelar_nombres(documento)
     db.session.commit()
 
     return autorizar_documento(documento, supervisora)
@@ -265,6 +266,17 @@ def _hash_contenido(documento):
     return hashlib.sha256(contenido.encode("utf-8")).hexdigest()
 
 
+def _congelar_nombres(documento):
+    """
+    Copia el nombre en vivo de cada participante a nombre_congelado en el
+    momento en que el documento se completa (queda como equivalente de un
+    papel firmado). Si más adelante se elimina alguna de las dos cuentas,
+    la hoja de cambio sigue mostrando quién firmó de verdad.
+    """
+    for p in documento.participantes:
+        p.nombre_congelado = p.usuario.nombre
+
+
 def firmar_documento(documento, usuario, imagen_firma):
     """
     Registra la firma de `usuario`. El estado pasa a pendiente_firmas tras
@@ -292,6 +304,7 @@ def firmar_documento(documento, usuario, imagen_firma):
     if documento.todos_han_firmado():
         documento.estado = "completo"
         documento.factibilidad_estado = comprobar_factibilidad(documento)
+        _congelar_nombres(documento)
         for p in documento.participantes:
             _notificar(
                 p.usuario, documento, "documento_cambio_completo",
@@ -330,19 +343,21 @@ def generar_notas_ilog(documento):
 
         notas.append({
             "usuario": p.usuario,
+            "nombre": p.nombre_mostrar,
             "fecha": p.turno_cede_fecha,
             "texto": (
                 f"Libra el turno de {p.turno_cede_franja.nombre.lower()} a cambio de "
-                f"trabajarle a {otro.usuario.nombre} el turno de "
+                f"trabajarle a {otro.nombre_mostrar} el turno de "
                 f"{p.turno_recibe_franja.nombre.lower()} del {_formatear_fecha(p.turno_recibe_fecha)}."
             ),
         })
         notas.append({
             "usuario": p.usuario,
+            "nombre": p.nombre_mostrar,
             "fecha": p.turno_recibe_fecha,
             "texto": (
                 f"Trabaja el turno de {p.turno_recibe_franja.nombre.lower()} a "
-                f"{otro.usuario.nombre} a cambio de que {otro.usuario.nombre} le "
+                f"{otro.nombre_mostrar} a cambio de que {otro.nombre_mostrar} le "
                 f"trabaje el turno de {p.turno_cede_franja.nombre.lower()} del "
                 f"{_formatear_fecha(p.turno_cede_fecha)}."
             ),
@@ -370,15 +385,18 @@ def generar_pdf_documento(documento):
     participante_solicitante = next(
         p for p in documento.participantes if p.usuario_id == solicitante.id
     )
-    companero = next(
-        p.usuario for p in documento.participantes if p.usuario_id != solicitante.id
+    participante_companero = next(
+        p for p in documento.participantes if p.usuario_id != solicitante.id
     )
+    companero = participante_companero.usuario
     firmas_por_usuario = {f.usuario_id: f for f in documento.firmas}
 
     html = render_template(
         "documento_cambio/pdf.html",
         hospital_nombre=solicitante.unidad.hospital.nombre,
         unidad_nombre=solicitante.unidad.nombre,
+        solicitante_nombre=participante_solicitante.nombre_mostrar,
+        companero_nombre=participante_companero.nombre_mostrar,
         solicitante=solicitante,
         participante_solicitante=participante_solicitante,
         companero=companero,

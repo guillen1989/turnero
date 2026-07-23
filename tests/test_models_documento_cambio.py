@@ -186,3 +186,24 @@ def test_todos_han_firmado_falso_sin_participantes(db):
     db.session.commit()
 
     assert documento.todos_han_firmado() is False
+
+
+def test_participante_nombre_mostrar_usa_nombre_congelado_si_existe(db):
+    crear_usuario, manyana, tarde = _setup(db, "d")
+    ana = crear_usuario("anad@h.es")
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
+    db.session.add(documento)
+    p = ParticipanteDocumentoCambio(
+        documento=documento, usuario=ana,
+        turno_cede_fecha=date(2026, 7, 25), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 26), turno_recibe_franja=tarde,
+    )
+    db.session.add(p)
+    db.session.commit()
+
+    assert p.nombre_mostrar == "Usuario Test"
+
+    p.nombre_congelado = "Ana Congelada"
+    db.session.commit()
+
+    assert p.nombre_mostrar == "Ana Congelada"

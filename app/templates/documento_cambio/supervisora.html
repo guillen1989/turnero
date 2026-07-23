@@ -146,10 +146,10 @@
           <td><input type="checkbox" name="documento_ids" value="{{ documento.id }}" class="bloque-checkbox"></td>
           <td>{{ _('cambio #%(numero)s del %(fecha)s', numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y')) }}{% if documento.origen_papel %} <span class="badge-draft">{{ _('Papel') }}</span>{% endif %}</td>
           <td>{{ documento.fecha_creacion.strftime('%d/%m/%Y') }}</td>
-          <td>{{ p1.usuario.nombre }}</td>
+          <td>{{ p1.nombre_mostrar }}</td>
           <td>{{ p1.turno_cede_franja.nombre }} {{ p1.turno_cede_fecha.strftime('%d/%m/%Y') }}</td>
           <td>{{ p1.turno_recibe_franja.nombre }} {{ p1.turno_recibe_fecha.strftime('%d/%m/%Y') }}</td>
-          <td>{{ p2.usuario.nombre if p2 else '—' }}</td>
+          <td>{{ p2.nombre_mostrar if p2 else '—' }}</td>
           <td>{{ p2.turno_cede_franja.nombre ~ ' ' ~ p2.turno_cede_fecha.strftime('%d/%m/%Y') if p2 else '—' }}</td>
           <td>{{ p2.turno_recibe_franja.nombre ~ ' ' ~ p2.turno_recibe_fecha.strftime('%d/%m/%Y') if p2 else '—' }}</td>
           <td>

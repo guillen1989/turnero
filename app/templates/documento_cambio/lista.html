@@ -20,7 +20,7 @@
     {% set companero = documento.participantes | rejectattr('usuario_id', 'equalto', current_user.id) | first %}
     <div class="card">
       <strong>{{ _('cambio #%(numero)s del %(fecha)s', numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y')) }}</strong>
-      {% if companero %}— {{ _('con %(nombre)s', nombre=companero.usuario.nombre) }}{% endif %}
+      {% if companero %}— {{ _('con %(nombre)s', nombre=companero.nombre_mostrar) }}{% endif %}
       {% if documento.origen_papel %} <span class="badge-draft">{{ _('Papel') }}</span>{% endif %}
       <br>
       {% if documento.estado == 'completo' %}

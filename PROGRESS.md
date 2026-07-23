@@ -39,12 +39,21 @@ en vivo:
   `registrar_papel` la captura y muestra un aviso en vez de aplicar el
   cambio. `no_verificado` sigue dejando pasar (no hay planilla suficiente
   para *saber* que es inviable, distinto de saber que sí lo es).
-- [ ] 7. **Solo plan, sin implementar todavía** (pendiente de confirmación del
-  usuario): que las hojas de cambio (`DocumentoCambio`/
-  `ParticipanteDocumentoCambio`) conserven el nombre real de los
-  participantes aunque alguno elimine su cuenta, ya que hacen de equivalente
-  firmado en papel. Ver el plan detallado más abajo, en las notas de esta
-  entrada.
+- [x] 7. Las hojas de cambio (`DocumentoCambio`/`ParticipanteDocumentoCambio`)
+  ya no dependen del nombre en vivo de `Usuario` para documentos completos:
+  nuevo campo `nombre_congelado` (nullable, migración `fce42d5845ad`, sin
+  backfill porque el proyecto todavía no ha llegado a producción) en
+  `ParticipanteDocumentoCambio`, con la propiedad `nombre_mostrar` (=
+  `nombre_congelado or usuario.nombre`). Se rellena en el momento de
+  completarse el documento: en `registrar_documento_cambio_papel` (nace
+  completo) y en `firmar_documento` cuando `todos_han_firmado()`. Plantillas
+  (`ver.html`, `lista.html`, `supervisora.html`) y generación de PDF/notas
+  ilog (`app/services/documento_cambio.py`) cambiadas a `nombre_mostrar`.
+  `eliminar_cuenta()` no necesitó tocarse. Se muestra siempre el nombre
+  congelado para documentos completos (no solo cuando la cuenta ya no
+  existe), para que el PDF sea estable en el tiempo. Tests de regresión a
+  nivel de modelo, servicio (firma digital y papel, incluyendo PDF) y ruta
+  (`/documentos-cambio/supervisora` tras `eliminar_cuenta`).
 - [x] 8. Confirmado el hueco real que sospechaba el usuario sobre
   `origen_papel` (commit `4d3636d3`): la columna sí se usaba en
   `documento_cambio/ver.html` y `supervisora.html`, pero **no** en
@@ -52,69 +61,10 @@ en vivo:
   trabajador) -- ahí no había ninguna insignia "Papel". Añadida + test de
   regresión.
 
-Todos los tests afectados (164 en los ficheros tocados + suite completa vía
-`--testmon`, 1004 passed) en verde. Pendiente: commitear, empujar la rama y
-abrir PR en borrador; y presentarle al usuario el plan del punto 7 sin
-tocar código de ese punto hasta que lo confirme.
-
-### Plan para el punto 7 (anonimización vs. hojas de cambio firmadas)
-
-**Problema:** `eliminar_cuenta()` (`app/services/registro.py`) sobreescribe
-`usuario.nombre`/`email` directamente sobre la fila `Usuario` ("Usuario
-eliminado"). Todas las plantillas de hoja de cambio (`ver.html`,
-`supervisora.html`, `lista.html`, `pdf.html`) y la generación de PDF/notas
-(`app/services/documento_cambio.py`) leen el nombre **en vivo** a través de
-`p.usuario.nombre` / `otro.usuario.nombre` -- no hay ninguna copia guardada
-en el propio documento. Si cualquiera de los dos firmantes de un
-`DocumentoCambio` ya `completo` elimina su cuenta más tarde, su nombre pasa a
-"Usuario eliminado" en el documento entero (pantalla y PDF), lo cual no
-tiene sentido para un documento que se comporta como un papel ya firmado por
-las dos partes -- igual que un contrato en papel no deja de tener la firma
-de alguien porque esa persona cierre su cuenta en otro sitio.
-
-**Propuesta:** desnormalizar (congelar) el nombre de cada participante en el
-propio `ParticipanteDocumentoCambio` en el momento en que el documento queda
-`completo` (todas las firmas recogidas, o directo en `origen_papel`), en vez
-de depender siempre de la fila `Usuario` en vivo:
-- Añadir `nombre_congelado` (String, nullable) a `ParticipanteDocumentoCambio`
-  -- migración de 3 pasos porque la tabla ya tiene filas en producción
-  (nullable, backfill con el nombre actual de cada `usuario`, luego se deja
-  nullable igualmente porque los documentos en `borrador`/`pendiente_firmas`
-  legítimamente no lo tienen todavía).
-- Rellenarlo en el momento de cerrar el documento: en
-  `registrar_documento_cambio_papel` (ya nace `completo`) y en
-  `firmar_documento` cuando `todos_han_firmado()` se cumple.
-- Las plantillas y la generación de PDF/notas pasan a usar
-  `p.nombre_congelado or p.usuario.nombre` (el `or` cubre documentos ya
-  completos de antes de este cambio, que no tienen congelado; para esos, se
-  podría hacer un backfill puntual con un script/migración de datos aparte).
-- `eliminar_cuenta()` no necesita ningún cambio: como las plantillas ya no
-  dependen de `usuario.nombre` para documentos completos, anonimizar la
-  cuenta deja de afectarlos. Los documentos todavía `borrador`/
-  `pendiente_firmas` (no llegaron a firmarse) sí seguirán mostrando "Usuario
-  eliminado" si la contraparte borra su cuenta antes de firmar -- razonable,
-  porque ese documento nunca llegó a ser el equivalente de un papel firmado.
-
-**Confirmado explícitamente por el usuario:** `/documentos-cambio/supervisora`
-tampoco debe anonimizar nombres -- ya lo hace bien hoy (lee `p.usuario.nombre`
-en vivo) y seguirá haciéndolo igual de bien leyendo `nombre_congelado`.
-
-**Complicaciones detectadas:**
-- Los documentos que ya están `completo` en la base de datos (staging/prod)
-  a día de hoy no tendrán `nombre_congelado` relleno -- hace falta decidir si
-  se backfillea con el nombre actual de cada `usuario` en la propia
-  migración (siempre que no esté ya anonimizado; si ya lo está, ya se ha
-  perdido el nombre real y no hay forma de recuperarlo retroactivamente,
-  salvo que exista un backup previo a la anonimización).
-- Si dos personas comparten nombre y una se elimina, el PDF ya generado
-  antes de este cambio no es reproducible retroactivamente (no afecta a
-  PDFs nuevos, solo a los ya descargados).
-- Habría que decidir si el nombre congelado se muestra siempre (incluso si
-  la cuenta sigue activa) o solo cuando la cuenta ya no existe/está
-  anonimizada -- se propone mostrarlo siempre para el documento completo,
-  para que el PDF sea estable en el tiempo independientemente de que el
-  usuario cambie su nombre después por otro motivo (p.ej. corrección de un
-  error tipográfico), no solo por eliminación de cuenta.
+Todos los tests afectados en verde (incluidos los del punto 7, ya
+implementado tras confirmación del usuario). PR #21 abierto en borrador
+contra `staging`. Pendiente: mergear esta rama en `staging` y empujar a
+`origin`.
 
 ## Paso anterior
 Lista anterior de 9 mejoras sobre `documento_cambio`/`planilla_supervision`,

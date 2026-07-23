@@ -100,6 +100,69 @@ def test_firmar_documento_segunda_firma_completa(db):
     assert len(documento.firmas) == 2
 
 
+def test_firmar_documento_no_congela_nombres_tras_la_primera_firma(db):
+    """Con una sola firma el documento sigue en borrador/pendiente_firmas:
+    todavía puede pasar tiempo hasta la segunda, así que el nombre no debe
+    congelarse antes de que el documento esté realmente completo."""
+    crear_usuario, manyana, tarde = _setup(db, "n1")
+    claudia = crear_usuario("Claudia Pérez", "claudian1@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juann1@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+
+    firmar_documento(documento, claudia, "data:image/png;base64,firmaclaudia")
+
+    for p in documento.participantes:
+        assert p.nombre_congelado is None
+
+
+def test_firmar_documento_congela_nombres_al_completarse(db):
+    """Al completarse (última firma) se congela el nombre de cada
+    participante, para que sobreviva aunque más adelante se elimine
+    alguna de las cuentas."""
+    crear_usuario, manyana, tarde = _setup(db, "n2")
+    claudia = crear_usuario("Claudia Pérez", "claudian2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juann2@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+
+    firmar_documento(documento, claudia, "data:image/png;base64,firmaclaudia")
+    firmar_documento(documento, juan, "data:image/png;base64,firmajuan")
+
+    p_claudia = next(p for p in documento.participantes if p.usuario_id == claudia.id)
+    p_juan = next(p for p in documento.participantes if p.usuario_id == juan.id)
+    assert p_claudia.nombre_congelado == "Claudia Pérez"
+    assert p_juan.nombre_congelado == "Juan Rodríguez"
+
+
+def test_firmar_documento_conserva_nombre_congelado_si_se_elimina_la_cuenta(db):
+    """El nombre congelado debe sobrevivir a eliminar_cuenta: es el motivo
+    por el que existe."""
+    from app.services.registro import eliminar_cuenta
+
+    crear_usuario, manyana, tarde = _setup(db, "n3")
+    claudia = crear_usuario("Claudia Pérez", "claudian3@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juann3@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, "data:image/png;base64,firmaclaudia")
+    firmar_documento(documento, juan, "data:image/png;base64,firmajuan")
+
+    eliminar_cuenta(claudia)
+
+    p_claudia = next(p for p in documento.participantes if p.usuario_id == claudia.id)
+    assert p_claudia.nombre_mostrar == "Claudia Pérez"
+
+
 def test_firmar_documento_guarda_mismo_hash_para_contenido_identico(db):
     crear_usuario, manyana, tarde = _setup(db, "d")
     claudia = crear_usuario("Claudia Pérez", "claudiad@h.es")
@@ -228,6 +291,34 @@ def test_generar_pdf_documento_completo(db):
     assert "Mañana" in texto
     assert "07/07/2026" in texto
     assert "28/07/2026" in texto
+
+
+def test_generar_pdf_documento_conserva_nombre_tras_eliminar_cuenta(db):
+    """El PDF es el equivalente descargable de la hoja firmada: debe seguir
+    mostrando quién firmó de verdad aunque luego elimine su cuenta."""
+    from app.services.registro import eliminar_cuenta
+
+    crear_usuario, manyana, tarde = _setup(db, "f2")
+    claudia = crear_usuario("Claudia Pérez", "claudiaf2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanf2@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, _FIRMA_PNG)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    eliminar_cuenta(juan)
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    import pypdf
+    import io as _io
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    assert "Claudia Pérez" in texto
+    assert "Juan Rodríguez" in texto
+    assert "Usuario eliminado" not in texto
 
 
 def test_generar_pdf_documento_no_pierde_campos_con_nombres_largos(db):
@@ -630,6 +721,27 @@ def test_registrar_documento_cambio_papel_queda_completo_y_autorizado(db):
     assert TurnoPlanilla.query.filter_by(
         usuario_id=juan.id, fecha=date(2026, 7, 7), franja_horaria_id=manyana.id
     ).first() is not None
+
+
+def test_registrar_documento_cambio_papel_congela_los_nombres(db):
+    """El documento queda completo desde el momento en que se registra, así
+    que el nombre debe congelarse ya en el registro, no esperar a un evento
+    posterior que en este flujo nunca llega (no hay firmas digitales)."""
+    crear_usuario, manyana, tarde = _setup(db, "w")
+    claudia = crear_usuario("Claudia Pérez", "claudiaw@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanw@h.es")
+    supervisora = crear_usuario("Marta Supervisora", "martaw@h.es")
+
+    documento = registrar_documento_cambio_papel(
+        supervisora=supervisora, usuario1=claudia, usuario2=juan,
+        turno1_cede_fecha=date(2026, 7, 7), turno1_cede_franja_id=manyana.id,
+        turno1_recibe_fecha=date(2026, 7, 28), turno1_recibe_franja_id=manyana.id,
+    )
+
+    p_claudia = next(p for p in documento.participantes if p.usuario_id == claudia.id)
+    p_juan = next(p for p in documento.participantes if p.usuario_id == juan.id)
+    assert p_claudia.nombre_congelado == "Claudia Pérez"
+    assert p_juan.nombre_congelado == "Juan Rodríguez"
 
 
 def test_registrar_documento_cambio_papel_no_factible_no_se_aplica(db):
