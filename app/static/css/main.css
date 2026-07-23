@@ -1219,6 +1219,11 @@ tr.supervision-fila-resaltada .supervision-col-trabajador {
   display: flex; align-items: center; gap: 0.4rem;
   font-size: 0.85rem; color: #475569;
 }
+.sup-ajuste-modo { display: flex; gap: 1rem; }
+.sup-ajuste-modo-opcion {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-size: 0.85rem; color: #475569;
+}
 .sup-ajuste-papel-link { text-align: center; }
 .documento-numero { font-size: 0.9rem; font-weight: normal; color: #6b7280; }
 

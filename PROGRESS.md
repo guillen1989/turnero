@@ -60,6 +60,21 @@ en vivo:
   `documento_cambio/lista.html` ("Mis hojas de cambio", la vista de cada
   trabajador) -- ahí no había ninguna insignia "Papel". Añadida + test de
   regresión.
+- [x] 9. UX del modal "Modificar turno" de `/planilla/supervision`
+  reordenado: el checkbox "Añadir turno extra" del punto 3 solo aparecía
+  *después* de elegir el turno concreto, lo cual no era evidente para la
+  supervisora al probarlo en vivo. Sustituido por un `radiogroup` de dos
+  opciones ("Modificar turno del día" / "Añadir turno extra (doblaje)")
+  que se muestra *antes* del desplegable de turno/estado; al elegir
+  "añadir", se deshabilitan las opciones no aplicables ("Vaciar día" y el
+  optgroup de estados especiales, que no tienen sentido en un doblaje).
+  Sin cambios de backend (la ruta/servicio ya soportaban `sustituir=False`
+  desde el punto 3). Cobertura nueva a nivel e2e con Playwright
+  (`e2e/test_planilla_supervision.py`, 3 tests: orden visual del radio
+  antes que el select, deshabilitado de estados especiales en modo
+  "añadir", y que añadir un turno extra no borra el turno existente del
+  día). 49 tests en verde (`test_rutas_planilla_supervision.py` +
+  `test_servicio_planilla_supervision.py` + el nuevo fichero e2e).
 
 Todos los tests afectados en verde (incluidos los del punto 7, ya
 implementado tras confirmación del usuario). PR #21 abierto en borrador

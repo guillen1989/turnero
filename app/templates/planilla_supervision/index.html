@@ -113,11 +113,24 @@
       <input type="hidden" name="fecha" id="sup-ajuste-fecha">
       <input type="hidden" name="anyo" value="{{ anyo }}">
       <input type="hidden" name="mes" value="{{ mes }}">
+      <input type="hidden" name="anadir_extra" id="sup-ajuste-extra" value="">
+      <div class="sup-ajuste-modo" role="radiogroup" aria-label="{{ _('¿Modificar o añadir?') }}">
+        <label class="sup-ajuste-modo-opcion">
+          <input type="radio" name="modo" value="sustituir" id="sup-ajuste-modo-sustituir"
+                 checked onchange="supAjustarCambiarModo()">
+          {{ _('Modificar turno del día') }}
+        </label>
+        <label class="sup-ajuste-modo-opcion">
+          <input type="radio" name="modo" value="anadir" id="sup-ajuste-modo-anadir"
+                 onchange="supAjustarCambiarModo()">
+          {{ _('Añadir turno extra (doblaje)') }}
+        </label>
+      </div>
       <select name="seleccion" id="sup-ajuste-seleccion" class="planilla-select" required
-              aria-label="{{ _('Nuevo turno o estado') }}" onchange="supAjustarToggleExtra()">
+              aria-label="{{ _('Nuevo turno o estado') }}">
         <option value="">{{ _('— elige —') }}</option>
-        <option value="vaciar">{{ _('Vaciar día (sin turno ni estado)') }}</option>
-        <optgroup label="{{ _('Estado del día') }}">
+        <option value="vaciar" id="sup-ajuste-opt-vaciar">{{ _('Vaciar día (sin turno ni estado)') }}</option>
+        <optgroup label="{{ _('Estado del día') }}" id="sup-ajuste-optgroup-estado">
           <option value="libre">{{ _('Libre') }}</option>
           <option value="vacaciones">{{ _('Vacaciones') }}</option>
           <option value="no_disponible">{{ _('No disponible para cambios') }}</option>
@@ -128,10 +141,6 @@
         </optgroup>
         {% endif %}
       </select>
-      <label id="sup-ajuste-extra-label" class="sup-ajuste-checkbox" style="display:none">
-        <input type="checkbox" name="anadir_extra" id="sup-ajuste-extra" value="1">
-        {{ _('Añadir turno extra (no sustituir el que ya tiene ese día -- p.ej. doblaje mañana + tarde)') }}
-      </label>
       <textarea name="motivo" id="sup-ajuste-motivo" class="dia-nota-textarea" rows="2"
                 placeholder="{{ _('Motivo (opcional)') }}"></textarea>
       <div class="sup-ajuste-actions">
@@ -155,8 +164,8 @@ function supAjustarAbrir(btn) {
   document.getElementById('sup-ajuste-fecha').value = btn.dataset.fecha;
   document.getElementById('sup-ajuste-seleccion').value = '';
   document.getElementById('sup-ajuste-motivo').value = '';
-  document.getElementById('sup-ajuste-extra').checked = false;
-  supAjustarToggleExtra();
+  document.getElementById('sup-ajuste-modo-sustituir').checked = true;
+  supAjustarCambiarModo();
   document.getElementById('sup-ajuste-registrar-papel').href =
     "{{ url_for('documento_cambio.registrar_papel') }}?usuario1_id=" + encodeURIComponent(btn.dataset.usuarioId) +
     "&fecha=" + encodeURIComponent(btn.dataset.fecha);
@@ -165,11 +174,13 @@ function supAjustarAbrir(btn) {
 function supAjustarCerrar() {
   document.getElementById('sup-ajuste-modal').style.display = 'none';
 }
-function supAjustarToggleExtra() {
-  const seleccion = document.getElementById('sup-ajuste-seleccion').value;
-  const esTurno = seleccion && !TIPOS_ESTADO_DIA.includes(seleccion);
-  document.getElementById('sup-ajuste-extra-label').style.display = esTurno ? 'flex' : 'none';
-  if (!esTurno) document.getElementById('sup-ajuste-extra').checked = false;
+function supAjustarCambiarModo() {
+  const esDoblaje = document.getElementById('sup-ajuste-modo-anadir').checked;
+  document.getElementById('sup-ajuste-extra').value = esDoblaje ? '1' : '';
+  document.getElementById('sup-ajuste-opt-vaciar').disabled = esDoblaje;
+  document.getElementById('sup-ajuste-optgroup-estado').disabled = esDoblaje;
+  const seleccion = document.getElementById('sup-ajuste-seleccion');
+  if (esDoblaje && TIPOS_ESTADO_DIA.includes(seleccion.value)) seleccion.value = '';
 }
 </script>
 {% endblock %}
