@@ -97,3 +97,76 @@ def test_no_factible_si_alguien_no_esta_libre_para_lo_que_recibe(db):
     db.session.commit()
 
     assert comprobar_factibilidad(documento) == "no_factible"
+
+
+def test_no_factible_si_recibir_el_turno_supera_el_limite_de_dias_consecutivos(db):
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "f")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+
+    claudia.unidad.grupo_intercambio.limite_dias_consecutivos = 3
+    # Claudia ya trabaja 26, 27, 29 y 30 de julio; recibir el turno del 28
+    # completaría una racha de 5 días seguidos, por encima del límite de 3.
+    for dia in (26, 27, 29, 30):
+        db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, dia), franja_horaria=manyana))
+    db.session.commit()
+
+    assert comprobar_factibilidad(documento) == "no_factible"
+
+
+def test_factible_si_recibir_el_turno_no_supera_el_limite_de_dias_consecutivos(db):
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "g")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    claudia.unidad.grupo_intercambio.limite_dias_consecutivos = 3
+    db.session.commit()
+
+    assert comprobar_factibilidad(documento) == "factible"
+
+
+def test_no_factible_si_el_turno_recibido_empieza_antes_de_las_14_tras_una_noche(db):
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "h")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+
+    noche = FranjaHoraria(
+        nombre="Noche", hora_inicio=time(22, 0), hora_fin=time(6, 0),
+        grupo_intercambio=claudia.unidad.grupo_intercambio,
+    )
+    db.session.add(noche)
+    db.session.commit()
+    # Claudia trabaja de noche el 27/7; el turno que recibiría el 28/7 es de
+    # mañana (empieza a las 7:00, antes de las 14:00) -> viola el descanso.
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 27), franja_horaria=noche))
+    db.session.commit()
+
+    assert comprobar_factibilidad(documento) == "no_factible"
+
+
+def test_factible_si_el_turno_recibido_empieza_a_partir_de_las_14_tras_una_noche(db):
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "i")
+    # Claudia recibe "Tarde" (empieza a las 15:00) en vez de "Mañana" el
+    # 28/7 -- lo que cede Juan debe ser espejo de lo que recibe Claudia.
+    documento.participantes[0].turno_recibe_franja_id = tarde.id
+    documento.participantes[1].turno_cede_franja_id = tarde.id
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=tarde))
+
+    noche = FranjaHoraria(
+        nombre="Noche", hora_inicio=time(22, 0), hora_fin=time(6, 0),
+        grupo_intercambio=claudia.unidad.grupo_intercambio,
+    )
+    db.session.add(noche)
+    db.session.commit()
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 27), franja_horaria=noche))
+    db.session.commit()
+
+    assert comprobar_factibilidad(documento) == "factible"

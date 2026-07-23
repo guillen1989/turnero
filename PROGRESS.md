@@ -163,12 +163,43 @@ ninguno salvo que haga falta una decisión del usuario.
   Playwright (contadores correctos sobre columnas de día con datos
   sembrados). 375+ tests passing en la suite completa (`pytest --testmon`,
   sin regresiones).
-  Siguiente: item #9 (motor de comprobación de factibilidad que use las
-  reglas del item #5). Nota: ya existe `comprobar_factibilidad` en
-  `app/services/factibilidad_documento_cambio.py` (ver más abajo, sección de
-  "carga masiva de planilla") -- revisar primero qué cubre ese servicio
-  antes de construir nada nuevo, ya que puede que el trabajo de item #9 ya
-  esté parcialmente hecho.
+- [x] Item #9 (motor de comprobación de factibilidad de cambios que use las
+  reglas configurables del item #5): ya existía `comprobar_factibilidad` en
+  `app/services/factibilidad_documento_cambio.py`, comprobando por cada
+  participante si de verdad trabaja lo que dice ceder y si está libre para
+  lo que dice recibir, contra las planillas subidas -- pero no comprobaba
+  las dos reglas de la supervisora del item #5. Se añaden dos comprobaciones
+  nuevas al mismo bucle por participante (sobre la fecha/franja que
+  recibiría):
+  `_viola_limite_dias_consecutivos(usuario, fecha)` cuenta la racha de días
+  seguidos trabajados que incluiría esa fecha (hacia atrás y hacia delante,
+  a partir de `TurnoPlanilla`/`EstadoDiaPlanilla` ya persistidos, asumiendo
+  que el turno recibido sí se trabajaría) y compara contra
+  `usuario.grupo_intercambio.limite_dias_consecutivos`;
+  `_viola_descanso_nocturno(usuario, fecha, franja)` comprueba que ningún
+  turno recibido empiece antes de las 14:00 el día siguiente a un turno que
+  cubra el periodo 0:00-6:00 (turnos nocturnos almacenados con
+  `hora_inicio > hora_fin`, vía el helper `_cubre_periodo_nocturno`), y a la
+  inversa, que un turno recibido que sea él mismo nocturno no choque con un
+  turno ya existente al día siguiente que empiece antes de las 14:00. Si
+  cualquiera de las dos reglas se viola, el resultado pasa a ser
+  `no_factible`, igual que las comprobaciones ya existentes. Se revisaron
+  los 4 puntos donde se llama a `comprobar_factibilidad`
+  (`app/services/documento_cambio.py`): en los dos que auto-completan el
+  documento (registro manual en papel, "firmar los dos ya") el resultado es
+  puramente informativo (no bloquea, tal y como ya era el diseño de la Fase
+  10); en el de la firma final tampoco bloquea la última firma, solo
+  actualiza el badge. 4 tests nuevos en
+  `test_servicio_factibilidad_documento_cambio.py` (9 en total en ese
+  archivo). 137 tests passing en la suite completa (`pytest --testmon`, sin
+  regresiones).
+
+Con esto quedan completados los 9 items de la lista de mejoras pedida por el
+usuario (ver nota al principio de esta fase). Siguiente paso: a decidir con
+el usuario (revisar si el PR #20 necesita actualizar su descripción para
+reflejar todo el trabajo de items #5, #6 y #9, o si hay algo más que
+retomar de la lista de "posibles mejoras" -- eso último no se implementa sin
+pedir confirmación antes).
 
 Fuera de la Fase 10, iniciativa pendiente sin retomar aún: carga masiva de
 planilla por parte de la supervisora, sustituyendo (para las unidades que lo
