@@ -134,6 +134,15 @@ body {
   .main-nav a:hover { background: rgba(255,255,255,0.28); }
 
   .main-nav .nav-section-sep { display: none; }
+
+  /* Enlaces solo-supervisora en su propia fila, para no apretar el resto */
+  .nav-supervisora-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    flex: 1 0 100%;
+    order: 10;
+  }
 }
 
 @media (max-width: 600px) {

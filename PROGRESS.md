@@ -95,6 +95,26 @@ ninguno salvo que haga falta una decisión del usuario.
   (`test_dia_anadir_permite_turno_extra_sin_sustituir_el_existente` en
   `tests/test_planilla_rutas.py`) sin ningún cambio de código de
   producción. 11 tests passing (`test_planilla_rutas.py`).
+- [x] Item #7 (los botones solo-supervisora del menú -- Supervisión de
+  cambios, Supervisión de planilla, Importar planilla -- apretados junto al
+  resto en escritorio): investigado primero si ya estaba resuelto (patrón de
+  los items #2/#3), pero no era el caso -- el rediseño de nav con hamburguesa
+  para móvil (commit `eabd05e`, 2026-06-23) solo toca el breakpoint <601px;
+  en escritorio (>=601px) los enlaces siguen siendo una fila `flex-wrap` sin
+  distinción, por lo que los 3 enlaces solo-supervisora se intercalaban con
+  el resto según fuera cayendo el wrap. Solución (a petición explícita del
+  usuario, que no le importa que esto complique el comportamiento en móvil
+  para cuentas de supervisora): en `base.html`, los 3 enlaces
+  solo-supervisora se envuelven en `<div class="nav-supervisora-row">`;
+  en `main.css`, dentro de `@media (min-width: 601px)`, esa clase usa
+  `flex: 1 0 100%` para forzar que siempre empiecen su propia fila dentro
+  del nav `flex-wrap`, con `order: 10` para que caigan al final. En móvil no
+  se añade CSS nuevo para esa clase -- al ser un `<div>` normal dentro del
+  dropdown vertical existente, los enlaces se siguen apilando igual que
+  antes (verificado visualmente con capturas Playwright a 1280px y 375px).
+  2 tests nuevos en `tests/test_nav_base.py` (agrupación visible para
+  supervisora, ausente para usuario normal). 85 tests passing
+  (`test_nav_base.py`+`test_planilla_rutas.py`+`test_rutas_documento_cambio.py`).
   Siguiente: item #5 de la lista (pantalla de configuración de reglas de
   comprobación: máx. días consecutivos + descanso tras noche/nocturno).
 
