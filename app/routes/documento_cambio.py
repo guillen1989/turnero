@@ -12,6 +12,7 @@ from app.extensions import db
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, anular_documento, puede_anularse,
+    registrar_documento_cambio_papel,
 )
 from app.services.registro import crear_franjas_default
 
@@ -209,6 +210,70 @@ def supervisora():
         documentos=documentos, filtros=filtros,
         trabajadores=_usuarios_del_grupo(grupo_id),
         franjas=_franjas_disponibles(),
+    )
+
+
+@bp.route("/registrar-papel", methods=["GET", "POST"])
+@login_required
+def registrar_papel():
+    """Permite a la supervisora incorporar un cambio que los dos
+    trabajadores ya formalizaron en una hoja de papel, para que la planilla
+    y la comprobación de factibilidad de futuros cambios sigan siendo
+    correctas."""
+    if not current_user.es_supervisora:
+        abort(403)
+    grupo_id = current_user.grupo_intercambio.id
+    trabajadores = _usuarios_del_grupo(grupo_id)
+    franjas = _franjas_disponibles()
+    hoy = date.today()
+
+    if request.method == "POST":
+        usuario1_id = request.form.get("usuario1_id", type=int)
+        usuario2_id = request.form.get("usuario2_id", type=int)
+        cede_fecha_str = request.form.get("turno_cede_fecha", "")
+        cede_franja_id = request.form.get("turno_cede_franja_id", type=int)
+        recibe_fecha_str = request.form.get("turno_recibe_fecha", "")
+        recibe_franja_id = request.form.get("turno_recibe_franja_id", type=int)
+
+        usuario1 = next((u for u in trabajadores if u.id == usuario1_id), None)
+        usuario2 = next((u for u in trabajadores if u.id == usuario2_id), None)
+        franja_ids_validas = {f.id for f in franjas}
+
+        error = None
+        try:
+            cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
+            recibe_fecha = datetime.strptime(recibe_fecha_str, "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            error = _("Fechas incorrectas.")
+            cede_fecha = recibe_fecha = None
+
+        if not error and (usuario1 is None or usuario2 is None):
+            error = _("Selecciona los dos trabajadores.")
+        if not error and usuario1_id == usuario2_id:
+            error = _("Los dos trabajadores deben ser distintos.")
+        if not error and usuario1.categoria_id != usuario2.categoria_id:
+            error = _("Los dos trabajadores deben ser de la misma categoría profesional.")
+        if not error and (cede_franja_id not in franja_ids_validas or recibe_franja_id not in franja_ids_validas):
+            error = _("Selecciona un turno válido.")
+
+        if error:
+            flash(error, "danger")
+            return render_template(
+                "documento_cambio/registrar_papel.html",
+                trabajadores=trabajadores, franjas=franjas, today=hoy.isoformat(),
+            )
+
+        documento = registrar_documento_cambio_papel(
+            supervisora=current_user, usuario1=usuario1, usuario2=usuario2,
+            turno1_cede_fecha=cede_fecha, turno1_cede_franja_id=cede_franja_id,
+            turno1_recibe_fecha=recibe_fecha, turno1_recibe_franja_id=recibe_franja_id,
+        )
+        flash(_("Cambio registrado desde papel y aplicado a las planillas."), "success")
+        return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
+
+    return render_template(
+        "documento_cambio/registrar_papel.html",
+        trabajadores=trabajadores, franjas=franjas, today=hoy.isoformat(),
     )
 
 

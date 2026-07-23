@@ -2563,6 +2563,66 @@ msgstr ""
 msgid "Sin firmar"
 msgstr ""
 
+#: app/templates/documento_cambio/ver.html
+msgid "Registrado desde hoja de papel"
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html
+msgid "Este cambio se firmó en papel; la supervisora lo registró manualmente en el sistema."
+msgstr ""
+
+#: app/templates/documento_cambio/ver.html
+msgid "Firmado en papel"
+msgstr ""
+
+#: app/routes/documento_cambio.py
+msgid "Selecciona los dos trabajadores."
+msgstr ""
+
+#: app/routes/documento_cambio.py
+msgid "Los dos trabajadores deben ser distintos."
+msgstr ""
+
+#: app/routes/documento_cambio.py
+msgid "Los dos trabajadores deben ser de la misma categoría profesional."
+msgstr ""
+
+#: app/routes/documento_cambio.py
+msgid "Cambio registrado desde papel y aplicado a las planillas."
+msgstr ""
+
+#: app/templates/documento_cambio/supervisora.html
+msgid "Registrar cambio desde papel"
+msgstr ""
+
+#: app/templates/documento_cambio/supervisora.html
+msgid "Papel"
+msgstr ""
+
+#: app/templates/documento_cambio/registrar_papel.html
+msgid "Usa esto para cambios que los dos trabajadores ya firmaron a mano en la hoja de papel. Se registra directamente como autorizado y se aplica ya a las planillas de los dos."
+msgstr ""
+
+#: app/templates/documento_cambio/registrar_papel.html
+msgid "Primer trabajador"
+msgstr ""
+
+#: app/templates/documento_cambio/registrar_papel.html
+msgid "Segundo trabajador"
+msgstr ""
+
+#: app/templates/documento_cambio/registrar_papel.html
+msgid "Turno que cede el primer trabajador"
+msgstr ""
+
+#: app/templates/documento_cambio/registrar_papel.html
+msgid "Turno que recibe a cambio (el que cede el segundo trabajador)"
+msgstr ""
+
+#: app/templates/documento_cambio/registrar_papel.html
+msgid "Registrar cambio"
+msgstr ""
+
 #: app/templates/documento_cambio/ver.html:121
 msgid "Dibuja tu firma con el dedo en el recuadro."
 msgstr ""

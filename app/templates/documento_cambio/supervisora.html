@@ -6,6 +6,7 @@
 {% block content %}
 <div class="admin-section-header">
   <h1>{{ _('Supervisión de cambios') }}</h1>
+  <a href="{{ url_for('documento_cambio.registrar_papel') }}" class="btn btn-secondary btn-sm">{{ _('Registrar cambio desde papel') }}</a>
 </div>
 <p>{{ _('Hojas de cambio ya firmadas por las dos partes, de tu grupo de intercambio.') }}</p>
 
@@ -143,7 +144,7 @@
         {% set p2 = documento.participantes[1] if documento.participantes|length > 1 else None %}
         <tr>
           <td><input type="checkbox" name="documento_ids" value="{{ documento.id }}" class="bloque-checkbox"></td>
-          <td>{{ _('cambio #%(numero)s del %(fecha)s', numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y')) }}</td>
+          <td>{{ _('cambio #%(numero)s del %(fecha)s', numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y')) }}{% if documento.origen_papel %} <span class="badge-draft">{{ _('Papel') }}</span>{% endif %}</td>
           <td>{{ documento.fecha_creacion.strftime('%d/%m/%Y') }}</td>
           <td>{{ p1.usuario.nombre }}</td>
           <td>{{ p1.turno_cede_franja.nombre }} {{ p1.turno_cede_fecha.strftime('%d/%m/%Y') }}</td>

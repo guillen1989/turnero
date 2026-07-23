@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Registrar cambio desde papel') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Registrar cambio desde papel') }}</h1>
+  <p>{{ _('Usa esto para cambios que los dos trabajadores ya firmaron a mano en la hoja de papel. Se registra directamente como autorizado y se aplica ya a las planillas de los dos.') }}</p>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label for="usuario1_id">{{ _('Primer trabajador') }}</label>
+      <select id="usuario1_id" name="usuario1_id" required>
+        <option value="">{{ _('— Selecciona —') }}</option>
+        {% for u in trabajadores %}
+        <option value="{{ u.id }}">{{ u.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="usuario2_id">{{ _('Segundo trabajador') }}</label>
+      <select id="usuario2_id" name="usuario2_id" required>
+        <option value="">{{ _('— Selecciona —') }}</option>
+        {% for u in trabajadores %}
+        <option value="{{ u.id }}">{{ u.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <section class="turnos-section">
+      <h2>{{ _('Turno que cede el primer trabajador') }}</h2>
+      <div class="turno-row">
+        <div class="turno-row-campo">
+          <label for="turno_cede_fecha">{{ _('Día') }}</label>
+          <input type="date" id="turno_cede_fecha" name="turno_cede_fecha" required>
+        </div>
+        <div class="turno-row-campo">
+          <label for="turno_cede_franja_id">{{ _('Turno') }}</label>
+          <select id="turno_cede_franja_id" name="turno_cede_franja_id" required>
+            <option value="">{{ _('— Selecciona —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="turnos-section">
+      <h2>{{ _('Turno que recibe a cambio (el que cede el segundo trabajador)') }}</h2>
+      <div class="turno-row">
+        <div class="turno-row-campo">
+          <label for="turno_recibe_fecha">{{ _('Día') }}</label>
+          <input type="date" id="turno_recibe_fecha" name="turno_recibe_fecha" required>
+        </div>
+        <div class="turno-row-campo">
+          <label for="turno_recibe_franja_id">{{ _('Turno') }}</label>
+          <select id="turno_recibe_franja_id" name="turno_recibe_franja_id" required>
+            <option value="">{{ _('— Selecciona —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <button type="submit" class="btn btn-primary">{{ _('Registrar cambio') }}</button>
+  </form>
+</div>
+{% endblock %}

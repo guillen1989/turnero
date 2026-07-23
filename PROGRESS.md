@@ -42,9 +42,28 @@ ninguno salvo que haga falta una decisión del usuario.
   papel" cuando `origen_papel` es `True`. 3 tests nuevos (columna, servicio,
   plantilla), sin regresiones (92 tests en
   `test_rutas_documento_cambio.py` + `test_servicio_documento_cambio.py`).
-  Siguiente: la ruta/plantilla `/documentos-cambio/registrar-papel` (solo
-  supervisora) para que pueda usar este servicio desde la interfaz, más
-  marcarlo visible en `/documentos-cambio/supervisora`.
+  Paso 1c (hecho, cierra el item #1 de la lista): ruta
+  `GET/POST /documentos-cambio/registrar-papel` (solo supervisora, 403 si
+  no) + plantilla nueva `registrar_papel.html` (dos selects de trabajador
+  del grupo de la supervisora + turno que cede/recibe cada uno, sin nada de
+  firma). Valida que los dos trabajadores sean distintos y de la misma
+  categoría profesional (si no, error "Los dos trabajadores deben ser de la
+  misma categoría profesional", igual que exige el resto del sistema para
+  cualquier intercambio). Añadido enlace "Registrar cambio desde papel" en
+  `/documentos-cambio/supervisora` y badge "Papel" junto al número de cambio
+  para los `origen_papel=True` (cuidado al tocar la celda: el badge va en la
+  misma línea que el texto del número para no romper el test existente que
+  compara el `<td>` completo). 6 tests nuevos (login requerido, 403 no
+  supervisora, lista de trabajadores, creación + redirect, validación de
+  categoría, badge visible). Catálogo i18n: 15 cadenas nuevas añadidas a
+  mano en `messages.pot`/`messages.po` (mismo criterio que el resto de
+  entradas de deuda técnica de este archivo), `pybabel compile` sin
+  errores. 107 tests pasando en
+  `test_rutas_documento_cambio.py`+`test_servicio_documento_cambio.py`+`test_models_documento_cambio.py`,
+  sin regresiones (90 tests de auth/dashboard también verificados).
+  Siguiente: item #2 de la lista (visibilidad de doblajes para la
+  supervisora -- comprobar si ya está hecho en
+  `/planilla/supervisión`).
 
 Fuera de la Fase 10, iniciativa pendiente sin retomar aún: carga masiva de
 planilla por parte de la supervisora, sustituyendo (para las unidades que lo
