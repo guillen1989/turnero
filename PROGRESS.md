@@ -4,14 +4,121 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
-Trabajando la lista de 9 mejoras pedidas por el usuario sobre `documento_cambio`/
-`planilla_supervision` (registro manual de cambios en papel, visibilidad de
-doblajes, añadir turno sin sustituir, tooltip con datos del cambio, reglas de
-comprobación configurables — días consecutivos + descanso tras noche/nocturno—,
-contadores de presencia por franja, reordenar nav de supervisora en 2 filas,
-firma duplicada al decidir, y arrancar la comprobación de factibilidad de esas
-reglas nuevas). Se resuelve en el orden que parezca mejor, sin bloquear en
-ninguno salvo que haga falta una decisión del usuario.
+Rama `fix/planilla-supervision-followups` (a partir de `staging`, ya con la
+lista de 9 mejoras anterior mergeada). Lista de 8 seguimientos pedidos por el
+usuario tras probar `/planilla/supervision` y `/documentos-cambio/supervisora`
+en vivo:
+
+- [x] 1. Color propio (ámbar) para los botones solo-supervisora del nav, para
+  distinguirlos de un vistazo de la fila de usuario normal de arriba
+  (`.nav-supervisora-row a` en `main.css`).
+- [x] 2. Los usuarios eliminados (`Usuario.eliminado`, nueva property que
+  comprueba `password_hash == 'CUENTA_ELIMINADA'`) ya no aparecen en
+  `/planilla/supervision` (filtrado en la ruta `index`).
+- [x] 3. Bug real encontrado y corregido: el commit anterior (`e7df65d`) solo
+  había verificado que "añadir turno extra sin sustituir" funcionaba en la
+  planilla propia del trabajador (`/planilla/dia/añadir`), **no** en el editor
+  de la supervisora. `ajustar_turno_trabajador` (servicio) siempre borraba
+  todo el día antes de aplicar la selección; ahora acepta `sustituir: bool =
+  True` y, si es `False` y hay `franja_id`, añade sin tocar lo que ya había.
+  La ruta `/planilla/supervision/ajustar` acepta un nuevo campo de formulario
+  `anadir_extra`; el modal de la plantilla añade un checkbox "Añadir turno
+  extra" que solo se muestra cuando la selección es un turno concreto (no un
+  estado ni "vaciar"). Tests de regresión a nivel de servicio y de ruta.
+- [x] 4. El modal de "Modificar turno" de `/planilla/supervision` incluye
+  ahora un enlace "📄 Registrar cambio manualmente (papel)" que lleva a
+  `/documentos-cambio/registrar-papel` preseleccionando trabajador y fecha
+  (`registrar_papel` acepta `usuario1_id`/`fecha` por query string en GET).
+- [x] 5. Botón "Registrar cambio desde papel" con clase propia
+  `.btn-registrar-papel` (ámbar, con emoji 📄) en vez de `btn-secondary`
+  genérico, tanto en `/documentos-cambio/supervisora` como en el nuevo enlace
+  del punto 4.
+- [x] 6. `registrar_documento_cambio_papel` comprueba la factibilidad antes de
+  aplicar el cambio: si sale `no_factible`, hace rollback, lanza
+  `CambioNoFactibleError` (nueva excepción) y no crea ni aplica nada; la ruta
+  `registrar_papel` la captura y muestra un aviso en vez de aplicar el
+  cambio. `no_verificado` sigue dejando pasar (no hay planilla suficiente
+  para *saber* que es inviable, distinto de saber que sí lo es).
+- [ ] 7. **Solo plan, sin implementar todavía** (pendiente de confirmación del
+  usuario): que las hojas de cambio (`DocumentoCambio`/
+  `ParticipanteDocumentoCambio`) conserven el nombre real de los
+  participantes aunque alguno elimine su cuenta, ya que hacen de equivalente
+  firmado en papel. Ver el plan detallado más abajo, en las notas de esta
+  entrada.
+- [x] 8. Confirmado el hueco real que sospechaba el usuario sobre
+  `origen_papel` (commit `4d3636d3`): la columna sí se usaba en
+  `documento_cambio/ver.html` y `supervisora.html`, pero **no** en
+  `documento_cambio/lista.html` ("Mis hojas de cambio", la vista de cada
+  trabajador) -- ahí no había ninguna insignia "Papel". Añadida + test de
+  regresión.
+
+Todos los tests afectados (164 en los ficheros tocados + suite completa vía
+`--testmon`, 1004 passed) en verde. Pendiente: commitear, empujar la rama y
+abrir PR en borrador; y presentarle al usuario el plan del punto 7 sin
+tocar código de ese punto hasta que lo confirme.
+
+### Plan para el punto 7 (anonimización vs. hojas de cambio firmadas)
+
+**Problema:** `eliminar_cuenta()` (`app/services/registro.py`) sobreescribe
+`usuario.nombre`/`email` directamente sobre la fila `Usuario` ("Usuario
+eliminado"). Todas las plantillas de hoja de cambio (`ver.html`,
+`supervisora.html`, `lista.html`, `pdf.html`) y la generación de PDF/notas
+(`app/services/documento_cambio.py`) leen el nombre **en vivo** a través de
+`p.usuario.nombre` / `otro.usuario.nombre` -- no hay ninguna copia guardada
+en el propio documento. Si cualquiera de los dos firmantes de un
+`DocumentoCambio` ya `completo` elimina su cuenta más tarde, su nombre pasa a
+"Usuario eliminado" en el documento entero (pantalla y PDF), lo cual no
+tiene sentido para un documento que se comporta como un papel ya firmado por
+las dos partes -- igual que un contrato en papel no deja de tener la firma
+de alguien porque esa persona cierre su cuenta en otro sitio.
+
+**Propuesta:** desnormalizar (congelar) el nombre de cada participante en el
+propio `ParticipanteDocumentoCambio` en el momento en que el documento queda
+`completo` (todas las firmas recogidas, o directo en `origen_papel`), en vez
+de depender siempre de la fila `Usuario` en vivo:
+- Añadir `nombre_congelado` (String, nullable) a `ParticipanteDocumentoCambio`
+  -- migración de 3 pasos porque la tabla ya tiene filas en producción
+  (nullable, backfill con el nombre actual de cada `usuario`, luego se deja
+  nullable igualmente porque los documentos en `borrador`/`pendiente_firmas`
+  legítimamente no lo tienen todavía).
+- Rellenarlo en el momento de cerrar el documento: en
+  `registrar_documento_cambio_papel` (ya nace `completo`) y en
+  `firmar_documento` cuando `todos_han_firmado()` se cumple.
+- Las plantillas y la generación de PDF/notas pasan a usar
+  `p.nombre_congelado or p.usuario.nombre` (el `or` cubre documentos ya
+  completos de antes de este cambio, que no tienen congelado; para esos, se
+  podría hacer un backfill puntual con un script/migración de datos aparte).
+- `eliminar_cuenta()` no necesita ningún cambio: como las plantillas ya no
+  dependen de `usuario.nombre` para documentos completos, anonimizar la
+  cuenta deja de afectarlos. Los documentos todavía `borrador`/
+  `pendiente_firmas` (no llegaron a firmarse) sí seguirán mostrando "Usuario
+  eliminado" si la contraparte borra su cuenta antes de firmar -- razonable,
+  porque ese documento nunca llegó a ser el equivalente de un papel firmado.
+
+**Confirmado explícitamente por el usuario:** `/documentos-cambio/supervisora`
+tampoco debe anonimizar nombres -- ya lo hace bien hoy (lee `p.usuario.nombre`
+en vivo) y seguirá haciéndolo igual de bien leyendo `nombre_congelado`.
+
+**Complicaciones detectadas:**
+- Los documentos que ya están `completo` en la base de datos (staging/prod)
+  a día de hoy no tendrán `nombre_congelado` relleno -- hace falta decidir si
+  se backfillea con el nombre actual de cada `usuario` en la propia
+  migración (siempre que no esté ya anonimizado; si ya lo está, ya se ha
+  perdido el nombre real y no hay forma de recuperarlo retroactivamente,
+  salvo que exista un backup previo a la anonimización).
+- Si dos personas comparten nombre y una se elimina, el PDF ya generado
+  antes de este cambio no es reproducible retroactivamente (no afecta a
+  PDFs nuevos, solo a los ya descargados).
+- Habría que decidir si el nombre congelado se muestra siempre (incluso si
+  la cuenta sigue activa) o solo cuando la cuenta ya no existe/está
+  anonimizada -- se propone mostrarlo siempre para el documento completo,
+  para que el PDF sea estable en el tiempo independientemente de que el
+  usuario cambie su nombre después por otro motivo (p.ej. corrección de un
+  error tipográfico), no solo por eliminación de cuenta.
+
+## Paso anterior
+Lista anterior de 9 mejoras sobre `documento_cambio`/`planilla_supervision`,
+ya completada y mergeada en `staging` (PR #20, commit `f10a959`):
 
 - [x] Corregido el recuadro de firma duplicado al autorizar/denegar (ver más
   abajo, último paso completado).
