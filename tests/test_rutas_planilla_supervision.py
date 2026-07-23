@@ -255,8 +255,9 @@ def test_index_muestra_doblaje_con_dos_turnos_el_mismo_dia(db, client):
     resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
     assert resp.status_code == 200
     html = resp.data.decode("utf-8")
-    assert html.count(f">{franja_m.nombre}<") == 1
-    assert html.count(f">{franja_t.nombre}<") == 1
+    tbody = html[html.index("<tbody>"):]
+    assert tbody.count(f">{franja_m.nombre}<") == 1
+    assert tbody.count(f">{franja_t.nombre}<") == 1
 
 
 def test_index_tooltip_del_cambio_describe_companero_turno_y_fecha(db, client):
@@ -298,3 +299,36 @@ def test_index_tooltip_del_cambio_describe_companero_turno_y_fecha(db, client):
     assert "10/07/2026" in html
     assert franja_m.nombre in html
     assert "Día afectado por un cambio autorizado" not in html
+
+
+def test_index_muestra_contador_de_presencia_por_franja_y_dia(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "h")
+    supervisora = crear_usuario("Super", "super_h@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_h@h.es")
+    bea = crear_usuario("Bea", "bea_h@h.es")
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    añadir_turno(bea, date(2026, 7, 1), franja_m.id)
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    inicio = html.index('class="supervision-presencia-fila"')
+    fin = html.index("</tr>", inicio)
+    fila = html[inicio:fin]
+    assert franja_m.nombre in fila
+    assert ">2<" in fila
+
+
+def test_index_contador_de_presencia_vacio_si_nadie_trabaja_esa_franja_ese_dia(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "i")
+    supervisora = crear_usuario("Super", "super_i@h.es", supervisora=True)
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    inicio = html.index('class="supervision-presencia-fila"')
+    fin = html.index("</tr>", inicio)
+    fila = html[inicio:fin]
+    assert ">0<" not in fila

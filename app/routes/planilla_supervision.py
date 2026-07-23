@@ -13,6 +13,7 @@ from app.services.planilla_supervision import (
     ajustar_turno_trabajador,
     get_ajustes_mes_unidad,
     get_cambios_autorizados_mes_unidad,
+    get_conteos_presencia_mes_unidad,
     get_estados_mes_unidad,
     get_turnos_mes_unidad,
 )
@@ -77,6 +78,7 @@ def index():
     estados_por_usuario_dia = get_estados_mes_unidad(unidad, anyo, mes)
     cambios_por_usuario_dia = get_cambios_autorizados_mes_unidad(unidad, anyo, mes)
     ajustes_por_usuario_dia = get_ajustes_mes_unidad(unidad, anyo, mes)
+    conteos_presencia = get_conteos_presencia_mes_unidad(unidad, anyo, mes)
 
     franjas = (
         FranjaHoraria.query
@@ -98,6 +100,7 @@ def index():
         estados_por_usuario_dia=estados_por_usuario_dia,
         cambios_por_usuario_dia=cambios_por_usuario_dia,
         ajustes_por_usuario_dia=ajustes_por_usuario_dia,
+        conteos_presencia=conteos_presencia,
         etiquetas_estado=ETIQUETAS_ESTADO,
         franjas=franjas,
         hoy=hoy,

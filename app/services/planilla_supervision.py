@@ -35,6 +35,29 @@ def get_turnos_mes_unidad(unidad, anyo: int, mes: int) -> dict[tuple[int, date],
     return resultado
 
 
+def get_conteos_presencia_mes_unidad(unidad, anyo: int, mes: int) -> dict[tuple[date, int], int]:
+    """Cuántos trabajadores de la unidad tienen cada franja horaria asignada
+    cada día del mes, agrupado por (fecha, franja_horaria_id) -- para pintar
+    los contadores de presencia encima de las columnas de la matriz de la
+    supervisora."""
+    filas = (
+        db.session.query(
+            TurnoPlanilla.fecha,
+            TurnoPlanilla.franja_horaria_id,
+            db.func.count(TurnoPlanilla.id),
+        )
+        .join(Usuario, TurnoPlanilla.usuario_id == Usuario.id)
+        .filter(
+            Usuario.unidad_id == unidad.id,
+            db.func.extract("year", TurnoPlanilla.fecha) == anyo,
+            db.func.extract("month", TurnoPlanilla.fecha) == mes,
+        )
+        .group_by(TurnoPlanilla.fecha, TurnoPlanilla.franja_horaria_id)
+        .all()
+    )
+    return {(fecha, franja_id): total for fecha, franja_id, total in filas}
+
+
 def get_estados_mes_unidad(unidad, anyo: int, mes: int) -> dict[tuple[int, date], EstadoDiaPlanilla]:
     """Estados de día (libre/vacaciones/no_disponible) del mes de todos los
     trabajadores de la unidad, agrupados por (usuario_id, fecha)."""

@@ -29,6 +29,15 @@
   <div class="table-scroll">
     <table class="supervision-matriz">
       <thead>
+        {% for franja in franjas %}
+          <tr class="supervision-presencia-fila">
+            <th class="supervision-col-trabajador supervision-presencia-etiqueta">{{ franja.nombre }}</th>
+            {% for dia in dias %}
+              {% set conteo = conteos_presencia.get((dia, franja.id), 0) %}
+              <th class="supervision-col-dia supervision-presencia-conteo{% if dia == hoy %} supervision-col-dia--hoy{% endif %}{% if dia.weekday() >= 5 %} supervision-col-dia--finde{% endif %}">{{ conteo if conteo else '' }}</th>
+            {% endfor %}
+          </tr>
+        {% endfor %}
         <tr>
           <th class="supervision-col-trabajador">{{ _('Trabajador') }}</th>
           {% for dia in dias %}

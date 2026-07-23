@@ -1170,6 +1170,11 @@ tr.supervision-fila-resaltada .supervision-col-trabajador {
   background: #fef9c3;
 }
 .supervision-col-dia { min-width: 44px; }
+.supervision-presencia-fila th { border-bottom: none; padding-top: 0.2rem; padding-bottom: 0.2rem; }
+.supervision-presencia-etiqueta {
+  font-size: 0.72rem; font-weight: 400; color: #777; text-align: right;
+}
+.supervision-presencia-conteo { font-size: 0.75rem; color: #444; }
 .supervision-dia-num { display: block; font-weight: 600; }
 .supervision-dia-semana { display: block; font-size: 0.7rem; color: #888; }
 .supervision-col-dia--hoy, .supervision-celda--hoy { background: #eff6ff; }

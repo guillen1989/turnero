@@ -7,7 +7,7 @@ from app.models import (
 from app.services.planilla import añadir_turno, establecer_estado_dia
 from app.services.planilla_supervision import (
     get_turnos_mes_unidad, get_estados_mes_unidad, get_cambios_autorizados_mes_unidad,
-    ajustar_turno_trabajador, get_ajustes_mes_unidad,
+    ajustar_turno_trabajador, get_ajustes_mes_unidad, get_conteos_presencia_mes_unidad,
 )
 
 
@@ -316,3 +316,36 @@ def test_get_ajustes_mes_unidad_no_incluye_otra_unidad(db):
     ajustar_turno_trabajador(super_, cris, date(2026, 7, 1), tipo_estado="libre")
 
     assert get_ajustes_mes_unidad(unidad, 2026, 7) == {}
+
+
+# ── get_conteos_presencia_mes_unidad ────────────────────────────────────────
+
+def test_get_conteos_presencia_cuenta_trabajadores_por_franja_y_dia(db):
+    unidad, _, ana, bea, _, franja_m, franja_t = _setup(db, "t")
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    añadir_turno(bea, date(2026, 7, 1), franja_m.id)
+    añadir_turno(ana, date(2026, 7, 1), franja_t.id)
+
+    conteos = get_conteos_presencia_mes_unidad(unidad, 2026, 7)
+
+    assert conteos[(date(2026, 7, 1), franja_m.id)] == 2
+    assert conteos[(date(2026, 7, 1), franja_t.id)] == 1
+
+
+def test_get_conteos_presencia_no_incluye_otro_mes(db):
+    unidad, _, ana, _, _, franja_m, _ = _setup(db, "u")
+    añadir_turno(ana, date(2026, 8, 1), franja_m.id)
+
+    assert get_conteos_presencia_mes_unidad(unidad, 2026, 7) == {}
+
+
+def test_get_conteos_presencia_no_incluye_otra_unidad(db):
+    unidad, _, _, _, cris, franja_m, _ = _setup(db, "v")
+    añadir_turno(cris, date(2026, 7, 1), franja_m.id)
+
+    assert get_conteos_presencia_mes_unidad(unidad, 2026, 7) == {}
+
+
+def test_get_conteos_presencia_dia_sin_turnos_no_aparece(db):
+    unidad, _, _, _, _, franja_m, _ = _setup(db, "w")
+    assert get_conteos_presencia_mes_unidad(unidad, 2026, 7) == {}

@@ -138,12 +138,37 @@ ninguno salvo que haga falta una decisión del usuario.
   visualmente con Playwright (pantalla + nav) a 900px. 43 tests passing
   (`test_reglas_comprobacion.py`+`test_nav_base.py`+
   `test_rutas_planilla_supervision.py`+`test_servicio_planilla_supervision.py`).
-  Siguiente: item #6 de la lista (contadores de presencia por franja encima
-  de las columnas de día en `/planilla/supervisión`). Nota: item #9 (motor
-  de comprobación de factibilidad que use estas reglas) queda para después,
-  ya que depende de que ambas reglas de este paso existan primero -- solo
-  está implementada la persistencia/configuración, no el motor que las
-  aplica todavía.
+- [x] Item #6 (contadores de presencia por franja encima de las columnas de
+  día en `/planilla/supervisión`, p. ej. cuánta gente trabaja de mañana el
+  día 1, cuánta de tarde, etc.): nueva función de servicio
+  `get_conteos_presencia_mes_unidad(unidad, anyo, mes)` en
+  `planilla_supervision.py`, una sola consulta agrupada por
+  `(fecha, franja_horaria_id)` (mismo patrón N+1-safe que el resto de
+  `get_*_mes_unidad` de este archivo) que devuelve
+  `dict[(fecha, franja_id) -> total]`. Wireado en la ruta `index()` y pintado
+  en `index.html` como una fila `<tr class="supervision-presencia-fila">`
+  por franja horaria (por encima de la fila de números de día en el
+  `<thead>`), con el nombre de la franja como etiqueta y el conteo (vacío si
+  es 0) en cada columna de día. CSS nuevo en `main.css`
+  (`.supervision-presencia-fila`, `.supervision-presencia-etiqueta`,
+  `.supervision-presencia-conteo`) para diferenciar visualmente estas filas
+  de la cabecera de días. Un test previo
+  (`test_index_muestra_doblaje_con_dos_turnos_el_mismo_dia`) rompió porque
+  su aserción contaba apariciones del nombre de la franja en toda la página
+  y ahora aparece legítimamente dos veces (etiqueta nueva + chip de doblaje
+  existente en el `<tbody>`) -- se corrigió acotando la aserción solo a la
+  región `<tbody>`, que es lo que el test realmente pretendía comprobar. 4
+  tests nuevos en `test_servicio_planilla_supervision.py` y 2 en
+  `test_rutas_planilla_supervision.py`. Verificado visualmente con
+  Playwright (contadores correctos sobre columnas de día con datos
+  sembrados). 375+ tests passing en la suite completa (`pytest --testmon`,
+  sin regresiones).
+  Siguiente: item #9 (motor de comprobación de factibilidad que use las
+  reglas del item #5). Nota: ya existe `comprobar_factibilidad` en
+  `app/services/factibilidad_documento_cambio.py` (ver más abajo, sección de
+  "carga masiva de planilla") -- revisar primero qué cubre ese servicio
+  antes de construir nada nuevo, ya que puede que el trabajo de item #9 ya
+  esté parcialmente hecho.
 
 Fuera de la Fase 10, iniciativa pendiente sin retomar aún: carga masiva de
 planilla por parte de la supervisora, sustituyendo (para las unidades que lo
