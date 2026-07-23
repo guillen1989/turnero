@@ -91,6 +91,19 @@ def test_usuario_es_flask_login_compatible(db):
     assert usuario.get_id() == str(usuario.id)
 
 
+def test_usuario_eliminado_property(db):
+    unidad, categoria = _crear_contexto(db)
+
+    usuario = Usuario(nombre="Sin eliminar", email="activo@hospital.es", unidad=unidad, categoria=categoria)
+    usuario.set_password("pass")
+    db.session.add(usuario)
+    db.session.commit()
+    assert usuario.eliminado is False
+
+    usuario.password_hash = "CUENTA_ELIMINADA"
+    assert usuario.eliminado is True
+
+
 def test_firma_guardada_es_opcional_y_persiste(db):
     unidad, categoria = _crear_contexto(db)
 

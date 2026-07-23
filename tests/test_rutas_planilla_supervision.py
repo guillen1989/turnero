@@ -66,6 +66,19 @@ def test_index_muestra_trabajadores_de_la_unidad_y_no_de_otras(db, client):
     assert "Cris" not in html
 
 
+def test_index_no_muestra_usuarios_eliminados(db, client):
+    crear_usuario, unidad, _, _ = _setup(db, "z")
+    supervisora = crear_usuario("Super", "super_z@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_z@h.es")
+    ana.password_hash = "CUENTA_ELIMINADA"
+    db.session.commit()
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    assert "Ana" not in resp.data.decode("utf-8")
+
+
 def test_index_muestra_turno_del_dia(db, client):
     crear_usuario, unidad, _, franja_m = _setup(db, "c")
     supervisora = crear_usuario("Super", "super_c@h.es", supervisora=True)
@@ -191,6 +204,32 @@ def test_ajustar_asigna_turno(db, client):
     assert ajuste.descripcion_nueva == "Mañana"
 
 
+def test_ajustar_anadir_turno_extra_no_sustituye_el_existente(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "n")
+    franja_t = FranjaHoraria(
+        nombre="Tarde", hora_inicio=time(15, 0), hora_fin=time(22, 0),
+        grupo_intercambio=unidad.grupo_intercambio,
+    )
+    db.session.add(franja_t)
+    db.session.commit()
+
+    supervisora = crear_usuario("Super", "super_n@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_n@h.es")
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": str(franja_t.id), "anadir_extra": "1",
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+
+    html = resp.data.decode("utf-8")
+    tbody = html[html.index("<tbody>"):]
+    assert tbody.count(f">{franja_m.nombre}<") == 1
+    assert tbody.count(f">{franja_t.nombre}<") == 1
+
+
 def test_ajustar_vacia_dia(db, client):
     crear_usuario, unidad, _, franja_m = _setup(db, "j")
     supervisora = crear_usuario("Super", "super_j@h.es", supervisora=True)
@@ -299,6 +338,18 @@ def test_index_tooltip_del_cambio_describe_companero_turno_y_fecha(db, client):
     assert "10/07/2026" in html
     assert franja_m.nombre in html
     assert "Día afectado por un cambio autorizado" not in html
+
+
+def test_index_modal_dia_enlaza_a_registrar_cambio_desde_papel(db, client):
+    crear_usuario, unidad, _, _ = _setup(db, "x")
+    supervisora = crear_usuario("Super", "super_x@h.es", supervisora=True)
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert 'id="sup-ajuste-registrar-papel"' in html
+    assert "/documentos-cambio/registrar-papel" in html
 
 
 def test_index_muestra_contador_de_presencia_por_franja_y_dia(db, client):

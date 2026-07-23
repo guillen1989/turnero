@@ -72,7 +72,7 @@ def index():
     _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
     dias = [date(anyo, mes, d) for d in range(1, num_dias + 1)]
 
-    trabajadores = unidad.usuarios.order_by("nombre").all()
+    trabajadores = [u for u in unidad.usuarios.order_by("nombre").all() if not u.eliminado]
 
     turnos_por_usuario_dia = get_turnos_mes_unidad(unidad, anyo, mes)
     estados_por_usuario_dia = get_estados_mes_unidad(unidad, anyo, mes)
@@ -149,6 +149,7 @@ def ajustar():
 
     seleccion = request.form.get("seleccion", "")
     motivo = request.form.get("motivo", "").strip() or None
+    anadir_extra = request.form.get("anadir_extra") == "1"
 
     tipo_estado, franja_id, valido = _resolver_seleccion(
         seleccion, unidad.grupo_intercambio_id
@@ -157,9 +158,14 @@ def ajustar():
         flash(_("Selecciona una opción válida."), "danger")
         return redirect(url_for("planilla_supervision.index", anyo=anyo, mes=mes))
 
+    # "Añadir extra" solo tiene sentido para un turno concreto: un estado
+    # especial o vaciar el día siempre sustituyen lo que hubiera.
+    sustituir = not (anadir_extra and franja_id)
+
     ajustar_turno_trabajador(
         current_user, trabajador, fecha,
         tipo_estado=tipo_estado, franja_id=franja_id, motivo=motivo,
+        sustituir=sustituir,
     )
     flash(_("Turno de %(nombre)s actualizado.", nombre=trabajador.nombre), "success")
     return redirect(url_for("planilla_supervision.index", anyo=anyo, mes=mes))

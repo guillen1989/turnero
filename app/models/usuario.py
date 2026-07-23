@@ -85,6 +85,10 @@ class Usuario(UserMixin, db.Model):
             or self.email in ("demo1@turnero.com", "demo2@turnero.com", "demo3@turnero.com")
         )
 
+    @property
+    def eliminado(self):
+        return self.password_hash == "CUENTA_ELIMINADA"
+
     def __repr__(self):
         return f"<Usuario {self.email}>"
 

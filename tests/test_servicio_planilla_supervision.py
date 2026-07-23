@@ -264,6 +264,26 @@ def test_ajustar_turno_trabajador_vacia_el_dia_sin_estado_ni_turno(db):
     assert ajuste.descripcion_nueva == "(vacío)"
 
 
+def test_ajustar_turno_trabajador_anade_turno_extra_sin_sustituir(db):
+    """La supervisora debe poder añadir un segundo turno el mismo día (p.ej.
+    doblar de mañana a tarde) sin que desaparezca el que ya había."""
+    unidad, _, ana, _, _, franja_m, franja_t = _setup(db, "n2")
+    super_ = Usuario(nombre="Super", email="super_n2@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+
+    ajuste = ajustar_turno_trabajador(
+        super_, ana, date(2026, 7, 1), franja_id=franja_t.id, sustituir=False
+    )
+
+    turnos = get_turnos_mes_unidad(unidad, 2026, 7)
+    ids_turnos = {t.franja_horaria_id for t in turnos[(ana.id, date(2026, 7, 1))]}
+    assert ids_turnos == {franja_m.id, franja_t.id}
+    assert ajuste.descripcion_anterior == "Mañana"
+
+
 def test_ajustar_turno_trabajador_guarda_motivo(db):
     unidad, _, ana, _, _, _, _ = _setup(db, "p")
     super_ = Usuario(nombre="Super", email="super_p@test.es", unidad=unidad, categoria=ana.categoria)

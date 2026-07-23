@@ -140,18 +140,21 @@ def _describir_dia(trabajador, fecha: date) -> str:
 def ajustar_turno_trabajador(
     supervisora, trabajador, fecha: date, tipo_estado: str | None = None,
     franja_id: int | None = None, motivo: str | None = None,
+    sustituir: bool = True,
 ) -> AjustePlanillaSupervisora:
-    """Sustituye el turno/estado del día de un trabajador por decisión
-    unilateral de la supervisora (p. ej. asignarle un día libre) y deja
-    un AjustePlanillaSupervisora con el antes/después para poder auditarlo.
+    """Sustituye (o, si sustituir=False y hay franja_id, añade sin tocar lo
+    que ya había -- p.ej. un doblaje mañana+tarde) el turno/estado del día
+    de un trabajador por decisión unilateral de la supervisora, y deja un
+    AjustePlanillaSupervisora con el antes/después para poder auditarlo.
     tipo_estado y franja_id son excluyentes; si ambos son None, el día
-    queda sin turno ni estado.
+    queda sin turno ni estado (siempre sustituye en ese caso).
     """
     descripcion_anterior = _describir_dia(trabajador, fecha)
 
-    TurnoPlanilla.query.filter_by(usuario_id=trabajador.id, fecha=fecha).delete()
-    EstadoDiaPlanilla.query.filter_by(usuario_id=trabajador.id, fecha=fecha).delete()
-    db.session.commit()
+    if sustituir:
+        TurnoPlanilla.query.filter_by(usuario_id=trabajador.id, fecha=fecha).delete()
+        EstadoDiaPlanilla.query.filter_by(usuario_id=trabajador.id, fecha=fecha).delete()
+        db.session.commit()
 
     if tipo_estado:
         establecer_estado_dia(trabajador, fecha, tipo_estado)
