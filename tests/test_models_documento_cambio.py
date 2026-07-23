@@ -82,6 +82,17 @@ def test_documento_cambio_enlaza_a_match_opcional(db):
     assert db.session.get(DocumentoCambio, documento.id).match_id == match.id
 
 
+def test_documento_cambio_origen_papel_por_defecto_es_false(db):
+    crear_usuario, manyana, tarde = _setup(db, "c")
+    ana = crear_usuario("anac@h.es")
+
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
+    db.session.add(documento)
+    db.session.commit()
+
+    assert db.session.get(DocumentoCambio, documento.id).origen_papel is False
+
+
 def test_participante_unico_por_documento_y_usuario(db):
     import pytest
     from sqlalchemy.exc import IntegrityError

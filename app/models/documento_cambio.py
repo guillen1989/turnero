@@ -66,6 +66,11 @@ class DocumentoCambio(db.Model):
     # FirmaDocumentoCambio porque esa tabla es de los participantes del
     # cambio -- la supervisora no cede ni recibe turno, solo decide.
     firma_supervisora = db.Column(db.Text, nullable=True)
+    # Cambio registrado por la supervisora a partir de una hoja de papel (los
+    # trabajadores que aún no usan la app para firmar). server_default por la
+    # misma razón que anulado/decision_supervisora: filas ya existentes en
+    # staging.
+    origen_papel = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
 
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
     supervisora = db.relationship("Usuario", foreign_keys=[supervisora_id])

@@ -14,9 +14,22 @@ reglas nuevas). Se resuelve en el orden que parezca mejor, sin bloquear en
 ninguno salvo que haga falta una decisión del usuario.
 
 - [x] Corregido el recuadro de firma duplicado al autorizar/denegar (ver más
-  abajo, último paso completado). Siguiente: registro manual de cambios en
-  papel por la supervisora (nº de cambio asignado, visible en
-  `/documentos-cambio/supervisora`, marcado como "de papel").
+  abajo, último paso completado).
+- [ ] Registro manual de cambios en papel por la supervisora (nº de cambio
+  asignado, visible en `/documentos-cambio/supervisora`, marcado como "de
+  papel"). Decisión tomada sin bloquear en el usuario (encaja en "hazlo todo,
+  pregúntame solo si hace falta"): como el cambio ya ocurrió y ya se firmó a
+  mano en papel, no tiene sentido pedir firmas digitales ni dejarlo
+  "pendiente de decisión" -- se registra directamente como `completo` +
+  `decision_supervisora='autorizado'`, aplicándose ya a las planillas (que es
+  el objetivo real: mantenerlas al día para que la comprobación de
+  factibilidad de futuros cambios sea correcta). Paso 1a (hecho): columna
+  `origen_papel` (bool, `server_default='false'`, un solo paso porque tiene
+  default de servidor) en `DocumentoCambio` -- migración
+  `4b1f1eeadd91_add_origen_papel_to_documento_cambio`. Siguiente: servicio
+  `registrar_documento_cambio_papel` (crea documento + participantes,
+  reutiliza `autorizar_documento` para volcar a planillas y notificar) y
+  luego la ruta/plantilla para que la supervisora la use.
 
 Fuera de la Fase 10, iniciativa pendiente sin retomar aún: carga masiva de
 planilla por parte de la supervisora, sustituyendo (para las unidades que lo
