@@ -4721,3 +4721,29 @@ msgstr ""
 msgid "Ir al inicio"
 msgstr ""
 
+
+#: app/templates/base.html:39
+#: app/templates/planilla_supervision/reglas.html:3
+#: app/templates/planilla_supervision/reglas.html:7
+msgid "Reglas de comprobación"
+msgstr ""
+
+#: app/templates/planilla_supervision/reglas.html:8
+msgid "Estas reglas se usan para comprobar si un cambio de turno es factible antes de autorizarlo."
+msgstr ""
+
+#: app/templates/planilla_supervision/reglas.html:14
+msgid "Máximo de días de trabajo seguidos"
+msgstr ""
+
+#: app/templates/planilla_supervision/reglas.html:20
+msgid "Además, ningún turno puede empezar antes de las 14:00 el día siguiente a un turno que incluya el tramo de 0:00 a 6:00 (noche o nocturno de 12 horas)."
+msgstr ""
+
+#: app/routes/planilla_supervision.py:118
+msgid "Introduce un número de días válido (mayor que 0)."
+msgstr ""
+
+#: app/routes/planilla_supervision.py:122
+msgid "Reglas de comprobación actualizadas."
+msgstr ""

@@ -115,8 +115,35 @@ ninguno salvo que haga falta una decisión del usuario.
   2 tests nuevos en `tests/test_nav_base.py` (agrupación visible para
   supervisora, ausente para usuario normal). 85 tests passing
   (`test_nav_base.py`+`test_planilla_rutas.py`+`test_rutas_documento_cambio.py`).
-  Siguiente: item #5 de la lista (pantalla de configuración de reglas de
-  comprobación: máx. días consecutivos + descanso tras noche/nocturno).
+- [x] Item #5 (pantalla de reglas de comprobación: máx. días consecutivos
+  configurable + descanso obligatorio tras noche/nocturno de 12h): columna
+  `limite_dias_consecutivos` (Integer, `server_default='8'`, un solo paso)
+  en `GrupoIntercambio` -- migración `7ed9c5cc5e02` (single head verificado
+  con `flask db heads`). El límite se guarda por grupo de intercambio (igual
+  granularidad que `FranjaHoraria`, ya que es lo que define qué usuarios
+  comparten planilla/matching). Nueva ruta `GET/POST
+  /planilla/supervision/reglas` en `planilla_supervision.py` (solo
+  supervisora, 403 si no, reutilizando `_exigir_supervisora`), plantilla
+  `reglas.html` con un único campo numérico. La segunda regla (ningún turno
+  puede empezar antes de las 14:00 el día siguiente a un turno que cubra
+  0:00-6:00) se documenta en la pantalla como texto fijo -- el enunciado del
+  usuario no pide que sea configurable, solo el límite de días. Enlace
+  "Reglas de comprobación" añadido al `nav-supervisora-row` del item #7.
+  Catálogo i18n: 6 cadenas nuevas añadidas a mano en
+  `messages.pot`/`messages.po` (mismo criterio que el resto de deuda técnica
+  de este archivo -- un `pybabel extract` completo arrastra reformulaciones
+  pendientes de otras pantallas que no tocan este paso). 5 tests nuevos en
+  `tests/test_reglas_comprobacion.py` (default a 8, 403 sin supervisora, GET
+  muestra el valor, POST actualiza, POST rechaza valores <= 0). Verificado
+  visualmente con Playwright (pantalla + nav) a 900px. 43 tests passing
+  (`test_reglas_comprobacion.py`+`test_nav_base.py`+
+  `test_rutas_planilla_supervision.py`+`test_servicio_planilla_supervision.py`).
+  Siguiente: item #6 de la lista (contadores de presencia por franja encima
+  de las columnas de día en `/planilla/supervisión`). Nota: item #9 (motor
+  de comprobación de factibilidad que use estas reglas) queda para después,
+  ya que depende de que ambas reglas de este paso existan primero -- solo
+  está implementada la persistencia/configuración, no el motor que las
+  aplica todavía.
 
 Fuera de la Fase 10, iniciativa pendiente sin retomar aún: carga masiva de
 planilla por parte de la supervisora, sustituyendo (para las unidades que lo

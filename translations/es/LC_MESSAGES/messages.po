@@ -5215,6 +5215,24 @@ msgstr "No soy yo"
 msgid "Vinculado a tu planilla. Verás tus turnos automáticamente."
 msgstr "Vinculado a tu planilla. Verás tus turnos automáticamente."
 
+msgid "Reglas de comprobación"
+msgstr "Reglas de comprobación"
+
+msgid "Estas reglas se usan para comprobar si un cambio de turno es factible antes de autorizarlo."
+msgstr "Estas reglas se usan para comprobar si un cambio de turno es factible antes de autorizarlo."
+
+msgid "Máximo de días de trabajo seguidos"
+msgstr "Máximo de días de trabajo seguidos"
+
+msgid "Además, ningún turno puede empezar antes de las 14:00 el día siguiente a un turno que incluya el tramo de 0:00 a 6:00 (noche o nocturno de 12 horas)."
+msgstr "Además, ningún turno puede empezar antes de las 14:00 el día siguiente a un turno que incluya el tramo de 0:00 a 6:00 (noche o nocturno de 12 horas)."
+
+msgid "Introduce un número de días válido (mayor que 0)."
+msgstr "Introduce un número de días válido (mayor que 0)."
+
+msgid "Reglas de comprobación actualizadas."
+msgstr "Reglas de comprobación actualizadas."
+
 #~ msgid ""
 #~ "Hola %(nombre)s,\n"
 #~ "\n"

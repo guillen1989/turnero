@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Reglas de comprobación') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Reglas de comprobación') }}</h1>
+  <p>{{ _('Estas reglas se usan para comprobar si un cambio de turno es factible antes de autorizarlo.') }}</p>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label for="limite_dias_consecutivos">{{ _('Máximo de días de trabajo seguidos') }}</label>
+      <input type="number" id="limite_dias_consecutivos" name="limite_dias_consecutivos"
+             min="1" value="{{ grupo.limite_dias_consecutivos }}" required>
+    </div>
+
+    <p class="form-hint">
+      {{ _('Además, ningún turno puede empezar antes de las 14:00 el día siguiente a un turno que incluya el tramo de 0:00 a 6:00 (noche o nocturno de 12 horas).') }}
+    </p>
+
+    <button type="submit" class="btn btn-primary">{{ _('Guardar') }}</button>
+  </form>
+</div>
+{% endblock %}

@@ -106,6 +106,25 @@ def index():
     )
 
 
+@bp.route("/reglas", methods=["GET", "POST"])
+@login_required
+def reglas():
+    _exigir_supervisora()
+    grupo = current_user.unidad.grupo_intercambio
+
+    if request.method == "POST":
+        limite = request.form.get("limite_dias_consecutivos", type=int)
+        if not limite or limite < 1:
+            flash(_("Introduce un número de días válido (mayor que 0)."), "danger")
+        else:
+            grupo.limite_dias_consecutivos = limite
+            db.session.commit()
+            flash(_("Reglas de comprobación actualizadas."), "success")
+        return redirect(url_for("planilla_supervision.reglas"))
+
+    return render_template("planilla_supervision/reglas.html", grupo=grupo)
+
+
 @bp.post("/ajustar")
 @login_required
 def ajustar():
