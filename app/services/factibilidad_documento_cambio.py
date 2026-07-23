@@ -22,11 +22,15 @@ def _cubre_periodo_nocturno(franja) -> bool:
     return franja.hora_inicio < time(6, 0)
 
 
-def _viola_descanso_nocturno(usuario, fecha, franja) -> bool:
+def _viola_descanso_nocturno(usuario, fecha, franja, fecha_cedida) -> bool:
     """Regla de descanso: ningún turno puede empezar antes de las 14:00 el
-    día siguiente a un turno que cubra el periodo 0:00-6:00."""
+    día siguiente a un turno que cubra el periodo 0:00-6:00.
+
+    `fecha_cedida` es el día que este mismo usuario cede en el mismo
+    documento: si coincide con el día anterior o siguiente, ese turno deja
+    de ser suyo con este cambio y no cuenta para la regla."""
     dia_anterior = fecha - timedelta(days=1)
-    turnos_dia_anterior = TurnoPlanilla.query.filter_by(
+    turnos_dia_anterior = [] if dia_anterior == fecha_cedida else TurnoPlanilla.query.filter_by(
         usuario_id=usuario.id, fecha=dia_anterior
     ).all()
     if franja.hora_inicio < time(14, 0) and any(
@@ -36,7 +40,7 @@ def _viola_descanso_nocturno(usuario, fecha, franja) -> bool:
 
     if _cubre_periodo_nocturno(franja):
         dia_siguiente = fecha + timedelta(days=1)
-        turnos_dia_siguiente = TurnoPlanilla.query.filter_by(
+        turnos_dia_siguiente = [] if dia_siguiente == fecha_cedida else TurnoPlanilla.query.filter_by(
             usuario_id=usuario.id, fecha=dia_siguiente
         ).all()
         if any(t.franja_horaria.hora_inicio < time(14, 0) for t in turnos_dia_siguiente):
@@ -45,33 +49,39 @@ def _viola_descanso_nocturno(usuario, fecha, franja) -> bool:
     return False
 
 
-def _trabaja_el_dia(usuario, fecha, fecha_hipotetica) -> bool:
+def _trabaja_el_dia(usuario, fecha, fecha_hipotetica, fecha_cedida) -> bool:
     if fecha == fecha_hipotetica:
         return True
+    if fecha == fecha_cedida:
+        return False
     if EstadoDiaPlanilla.query.filter_by(usuario_id=usuario.id, fecha=fecha).first() is not None:
         return False
     return TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=fecha).first() is not None
 
 
-def _contar_dias_consecutivos_trabajados(usuario, fecha) -> int:
+def _contar_dias_consecutivos_trabajados(usuario, fecha, fecha_cedida) -> int:
     """Cuenta la racha de días seguidos trabajados que incluiría `fecha`,
     contando hacia atrás y hacia delante a partir de los turnos/estados ya
-    persistidos, asumiendo que `fecha` se trabajaría (turno recibido)."""
+    persistidos, asumiendo que `fecha` se trabajaría (turno recibido).
+
+    `fecha_cedida` es el día que este mismo usuario cede en el mismo
+    documento: aunque las planillas publicadas todavía lo marquen como
+    trabajado, deja de serlo con este cambio, así que no debe contar."""
     total = 1
     cursor = fecha - timedelta(days=1)
-    while _trabaja_el_dia(usuario, cursor, fecha):
+    while _trabaja_el_dia(usuario, cursor, fecha, fecha_cedida):
         total += 1
         cursor -= timedelta(days=1)
     cursor = fecha + timedelta(days=1)
-    while _trabaja_el_dia(usuario, cursor, fecha):
+    while _trabaja_el_dia(usuario, cursor, fecha, fecha_cedida):
         total += 1
         cursor += timedelta(days=1)
     return total
 
 
-def _viola_limite_dias_consecutivos(usuario, fecha) -> bool:
+def _viola_limite_dias_consecutivos(usuario, fecha, fecha_cedida) -> bool:
     limite = usuario.grupo_intercambio.limite_dias_consecutivos
-    return _contar_dias_consecutivos_trabajados(usuario, fecha) > limite
+    return _contar_dias_consecutivos_trabajados(usuario, fecha, fecha_cedida) > limite
 
 
 def _trabaja_turno(usuario, fecha, franja) -> bool:
@@ -120,9 +130,11 @@ def comprobar_factibilidad(documento) -> str:
             return "no_factible"
         if not _libre_para_turno(p.usuario, p.turno_recibe_fecha, p.turno_recibe_franja):
             return "no_factible"
-        if _viola_limite_dias_consecutivos(p.usuario, p.turno_recibe_fecha):
+        if _viola_limite_dias_consecutivos(p.usuario, p.turno_recibe_fecha, p.turno_cede_fecha):
             return "no_factible"
-        if _viola_descanso_nocturno(p.usuario, p.turno_recibe_fecha, p.turno_recibe_franja):
+        if _viola_descanso_nocturno(
+            p.usuario, p.turno_recibe_fecha, p.turno_recibe_franja, p.turno_cede_fecha
+        ):
             return "no_factible"
 
     return "factible"

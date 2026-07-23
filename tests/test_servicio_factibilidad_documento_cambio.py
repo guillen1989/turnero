@@ -37,13 +37,17 @@ def _publicar_mes(usuario, anyo, mes):
 
 
 def _crear_documento(db, sufijo):
+    return _crear_documento_fechas(db, sufijo, date(2026, 7, 7), date(2026, 7, 28))
+
+
+def _crear_documento_fechas(db, sufijo, cede_fecha, recibe_fecha):
     crear_usuario, manyana, tarde = _setup(db, sufijo)
     claudia = crear_usuario(f"Claudia{sufijo}", f"claudia{sufijo}@h.es")
     juan = crear_usuario(f"Juan{sufijo}", f"juan{sufijo}@h.es")
     documento = crear_documento_cambio(
         creado_por=claudia, companero=juan,
-        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
-        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+        turno_cede_fecha=cede_fecha, turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=manyana.id,
     )
     return documento, claudia, juan, manyana, tarde
 
@@ -167,6 +171,55 @@ def test_factible_si_el_turno_recibido_empieza_a_partir_de_las_14_tras_una_noche
     db.session.add(noche)
     db.session.commit()
     db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 27), franja_horaria=noche))
+    db.session.commit()
+
+    assert comprobar_factibilidad(documento) == "factible"
+
+
+def test_factible_si_el_dia_cedido_forma_parte_de_la_racha_hacia_el_dia_recibido(db):
+    # Reproduce un cambio en papel real: Claudia cede el 10/7 (turno que
+    # deja de ser suyo en este mismo documento) y recibe el 13/7. Sin
+    # descontar el día cedido de su propia racha, el 10/7 seguiría contando
+    # como trabajado y superaría el límite -- pero al cederlo, ya no es su
+    # turno y no debería contar.
+    documento, claudia, juan, manyana, tarde = _crear_documento_fechas(
+        db, "j", date(2026, 7, 10), date(2026, 7, 13)
+    )
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    claudia.unidad.grupo_intercambio.limite_dias_consecutivos = 3
+
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 10), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 11), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 12), franja_horaria=manyana))
+    # Juan trabaja el 13/7 (lo cede) y está libre el 10/7 (lo recibe).
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 13), franja_horaria=manyana))
+    db.session.commit()
+
+    assert comprobar_factibilidad(documento) == "factible"
+
+
+def test_factible_si_el_dia_cedido_es_la_noche_anterior_al_dia_recibido(db):
+    # Mismo principio que el test anterior, pero para el descanso nocturno:
+    # Claudia cede la noche del 10/7 y recibiría "Mañana" el 11/7. Sin
+    # descontar la noche cedida, parecería que rompe su propio descanso,
+    # pero esa noche deja de ser suya en este mismo cambio.
+    documento, claudia, juan, manyana, tarde = _crear_documento_fechas(
+        db, "k", date(2026, 7, 10), date(2026, 7, 11)
+    )
+    noche = FranjaHoraria(
+        nombre="Noche", hora_inicio=time(22, 0), hora_fin=time(6, 0),
+        grupo_intercambio=claudia.unidad.grupo_intercambio,
+    )
+    db.session.add(noche)
+    db.session.commit()
+    documento.participantes[0].turno_cede_franja_id = noche.id
+    documento.participantes[1].turno_recibe_franja_id = noche.id
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 10), franja_horaria=noche))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 11), franja_horaria=manyana))
     db.session.commit()
 
     assert comprobar_factibilidad(documento) == "factible"
