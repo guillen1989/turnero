@@ -9,7 +9,7 @@ from app.models.planilla import AjustePlanillaSupervisora, EstadoDiaPlanilla, Tu
 from app.models.usuario import Usuario
 
 CambioDia = namedtuple("CambioDia", ["documento", "descripcion"])
-from app.services.planilla import añadir_turno, establecer_estado_dia
+from app.services.planilla import añadir_turno, eliminar_turno, establecer_estado_dia
 
 
 def get_turnos_mes_unidad(unidad, anyo: int, mes: int) -> dict[tuple[int, date], list[TurnoPlanilla]]:
@@ -137,6 +137,24 @@ def _describir_dia(trabajador, fecha: date) -> str:
     return "(vacío)"
 
 
+def _registrar_ajuste(
+    supervisora, trabajador, fecha: date, descripcion_anterior: str, motivo: str | None
+) -> AjustePlanillaSupervisora:
+    """Crea y guarda el AjustePlanillaSupervisora con el antes/después de un
+    día ya modificado, comparando la descripción recibida con la que tiene
+    el día en este momento -- común a todas las operaciones de la
+    supervisora sobre el turno/estado de un trabajador."""
+    descripcion_nueva = _describir_dia(trabajador, fecha)
+    ajuste = AjustePlanillaSupervisora(
+        usuario=trabajador, realizado_por=supervisora, fecha=fecha,
+        descripcion_anterior=descripcion_anterior, descripcion_nueva=descripcion_nueva,
+        motivo=motivo,
+    )
+    db.session.add(ajuste)
+    db.session.commit()
+    return ajuste
+
+
 def ajustar_turno_trabajador(
     supervisora, trabajador, fecha: date, tipo_estado: str | None = None,
     franja_id: int | None = None, motivo: str | None = None,
@@ -161,16 +179,31 @@ def ajustar_turno_trabajador(
     elif franja_id:
         añadir_turno(trabajador, fecha, franja_id)
 
-    descripcion_nueva = _describir_dia(trabajador, fecha)
+    return _registrar_ajuste(supervisora, trabajador, fecha, descripcion_anterior, motivo)
 
-    ajuste = AjustePlanillaSupervisora(
-        usuario=trabajador, realizado_por=supervisora, fecha=fecha,
-        descripcion_anterior=descripcion_anterior, descripcion_nueva=descripcion_nueva,
-        motivo=motivo,
-    )
-    db.session.add(ajuste)
-    db.session.commit()
-    return ajuste
+
+def eliminar_turno_trabajador(
+    supervisora, trabajador, fecha: date, franja_id: int, motivo: str | None = None
+) -> AjustePlanillaSupervisora:
+    """Quita un único turno concreto del día (p.ej. uno de los dos de un
+    doblaje) sin tocar el resto de turnos/estado que hubiera ese día, y deja
+    un AjustePlanillaSupervisora con el antes/después."""
+    descripcion_anterior = _describir_dia(trabajador, fecha)
+    eliminar_turno(trabajador, fecha, franja_id)
+    return _registrar_ajuste(supervisora, trabajador, fecha, descripcion_anterior, motivo)
+
+
+def editar_turno_trabajador(
+    supervisora, trabajador, fecha: date, franja_actual_id: int, franja_nueva_id: int,
+    motivo: str | None = None,
+) -> AjustePlanillaSupervisora:
+    """Sustituye un único turno concreto del día por otra franja, sin tocar
+    el resto de turnos/estado que hubiera ese día, y deja un
+    AjustePlanillaSupervisora con el antes/después."""
+    descripcion_anterior = _describir_dia(trabajador, fecha)
+    eliminar_turno(trabajador, fecha, franja_actual_id)
+    añadir_turno(trabajador, fecha, franja_nueva_id)
+    return _registrar_ajuste(supervisora, trabajador, fecha, descripcion_anterior, motivo)
 
 
 def get_ajustes_mes_unidad(

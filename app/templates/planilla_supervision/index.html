@@ -64,6 +64,8 @@
                         data-usuario-nombre="{{ trabajador.nombre }}"
                         data-fecha="{{ dia.isoformat() }}"
                         data-fecha-label="{{ dia.day }} {{ MESES[mes - 1] }} {{ anyo }}"
+                        data-turnos='{{ turnos_json_por_usuario_dia.get(clave, [])|tojson }}'
+                        data-estado='{{ estados_json_por_usuario_dia.get(clave)|tojson }}'
                         onclick="supAjustarAbrir(this)"
                         title="{{ _('Modificar turno') }}">
                   {% if estado_dia %}
@@ -105,27 +107,24 @@
 {# ── Modal: modificar turno de un día ── #}
 <div id="sup-ajuste-modal" class="sup-ajuste-modal" style="display:none" role="dialog" aria-modal="true" aria-label="{{ _('Modificar turno') }}">
   <div class="sup-ajuste-panel">
+    <button type="button" class="sup-ajuste-cerrar" onclick="supAjustarCerrar()" aria-label="{{ _('Cerrar') }}">&times;</button>
     <h3>{{ _('Modificar turno') }}</h3>
     <p class="sup-ajuste-quien"><strong id="sup-ajuste-nombre"></strong> — <span id="sup-ajuste-fecha-label"></span></p>
-    <form method="post" action="{{ url_for('planilla_supervision.ajustar') }}">
+
+    <div id="sup-ajuste-filas" class="sup-ajuste-filas"></div>
+
+    <button type="button" class="btn btn-secondary btn-sm sup-ajuste-anadir-btn" id="sup-ajuste-anadir-btn"
+            onclick="supAjustarMostrarForm('anadir')">
+      + {{ _('Añadir') }}
+    </button>
+
+    <form id="sup-ajuste-form" method="post" action="{{ url_for('planilla_supervision.ajustar') }}" style="display:none">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="usuario_id" id="sup-ajuste-usuario-id">
       <input type="hidden" name="fecha" id="sup-ajuste-fecha">
       <input type="hidden" name="anyo" value="{{ anyo }}">
       <input type="hidden" name="mes" value="{{ mes }}">
-      <input type="hidden" name="anadir_extra" id="sup-ajuste-extra" value="">
-      <div class="sup-ajuste-modo" role="radiogroup" aria-label="{{ _('¿Modificar o añadir?') }}">
-        <label class="sup-ajuste-modo-opcion">
-          <input type="radio" name="modo" value="sustituir" id="sup-ajuste-modo-sustituir"
-                 checked onchange="supAjustarCambiarModo()">
-          {{ _('Modificar turno del día') }}
-        </label>
-        <label class="sup-ajuste-modo-opcion">
-          <input type="radio" name="modo" value="anadir" id="sup-ajuste-modo-anadir"
-                 onchange="supAjustarCambiarModo()">
-          {{ _('Añadir turno extra (doblaje)') }}
-        </label>
-      </div>
+      <input type="hidden" name="franja_actual_id" id="sup-ajuste-franja-actual-id">
       <select name="seleccion" id="sup-ajuste-seleccion" class="planilla-select" required
               aria-label="{{ _('Nuevo turno o estado') }}">
         <option value="">{{ _('— elige —') }}</option>
@@ -145,42 +144,148 @@
                 placeholder="{{ _('Motivo (opcional)') }}"></textarea>
       <div class="sup-ajuste-actions">
         <button type="submit" class="btn btn-primary btn-sm">{{ _('Guardar') }}</button>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="supAjustarCerrar()">{{ _('Cancelar') }}</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="supAjustarOcultarForm()">{{ _('Cancelar') }}</button>
       </div>
-      <a id="sup-ajuste-registrar-papel" href="#" class="btn btn-registrar-papel btn-sm sup-ajuste-papel-link">
-        📄 {{ _('Registrar cambio manualmente (papel)') }}
-      </a>
     </form>
+
+    <a id="sup-ajuste-registrar-papel" href="#" class="btn btn-registrar-papel btn-sm sup-ajuste-papel-link"
+       title="{{ _('Registrar cambio manualmente (papel)') }}" aria-label="{{ _('Registrar cambio manualmente (papel)') }}">
+      📄
+    </a>
   </div>
 </div>
 
+{# ── Formularios ocultos: acciones directas sobre un turno concreto de una fila ── #}
+<form id="sup-turno-eliminar-form" method="post" action="{{ url_for('planilla_supervision.turno_eliminar') }}" style="display:none">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="usuario_id" id="sup-turno-eliminar-usuario-id">
+  <input type="hidden" name="fecha" id="sup-turno-eliminar-fecha">
+  <input type="hidden" name="anyo" value="{{ anyo }}">
+  <input type="hidden" name="mes" value="{{ mes }}">
+  <input type="hidden" name="franja_id" id="sup-turno-eliminar-franja-id">
+</form>
+
 <script>
-const TIPOS_ESTADO_DIA = ['vaciar', 'libre', 'vacaciones', 'no_disponible'];
+const T_SUP_AJUSTE = {
+  editar: "{{ _('Modificar') }}",
+  eliminar: "{{ _('Eliminar') }}",
+};
+const URL_SUP_AJUSTAR = "{{ url_for('planilla_supervision.ajustar') }}";
+const URL_SUP_TURNO_EDITAR = "{{ url_for('planilla_supervision.turno_editar') }}";
+const URL_SUP_REGISTRAR_PAPEL = "{{ url_for('documento_cambio.registrar_papel') }}";
+
+let supAjusteCtx = null;
 
 function supAjustarAbrir(btn) {
+  supAjusteCtx = { usuarioId: btn.dataset.usuarioId, fecha: btn.dataset.fecha };
+
   document.getElementById('sup-ajuste-nombre').textContent = btn.dataset.usuarioNombre;
   document.getElementById('sup-ajuste-fecha-label').textContent = btn.dataset.fechaLabel;
-  document.getElementById('sup-ajuste-usuario-id').value = btn.dataset.usuarioId;
-  document.getElementById('sup-ajuste-fecha').value = btn.dataset.fecha;
-  document.getElementById('sup-ajuste-seleccion').value = '';
-  document.getElementById('sup-ajuste-motivo').value = '';
-  document.getElementById('sup-ajuste-modo-sustituir').checked = true;
-  supAjustarCambiarModo();
+
+  const turnos = JSON.parse(btn.dataset.turnos || '[]');
+  const estado = btn.dataset.estado ? JSON.parse(btn.dataset.estado) : null;
+  supAjustarPintarFilas(turnos, estado);
+  supAjustarOcultarForm();
+
   document.getElementById('sup-ajuste-registrar-papel').href =
-    "{{ url_for('documento_cambio.registrar_papel') }}?usuario1_id=" + encodeURIComponent(btn.dataset.usuarioId) +
+    URL_SUP_REGISTRAR_PAPEL + "?usuario1_id=" + encodeURIComponent(btn.dataset.usuarioId) +
     "&fecha=" + encodeURIComponent(btn.dataset.fecha);
   document.getElementById('sup-ajuste-modal').style.display = 'flex';
 }
+
 function supAjustarCerrar() {
   document.getElementById('sup-ajuste-modal').style.display = 'none';
 }
-function supAjustarCambiarModo() {
-  const esDoblaje = document.getElementById('sup-ajuste-modo-anadir').checked;
-  document.getElementById('sup-ajuste-extra').value = esDoblaje ? '1' : '';
-  document.getElementById('sup-ajuste-opt-vaciar').disabled = esDoblaje;
-  document.getElementById('sup-ajuste-optgroup-estado').disabled = esDoblaje;
+
+function supAjustarPintarFilas(turnos, estado) {
+  const contenedor = document.getElementById('sup-ajuste-filas');
+  contenedor.innerHTML = '';
+  turnos.forEach(function (turno) { contenedor.appendChild(supAjustarCrearFilaTurno(turno)); });
+  if (estado) contenedor.appendChild(supAjustarCrearFilaEstado(estado));
+}
+
+function supAjustarCrearFilaBoton(texto, titulo, onClick) {
+  const boton = document.createElement('button');
+  boton.type = 'button';
+  boton.className = 'sup-ajuste-fila-btn';
+  boton.title = titulo;
+  boton.setAttribute('aria-label', titulo);
+  boton.textContent = texto;
+  boton.onclick = onClick;
+  return boton;
+}
+
+function supAjustarCrearFilaTurno(turno) {
+  const fila = document.createElement('div');
+  fila.className = 'sup-ajuste-fila';
+
+  const nombre = document.createElement('span');
+  nombre.className = 'sup-ajuste-fila-nombre';
+  nombre.textContent = turno.nombre;
+  fila.appendChild(nombre);
+
+  fila.appendChild(supAjustarCrearFilaBoton('✎', T_SUP_AJUSTE.editar, function () {
+    supAjustarMostrarForm('editar', turno.franja_id);
+  }));
+  fila.appendChild(supAjustarCrearFilaBoton('−', T_SUP_AJUSTE.eliminar, function () {
+    supAjustarEliminarTurno(turno.franja_id);
+  }));
+  return fila;
+}
+
+function supAjustarCrearFilaEstado(estado) {
+  const fila = document.createElement('div');
+  fila.className = 'sup-ajuste-fila';
+
+  const nombre = document.createElement('span');
+  nombre.className = 'sup-ajuste-fila-nombre';
+  nombre.textContent = estado.etiqueta;
+  fila.appendChild(nombre);
+
+  fila.appendChild(supAjustarCrearFilaBoton('−', T_SUP_AJUSTE.eliminar, supAjustarVaciarDia));
+  return fila;
+}
+
+function supAjustarEliminarTurno(franjaId) {
+  document.getElementById('sup-turno-eliminar-usuario-id').value = supAjusteCtx.usuarioId;
+  document.getElementById('sup-turno-eliminar-fecha').value = supAjusteCtx.fecha;
+  document.getElementById('sup-turno-eliminar-franja-id').value = franjaId;
+  document.getElementById('sup-turno-eliminar-form').submit();
+}
+
+function supAjustarVaciarDia() {
+  const form = document.getElementById('sup-ajuste-form');
   const seleccion = document.getElementById('sup-ajuste-seleccion');
-  if (esDoblaje && TIPOS_ESTADO_DIA.includes(seleccion.value)) seleccion.value = '';
+  document.getElementById('sup-ajuste-usuario-id').value = supAjusteCtx.usuarioId;
+  document.getElementById('sup-ajuste-fecha').value = supAjusteCtx.fecha;
+  form.action = URL_SUP_AJUSTAR;
+  seleccion.name = 'seleccion';
+  seleccion.value = 'vaciar';
+  form.submit();
+}
+
+function supAjustarMostrarForm(modo, franjaActualId) {
+  const form = document.getElementById('sup-ajuste-form');
+  const seleccion = document.getElementById('sup-ajuste-seleccion');
+  const esEdicion = modo === 'editar';
+
+  document.getElementById('sup-ajuste-usuario-id').value = supAjusteCtx.usuarioId;
+  document.getElementById('sup-ajuste-fecha').value = supAjusteCtx.fecha;
+  document.getElementById('sup-ajuste-franja-actual-id').value = esEdicion ? franjaActualId : '';
+  document.getElementById('sup-ajuste-motivo').value = '';
+  seleccion.value = '';
+  seleccion.name = esEdicion ? 'franja_nueva_id' : 'seleccion';
+  document.getElementById('sup-ajuste-opt-vaciar').disabled = esEdicion;
+  document.getElementById('sup-ajuste-optgroup-estado').disabled = esEdicion;
+  form.action = esEdicion ? URL_SUP_TURNO_EDITAR : URL_SUP_AJUSTAR;
+
+  form.style.display = 'block';
+  document.getElementById('sup-ajuste-anadir-btn').style.display = 'none';
+}
+
+function supAjustarOcultarForm() {
+  document.getElementById('sup-ajuste-form').style.display = 'none';
+  document.getElementById('sup-ajuste-anadir-btn').style.display = '';
 }
 </script>
 {% endblock %}

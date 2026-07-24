@@ -75,6 +75,33 @@ en vivo:
   "añadir", y que añadir un turno extra no borra el turno existente del
   día). 49 tests en verde (`test_rutas_planilla_supervision.py` +
   `test_servicio_planilla_supervision.py` + el nuevo fichero e2e).
+- [x] 10. El radiogroup del punto 9 seguía sin ser evidente al usarlo en
+  vivo (dos radios + un desplegable compartido para todo: turnos, estados
+  y "vaciar" era demasiado indirecto). Rediseño a UI de filas con iconos:
+  el modal ahora lista una fila por cada turno/estado ya asignado ese día,
+  cada una con "✎" (modificar esa franja concreta por otra) y "−"
+  (eliminarla, sin tocar el resto -- soporta doblajes); debajo, un botón
+  "+ Añadir" muestra el formulario para dar de alta un turno o estado
+  nuevo. El icono de papel del punto 4 se queda sin texto visible (solo el
+  emoji) para que el modal sea más visual. Backend: dos rutas nuevas,
+  `POST /planilla/supervision/turno/eliminar` y
+  `POST /planilla/supervision/turno/editar`, más los servicios
+  `eliminar_turno_trabajador`/`editar_turno_trabajador` (reutilizan
+  `eliminar_turno`/`añadir_turno` de `app/services/planilla.py`) --
+  `ajustar_turno_trabajador` y su ruta `/ajustar` se conservan para
+  "añadir turno nuevo" / asignar estado / vaciar día. Regla de sustitución
+  simplificada: elegir un turno en el "+" siempre añade (nunca vacía el
+  día), elegir un estado especial o "vaciar" siempre sustituye todo el
+  día -- ya no hace falta el checkbox/radio de modo. Los datos de cada
+  celda (turnos + estado) se serializan a JSON en la ruta (`_turnos_a_json`,
+  `_estado_a_json`) y se pintan en el modal por JS sin peticiones extra.
+  Tests: cobertura completa a nivel de ruta para las dos rutas nuevas,
+  test de ruta para los atributos JSON de la celda, y reescritura completa
+  de `e2e/test_planilla_supervision.py` (5 tests Playwright: iconos
+  editar/eliminar en la fila, eliminar quita solo esa franja, editar
+  sustituye solo esa franja, añadir no pierde el turno existente, icono de
+  papel sin texto). 68 tests en verde (`test_rutas_planilla_supervision.py`
+  + `test_servicio_planilla_supervision.py` + `e2e/test_planilla_supervision.py`).
 
 Todos los tests afectados en verde (incluidos los del punto 7, ya
 implementado tras confirmación del usuario). PR #21 abierto en borrador

@@ -1,3 +1,5 @@
+import json
+import re
 from datetime import date, time
 
 from app.models import (
@@ -36,6 +38,12 @@ def _setup(db, sufijo="a"):
 
 def _login(client, email, password="password123"):
     return client.post("/auth/login", data={"email": email, "password": password}, follow_redirects=True)
+
+
+def _contar_chips(tbody, nombre):
+    """Cuenta chips de turno en la matriz (no confundir con las <option> del
+    select del modal, que listan el nombre de la franja sin espacios alrededor)."""
+    return len(re.findall(r">\s+" + re.escape(nombre) + r"\s+<", tbody))
 
 
 def test_index_requiere_login(client):
@@ -274,6 +282,209 @@ def test_ajustar_franja_de_otro_grupo_rechazada(db, client):
     }, follow_redirects=True)
     assert resp.status_code == 200
     assert AjustePlanillaSupervisora.query.count() == 0
+
+
+# ── turno/eliminar ────────────────────────────────────────────────────────────
+
+def test_turno_eliminar_requiere_login(client):
+    resp = client.post("/planilla/supervision/turno/eliminar", data={})
+    assert resp.status_code == 302
+
+
+def test_turno_eliminar_prohibido_si_no_es_supervisora(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "o")
+    normal = crear_usuario("Normal", "normal_o@h.es")
+    ana = crear_usuario("Ana", "ana_o@h.es")
+    _login(client, normal.email)
+
+    resp = client.post("/planilla/supervision/turno/eliminar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "franja_id": franja_m.id,
+    })
+    assert resp.status_code == 403
+
+
+def test_turno_eliminar_prohibido_si_trabajador_de_otra_unidad(db, client):
+    crear_usuario, unidad, otra_unidad, franja_m = _setup(db, "p")
+    supervisora = crear_usuario("Super", "super_p@h.es", supervisora=True)
+    cris = crear_usuario("Cris", "cris_p@h.es", u=otra_unidad)
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/turno/eliminar", data={
+        "usuario_id": cris.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "franja_id": franja_m.id,
+    })
+    assert resp.status_code == 403
+    assert AjustePlanillaSupervisora.query.count() == 0
+
+
+def test_turno_eliminar_franja_de_otro_grupo_rechazada(db, client):
+    crear_usuario, unidad, _, _ = _setup(db, "q")
+    _, _, _, franja_otro_grupo = _setup(db, "r")
+    supervisora = crear_usuario("Super", "super_q@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_q@h.es")
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/turno/eliminar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "franja_id": franja_otro_grupo.id,
+    })
+    assert resp.status_code == 400
+    assert AjustePlanillaSupervisora.query.count() == 0
+
+
+def test_turno_eliminar_quita_solo_esa_franja_de_un_doblaje(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "s")
+    franja_t = FranjaHoraria(
+        nombre="Tarde", hora_inicio=time(15, 0), hora_fin=time(22, 0),
+        grupo_intercambio=unidad.grupo_intercambio,
+    )
+    db.session.add(franja_t)
+    db.session.commit()
+
+    supervisora = crear_usuario("Super", "super_s@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_s@h.es")
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    añadir_turno(ana, date(2026, 7, 1), franja_t.id)
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/turno/eliminar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "franja_id": franja_m.id, "motivo": "Cambio de turno",
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+
+    html = resp.data.decode("utf-8")
+    tbody = html[html.index("<tbody>"):]
+    assert _contar_chips(tbody, franja_m.nombre) == 0
+    assert _contar_chips(tbody, franja_t.nombre) == 1
+
+    ajuste = AjustePlanillaSupervisora.query.filter_by(usuario_id=ana.id).first()
+    assert ajuste.motivo == "Cambio de turno"
+
+
+# ── turno/editar ─────────────────────────────────────────────────────────────
+
+def test_turno_editar_requiere_login(client):
+    resp = client.post("/planilla/supervision/turno/editar", data={})
+    assert resp.status_code == 302
+
+
+def test_turno_editar_prohibido_si_no_es_supervisora(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "t")
+    normal = crear_usuario("Normal", "normal_t@h.es")
+    ana = crear_usuario("Ana", "ana_t@h.es")
+    _login(client, normal.email)
+
+    resp = client.post("/planilla/supervision/turno/editar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "franja_actual_id": franja_m.id, "franja_nueva_id": franja_m.id,
+    })
+    assert resp.status_code == 403
+
+
+def test_turno_editar_prohibido_si_trabajador_de_otra_unidad(db, client):
+    crear_usuario, unidad, otra_unidad, franja_m = _setup(db, "u")
+    supervisora = crear_usuario("Super", "super_u@h.es", supervisora=True)
+    cris = crear_usuario("Cris", "cris_u@h.es", u=otra_unidad)
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/turno/editar", data={
+        "usuario_id": cris.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "franja_actual_id": franja_m.id, "franja_nueva_id": franja_m.id,
+    })
+    assert resp.status_code == 403
+    assert AjustePlanillaSupervisora.query.count() == 0
+
+
+def test_turno_editar_franja_de_otro_grupo_rechazada(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "v")
+    _, _, _, franja_otro_grupo = _setup(db, "w")
+    supervisora = crear_usuario("Super", "super_v@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_v@h.es")
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/turno/editar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "franja_actual_id": franja_m.id, "franja_nueva_id": franja_otro_grupo.id,
+    })
+    assert resp.status_code == 400
+    assert AjustePlanillaSupervisora.query.count() == 0
+
+
+def test_turno_editar_sustituye_solo_esa_franja(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "y")
+    franja_t = FranjaHoraria(
+        nombre="Tarde", hora_inicio=time(15, 0), hora_fin=time(22, 0),
+        grupo_intercambio=unidad.grupo_intercambio,
+    )
+    franja_n = FranjaHoraria(
+        nombre="Noche", hora_inicio=time(22, 0), hora_fin=time(8, 0),
+        grupo_intercambio=unidad.grupo_intercambio,
+    )
+    db.session.add_all([franja_t, franja_n])
+    db.session.commit()
+
+    supervisora = crear_usuario("Super", "super_y@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_y@h.es")
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    añadir_turno(ana, date(2026, 7, 1), franja_t.id)
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/turno/editar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "franja_actual_id": franja_m.id, "franja_nueva_id": franja_n.id,
+        "motivo": "Cambio de hora",
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+
+    html = resp.data.decode("utf-8")
+    tbody = html[html.index("<tbody>"):]
+    assert _contar_chips(tbody, franja_m.nombre) == 0
+    assert _contar_chips(tbody, franja_n.nombre) == 1
+    assert _contar_chips(tbody, franja_t.nombre) == 1
+
+    ajuste = AjustePlanillaSupervisora.query.filter_by(usuario_id=ana.id).first()
+    assert ajuste.motivo == "Cambio de hora"
+
+
+def test_index_celda_lleva_datos_json_de_turnos_y_estado(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "z2")
+    franja_t = FranjaHoraria(
+        nombre="Tarde", hora_inicio=time(15, 0), hora_fin=time(22, 0),
+        grupo_intercambio=unidad.grupo_intercambio,
+    )
+    db.session.add(franja_t)
+    db.session.commit()
+
+    supervisora = crear_usuario("Super", "super_z2@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_z2@h.es")
+    bea = crear_usuario("Bea", "bea_z2@h.es")
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    añadir_turno(ana, date(2026, 7, 1), franja_t.id)
+    establecer_estado_dia(bea, date(2026, 7, 1), "libre")
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+
+    celda_ana = re.search(
+        rf'data-usuario-id="{ana.id}"[^>]*data-fecha="2026-07-01"[^>]*data-turnos=\'([^\']*)\'',
+        html,
+    )
+    assert celda_ana is not None
+    turnos = json.loads(celda_ana.group(1))
+    assert {"franja_id": franja_m.id, "nombre": franja_m.nombre} in turnos
+    assert {"franja_id": franja_t.id, "nombre": franja_t.nombre} in turnos
+
+    celda_bea = re.search(
+        rf'data-usuario-id="{bea.id}"[^>]*data-fecha="2026-07-01"[^>]*data-turnos=\'[^\']*\'\s*data-estado=\'([^\']*)\'',
+        html,
+    )
+    assert celda_bea is not None
+    estado = json.loads(celda_bea.group(1))
+    assert estado == {"tipo": "libre", "etiqueta": "Libre"}
 
 
 def test_index_muestra_doblaje_con_dos_turnos_el_mismo_dia(db, client):

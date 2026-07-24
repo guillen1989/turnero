@@ -1208,6 +1208,7 @@ tr.supervision-fila-resaltada .supervision-col-trabajador {
   align-items: center; justify-content: center; z-index: 50; padding: 1rem;
 }
 .sup-ajuste-panel {
+  position: relative;
   background: #fff; border-radius: 10px; padding: 1.25rem; width: 100%; max-width: 380px;
   display: flex; flex-direction: column; gap: 0.6rem;
 }
@@ -1219,12 +1220,24 @@ tr.supervision-fila-resaltada .supervision-col-trabajador {
   display: flex; align-items: center; gap: 0.4rem;
   font-size: 0.85rem; color: #475569;
 }
-.sup-ajuste-modo { display: flex; gap: 1rem; }
-.sup-ajuste-modo-opcion {
-  display: flex; align-items: center; gap: 0.35rem;
-  font-size: 0.85rem; color: #475569;
+.sup-ajuste-cerrar {
+  position: absolute; top: 0.5rem; right: 0.6rem; background: none; border: none;
+  font-size: 1.3rem; line-height: 1; cursor: pointer; color: #64748b; padding: 0.2rem 0.4rem;
 }
-.sup-ajuste-papel-link { text-align: center; }
+.sup-ajuste-cerrar:hover { color: #0f172a; }
+.sup-ajuste-filas { display: flex; flex-direction: column; gap: 0.35rem; }
+.sup-ajuste-fila {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.35rem 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc;
+}
+.sup-ajuste-fila-nombre { flex: 1; font-size: 0.9rem; color: #1e293b; }
+.sup-ajuste-fila-btn {
+  background: none; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer;
+  width: 1.7rem; height: 1.7rem; line-height: 1; font-size: 1rem; color: #475569;
+}
+.sup-ajuste-fila-btn:hover { background: #e2e8f0; }
+.sup-ajuste-anadir-btn { align-self: flex-start; }
+.sup-ajuste-papel-link { text-align: center; align-self: center; font-size: 1.15rem; }
 .documento-numero { font-size: 0.9rem; font-weight: normal; color: #6b7280; }
 
 /* Botón de "Registrar cambio desde papel": color propio para que destaque

@@ -8,6 +8,7 @@ from app.services.planilla import añadir_turno, establecer_estado_dia
 from app.services.planilla_supervision import (
     get_turnos_mes_unidad, get_estados_mes_unidad, get_cambios_autorizados_mes_unidad,
     ajustar_turno_trabajador, get_ajustes_mes_unidad, get_conteos_presencia_mes_unidad,
+    eliminar_turno_trabajador, editar_turno_trabajador,
 )
 
 
@@ -298,6 +299,112 @@ def test_ajustar_turno_trabajador_guarda_motivo(db):
     assert ajuste.motivo == "Se le concede el día libre."
     recuperado = db.session.get(AjustePlanillaSupervisora, ajuste.id)
     assert recuperado.motivo == "Se le concede el día libre."
+
+
+# ── eliminar_turno_trabajador ─────────────────────────────────────────────────
+
+def test_eliminar_turno_trabajador_quita_solo_esa_franja_de_un_doblaje(db):
+    unidad, _, ana, _, _, franja_m, franja_t = _setup(db, "x1")
+    super_ = Usuario(nombre="Super", email="super_x1@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    añadir_turno(ana, date(2026, 7, 1), franja_t.id)
+
+    ajuste = eliminar_turno_trabajador(super_, ana, date(2026, 7, 1), franja_m.id)
+
+    turnos = get_turnos_mes_unidad(unidad, 2026, 7)
+    ids_turnos = {t.franja_horaria_id for t in turnos[(ana.id, date(2026, 7, 1))]}
+    assert ids_turnos == {franja_t.id}
+    assert ajuste.descripcion_nueva == "Tarde"
+
+
+def test_eliminar_turno_trabajador_deja_dia_vacio_si_era_el_unico(db):
+    unidad, _, ana, _, _, franja_m, _ = _setup(db, "x2")
+    super_ = Usuario(nombre="Super", email="super_x2@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+
+    ajuste = eliminar_turno_trabajador(super_, ana, date(2026, 7, 1), franja_m.id)
+
+    turnos = get_turnos_mes_unidad(unidad, 2026, 7)
+    assert (ana.id, date(2026, 7, 1)) not in turnos
+    assert ajuste.descripcion_anterior == "Mañana"
+    assert ajuste.descripcion_nueva == "(vacío)"
+
+
+def test_eliminar_turno_trabajador_guarda_motivo(db):
+    unidad, _, ana, _, _, franja_m, _ = _setup(db, "x3")
+    super_ = Usuario(nombre="Super", email="super_x3@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+
+    ajuste = eliminar_turno_trabajador(
+        super_, ana, date(2026, 7, 1), franja_m.id, motivo="Ya no acude"
+    )
+
+    assert ajuste.motivo == "Ya no acude"
+
+
+# ── editar_turno_trabajador ───────────────────────────────────────────────────
+
+def test_editar_turno_trabajador_sustituye_solo_esa_franja(db):
+    unidad, _, ana, _, _, franja_m, franja_t = _setup(db, "y1")
+    super_ = Usuario(nombre="Super", email="super_y1@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+
+    ajuste = editar_turno_trabajador(super_, ana, date(2026, 7, 1), franja_m.id, franja_t.id)
+
+    turnos = get_turnos_mes_unidad(unidad, 2026, 7)
+    ids_turnos = {t.franja_horaria_id for t in turnos[(ana.id, date(2026, 7, 1))]}
+    assert ids_turnos == {franja_t.id}
+    assert ajuste.descripcion_anterior == "Mañana"
+    assert ajuste.descripcion_nueva == "Tarde"
+
+
+def test_editar_turno_trabajador_no_toca_otros_turnos_del_mismo_dia(db):
+    unidad, _, ana, _, _, franja_m, franja_t = _setup(db, "y2")
+    franja_n = FranjaHoraria(
+        nombre="Noche", hora_inicio=time(22, 0), hora_fin=time(8, 0),
+        grupo_intercambio=unidad.grupo_intercambio,
+    )
+    db.session.add(franja_n)
+    db.session.commit()
+    super_ = Usuario(nombre="Super", email="super_y2@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    añadir_turno(ana, date(2026, 7, 1), franja_t.id)
+
+    editar_turno_trabajador(super_, ana, date(2026, 7, 1), franja_m.id, franja_n.id)
+
+    turnos = get_turnos_mes_unidad(unidad, 2026, 7)
+    ids_turnos = {t.franja_horaria_id for t in turnos[(ana.id, date(2026, 7, 1))]}
+    assert ids_turnos == {franja_n.id, franja_t.id}
+
+
+def test_editar_turno_trabajador_guarda_motivo(db):
+    unidad, _, ana, _, _, franja_m, franja_t = _setup(db, "y3")
+    super_ = Usuario(nombre="Super", email="super_y3@test.es", unidad=unidad, categoria=ana.categoria)
+    super_.set_password("pass")
+    db.session.add(super_)
+    db.session.commit()
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+
+    ajuste = editar_turno_trabajador(
+        super_, ana, date(2026, 7, 1), franja_m.id, franja_t.id, motivo="Cambio de última hora"
+    )
+
+    assert ajuste.motivo == "Cambio de última hora"
 
 
 # ── get_ajustes_mes_unidad ─────────────────────────────────────────────────────

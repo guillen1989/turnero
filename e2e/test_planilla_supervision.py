@@ -1,10 +1,11 @@
 """E2E: modal de "Modificar turno" en /planilla/supervision.
 
-El modo (modificar vs. añadir turno extra / doblaje) debe elegirse ANTES
-de elegir el turno concreto, porque condiciona qué opciones tienen
-sentido (con "añadir turno extra" no caben los estados especiales como
-Libre o Vacaciones, solo turnos). Un checkbox que solo aparece después de
-elegir un turno no es evidente para la supervisora.
+Cada turno existente de un día se lista en una fila propia con dos
+iconos: "✎" para modificarlo (cambiarlo por otra franja) y "−" para
+eliminarlo. Debajo de las filas hay un botón "+ Añadir" para dar de alta
+un turno nuevo (o un estado especial) sin tocar los que ya hubiera —
+permite doblajes. El icono de papel para registrar un cambio manual no
+lleva texto visible, solo el icono.
 """
 from datetime import date, time
 
@@ -53,6 +54,7 @@ def escenario_supervision(e2e_app, clean_e2e_db):
         return {
             "supervisora_email": "sup@e2e-sup.es",
             "trabajador_id": trabajador.id,
+            "franja_m_id": franja_m.id,
             "franja_m_nombre": franja_m.nombre,
             "franja_t_id": franja_t.id,
             "franja_t_nombre": franja_t.nombre,
@@ -68,53 +70,88 @@ def _login_supervisora(page, live_server, email):
     page.wait_for_url(f"{live_server}/calendario/")
 
 
-def _abrir_modal_dia(page, live_server, escenario):
+def _celda(page, live_server, escenario):
     page.goto(f"{live_server}/planilla/supervision/")
-    boton = page.locator(
+    return page.locator(
         f'.supervision-celda-btn[data-usuario-id="{escenario["trabajador_id"]}"]'
         f'[data-fecha="{escenario["hoy"].isoformat()}"]'
     )
-    boton.click()
+
+
+def _abrir_modal_dia(page, live_server, escenario):
+    _celda(page, live_server, escenario).click()
     return page.locator("#sup-ajuste-modal")
 
 
-def test_modo_se_elige_antes_que_el_turno(page, live_server, escenario_supervision):
+def test_fila_de_turno_existente_tiene_iconos_editar_y_eliminar(
+    page, live_server, escenario_supervision
+):
     _login_supervisora(page, live_server, escenario_supervision["supervisora_email"])
     modal = _abrir_modal_dia(page, live_server, escenario_supervision)
 
-    modo = modal.locator(".sup-ajuste-modo")
+    fila = modal.locator(".sup-ajuste-fila").filter(
+        has_text=escenario_supervision["franja_m_nombre"]
+    )
+    assert fila.locator(".sup-ajuste-fila-btn").count() == 2
+
+
+def test_eliminar_turno_con_el_icono_lo_quita_del_dia(page, live_server, escenario_supervision):
+    _login_supervisora(page, live_server, escenario_supervision["supervisora_email"])
+    modal = _abrir_modal_dia(page, live_server, escenario_supervision)
+
+    fila = modal.locator(".sup-ajuste-fila").filter(
+        has_text=escenario_supervision["franja_m_nombre"]
+    )
+    fila.locator(".sup-ajuste-fila-btn").last.click()
+
+    page.wait_for_load_state("networkidle")
+    celda = _celda(page, live_server, escenario_supervision)
+    assert escenario_supervision["franja_m_nombre"] not in celda.inner_text()
+
+
+def test_editar_turno_con_el_icono_lo_sustituye_por_otra_franja(
+    page, live_server, escenario_supervision
+):
+    _login_supervisora(page, live_server, escenario_supervision["supervisora_email"])
+    modal = _abrir_modal_dia(page, live_server, escenario_supervision)
+
+    fila = modal.locator(".sup-ajuste-fila").filter(
+        has_text=escenario_supervision["franja_m_nombre"]
+    )
+    fila.locator(".sup-ajuste-fila-btn").first.click()
+
     seleccion = modal.locator("#sup-ajuste-seleccion")
-    assert modo.locator('input[name="modo"]').count() == 2
-    assert modo.locator('input[value="sustituir"]').is_checked()
+    assert seleccion.get_attribute("name") == "franja_nueva_id"
+    seleccion.select_option(str(escenario_supervision["franja_t_id"]))
+    modal.locator('button[type="submit"]').click()
 
-    modo_y = modo.bounding_box()["y"]
-    seleccion_y = seleccion.bounding_box()["y"]
-    assert modo_y < seleccion_y, "el modo debe aparecer antes que el desplegable de turno"
-
-
-def test_modo_anadir_deshabilita_estados_especiales(page, live_server, escenario_supervision):
-    _login_supervisora(page, live_server, escenario_supervision["supervisora_email"])
-    modal = _abrir_modal_dia(page, live_server, escenario_supervision)
-
-    modal.locator('input[name="modo"][value="anadir"]').check()
-
-    assert modal.locator('option[value="vaciar"]').is_disabled()
-    assert modal.locator('option[value="libre"]').is_disabled()
+    page.wait_for_load_state("networkidle")
+    celda = _celda(page, live_server, escenario_supervision)
+    texto = celda.inner_text()
+    assert escenario_supervision["franja_t_nombre"] in texto
+    assert escenario_supervision["franja_m_nombre"] not in texto
 
 
 def test_anadir_turno_extra_sin_perder_el_existente(page, live_server, escenario_supervision):
     _login_supervisora(page, live_server, escenario_supervision["supervisora_email"])
     modal = _abrir_modal_dia(page, live_server, escenario_supervision)
 
-    modal.locator('input[name="modo"][value="anadir"]').check()
-    modal.locator("#sup-ajuste-seleccion").select_option(str(escenario_supervision["franja_t_id"]))
+    modal.locator("#sup-ajuste-anadir-btn").click()
+    seleccion = modal.locator("#sup-ajuste-seleccion")
+    assert seleccion.get_attribute("name") == "seleccion"
+    seleccion.select_option(str(escenario_supervision["franja_t_id"]))
     modal.locator('button[type="submit"]').click()
 
     page.wait_for_load_state("networkidle")
-    celda = page.locator(
-        f'.supervision-celda-btn[data-usuario-id="{escenario_supervision["trabajador_id"]}"]'
-        f'[data-fecha="{escenario_supervision["hoy"].isoformat()}"]'
-    )
+    celda = _celda(page, live_server, escenario_supervision)
     texto = celda.inner_text()
     assert escenario_supervision["franja_m_nombre"] in texto
     assert escenario_supervision["franja_t_nombre"] in texto
+
+
+def test_icono_de_papel_no_lleva_texto_visible(page, live_server, escenario_supervision):
+    _login_supervisora(page, live_server, escenario_supervision["supervisora_email"])
+    modal = _abrir_modal_dia(page, live_server, escenario_supervision)
+
+    enlace = modal.locator("#sup-ajuste-registrar-papel")
+    assert enlace.inner_text().strip() == "📄"

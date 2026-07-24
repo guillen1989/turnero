@@ -11,6 +11,8 @@ from app.models.planilla import ETIQUETAS_ESTADO, TIPOS_ESTADO_DIA
 from app.models.usuario import Usuario
 from app.services.planilla_supervision import (
     ajustar_turno_trabajador,
+    editar_turno_trabajador,
+    eliminar_turno_trabajador,
     get_ajustes_mes_unidad,
     get_cambios_autorizados_mes_unidad,
     get_conteos_presencia_mes_unidad,
@@ -42,6 +44,25 @@ def _parsear_fecha(valor):
         return None
 
 
+def _franja_del_grupo(franja_id, grupo_id):
+    if not franja_id:
+        return None
+    franja = db.session.get(FranjaHoraria, franja_id)
+    if franja is None or franja.grupo_intercambio_id != grupo_id:
+        return None
+    return franja
+
+
+def _turnos_a_json(turnos):
+    return [{"franja_id": t.franja_horaria_id, "nombre": t.franja_horaria.nombre} for t in turnos]
+
+
+def _estado_a_json(estado):
+    if estado is None:
+        return None
+    return {"tipo": estado.tipo, "etiqueta": ETIQUETAS_ESTADO[estado.tipo]}
+
+
 def _resolver_seleccion(seleccion, grupo_id):
     """Devuelve (tipo_estado, franja_id, valido). 'vaciar' es una opción
     explícita y válida (deja el día sin turno ni estado)."""
@@ -53,10 +74,9 @@ def _resolver_seleccion(seleccion, grupo_id):
         franja_id = int(seleccion)
     except (ValueError, TypeError):
         return None, None, False
-    franja = db.session.get(FranjaHoraria, franja_id)
-    if franja and franja.grupo_intercambio_id == grupo_id:
-        return None, franja_id, True
-    return None, None, False
+    if _franja_del_grupo(franja_id, grupo_id) is None:
+        return None, None, False
+    return None, franja_id, True
 
 
 @bp.get("/")
@@ -80,6 +100,13 @@ def index():
     ajustes_por_usuario_dia = get_ajustes_mes_unidad(unidad, anyo, mes)
     conteos_presencia = get_conteos_presencia_mes_unidad(unidad, anyo, mes)
 
+    turnos_json_por_usuario_dia = {
+        clave: _turnos_a_json(turnos) for clave, turnos in turnos_por_usuario_dia.items()
+    }
+    estados_json_por_usuario_dia = {
+        clave: _estado_a_json(estado) for clave, estado in estados_por_usuario_dia.items()
+    }
+
     franjas = (
         FranjaHoraria.query
         .filter_by(grupo_intercambio_id=unidad.grupo_intercambio_id)
@@ -98,6 +125,8 @@ def index():
         trabajadores=trabajadores,
         turnos_por_usuario_dia=turnos_por_usuario_dia,
         estados_por_usuario_dia=estados_por_usuario_dia,
+        turnos_json_por_usuario_dia=turnos_json_por_usuario_dia,
+        estados_json_por_usuario_dia=estados_json_por_usuario_dia,
         cambios_por_usuario_dia=cambios_por_usuario_dia,
         ajustes_por_usuario_dia=ajustes_por_usuario_dia,
         conteos_presencia=conteos_presencia,
@@ -149,7 +178,6 @@ def ajustar():
 
     seleccion = request.form.get("seleccion", "")
     motivo = request.form.get("motivo", "").strip() or None
-    anadir_extra = request.form.get("anadir_extra") == "1"
 
     tipo_estado, franja_id, valido = _resolver_seleccion(
         seleccion, unidad.grupo_intercambio_id
@@ -158,9 +186,9 @@ def ajustar():
         flash(_("Selecciona una opción válida."), "danger")
         return redirect(url_for("planilla_supervision.index", anyo=anyo, mes=mes))
 
-    # "Añadir extra" solo tiene sentido para un turno concreto: un estado
-    # especial o vaciar el día siempre sustituyen lo que hubiera.
-    sustituir = not (anadir_extra and franja_id)
+    # Elegir un turno siempre añade (permite doblajes); elegir un estado
+    # especial o vaciar el día siempre sustituye lo que hubiera.
+    sustituir = franja_id is None
 
     ajustar_turno_trabajador(
         current_user, trabajador, fecha,
@@ -168,4 +196,68 @@ def ajustar():
         sustituir=sustituir,
     )
     flash(_("Turno de %(nombre)s actualizado.", nombre=trabajador.nombre), "success")
+    return redirect(url_for("planilla_supervision.index", anyo=anyo, mes=mes))
+
+
+@bp.post("/turno/eliminar")
+@login_required
+def turno_eliminar():
+    _exigir_supervisora()
+    unidad = current_user.unidad
+
+    trabajador = _usuario_de_la_unidad(
+        request.form.get("usuario_id", type=int), unidad.id
+    )
+    if trabajador is None:
+        abort(403)
+
+    fecha = _parsear_fecha(request.form.get("fecha", ""))
+    if fecha is None:
+        abort(400)
+
+    anyo = request.form.get("anyo", fecha.year, type=int)
+    mes = request.form.get("mes", fecha.month, type=int)
+
+    franja_id = request.form.get("franja_id", type=int)
+    if _franja_del_grupo(franja_id, unidad.grupo_intercambio_id) is None:
+        abort(400)
+
+    motivo = request.form.get("motivo", "").strip() or None
+    eliminar_turno_trabajador(current_user, trabajador, fecha, franja_id, motivo=motivo)
+    flash(_("Turno de %(nombre)s eliminado.", nombre=trabajador.nombre), "success")
+    return redirect(url_for("planilla_supervision.index", anyo=anyo, mes=mes))
+
+
+@bp.post("/turno/editar")
+@login_required
+def turno_editar():
+    _exigir_supervisora()
+    unidad = current_user.unidad
+
+    trabajador = _usuario_de_la_unidad(
+        request.form.get("usuario_id", type=int), unidad.id
+    )
+    if trabajador is None:
+        abort(403)
+
+    fecha = _parsear_fecha(request.form.get("fecha", ""))
+    if fecha is None:
+        abort(400)
+
+    anyo = request.form.get("anyo", fecha.year, type=int)
+    mes = request.form.get("mes", fecha.month, type=int)
+
+    franja_actual_id = request.form.get("franja_actual_id", type=int)
+    franja_nueva_id = request.form.get("franja_nueva_id", type=int)
+    if (
+        _franja_del_grupo(franja_actual_id, unidad.grupo_intercambio_id) is None
+        or _franja_del_grupo(franja_nueva_id, unidad.grupo_intercambio_id) is None
+    ):
+        abort(400)
+
+    motivo = request.form.get("motivo", "").strip() or None
+    editar_turno_trabajador(
+        current_user, trabajador, fecha, franja_actual_id, franja_nueva_id, motivo=motivo
+    )
+    flash(_("Turno de %(nombre)s modificado.", nombre=trabajador.nombre), "success")
     return redirect(url_for("planilla_supervision.index", anyo=anyo, mes=mes))
