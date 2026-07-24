@@ -48,16 +48,24 @@ el plan completo queda documentado aquí en vez de solo en la conversación.
       (cede → `#usuario1_id`, recibe → `#usuario2_id`).
     - Tests: 2 de servicio + 5 de ruta (incluye login requerido, sin turnos,
       otro grupo, fecha inválida, doblaje).
-  - Bloque B: cambiar `comprobar_factibilidad` para que, en vez de devolver
-    solo el string de `ESTADOS_FACTIBILIDAD`, acumule también la lista de
-    motivos concretos por participante (sin cortar en el primer fallo), y
-    mostrar esos motivos en el aviso de `registrar_papel()` cuando el
-    registro se rechaza por no factible, y en las vistas donde ya se
-    muestra el estado de factibilidad (`ver.html`, `supervisora.html`).
-  - Siguiente paso concreto: Bloque B — modificar `comprobar_factibilidad`
-    en `app/services/factibilidad_documento_cambio.py` para que acumule
-    motivos en vez de cortar en el primer fallo, empezando con TDD (test
-    de servicio que compruebe que se devuelven múltiples motivos).
+  - [x] Bloque B — Motivos de no factibilidad: HECHO.
+    - `comprobar_factibilidad` devuelve ahora `(estado: str, motivos: list[str])`
+      en vez de solo el estado. Los motivos son cadenas legibles (una por fallo,
+      sin cortar en el primero) que incluyen nombre del participante y causa
+      concreta: "no trabaja X el dd/mm/aaaa", "no está libre para X el dd/mm/aaaa",
+      "haría N días consecutivos superando el límite de M", "no respeta el
+      descanso tras turno nocturno".
+    - Nueva columna `factibilidad_motivos` (Text, nullable) en `DocumentoCambio`
+      (migración `1f57cef1c0e8`).
+    - `CambioNoFactibleError` expone `.motivos` para que la ruta
+      `registrar_papel()` los muestre uno a uno como flash messages.
+    - `ver.html`: lista los motivos bajo el aviso de no factibilidad.
+    - `supervisora.html`: incluye los motivos en el `title` del badge
+      "No factible" como tooltip.
+    - Tests: 6 nuevos (acumulación de motivos, límite consecutivos, descanso
+      nocturno, vacío en factible) + 10 actualizados al nuevo tipo de retorno.
+  - [x] Ambos bloques A y B completados, todos los tests en verde.
+  - Siguiente paso: push de la rama + `gh pr create --draft` contra `staging`.
   - Al terminar A+B con todos los tests en verde: push de la rama y
     `gh pr create --draft` contra `staging`.
 
