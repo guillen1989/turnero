@@ -116,7 +116,9 @@ def crear_documento_cambio(
     ))
     db.session.flush()
 
-    documento.factibilidad_estado = comprobar_factibilidad(documento)
+    estado, motivos = comprobar_factibilidad(documento)
+    documento.factibilidad_estado = estado
+    documento.factibilidad_motivos = "\n".join(motivos) if motivos else None
 
     _notificar(
         companero, documento, "documento_cambio_pendiente_firma",
@@ -131,7 +133,13 @@ def crear_documento_cambio(
 class CambioNoFactibleError(Exception):
     """Se lanza cuando el cambio que se intenta registrar desde papel no es
     factible según las planillas ya publicadas (alguna de las partes no
-    puede ceder o recibir el turno indicado)."""
+    puede ceder o recibir el turno indicado).
+
+    `motivos` es una lista de cadenas legibles con el detalle de cada fallo."""
+
+    def __init__(self, motivos=None):
+        super().__init__()
+        self.motivos = motivos or []
 
 
 def registrar_documento_cambio_papel(
@@ -177,12 +185,13 @@ def registrar_documento_cambio_papel(
     ))
     db.session.flush()
 
-    factibilidad = comprobar_factibilidad(documento)
-    if factibilidad == "no_factible":
+    estado, motivos = comprobar_factibilidad(documento)
+    if estado == "no_factible":
         db.session.rollback()
-        raise CambioNoFactibleError()
+        raise CambioNoFactibleError(motivos)
 
-    documento.factibilidad_estado = factibilidad
+    documento.factibilidad_estado = estado
+    documento.factibilidad_motivos = "\n".join(motivos) if motivos else None
     _congelar_nombres(documento)
     db.session.commit()
 
@@ -245,7 +254,9 @@ def crear_documento_cambio_desde_match(match):
     ))
     db.session.flush()
 
-    documento.factibilidad_estado = comprobar_factibilidad(documento)
+    estado, motivos = comprobar_factibilidad(documento)
+    documento.factibilidad_estado = estado
+    documento.factibilidad_motivos = "\n".join(motivos) if motivos else None
 
     db.session.commit()
     return documento
@@ -303,7 +314,9 @@ def firmar_documento(documento, usuario, imagen_firma):
 
     if documento.todos_han_firmado():
         documento.estado = "completo"
-        documento.factibilidad_estado = comprobar_factibilidad(documento)
+        estado, motivos = comprobar_factibilidad(documento)
+        documento.factibilidad_estado = estado
+        documento.factibilidad_motivos = "\n".join(motivos) if motivos else None
         _congelar_nombres(documento)
         for p in documento.participantes:
             _notificar(

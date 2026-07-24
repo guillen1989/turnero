@@ -96,6 +96,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/firma-canvas.js') }}"></script>
+<script src="{{ url_for('static', filename='js/filtro-turnos-planilla.js') }}"></script>
 <script>
 (function () {
   var checkbox = document.getElementById('firmar_ambos');
@@ -106,6 +107,24 @@
 
   setupFirmaCanvas(canvasPropia);
   setupFirmaCanvas(canvasCompanero);
+
+  var companeroSelect = document.getElementById('companero_id');
+  var cedeFecha = document.getElementById('turno_cede_fecha');
+  var recibeFecha = document.getElementById('turno_recibe_fecha');
+
+  var actualizarCede = initFiltroTurno(
+    document.getElementById('turno_cede_franja_id'),
+    function () { return {{ current_user.id }}; },
+    function () { return cedeFecha.value; }
+  );
+  var actualizarRecibe = initFiltroTurno(
+    document.getElementById('turno_recibe_franja_id'),
+    function () { return companeroSelect.value; },
+    function () { return recibeFecha.value; }
+  );
+  cedeFecha.addEventListener('change', actualizarCede);
+  recibeFecha.addEventListener('change', actualizarRecibe);
+  companeroSelect.addEventListener('change', actualizarRecibe);
 
   checkbox.addEventListener('change', function () {
     box.style.display = checkbox.checked ? 'block' : 'none';

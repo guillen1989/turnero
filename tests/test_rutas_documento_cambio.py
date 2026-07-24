@@ -35,6 +35,68 @@ def test_nuevo_requiere_login(client):
     assert resp.status_code == 302
 
 
+def test_turnos_disponibles_requiere_login(client):
+    resp = client.get("/documentos-cambio/api/turnos-disponibles?usuario_id=1&fecha=2026-07-01")
+    assert resp.status_code == 302
+
+
+def test_turnos_disponibles_devuelve_las_franjas_del_dia(db, client):
+    from app.services.planilla import añadir_turno
+
+    crear_usuario, manyana, tarde = _setup(db, "td")
+    claudia = crear_usuario("Claudia", "claudiatd@h.es")
+    añadir_turno(claudia, date(2026, 7, 1), manyana.id)
+    _login(client, claudia.email)
+
+    resp = client.get(
+        f"/documentos-cambio/api/turnos-disponibles?usuario_id={claudia.id}&fecha=2026-07-01"
+    )
+    assert resp.status_code == 200
+    assert resp.json == [{"id": manyana.id, "nombre": "Mañana"}]
+
+
+def test_turnos_disponibles_vacio_si_no_trabaja_ese_dia(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "td2")
+    claudia = crear_usuario("Claudia", "claudiatd2@h.es")
+    _login(client, claudia.email)
+
+    resp = client.get(
+        f"/documentos-cambio/api/turnos-disponibles?usuario_id={claudia.id}&fecha=2026-07-01"
+    )
+    assert resp.status_code == 200
+    assert resp.json == []
+
+
+def test_turnos_disponibles_de_usuario_de_otro_grupo_da_vacio(db, client):
+    from app.services.planilla import añadir_turno
+
+    crear_usuario, manyana, tarde = _setup(db, "td3")
+    claudia = crear_usuario("Claudia", "claudiatd3@h.es")
+    _login(client, claudia.email)
+
+    crear_usuario_otro, manyana_otro, _ = _setup(db, "td3b")
+    ajeno = crear_usuario_otro("Ajeno", "ajenotd3@h.es")
+    añadir_turno(ajeno, date(2026, 7, 1), manyana_otro.id)
+
+    resp = client.get(
+        f"/documentos-cambio/api/turnos-disponibles?usuario_id={ajeno.id}&fecha=2026-07-01"
+    )
+    assert resp.status_code == 200
+    assert resp.json == []
+
+
+def test_turnos_disponibles_fecha_invalida_da_vacio(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "td4")
+    claudia = crear_usuario("Claudia", "claudiatd4@h.es")
+    _login(client, claudia.email)
+
+    resp = client.get(
+        f"/documentos-cambio/api/turnos-disponibles?usuario_id={claudia.id}&fecha=no-es-una-fecha"
+    )
+    assert resp.status_code == 200
+    assert resp.json == []
+
+
 def test_get_nuevo_lista_companeros_misma_categoria_y_grupo(db, client):
     crear_usuario, manyana, tarde = _setup(db, "a")
     claudia = crear_usuario("Claudia Pérez", "claudiaa@h.es")

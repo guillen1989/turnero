@@ -108,33 +108,58 @@ def _libre_para_turno(usuario, fecha, franja) -> bool:
     )
 
 
-def comprobar_factibilidad(documento) -> str:
+def comprobar_factibilidad(documento) -> tuple[str, list[str]]:
     """
-    Devuelve uno de ESTADOS_FACTIBILIDAD:
-    - 'no_verificado': falta la planilla publicada de algún participante
-      para alguno de los meses implicados (no se puede comprobar).
-    - 'no_factible': hay planilla de todos, pero alguna parte no trabaja
-      lo que dice ceder, no está libre para lo que dice recibir, o recibirlo
-      violaría el límite de días consecutivos o el descanso tras una noche
-      (reglas de comprobación de la supervisora).
-    - 'factible': cuadra todo.
+    Devuelve (estado, motivos) donde:
+    - estado: uno de ESTADOS_FACTIBILIDAD.
+    - motivos: lista de cadenas legibles explicando cada fallo detectado
+      (una por participante, una por cada causa distinta), vacía si el
+      cambio es factible o si la verificación aún no es posible.
+
+    Estado 'no_verificado': falta la planilla publicada de algún
+    participante para alguno de los meses implicados (no se puede comprobar).
+    Estado 'no_factible': hay planilla de todos, pero alguna parte no
+    trabaja lo que dice ceder, no está libre para lo que dice recibir, o
+    recibir supondría violar el límite de días consecutivos o el descanso
+    tras una noche (reglas de comprobación de la supervisora).
+    Estado 'factible': cuadra todo.
     """
+    motivos = []
     for p in documento.participantes:
         if not tiene_mes_publicado(p.usuario, p.turno_cede_fecha):
-            return "no_verificado"
+            return "no_verificado", []
         if not tiene_mes_publicado(p.usuario, p.turno_recibe_fecha):
-            return "no_verificado"
+            return "no_verificado", []
 
     for p in documento.participantes:
+        nombre = p.usuario.nombre or f"#{p.usuario_id}"
+        fecha_str = p.turno_cede_fecha.strftime("%d/%m/%Y")
         if not _trabaja_turno(p.usuario, p.turno_cede_fecha, p.turno_cede_franja):
-            return "no_factible"
+            motivos.append(
+                f"{nombre}: no trabaja {p.turno_cede_franja.nombre} el {fecha_str}"
+            )
+        fecha_recibe_str = p.turno_recibe_fecha.strftime("%d/%m/%Y")
         if not _libre_para_turno(p.usuario, p.turno_recibe_fecha, p.turno_recibe_franja):
-            return "no_factible"
+            motivos.append(
+                f"{nombre}: no esta libre para {p.turno_recibe_franja.nombre} el {fecha_recibe_str}"
+            )
+        limite = p.usuario.grupo_intercambio.limite_dias_consecutivos
         if _viola_limite_dias_consecutivos(p.usuario, p.turno_recibe_fecha, p.turno_cede_fecha):
-            return "no_factible"
+            racha = _contar_dias_consecutivos_trabajados(
+                p.usuario, p.turno_recibe_fecha, p.turno_cede_fecha
+            )
+            motivos.append(
+                f"{nombre}: recibir {p.turno_recibe_franja.nombre} el {fecha_recibe_str} "
+                f"haría {racha} días consecutivos, superando el limite de {limite}"
+            )
         if _viola_descanso_nocturno(
             p.usuario, p.turno_recibe_fecha, p.turno_recibe_franja, p.turno_cede_fecha
         ):
-            return "no_factible"
+            motivos.append(
+                f"{nombre}: recibir {p.turno_recibe_franja.nombre} el {fecha_recibe_str} "
+                f"no respeta el descanso tras turno nocturno"
+            )
 
-    return "factible"
+    if motivos:
+        return "no_factible", motivos
+    return "factible", []

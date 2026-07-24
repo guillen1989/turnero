@@ -130,6 +130,13 @@ def get_turnos_mes(usuario, anyo: int, mes: int) -> list[TurnoPlanilla]:
     )
 
 
+def franjas_trabajadas_en_fecha(usuario, fecha: date):
+    """Devuelve las FranjaHoraria que el usuario trabaja ese día (vacío si
+    está libre, de vacaciones o no tiene ningún turno asignado)."""
+    turnos = TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=fecha).all()
+    return [t.franja_horaria for t in turnos]
+
+
 def dias_sin_cumplimentar(usuario, anyo: int, mes: int) -> list[date]:
     """Devuelve los días del mes que no tienen ningún TurnoPlanilla ni EstadoDiaPlanilla."""
     _, num_dias = _calendar.monthrange(anyo, mes)

@@ -50,6 +50,9 @@ class DocumentoCambio(db.Model):
     )
     supervisora_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=True)
     fecha_decision_supervisora = db.Column(db.DateTime(timezone=True), nullable=True)
+    # Motivos concretos de no factibilidad (uno por línea), vacío si el cambio
+    # es factible o si todavía no se ha podido comprobar (no_verificado).
+    factibilidad_motivos = db.Column(db.Text, nullable=True)
     # Solo se rellena al denegar; los participantes deben poder ver por qué.
     motivo_denegacion = db.Column(db.Text, nullable=True)
     # Anular deshace un cambio ya autorizado (planilla + match/publicaciones

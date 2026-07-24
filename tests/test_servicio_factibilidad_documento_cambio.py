@@ -52,17 +52,22 @@ def _crear_documento_fechas(db, sufijo, cede_fecha, recibe_fecha):
     return documento, claudia, juan, manyana, tarde
 
 
+def _estado_y_motivos(documento):
+    """Wrapper que extrae el estado del tuple devuelto por comprobar_factibilidad."""
+    return comprobar_factibilidad(documento)[0]
+
+
 def test_no_verificado_si_falta_planilla_publicada(db):
     documento, claudia, juan, manyana, tarde = _crear_documento(db, "a")
     # Ninguna planilla publicada.
-    assert comprobar_factibilidad(documento) == "no_verificado"
+    assert _estado_y_motivos(documento) == "no_verificado"
 
 
 def test_no_verificado_si_solo_una_parte_tiene_planilla(db):
     documento, claudia, juan, manyana, tarde = _crear_documento(db, "b")
     _publicar_mes(claudia, 2026, 7)
     # Falta la de Juan.
-    assert comprobar_factibilidad(documento) == "no_verificado"
+    assert _estado_y_motivos(documento) == "no_verificado"
 
 
 def test_factible_si_ambos_cumplen_su_parte(db):
@@ -76,7 +81,7 @@ def test_factible_si_ambos_cumplen_su_parte(db):
     db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
     db.session.commit()
 
-    assert comprobar_factibilidad(documento) == "factible"
+    assert _estado_y_motivos(documento) == "factible"
 
 
 def test_no_factible_si_alguien_no_trabaja_lo_que_dice_ceder(db):
@@ -87,7 +92,7 @@ def test_no_factible_si_alguien_no_trabaja_lo_que_dice_ceder(db):
     db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
     db.session.commit()
 
-    assert comprobar_factibilidad(documento) == "no_factible"
+    assert _estado_y_motivos(documento) == "no_factible"
 
 
 def test_no_factible_si_alguien_no_esta_libre_para_lo_que_recibe(db):
@@ -100,7 +105,7 @@ def test_no_factible_si_alguien_no_esta_libre_para_lo_que_recibe(db):
     db.session.add(EstadoDiaPlanilla(usuario=claudia, fecha=date(2026, 7, 28), tipo="vacaciones"))
     db.session.commit()
 
-    assert comprobar_factibilidad(documento) == "no_factible"
+    assert _estado_y_motivos(documento) == "no_factible"
 
 
 def test_no_factible_si_recibir_el_turno_supera_el_limite_de_dias_consecutivos(db):
@@ -117,7 +122,7 @@ def test_no_factible_si_recibir_el_turno_supera_el_limite_de_dias_consecutivos(d
         db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, dia), franja_horaria=manyana))
     db.session.commit()
 
-    assert comprobar_factibilidad(documento) == "no_factible"
+    assert _estado_y_motivos(documento) == "no_factible"
 
 
 def test_factible_si_recibir_el_turno_no_supera_el_limite_de_dias_consecutivos(db):
@@ -129,7 +134,7 @@ def test_factible_si_recibir_el_turno_no_supera_el_limite_de_dias_consecutivos(d
     claudia.unidad.grupo_intercambio.limite_dias_consecutivos = 3
     db.session.commit()
 
-    assert comprobar_factibilidad(documento) == "factible"
+    assert _estado_y_motivos(documento) == "factible"
 
 
 def test_no_factible_si_el_turno_recibido_empieza_antes_de_las_14_tras_una_noche(db):
@@ -150,7 +155,7 @@ def test_no_factible_si_el_turno_recibido_empieza_antes_de_las_14_tras_una_noche
     db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 27), franja_horaria=noche))
     db.session.commit()
 
-    assert comprobar_factibilidad(documento) == "no_factible"
+    assert _estado_y_motivos(documento) == "no_factible"
 
 
 def test_factible_si_el_turno_recibido_empieza_a_partir_de_las_14_tras_una_noche(db):
@@ -173,7 +178,7 @@ def test_factible_si_el_turno_recibido_empieza_a_partir_de_las_14_tras_una_noche
     db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 27), franja_horaria=noche))
     db.session.commit()
 
-    assert comprobar_factibilidad(documento) == "factible"
+    assert _estado_y_motivos(documento) == "factible"
 
 
 def test_factible_si_el_dia_cedido_forma_parte_de_la_racha_hacia_el_dia_recibido(db):
@@ -196,7 +201,7 @@ def test_factible_si_el_dia_cedido_forma_parte_de_la_racha_hacia_el_dia_recibido
     db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 13), franja_horaria=manyana))
     db.session.commit()
 
-    assert comprobar_factibilidad(documento) == "factible"
+    assert _estado_y_motivos(documento) == "factible"
 
 
 def test_factible_si_el_dia_cedido_es_la_noche_anterior_al_dia_recibido(db):
@@ -222,4 +227,93 @@ def test_factible_si_el_dia_cedido_es_la_noche_anterior_al_dia_recibido(db):
     db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 11), franja_horaria=manyana))
     db.session.commit()
 
-    assert comprobar_factibilidad(documento) == "factible"
+    assert _estado_y_motivos(documento) == "factible"
+
+
+# ── Tests nuevos: acumulación de motivos ──────────────────────────────────────
+
+
+def test_comprobar_factibilidad_devuelve_motivos_cuando_no_factible(db):
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "m1")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    # Claudia no tiene el turno de mañana del 7/7 (no puede cederlo).
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    db.session.commit()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    assert estado == "no_factible"
+    assert len(motivos) == 1
+    assert "Claudia" in motivos[0]
+    assert "Mañana" in motivos[0]
+    assert "07/07/2026" in motivos[0]
+
+
+def test_comprobar_factibilidad_acumula_varios_motivos_por_participante(db):
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "m2")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    # Ambos fallos de Claudia: no trabaja lo que dice ceder (Mañana 7/7),
+    # y está de vacaciones el día que recibiría (28/7). Juan no falla nada.
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    db.session.add(EstadoDiaPlanilla(usuario=claudia, fecha=date(2026, 7, 28), tipo="vacaciones"))
+    db.session.commit()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    assert estado == "no_factible"
+    assert len(motivos) == 2
+    assert any("Claudia" in m for m in motivos)
+    assert any("vacaciones" not in m.lower() and "no esta libre" in m.lower() for m in motivos)
+
+
+def test_comprobar_factibilidad_incluye_motivo_por_limite_consecutivos(db):
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "m3")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    claudia.unidad.grupo_intercambio.limite_dias_consecutivos = 3
+    for dia in (26, 27, 29, 30):
+        db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, dia), franja_horaria=manyana))
+    db.session.commit()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    assert estado == "no_factible"
+    assert len(motivos) >= 1
+    limite_motivo = next(m for m in motivos if "consecutivos" in m.lower())
+    assert "Claudia" in limite_motivo
+
+
+def test_comprobar_factibilidad_incluye_motivo_por_descanso_nocturno(db):
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "m4")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    noche = FranjaHoraria(
+        nombre="Noche", hora_inicio=time(22, 0), hora_fin=time(6, 0),
+        grupo_intercambio=claudia.unidad.grupo_intercambio,
+    )
+    db.session.add(noche)
+    db.session.commit()
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 27), franja_horaria=noche))
+    db.session.commit()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    assert estado == "no_factible"
+    assert len(motivos) >= 1
+    nocturno_motivo = next(m for m in motivos if "nocturno" in m.lower())
+    assert "Claudia" in nocturno_motivo
+
+
+def test_comprobar_factibilidad_motivos_vacio_cuando_factible(db):
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "m5")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    db.session.commit()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    assert estado == "factible"
+    assert motivos == []
