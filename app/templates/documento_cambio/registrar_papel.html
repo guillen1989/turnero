@@ -71,4 +71,29 @@
     <button type="submit" class="btn btn-primary">{{ _('Registrar cambio') }}</button>
   </form>
 </div>
+
+<script src="{{ url_for('static', filename='js/filtro-turnos-planilla.js') }}"></script>
+<script>
+(function () {
+  var usuario1Select = document.getElementById('usuario1_id');
+  var usuario2Select = document.getElementById('usuario2_id');
+  var cedeFecha = document.getElementById('turno_cede_fecha');
+  var recibeFecha = document.getElementById('turno_recibe_fecha');
+
+  var actualizarCede = initFiltroTurno(
+    document.getElementById('turno_cede_franja_id'),
+    function () { return usuario1Select.value; },
+    function () { return cedeFecha.value; }
+  );
+  var actualizarRecibe = initFiltroTurno(
+    document.getElementById('turno_recibe_franja_id'),
+    function () { return usuario2Select.value; },
+    function () { return recibeFecha.value; }
+  );
+  cedeFecha.addEventListener('change', actualizarCede);
+  usuario1Select.addEventListener('change', actualizarCede);
+  recibeFecha.addEventListener('change', actualizarRecibe);
+  usuario2Select.addEventListener('change', actualizarRecibe);
+})();
+</script>
 {% endblock %}

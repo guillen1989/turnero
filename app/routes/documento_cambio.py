@@ -2,7 +2,7 @@ import calendar
 import io
 from datetime import date, datetime
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 from sqlalchemy import and_, or_
@@ -14,6 +14,7 @@ from app.services.documento_cambio import (
     autorizar_documento, denegar_documento, anular_documento, puede_anularse,
     registrar_documento_cambio_papel, CambioNoFactibleError,
 )
+from app.services.planilla import franjas_trabajadas_en_fecha
 from app.services.registro import crear_franjas_default
 
 bp = Blueprint("documento_cambio", __name__, url_prefix="/documentos-cambio")
@@ -211,6 +212,27 @@ def supervisora():
         trabajadores=_usuarios_del_grupo(grupo_id),
         franjas=_franjas_disponibles(),
     )
+
+
+@bp.get("/api/turnos-disponibles")
+@login_required
+def turnos_disponibles():
+    """JSON con las franjas que un usuario del mismo grupo de intercambio
+    trabaja realmente en una fecha, para repoblar los desplegables de turno
+    de los formularios de alta según lo que dice la planilla ya publicada."""
+    usuario_id = request.args.get("usuario_id", type=int)
+    try:
+        fecha = datetime.strptime(request.args.get("fecha", ""), "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return jsonify([])
+
+    grupo_id = current_user.grupo_intercambio.id
+    usuario = next((u for u in _usuarios_del_grupo(grupo_id) if u.id == usuario_id), None)
+    if usuario is None:
+        return jsonify([])
+
+    franjas = franjas_trabajadas_en_fecha(usuario, fecha)
+    return jsonify([{"id": f.id, "nombre": f.nombre} for f in franjas])
 
 
 @bp.route("/registrar-papel", methods=["GET", "POST"])

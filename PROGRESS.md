@@ -30,24 +30,34 @@ herramienta (opencode) si se queda sin tokens de Claude a mitad -- por eso
 el plan completo queda documentado aquí en vez de solo en la conversación.
 
 - **PR 1 (este worktree, en curso): Bloque A + Bloque B.**
-  - Bloque A: nueva función de servicio, p.ej.
-    `turnos_trabajados_por_usuario_en_fecha(usuario, fecha) ->
-    list[FranjaHoraria]`, que consulta `TurnoPlanilla` para ese
-    usuario/fecha. Como el trabajador se elige en el propio formulario (sin
-    reload de página), lo más simple es un endpoint JSON nuevo (p.ej. `GET
-    /documentos-cambio/api/turnos-disponibles?usuario_id=...&fecha=...`) y
-    repoblar por JS el `<select>` de turno correspondiente cuando cambian
-    usuario o fecha, tanto en `nuevo.html` como en `registrar_papel.html`.
+  - [x] Bloque A — Filtrado de `<select>` de turno por planilla real: HECHO.
+    - `app/services/planilla.py::franjas_trabajadas_en_fecha(usuario, fecha)`:
+      devuelve las `FranjaHoraria` que el usuario trabaja ese día según
+      `TurnoPlanilla`.
+    - `GET /documentos-cambio/api/turnos-disponibles?usuario_id=&fecha=`
+      (`app/routes/documento_cambio.py`): endpoint JSON que devuelve las
+      franjas del usuario (validando que sea del mismo `grupo_intercambio`
+      que `current_user`), con fallback a lista vacía para fechas inválidas
+      o usuarios ajenos.
+    - `app/static/js/filtro-turnos-planilla.js` (nuevo): script vanilla que
+      expone `initFiltroTurno(select, getUsuarioId, getFecha)`. Al cambiar
+      usuario o fecha, llama al endpoint y repuebla el `<select>` con las
+      franjas reales; si el endpoint devuelve vacío, muestra la lista
+      completa como fallback. Conectado en `nuevo.html` (cede →
+      `current_user`, recibe → `#companero_id`) y `registrar_papel.html`
+      (cede → `#usuario1_id`, recibe → `#usuario2_id`).
+    - Tests: 2 de servicio + 5 de ruta (incluye login requerido, sin turnos,
+      otro grupo, fecha inválida, doblaje).
   - Bloque B: cambiar `comprobar_factibilidad` para que, en vez de devolver
     solo el string de `ESTADOS_FACTIBILIDAD`, acumule también la lista de
     motivos concretos por participante (sin cortar en el primer fallo), y
     mostrar esos motivos en el aviso de `registrar_papel()` cuando el
     registro se rechaza por no factible, y en las vistas donde ya se
     muestra el estado de factibilidad (`ver.html`, `supervisora.html`).
-  - Siguiente paso concreto: empezar por Bloque A con TDD -- test de
-    servicio para `turnos_trabajados_por_usuario_en_fecha` (caso con
-    turnos, caso sin planilla publicada, caso con estado especial tipo
-    "libre").
+  - Siguiente paso concreto: Bloque B — modificar `comprobar_factibilidad`
+    en `app/services/factibilidad_documento_cambio.py` para que acumule
+    motivos en vez de cortar en el primer fallo, empezando con TDD (test
+    de servicio que compruebe que se devuelven múltiples motivos).
   - Al terminar A+B con todos los tests en verde: push de la rama y
     `gh pr create --draft` contra `staging`.
 

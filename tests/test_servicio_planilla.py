@@ -6,6 +6,7 @@ from app.models import (
 from app.services.planilla import (
     añadir_turno, eliminar_turno, publicar_mes, despublicar_mes,
     tiene_mes_publicado, get_turnos_mes, establecer_estado_dia, limpiar_dia,
+    franjas_trabajadas_en_fecha,
 )
 
 
@@ -126,6 +127,23 @@ def test_get_turnos_mes(db):
     assert len(turnos) == 2
     assert turnos[0].fecha == date(2026, 7, 1)
     assert turnos[1].fecha == date(2026, 7, 3)
+
+
+def test_franjas_trabajadas_en_fecha_devuelve_las_franjas_del_dia(db):
+    usuario, franja_m, franja_t = _setup(db, "franjas@test.es")
+    añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
+    añadir_turno(usuario, date(2026, 7, 1), franja_t.id)  # doblaje
+    añadir_turno(usuario, date(2026, 7, 2), franja_m.id)  # otro día, no debe aparecer
+
+    franjas = franjas_trabajadas_en_fecha(usuario, date(2026, 7, 1))
+    assert {f.id for f in franjas} == {franja_m.id, franja_t.id}
+
+
+def test_franjas_trabajadas_en_fecha_vacio_si_no_trabaja(db):
+    usuario, _, _ = _setup(db, "libre@test.es")
+    establecer_estado_dia(usuario, date(2026, 7, 1), "libre")
+
+    assert franjas_trabajadas_en_fecha(usuario, date(2026, 7, 1)) == []
 
 
 # ── Tests de estados de día ───────────────────────────────────────────────────
