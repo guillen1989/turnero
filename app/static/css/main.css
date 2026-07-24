@@ -1187,6 +1187,16 @@ tr.supervision-fila-resaltada .supervision-col-trabajador {
 .supervision-dia-semana { display: block; font-size: 0.7rem; color: #888; }
 .supervision-col-dia--hoy, .supervision-celda--hoy { background: #eff6ff; }
 .supervision-col-dia--finde, .supervision-celda--finde { background: #f9fafb; }
+/* Distingue la fila de números de día de la fila de contadores de arriba,
+   sin pisar el fondo de "hoy"/fin de semana de sus propias celdas. */
+.supervision-dianum-fila th:not(.supervision-col-trabajador):not(.supervision-col-dia--hoy):not(.supervision-col-dia--finde) {
+  background: #e2e8f0;
+}
+/* Marco interior (no border, para no desplazar la cuadrícula con border-collapse)
+   para que un día con doblaje (más de un turno) se detecte de un vistazo. */
+.supervision-celda--doblaje {
+  box-shadow: inset 0 0 0 3px #f59e0b;
+}
 .supervision-celda { min-height: 2.2rem; }
 .supervision-celda .supervision-chip { display: block; margin-bottom: 0.15rem; white-space: nowrap; }
 .supervision-celda-btn {
