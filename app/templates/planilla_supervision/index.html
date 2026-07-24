@@ -38,7 +38,7 @@
             {% endfor %}
           </tr>
         {% endfor %}
-        <tr>
+        <tr class="supervision-dianum-fila">
           <th class="supervision-col-trabajador">{{ _('Trabajador') }}</th>
           {% for dia in dias %}
             <th class="supervision-col-dia{% if dia == hoy %} supervision-col-dia--hoy{% endif %}{% if dia.weekday() >= 5 %} supervision-col-dia--finde{% endif %}">
@@ -58,7 +58,7 @@
               {% set estado_dia = estados_por_usuario_dia.get(clave) %}
               {% set cambio = cambios_por_usuario_dia.get(clave) %}
               {% set ajuste = ajustes_por_usuario_dia.get(clave) %}
-              <td class="supervision-celda{% if dia == hoy %} supervision-celda--hoy{% endif %}{% if dia.weekday() >= 5 %} supervision-celda--finde{% endif %}">
+              <td class="supervision-celda{% if dia == hoy %} supervision-celda--hoy{% endif %}{% if dia.weekday() >= 5 %} supervision-celda--finde{% endif %}{% if turnos_dia|length > 1 %} supervision-celda--doblaje{% endif %}">
                 <button type="button" class="supervision-celda-btn"
                         data-usuario-id="{{ trabajador.id }}"
                         data-usuario-nombre="{{ trabajador.nombre }}"

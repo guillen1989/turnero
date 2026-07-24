@@ -508,6 +508,33 @@ def test_index_muestra_doblaje_con_dos_turnos_el_mismo_dia(db, client):
     tbody = html[html.index("<tbody>"):]
     assert tbody.count(f">{franja_m.nombre}<") == 1
     assert tbody.count(f">{franja_t.nombre}<") == 1
+    assert tbody.count("supervision-celda--doblaje") == 1
+
+
+def test_index_no_marca_doblaje_si_solo_hay_un_turno_ese_dia(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "f2")
+    supervisora = crear_usuario("Super", "super_f2@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_f2@h.es")
+    añadir_turno(ana, date(2026, 7, 1), franja_m.id)
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    tbody = html[html.index("<tbody>"):]
+    assert "supervision-celda--doblaje" not in tbody
+
+
+def test_index_fila_de_numeros_de_dia_tiene_clase_propia(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "f3")
+    supervisora = crear_usuario("Super", "super_f3@h.es", supervisora=True)
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    thead = html[html.index("<thead>"):html.index("</thead>")]
+    assert "supervision-dianum-fila" in thead
 
 
 def test_index_tooltip_del_cambio_describe_companero_turno_y_fecha(db, client):
