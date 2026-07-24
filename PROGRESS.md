@@ -4,6 +4,89 @@
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
+Worktree `turnos-factibles-y-causas` (rama
+`worktree-turnos-factibles-y-causas`, creada desde `origin/staging` en
+`dfc0557`, que ya incluye el PR #21 mergeado -- ver más abajo). Motivado por
+tres peticiones del usuario tras usar la app en producción:
+
+a. Los desplegables de turno en `/documentos-cambio/nuevo` y
+   `/documentos-cambio/registrar-papel` listan todas las `FranjaHoraria` del
+   grupo, aunque el trabajador elegido no curre ese turno ese día concreto --
+   deberían filtrarse por lo que el usuario realmente tiene asignado en la
+   planilla ese día.
+b. `comprobar_factibilidad` (`app/services/factibilidad_documento_cambio.py`)
+   devuelve `no_factible` sin decir *por qué* (corta en el primer fallo que
+   encuentra) -- la supervisora necesita ver el motivo concreto (no trabaja
+   ese turno / no está libre / rompe el límite de días consecutivos / rompe
+   el descanso nocturno) para cada participante.
+c. "Hojas de cambio encadenadas": permitir registrar una hoja que depende de
+   otra hoja todavía pendiente de autorizar, sin que salga `no_factible`
+   solo porque los efectos de la primera aún no están volcados a la
+   planilla real.
+
+Van en **dos PRs separados** porque (c) es bastante más grande y arriesgado
+que (a)+(b), y el usuario puede tener que seguir el trabajo desde otra
+herramienta (opencode) si se queda sin tokens de Claude a mitad -- por eso
+el plan completo queda documentado aquí en vez de solo en la conversación.
+
+- **PR 1 (este worktree, en curso): Bloque A + Bloque B.**
+  - Bloque A: nueva función de servicio, p.ej.
+    `turnos_trabajados_por_usuario_en_fecha(usuario, fecha) ->
+    list[FranjaHoraria]`, que consulta `TurnoPlanilla` para ese
+    usuario/fecha. Como el trabajador se elige en el propio formulario (sin
+    reload de página), lo más simple es un endpoint JSON nuevo (p.ej. `GET
+    /documentos-cambio/api/turnos-disponibles?usuario_id=...&fecha=...`) y
+    repoblar por JS el `<select>` de turno correspondiente cuando cambian
+    usuario o fecha, tanto en `nuevo.html` como en `registrar_papel.html`.
+  - Bloque B: cambiar `comprobar_factibilidad` para que, en vez de devolver
+    solo el string de `ESTADOS_FACTIBILIDAD`, acumule también la lista de
+    motivos concretos por participante (sin cortar en el primer fallo), y
+    mostrar esos motivos en el aviso de `registrar_papel()` cuando el
+    registro se rechaza por no factible, y en las vistas donde ya se
+    muestra el estado de factibilidad (`ver.html`, `supervisora.html`).
+  - Siguiente paso concreto: empezar por Bloque A con TDD -- test de
+    servicio para `turnos_trabajados_por_usuario_en_fecha` (caso con
+    turnos, caso sin planilla publicada, caso con estado especial tipo
+    "libre").
+  - Al terminar A+B con todos los tests en verde: push de la rama y
+    `gh pr create --draft` contra `staging`.
+
+- **PR 2 (futuro, worktree/rama aparte, todavía sin empezar): Bloque C --
+  hojas de cambio encadenadas.** No empezar hasta que el PR 1 esté cerrado y
+  mergeado. Diseño ya acordado con el usuario, documentado aquí para que
+  cualquier herramienta pueda retomarlo sin depender de esta conversación:
+  - Los números de hoja (`DocumentoCambio.numero_unidad`) son relativos a
+    `unidad_id` (`_siguiente_numero_unidad`, `UniqueConstraint("unidad_id",
+    "numero_unidad", ...)`), **no** un identificador global -- el
+    encadenado debe referenciar siempre por el `id` real (autoincrement,
+    único de verdad), nunca por `numero_unidad`, para evitar ambigüedad
+    entre unidades.
+  - Nueva columna nullable `DocumentoCambio.depende_de_id` (FK
+    self-referential a `DocumentoCambio.id`). Migración de un solo paso
+    (nullable, sin backfill necesario -- no rompe el patrón de tres pasos
+    porque no es `NOT NULL`).
+  - UI en el alta de una hoja: select opcional "¿Esta hoja depende de otra
+    hoja aún no autorizada?", listando las hojas pendientes de la misma
+    `unidad_id` como p.ej. `"Hoja nº 12 (14/03) -- cedes noche a Ana,
+    recibes tarde de Ana"` (el `value` del `<option>` es el `id` real;
+    mostrar `numero_unidad` como texto es seguro porque la lista ya está
+    acotada a una sola unidad).
+  - Backend: construir un "overlay" del estado hipotético de la planilla
+    (estado real + deltas de la cadena de documentos predecesores aún
+    pendientes) y hacer que las funciones auxiliares de
+    `factibilidad_documento_cambio.py` (`_trabaja_turno`,
+    `_libre_para_turno`, `_trabaja_el_dia`,
+    `_contar_dias_consecutivos_trabajados`) consulten ese overlay en vez de
+    `TurnoPlanilla`/`EstadoDiaPlanilla` directamente -- sin cadena, el
+    overlay es un no-op y el comportamiento actual no cambia (compatible
+    hacia atrás).
+  - Si se deniega/anula un predecesor, hay que recalcular la factibilidad
+    de la hoja dependiente (puede volver a `no_factible`); una vez
+    autorizado el predecesor (`volcar_documento_a_planillas` aplicado), la
+    dependiente pasa a comprobarse contra el estado real directamente (deja
+    de necesitar el overlay).
+
+## Paso anterior
 Rama `fix/planilla-supervision-followups` (a partir de `staging`, ya con la
 lista de 9 mejoras anterior mergeada). Lista de 8 seguimientos pedidos por el
 usuario tras probar `/planilla/supervision` y `/documentos-cambio/supervisora`
