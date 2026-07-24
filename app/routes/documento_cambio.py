@@ -291,13 +291,15 @@ def registrar_papel():
                 turno1_cede_fecha=cede_fecha, turno1_cede_franja_id=cede_franja_id,
                 turno1_recibe_fecha=recibe_fecha, turno1_recibe_franja_id=recibe_franja_id,
             )
-        except CambioNoFactibleError:
+        except CambioNoFactibleError as e:
             flash(
                 _("Este cambio no es factible según las planillas ya publicadas: "
                   "alguna de las partes no puede ceder o recibir el turno indicado. "
                   "No se ha aplicado."),
                 "danger",
             )
+            for motivo in e.motivos:
+                flash(motivo, "danger")
             return render_template(
                 "documento_cambio/registrar_papel.html",
                 trabajadores=trabajadores, franjas=franjas, today=hoy.isoformat(),

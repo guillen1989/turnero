@@ -20,7 +20,16 @@
   {% if documento.factibilidad_estado == 'factible' %}
     <p><span class="badge-success">{{ _('Verificado contra la planilla') }}</span> {{ _('El cambio es factible según las planillas subidas de ambos.') }}</p>
   {% elif documento.factibilidad_estado == 'no_factible' %}
-    <div class="flash flash--danger">{{ _('Atención: según las planillas subidas, este cambio no parece factible. Revisa los datos antes de firmar.') }}</div>
+    <div class="flash flash--danger">
+      {{ _('Atención: según las planillas subidas, este cambio no parece factible. Revisa los datos antes de firmar.') }}
+      {% if documento.factibilidad_motivos %}
+        <ul style="margin: 0.5rem 0 0 0;">
+          {% for motivo in documento.factibilidad_motivos.split('\n') %}
+            <li>{{ motivo }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
   {% else %}
     <p><span class="badge-draft">{{ _('Factibilidad no verificada') }}</span> {{ _('Falta la planilla publicada de alguna de las dos personas para ese mes. Comprueba manualmente que no haya conflictos.') }}</p>
   {% endif %}
