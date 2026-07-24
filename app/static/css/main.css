@@ -90,10 +90,10 @@ body {
 /* Enlaces solo-supervisora: color propio para distinguirlos de un vistazo
    de las opciones de usuario normal de la fila/sección de arriba. */
 .nav-supervisora-row a {
-  background: rgba(255, 176, 32, 0.22);
-  border: 1px solid rgba(255, 176, 32, 0.45);
+  background: rgba(245, 158, 11, 0.45);
+  border: 1px solid rgba(245, 158, 11, 0.65);
 }
-.nav-supervisora-row a:hover { background: rgba(255, 176, 32, 0.38); }
+.nav-supervisora-row a:hover { background: rgba(245, 158, 11, 0.65); }
 
 .main-nav .nav-section-sep {
   border: none;
@@ -1190,7 +1190,7 @@ tr.supervision-fila-resaltada .supervision-col-trabajador {
 /* Distingue la fila de números de día de la fila de contadores de arriba,
    sin pisar el fondo de "hoy"/fin de semana de sus propias celdas. */
 .supervision-dianum-fila th:not(.supervision-col-trabajador):not(.supervision-col-dia--hoy):not(.supervision-col-dia--finde) {
-  background: #e2e8f0;
+  background: #94a3b8;
 }
 /* Marco interior (no border, para no desplazar la cuadrícula con border-collapse)
    para que un día con doblaje (más de un turno) se detecte de un vistazo. */

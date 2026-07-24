@@ -188,6 +188,40 @@ def test_todos_han_firmado_falso_sin_participantes(db):
     assert documento.todos_han_firmado() is False
 
 
+def test_documento_cambio_con_depende_de_id(db):
+    """Un documento puede enlazar a otro como predecesor (FK self-referential)."""
+    crear_usuario, manyana, tarde = _setup(db, "dep")
+    ana = crear_usuario("anadep@h.es")
+    pedro = crear_usuario("pedrodep@h.es")
+
+    doc_a = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
+    db.session.add(doc_a)
+    db.session.flush()
+
+    doc_b = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=2, depende_de_id=doc_a.id)
+    db.session.add(doc_b)
+    db.session.commit()
+
+    recuperado = db.session.get(DocumentoCambio, doc_b.id)
+    assert recuperado.depende_de_id == doc_a.id
+    assert recuperado.depende_de is not None
+    assert recuperado.depende_de.id == doc_a.id
+
+
+def test_documento_cambio_depende_de_id_nullable_por_defecto(db):
+    """Un documento sin dependencia tiene depende_de_id None (caso normal)."""
+    crear_usuario, manyana, tarde = _setup(db, "dep2")
+    ana = crear_usuario("anadep2@h.es")
+
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
+    db.session.add(documento)
+    db.session.commit()
+
+    recuperado = db.session.get(DocumentoCambio, documento.id)
+    assert recuperado.depende_de_id is None
+    assert recuperado.depende_de is None
+
+
 def test_participante_nombre_mostrar_usa_nombre_congelado_si_existe(db):
     crear_usuario, manyana, tarde = _setup(db, "d")
     ana = crear_usuario("anad@h.es")

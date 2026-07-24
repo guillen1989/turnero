@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Parser puro de planillas exportadas en el formato ILOG (texto separado por
 tabuladores, una fila de metadatos + una fila por trabajador con un código de

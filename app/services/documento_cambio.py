@@ -89,6 +89,7 @@ def crear_documento_cambio(
     creado_por, companero,
     turno_cede_fecha, turno_cede_franja_id,
     turno_recibe_fecha, turno_recibe_franja_id,
+    depende_de_id=None,
 ):
     """
     Crea el documento con sus dos participantes espejo: lo que cede/recibe
@@ -100,6 +101,7 @@ def crear_documento_cambio(
         creado_por=creado_por,
         unidad_id=creado_por.unidad_id,
         numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        depende_de_id=depende_de_id,
     )
     db.session.add(documento)
     db.session.flush()
@@ -146,6 +148,7 @@ def registrar_documento_cambio_papel(
     supervisora, usuario1, usuario2,
     turno1_cede_fecha, turno1_cede_franja_id,
     turno1_recibe_fecha, turno1_recibe_franja_id,
+    depende_de_id=None,
 ):
     """
     Registra un cambio que un pequeño número de trabajadores sigue
@@ -169,6 +172,7 @@ def registrar_documento_cambio_papel(
         numero_unidad=_siguiente_numero_unidad(usuario1.unidad_id),
         estado="completo",
         origen_papel=True,
+        depende_de_id=depende_de_id,
     )
     db.session.add(documento)
     db.session.flush()
@@ -456,6 +460,25 @@ def volcar_documento_a_planillas(documento):
     db.session.commit()
 
 
+def _recalcular_factibilidad_dependientes(documento):
+    """
+    Tras autorizar, denegar o anular un documento, los documentos que
+    dependen de él pueden cambiar de factibilidad (el overlay que antes los
+    hacía factibles ya no aplica, o el estado real de las planillas ha
+    cambiado). Recalcula la factibilidad de todos los dependientes directos.
+    No recorre en cascada: cada dependiente se recalcula contra el nuevo
+    estado (si el predecesor se autorizó y volcó a planillas, el dependiente
+    ya lo ve como estado real sin overlay).
+    """
+    dependientes = DocumentoCambio.query.filter_by(depende_de_id=documento.id).all()
+    for dep in dependientes:
+        estado, motivos = comprobar_factibilidad(dep)
+        dep.factibilidad_estado = estado
+        dep.factibilidad_motivos = "\n".join(motivos) if motivos else None
+    if dependientes:
+        db.session.flush()
+
+
 def autorizar_documento(documento, supervisora, imagen_firma=None):
     """
     La supervisora autoriza un documento completo (dos firmas): se vuelca
@@ -471,6 +494,7 @@ def autorizar_documento(documento, supervisora, imagen_firma=None):
     if imagen_firma:
         documento.firma_supervisora = imagen_firma
     volcar_documento_a_planillas(documento)
+    _recalcular_factibilidad_dependientes(documento)
 
     resumen = _resumen_cambio(documento)
     for p in documento.participantes:
@@ -498,6 +522,8 @@ def denegar_documento(documento, supervisora, motivo, imagen_firma=None):
     documento.motivo_denegacion = motivo
     if imagen_firma:
         documento.firma_supervisora = imagen_firma
+
+    _recalcular_factibilidad_dependientes(documento)
 
     resumen = _resumen_cambio(documento)
     for p in documento.participantes:
@@ -605,6 +631,8 @@ def anular_documento(documento, supervisora, motivo):
     documento.anulado_por = supervisora
     documento.fecha_anulacion = datetime.now(timezone.utc)
     documento.motivo_anulacion = motivo
+
+    _recalcular_factibilidad_dependientes(documento)
 
     resumen = _resumen_cambio(documento)
     for p in documento.participantes:

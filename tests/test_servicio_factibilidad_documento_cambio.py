@@ -3,6 +3,7 @@ from app.extensions import db
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario,
     TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla,
+    DocumentoCambio, ParticipanteDocumentoCambio,
 )
 from app.services.documento_cambio import crear_documento_cambio
 from app.services.factibilidad_documento_cambio import comprobar_factibilidad
@@ -317,3 +318,214 @@ def test_comprobar_factibilidad_motivos_vacio_cuando_factible(db):
     estado, motivos = comprobar_factibilidad(documento)
     assert estado == "factible"
     assert motivos == []
+
+
+# ── Tests nuevos: overlay de documentos encadenados ──────────────────────────
+
+
+def test_overlay_vacio_sin_dependencia(db):
+    """Sin dependencia, comprobar_factibilidad no usa overlay: comportamiento
+    idéntico al actual (compatible hacia atrás)."""
+    documento, claudia, juan, manyana, tarde = _crear_documento(db, "ov1")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    db.session.commit()
+
+    assert documento.depende_de_id is None
+    estado, motivos = comprobar_factibilidad(documento)
+    assert estado == "factible"
+
+
+def test_overlay_con_dependencia_es_factible_gracias_al_overlay(db):
+    """Documento hijo que por sí solo no sería factible (Juan no trabaja
+    7/7) se vuelve factible porque el overlay del predecesor le da ese turno."""
+    from app.models import DocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "ov2")
+    claudia = crear_usuario("Claudiaov2", "claudiaov2@h.es")
+    juan = crear_usuario("Juanov2", "juanov2@h.es")
+    ana = crear_usuario("Anaov2", "anaov2@h.es")
+    for u in (claudia, juan, ana):
+        _publicar_mes(u, 2026, 7)
+
+    # Planilla real: Claudia tiene 7/7, Juan tiene 14/7, Ana tiene 21/7
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 14), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=ana, fecha=date(2026, 7, 21), franja_horaria=manyana))
+    db.session.commit()
+
+    # Documento predecesor: Claudia cede 7/7 ↔ Juan cede 14/7
+    doc_predecesor = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 14), turno_recibe_franja_id=manyana.id,
+    )
+    doc_predecesor.estado = "completo"
+    doc_predecesor.decision_supervisora = "pendiente"
+    db.session.commit()
+    # Overlay: Juan gana 7/7, Claudia gana 14/7
+
+    # Documento hijo: Juan (cede 7/7, ganada en overlay) ↔ Ana (cede 21/7)
+    documento_hijo = DocumentoCambio(
+        creado_por=juan,
+        unidad_id=juan.unidad_id,
+        numero_unidad=99,
+        depende_de_id=doc_predecesor.id,
+    )
+    db.session.add(documento_hijo)
+    db.session.flush()
+    documento_hijo.participantes.append(ParticipanteDocumentoCambio(
+        usuario=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 21), turno_recibe_franja=manyana,
+    ))
+    documento_hijo.participantes.append(ParticipanteDocumentoCambio(
+        usuario=ana,
+        turno_cede_fecha=date(2026, 7, 21), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 7), turno_recibe_franja=manyana,
+    ))
+    db.session.commit()
+
+    # Juan no tiene 7/7 en planilla real → sin overlay sería no_factible.
+    # Pero con overlay, el predecesor le da 7/7 → factible.
+    estado, motivos = comprobar_factibilidad(documento_hijo)
+    assert estado == "factible", f"Esperaba factible, obtuve {estado}: {motivos}"
+
+
+def test_overlay_removed_quita_turnos_cedidos_por_predecesor(db):
+    """El overlay quita el turno que el predecesor cede, así que el hijo
+    no puede volver a cederlo (el removed lo hace desaparecer)."""
+    from app.models import DocumentoCambio, ParticipanteDocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "ov3")
+    claudia = crear_usuario("Claudiaov3", "claudiaov3@h.es")
+    juan = crear_usuario("Juanov3", "juanov3@h.es")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 14), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    db.session.commit()
+
+    # Predecesor: Claudia cede 7/7 ↔ Juan cede 14/7
+    doc_predecesor = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 14), turno_recibe_franja_id=manyana.id,
+    )
+    doc_predecesor.estado = "completo"
+    doc_predecesor.decision_supervisora = "pendiente"
+    db.session.commit()
+
+    # Hijo: Juan intenta ceder 14/7 otra vez. En la planilla real lo tiene,
+    # pero el overlay dice que lo perdió en el predecesor → no factible.
+    documento_hijo = DocumentoCambio(
+        creado_por=juan, unidad_id=juan.unidad_id, numero_unidad=99,
+        depende_de_id=doc_predecesor.id,
+    )
+    db.session.add(documento_hijo)
+    db.session.flush()
+    documento_hijo.participantes.append(ParticipanteDocumentoCambio(
+        usuario=juan,
+        turno_cede_fecha=date(2026, 7, 14), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja=manyana,
+    ))
+    # El compañero sería Claudia, que ya tiene 7/7 y 14/7...
+    # Mejor: creamos un 3er usuario.
+    ana = crear_usuario("Anaov3", "anaov3@h.es")
+    _publicar_mes(ana, 2026, 7)
+    db.session.add(TurnoPlanilla(usuario=ana, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    db.session.commit()
+
+    documento_hijo.participantes.append(ParticipanteDocumentoCambio(
+        usuario=ana,
+        turno_cede_fecha=date(2026, 7, 28), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 14), turno_recibe_franja=manyana,
+    ))
+    db.session.commit()
+
+    estado, motivos = comprobar_factibilidad(documento_hijo)
+    assert estado == "no_factible"
+    assert any("Juan" in m and "14" in m for m in motivos)
+
+
+def test_cadena_dos_niveles(db):
+    """Cadena: doc C depende de B que depende de A. El overlay de C ve los
+    deltas acumulados de B y A."""
+    from app.models import DocumentoCambio, ParticipanteDocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "ov4")
+    claudia = crear_usuario("Claudiaov4", "claudiaov4@h.es")
+    juan = crear_usuario("Juanov4", "juanov4@h.es")
+    ana = crear_usuario("Anaov4", "anaov4@h.es")
+    luis = crear_usuario("Luisov4", "luisov4@h.es")
+    for u in (claudia, juan, ana, luis):
+        _publicar_mes(u, 2026, 7)
+
+    # Planillas reales:
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 14), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=ana, fecha=date(2026, 7, 21), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=luis, fecha=date(2026, 7, 28), franja_horaria=manyana))
+    db.session.commit()
+
+    # Doc A (nivel 1): Claudia(7/7) ↔ Juan(14/7)
+    doc_a = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 14), turno_recibe_franja_id=manyana.id,
+    )
+    doc_a.estado = "completo"
+    doc_a.decision_supervisora = "pendiente"
+    # overlay de A: Juan gana 7/7, Claudia gana 14/7
+
+    # Doc B (nivel 2): Juan(7/7, ganado en A) ↔ Ana(21/7)
+    doc_b = DocumentoCambio(
+        creado_por=juan, unidad_id=juan.unidad_id, numero_unidad=98,
+        depende_de_id=doc_a.id,
+    )
+    db.session.add(doc_b)
+    db.session.flush()
+    doc_b.participantes.append(ParticipanteDocumentoCambio(
+        usuario=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 21), turno_recibe_franja=manyana,
+    ))
+    doc_b.participantes.append(ParticipanteDocumentoCambio(
+        usuario=ana,
+        turno_cede_fecha=date(2026, 7, 21), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 7), turno_recibe_franja=manyana,
+    ))
+    doc_b.estado = "completo"
+    doc_b.decision_supervisora = "pendiente"
+    db.session.commit()
+    # overlay de B: Ana gana 7/7, Juan gana 21/7
+    # Pero como B depende de A, el overlay de C verá A+B acumulados:
+    # added: Juan(7/7) de A, Claudia(14/7) de A, Ana(7/7) de B, Juan(21/7) de B
+    # removed: Claudia(7/7) de A, Juan(14/7) de A, Juan(7/7) de B, Ana(21/7) de B
+
+    # Doc C (nivel 3): Ana(7/7, ganado en B) ↔ Luis(28/7)
+    # Ana no tiene 7/7 en planilla real, pero gracias a la cadena (B→A) sí.
+    doc_c = DocumentoCambio(
+        creado_por=ana, unidad_id=ana.unidad_id, numero_unidad=97,
+        depende_de_id=doc_b.id,
+    )
+    db.session.add(doc_c)
+    db.session.flush()
+    doc_c.participantes.append(ParticipanteDocumentoCambio(
+        usuario=ana,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja=manyana,
+    ))
+    doc_c.participantes.append(ParticipanteDocumentoCambio(
+        usuario=luis,
+        turno_cede_fecha=date(2026, 7, 28), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 7), turno_recibe_franja=manyana,
+    ))
+    db.session.commit()
+
+    estado, motivos = comprobar_factibilidad(doc_c)
+    assert estado == "factible", f"Esperaba factible, obtuve {estado}: {motivos}"

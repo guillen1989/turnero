@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Resolución persistente de los dos mapeos que necesita la carga masiva de
 planilla: código de turno -> FranjaHoraria (por grupo de intercambio) y

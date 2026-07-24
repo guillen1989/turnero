@@ -30,6 +30,24 @@
       </select>
     </div>
 
+    {% if hojas_pendientes %}
+    <section class="turnos-section">
+      <h2>{{ _('¿Esta hoja depende de otra aún no autorizada?') }}</h2>
+      <p class="form-hint">{{ _('Si este cambio solo se puede hacer si primero se autoriza otra hoja pendiente de esta misma unidad, selecciónala aquí. Si no, déjala en blanco.') }}</p>
+      <div class="form-group">
+        <label for="depende_de_id">{{ _('Depende de') }}</label>
+        <select id="depende_de_id" name="depende_de_id">
+          <option value="">{{ _('— Ninguna —') }}</option>
+          {% for h in hojas_pendientes %}
+          <option value="{{ h.id }}">{{ _('Hoja nº %(numero)s (%(fecha)s)', numero=h.numero_unidad, fecha=h.fecha_creacion.strftime('%d/%m')) }}
+            — {% for p in h.participantes %}{{ p.nombre_mostrar }} {{ _('cede') }} {{ p.turno_cede_franja.nombre }}{% if not loop.last %}, {% endif %}{% endfor %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </section>
+    {% endif %}
+
     <section class="turnos-section">
       <h2>{{ _('Turno que cede el primer trabajador') }}</h2>
       <div class="turno-row">
@@ -94,6 +112,14 @@
   usuario1Select.addEventListener('change', actualizarCede);
   recibeFecha.addEventListener('change', actualizarRecibe);
   usuario2Select.addEventListener('change', actualizarRecibe);
+
+  // Disparar el filtro al cargar si ya hay valores preseleccionados
+  if (usuario1Select.value && cedeFecha.value) {
+    actualizarCede();
+  }
+  if (usuario2Select.value && recibeFecha.value) {
+    actualizarRecibe();
+  }
 })();
 </script>
 {% endblock %}

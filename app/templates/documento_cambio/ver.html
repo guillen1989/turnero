@@ -10,6 +10,15 @@
     <p><span class="badge-draft">{{ _('Registrado desde hoja de papel') }}</span> {{ _('Este cambio se firmó en papel; la supervisora lo registró manualmente en el sistema.') }}</p>
   {% endif %}
 
+  {% if documento.depende_de_id and documento.depende_de %}
+    <p class="dependencia-badge">
+      <span class="badge-draft">{{ _('Encadenada a:') }}</span>
+      <a href="{{ url_for('documento_cambio.ver', documento_id=documento.depende_de.id) }}">
+        {{ _('Hoja nº %(numero)s del %(fecha)s', numero=documento.depende_de.numero_unidad, fecha=documento.depende_de.fecha_creacion.strftime('%d/%m/%Y')) }}
+      </a>
+    </p>
+  {% endif %}
+
   {% if documento.estado == 'completo' %}
     <div class="flash flash--success documento-completo-banner">{{ _('Las dos firmas están recogidas. La hoja de cambio está completa.') }}</div>
     <a href="{{ url_for('documento_cambio.pdf', documento_id=documento.id) }}" class="btn btn-primary">{{ _('Generar PDF') }}</a>

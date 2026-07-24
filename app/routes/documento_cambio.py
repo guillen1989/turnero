@@ -40,6 +40,34 @@ def _companeros_disponibles():
     )
 
 
+def _hojas_pendientes_encadenables(grupo_id):
+    """
+    Documentos de la misma unidad del usuario actual que están en estado
+    'completo', con decision_supervisora == 'pendiente' y no anulados.
+    Son candidatos para que una nueva hoja de cambio dependa de ellos.
+    Se devuelven ordenados por id descendente (el más reciente primero).
+    """
+    from sqlalchemy import and_
+
+    subquery_ids = (
+        db.session.query(ParticipanteDocumentoCambio.documento_id)
+        .join(Usuario, ParticipanteDocumentoCambio.usuario_id == Usuario.id)
+        .join(Unidad, Usuario.unidad_id == Unidad.id)
+        .filter(Unidad.grupo_intercambio_id == grupo_id)
+    )
+    return (
+        DocumentoCambio.query
+        .filter(
+            DocumentoCambio.estado == "completo",
+            DocumentoCambio.decision_supervisora == "pendiente",
+            DocumentoCambio.anulado.is_(False),
+            DocumentoCambio.id.in_(subquery_ids),
+        )
+        .order_by(DocumentoCambio.id.desc())
+        .all()
+    )
+
+
 def _franjas_disponibles():
     return (
         FranjaHoraria.query
@@ -256,6 +284,7 @@ def registrar_papel():
         cede_franja_id = request.form.get("turno_cede_franja_id", type=int)
         recibe_fecha_str = request.form.get("turno_recibe_fecha", "")
         recibe_franja_id = request.form.get("turno_recibe_franja_id", type=int)
+        depende_de_id = request.form.get("depende_de_id", type=int)
 
         usuario1 = next((u for u in trabajadores if u.id == usuario1_id), None)
         usuario2 = next((u for u in trabajadores if u.id == usuario2_id), None)
@@ -283,6 +312,7 @@ def registrar_papel():
             return render_template(
                 "documento_cambio/registrar_papel.html",
                 trabajadores=trabajadores, franjas=franjas, today=hoy.isoformat(),
+                hojas_pendientes=_hojas_pendientes_encadenables(grupo_id),
             )
 
         try:
@@ -290,6 +320,7 @@ def registrar_papel():
                 supervisora=current_user, usuario1=usuario1, usuario2=usuario2,
                 turno1_cede_fecha=cede_fecha, turno1_cede_franja_id=cede_franja_id,
                 turno1_recibe_fecha=recibe_fecha, turno1_recibe_franja_id=recibe_franja_id,
+                depende_de_id=depende_de_id,
             )
         except CambioNoFactibleError as e:
             flash(
@@ -303,6 +334,7 @@ def registrar_papel():
             return render_template(
                 "documento_cambio/registrar_papel.html",
                 trabajadores=trabajadores, franjas=franjas, today=hoy.isoformat(),
+                hojas_pendientes=_hojas_pendientes_encadenables(grupo_id),
             )
         flash(_("Cambio registrado desde papel y aplicado a las planillas."), "success")
         return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
@@ -312,6 +344,7 @@ def registrar_papel():
         trabajadores=trabajadores, franjas=franjas, today=hoy.isoformat(),
         prefill_usuario1_id=request.args.get("usuario1_id", type=int),
         prefill_fecha=request.args.get("fecha", ""),
+        hojas_pendientes=_hojas_pendientes_encadenables(grupo_id),
     )
 
 
@@ -332,6 +365,7 @@ def nueva():
         cede_franja_id = request.form.get("turno_cede_franja_id", type=int)
         recibe_fecha_str = request.form.get("turno_recibe_fecha", "")
         recibe_franja_id = request.form.get("turno_recibe_franja_id", type=int)
+        depende_de_id = request.form.get("depende_de_id", type=int)
         firmar_ambos = request.form.get("firmar_ambos") == "on"
         imagen_firma_propia = request.form.get("imagen_firma_propia", "")
         imagen_firma_companero = request.form.get("imagen_firma_companero", "")
@@ -362,12 +396,14 @@ def nueva():
             return render_template(
                 "documento_cambio/nuevo.html", companeros=companeros,
                 franjas=franjas, today=hoy.isoformat(),
+                hojas_pendientes=_hojas_pendientes_encadenables(current_user.grupo_intercambio.id),
             )
 
         documento = crear_documento_cambio(
             creado_por=current_user, companero=companero,
             turno_cede_fecha=cede_fecha, turno_cede_franja_id=cede_franja_id,
             turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=recibe_franja_id,
+            depende_de_id=depende_de_id,
         )
 
         if firmar_ambos:
@@ -388,6 +424,7 @@ def nueva():
     return render_template(
         "documento_cambio/nuevo.html", companeros=companeros,
         franjas=franjas, today=hoy.isoformat(),
+        hojas_pendientes=_hojas_pendientes_encadenables(current_user.grupo_intercambio.id),
     )
 
 

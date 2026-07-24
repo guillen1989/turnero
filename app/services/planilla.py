@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import calendar as _calendar
 from datetime import date
 from app.extensions import db

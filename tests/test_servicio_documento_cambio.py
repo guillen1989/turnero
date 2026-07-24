@@ -3,12 +3,12 @@ from datetime import date, time
 from app.extensions import db
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario, TurnoPlanilla,
-    NotaDia, DocumentoCambio, PlanillaMes,
+    NotaDia, DocumentoCambio, ParticipanteDocumentoCambio, PlanillaMes,
 )
 from app.services.documento_cambio import (
     crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
-    autorizar_documento, denegar_documento, registrar_documento_cambio_papel,
-    CambioNoFactibleError,
+    autorizar_documento, denegar_documento, anular_documento,
+    registrar_documento_cambio_papel, CambioNoFactibleError,
 )
 
 _FIRMA_PNG = (
@@ -781,3 +781,190 @@ def test_autorizar_documento_sin_firma_no_la_rellena(db):
     autorizar_documento(documento, supervisora)
 
     assert documento.firma_supervisora is None
+
+
+# ── Tests nuevos: recálculo de factibilidad de dependientes ─────────────────
+
+
+def test_al_autorizar_recalcula_factibilidad_dependientes(db):
+    """Al autorizar un documento, los documentos que dependen de él recalculan
+    su factibilidad (ya sin overlay, contra el nuevo estado real de planilla).
+    Si el estado real tras el volcado sigue siendo factible, el dependiente
+    sigue factible -- pero el recálculo debe haberse ejecutado."""
+    from app.models import DocumentoCambio, ParticipanteDocumentoCambio, PlanillaMes
+
+    crear_usuario, manyana, tarde = _setup(db, "rd1")
+    claudia = crear_usuario("Claudiard1", "claudiard1@h.es")
+    juan = crear_usuario("Juanrd1", "juanrd1@h.es")
+    ana = crear_usuario("Anard1", "anard1@h.es")
+    supervisora = crear_usuario("Martard1", "martard1@h.es")
+
+    for u in (claudia, juan, ana):
+        db.session.add(PlanillaMes(usuario=u, anyo=2026, mes=7, publicada=True))
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 14), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=ana, fecha=date(2026, 7, 21), franja_horaria=manyana))
+    db.session.commit()
+
+    # Doc A (predecesor): Claudia(7/7) ↔ Juan(14/7)
+    doc_a = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 14), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(doc_a, claudia, "x")
+    firmar_documento(doc_a, juan, "y")
+
+    # Doc B: Juan(14/7, que perderá al autorizar A) ↔ Ana(21/7)
+    # Sin overlay: Juan tiene 14/7 → B es factible.
+    # Con overlay (A pendiente): Juan pierde 14/7 → B no_factible.
+    # Para que B sea factible con overlay usamos: Juan(7/7) ↔ Ana(21/7)
+    # Juan gana 7/7 en overlay de A.
+    doc_b = DocumentoCambio(
+        creado_por=juan, unidad_id=juan.unidad_id, numero_unidad=99,
+        depende_de_id=doc_a.id,
+    )
+    db.session.add(doc_b)
+    db.session.flush()
+    doc_b.participantes.append(ParticipanteDocumentoCambio(
+        usuario=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 21), turno_recibe_franja=manyana,
+    ))
+    doc_b.participantes.append(ParticipanteDocumentoCambio(
+        usuario=ana,
+        turno_cede_fecha=date(2026, 7, 21), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 7), turno_recibe_franja=manyana,
+    ))
+    db.session.commit()
+
+    from app.services.factibilidad_documento_cambio import comprobar_factibilidad
+    estado_b, _ = comprobar_factibilidad(doc_b)
+    assert estado_b == "factible", f"Esperaba factible con overlay, obtuve {estado_b}"
+
+    # Forzar B a un estado conocido (no_verificado) para detectar recálculo
+    doc_b.factibilidad_estado = "no_verificado"
+    db.session.commit()
+
+    # Autorizar A → recálculo de B: Juan ahora tiene 7/7 en planilla real
+    # (A volcó), así que B sigue siendo factible.
+    autorizar_documento(doc_a, supervisora)
+    db.session.refresh(doc_b)
+    # El recálculo debe haber ocurrido: B ya no está en no_verificado
+    assert doc_b.factibilidad_estado == "factible"
+
+
+def test_al_denegar_documento_dependientes_pasan_a_no_factible(db):
+    """Denegar un predecesor invalida el overlay: el dependiente ya no puede
+    contar con esos turnos."""
+    from app.models import DocumentoCambio, ParticipanteDocumentoCambio, PlanillaMes
+
+    crear_usuario, manyana, tarde = _setup(db, "rd2")
+    claudia = crear_usuario("Claudiard2", "claudiard2@h.es")
+    juan = crear_usuario("Juanrd2", "juanrd2@h.es")
+    ana = crear_usuario("Anard2", "anard2@h.es")
+    supervisora = crear_usuario("Martard2", "martard2@h.es")
+
+    for u in (claudia, juan, ana):
+        db.session.add(PlanillaMes(usuario=u, anyo=2026, mes=7, publicada=True))
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 14), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=ana, fecha=date(2026, 7, 21), franja_horaria=manyana))
+    db.session.commit()
+
+    doc_a = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 14), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(doc_a, claudia, "x")
+    firmar_documento(doc_a, juan, "y")
+
+    doc_b = DocumentoCambio(
+        creado_por=juan, unidad_id=juan.unidad_id, numero_unidad=99,
+        depende_de_id=doc_a.id,
+    )
+    db.session.add(doc_b)
+    db.session.flush()
+    doc_b.participantes.append(ParticipanteDocumentoCambio(
+        usuario=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 21), turno_recibe_franja=manyana,
+    ))
+    doc_b.participantes.append(ParticipanteDocumentoCambio(
+        usuario=ana,
+        turno_cede_fecha=date(2026, 7, 21), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 7), turno_recibe_franja=manyana,
+    ))
+    db.session.commit()
+    from app.services.factibilidad_documento_cambio import comprobar_factibilidad
+    estado_b, _ = comprobar_factibilidad(doc_b)
+    assert estado_b == "factible"
+
+    # Denegar A → B ya no puede contar con overlay → no_factible
+    denegar_documento(doc_a, supervisora, motivo="No válido")
+    db.session.refresh(doc_b)
+    assert doc_b.factibilidad_estado == "no_factible"
+
+
+def test_al_anular_documento_autorizado_dependientes_pasan_a_no_factible(db):
+    """Anular un documento ya autorizado revierte las planillas; los
+    dependientes pierden el estado real que ganaron y pasan a no_factible."""
+    from app.models import DocumentoCambio, ParticipanteDocumentoCambio, PlanillaMes
+
+    crear_usuario, manyana, tarde = _setup(db, "rd3")
+    claudia = crear_usuario("Claudiard3", "claudiard3@h.es")
+    juan = crear_usuario("Juanrd3", "juanrd3@h.es")
+    ana = crear_usuario("Anard3", "anard3@h.es")
+    supervisora = crear_usuario("Martard3", "martard3@h.es")
+
+    for u in (claudia, juan, ana):
+        db.session.add(PlanillaMes(usuario=u, anyo=2026, mes=7, publicada=True))
+    db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, 7), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, 14), franja_horaria=manyana))
+    db.session.add(TurnoPlanilla(usuario=ana, fecha=date(2026, 7, 21), franja_horaria=manyana))
+    db.session.commit()
+
+    # Doc A: Claudia(7/7) ↔ Juan(14/7) — lo autorizamos (vuelca a planilla)
+    doc_a = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 14), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(doc_a, claudia, "x")
+    firmar_documento(doc_a, juan, "y")
+    autorizar_documento(doc_a, supervisora)
+    # Después de autorizar: Juan gana 7/7 en planilla real, Claudia gana 14/7
+
+    # Doc B: Juan(cede 7/7, ganado de A) ↔ Ana(cede 21/7)
+    doc_b = DocumentoCambio(
+        creado_por=juan, unidad_id=juan.unidad_id, numero_unidad=99,
+    )
+    db.session.add(doc_b)
+    db.session.flush()
+    doc_b.participantes.append(ParticipanteDocumentoCambio(
+        usuario=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 21), turno_recibe_franja=manyana,
+    ))
+    doc_b.participantes.append(ParticipanteDocumentoCambio(
+        usuario=ana,
+        turno_cede_fecha=date(2026, 7, 21), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 7), turno_recibe_franja=manyana,
+    ))
+    db.session.commit()
+
+    # Hacer que B dependa de A para que se recalcule al anular A
+    doc_b.depende_de_id = doc_a.id
+    db.session.commit()
+
+    # B es factible porque Juan tiene 7/7 en planilla real (gracias a A)
+    from app.services.factibilidad_documento_cambio import comprobar_factibilidad
+    estado_b, motivos = comprobar_factibilidad(doc_b)
+    assert estado_b == "factible", f"Esperaba factible, obtuve {estado_b}: {motivos}"
+
+    # Anular A → revierte planillas: Juan pierde 7/7
+    # B ya no puede contar con que Juan tenga 7/7 → no_factible
+    anular_documento(doc_a, supervisora, motivo="Error")
+    db.session.refresh(doc_b)
+    assert doc_b.factibilidad_estado == "no_factible"

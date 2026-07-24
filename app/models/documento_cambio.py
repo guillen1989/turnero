@@ -74,10 +74,22 @@ class DocumentoCambio(db.Model):
     # misma razón que anulado/decision_supervisora: filas ya existentes en
     # staging.
     origen_papel = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
+    # FK self-referential para hojas de cambio encadenadas: un documento puede
+    # depender de otro que todavía no ha sido autorizado (la cadena construye
+    # un overlay del estado hipotético de las planillas para comprobar que el
+    # nuevo cambio sería factible si primero se autoriza el predecesor).
+    # Nullable: un documento sin dependencia es el caso normal (compatible
+    # hacia atrás).
+    depende_de_id = db.Column(
+        db.Integer, db.ForeignKey("documento_cambio.id"), nullable=True
+    )
 
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
     supervisora = db.relationship("Usuario", foreign_keys=[supervisora_id])
     anulado_por = db.relationship("Usuario", foreign_keys=[anulado_por_id])
+    depende_de = db.relationship(
+        "DocumentoCambio", remote_side=[id], foreign_keys=[depende_de_id]
+    )
     unidad = db.relationship("Unidad")
     match = db.relationship("MatchCambio", back_populates="documento_cambio")
     participantes = db.relationship(

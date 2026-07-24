@@ -30,12 +30,20 @@ que (a)+(b).
 - **PR 1 (mergeado como PR #23): Bloque A + Bloque B.**
   - [x] Bloque A — Filtrado de `<select>` de turno por planilla real: HECHO.
   - [x] Bloque B — Motivos de no factibilidad: HECHO.
-  - [x] Ambos bloques A y B completados y mergeados en `staging`.
+- [x] Bloque C — Hojas de cambio encadenadas: HECHO.
+  - [x] Modelo: columna `DocumentoCambio.depende_de_id` (FK self-referential nullable) + relación `depende_de`.
+  - [x] Migración: `0de75e74af26` (un solo paso, nullable sin backfill).
+  - [x] Servicio de overlay: `_construir_overlay()` recorre la cadena de predecesores pendientes y construye conjuntos `added`/`removed` de turnos. Funciones de factibilidad (`_trabaja_turno`, `_libre_para_turno`, `_trabaja_el_dia`, `_contar_dias_consecutivos_trabajados`, `_viola_limite_dias_consecutivos`, `_viola_descanso_nocturno`) aceptan parámetro `overlay` opcional; sin overlay, comportamiento idéntico al actual.
+  - [x] Servicio de recálculo: `_recalcular_factibilidad_dependientes()` se llama desde `autorizar_documento`, `denegar_documento` y `anular_documento` para actualizar `factibilidad_estado`/`factibilidad_motivos` de todos los documentos que dependen del documento modificado.
+  - [x] Rutas: `nueva()` y `registrar_papel()` aceptan `depende_de_id` del formulario y pasan `hojas_pendientes` a las plantillas. Nuevo helper `_hojas_pendientes_encadenables()`.
+  - [x] UI: select opcional "Esta hoja depende de otra" en `nuevo.html` y `registrar_papel.html` listando hojas pendientes de la misma unidad. Badge "Encadenada a" en `ver.html` y `supervisora.html`.
+  - [x] Tests: 13 nuevos (2 modelo + 4 overlay + 3 recálculo + 4 rutas), 143 pasando. 3 tests de PDF con fallo preexistente (incompatibilidad `openssl_md5` en Python 3.8, no relacionado con este cambio).
+- [x] Style: intensificados los colores de la fila de números de día (`#94a3b8`) y de los botones solo-supervisora en la navbar (mayor opacidad amber).
 
-- **PR 2 (futuro, worktree/rama aparte, todavía sin empezar): Bloque C --
-  hojas de cambio encadenadas.** No empezar hasta que el PR 1 esté cerrado y
-  mergeado. Diseño ya acordado con el usuario, documentado aquí para que
-  cualquier herramienta pueda retomarlo sin depender de esta conversación:
+
+
+- **PR 2 (completado en `staging`): Bloque C — hojas de cambio encadenadas.**
+  Implementado tras mergear el PR 1. Diseño acordado con el usuario:
   - Los números de hoja (`DocumentoCambio.numero_unidad`) son relativos a
     `unidad_id` (`_siguiente_numero_unidad`, `UniqueConstraint("unidad_id",
     "numero_unidad", ...)`), **no** un identificador global -- el
