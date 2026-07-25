@@ -14,6 +14,7 @@ from app.models import (
     TurnoAceptado,
     insertar_categorias_semilla,
 )
+from app.matching.service import crear_pub_sintetica
 from app.services.registro import registrar_usuario
 from app.services.caducidad import caducar_publicaciones_expiradas
 
@@ -127,6 +128,40 @@ def test_no_caduca_si_algun_turno_cedido_es_futuro(db):
 
     db.session.refresh(pub)
     assert pub.estado == "abierta"
+
+
+# --- Limpieza de sintéticas huérfanas ---
+
+def test_elimina_sintetica_cuando_un_padre_caduca(db):
+    """Antes solo se marcaba 'cancelada'; las filas se acumulaban sin límite
+    en producción (70% de la tabla eran sintéticas muertas). Ahora se borran."""
+    ana = _usuario("ana@test.es")
+    pedro = _usuario("pedro@test.es")
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+    pub_a = _pub(ana, PASADO, franja)
+    pub_b = _pub(pedro, FUTURO, franja)
+    sint = crear_pub_sintetica(pub_a, pub_b)
+    sint_id = sint.id
+
+    caducar_publicaciones_expiradas(hoy=HOY)
+
+    db.session.refresh(pub_a)
+    assert pub_a.estado == "caducada"
+    assert PublicacionCambio.query.get(sint_id) is None
+
+
+def test_no_elimina_sintetica_si_ambos_padres_siguen_activos(db):
+    ana = _usuario("ana@test.es")
+    pedro = _usuario("pedro@test.es")
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+    pub_a = _pub(ana, FUTURO, franja)
+    pub_b = _pub(pedro, FUTURO, franja)
+    sint = crear_pub_sintetica(pub_a, pub_b)
+    sint_id = sint.id
+
+    caducar_publicaciones_expiradas(hoy=HOY)
+
+    assert PublicacionCambio.query.get(sint_id) is not None
 
 
 def test_devuelve_conteo_de_publicaciones_caducadas(db):
