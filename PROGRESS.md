@@ -1,7 +1,38 @@
 # Estado del desarrollo
 
+## Mantenimiento reciente (independiente de la Fase 10 — ahorro de tokens en sesiones de Claude Code)
+PR contra `staging` con 3 cambios para reducir el gasto de tokens de las sesiones
+de Claude Code (el gasto se había disparado con el tamaño del proyecto):
+- [x] `app/routes/admin.py` (1194 líneas, 38 rutas) dividido en el paquete
+  `app/routes/admin/` (10 módulos por dominio: `vista_general`, `usuarios`,
+  `geografia`, `publicaciones`, `feedback`, `demo`, `franjas`, `analytics`,
+  más `__init__.py` con `bp`/`admin_required` y `helpers.py` con los
+  `_choices_*` compartidos). Mismos 38 endpoints (`url_for("admin.xxx")` sin
+  cambios), verificado con `test_admin.py` + `test_admin_analytics.py` (47
+  tests) y conteo de rutas registradas.
+- [x] `tests/test_rutas_documento_cambio.py` (1942 líneas, 85 tests) dividido
+  en 8 archivos por escenario (`test_documento_cambio_{creacion,firma,lista,
+  registro_papel,supervision,anular,bloque,encadenadas}.py`) + un módulo
+  nuevo `tests/helpers_documento_cambio.py` con los helpers/constantes
+  compartidos (`_setup`, `_login`, `_FIRMA_PNG`, `_crear_documento_completo`,
+  etc.). Los 85 tests siguen pasando.
+- [x] `AGENTS.md` (casi duplicado de `CLAUDE.md`, ya divergente) reducido a un
+  stub que remite a `CLAUDE.md` como única fuente, para no volver a mantener
+  las convenciones dos veces.
+- [x] Reforzada en `CLAUDE.md` la recomendación de usar `pytest --testmon` en
+  vez de la suite completa en el día a día.
+
+Nota para la próxima sesión: al dividir `app/routes/admin.py`, el primer
+intento de split olvidó el import de `request` en `geografia.py`; al dividir
+el test file, dos archivos nuevos olvidaron importar `_mes_actual_y_siguiente`/
+`_crear_documento_completo` de `helpers_documento_cambio.py` — el `NameError`
+resultante dejaba una transacción a medias que causaba deadlocks en tests
+posteriores (parecía contención de la BD de test, pero era un import que
+faltaba). Verificar con `pyflakes` tras cualquier split de este tipo antes de
+fiarte de los resultados de tests que fallan con errores de BD poco claros.
+
 ## Fase actual
-Fase 9 — Mejoras post-MVP
+Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
 ## Paso actual / siguiente paso
 perf(publicaciones): eliminar una publicación con sintéticas dependientes
@@ -150,480 +181,183 @@ cada publish/editar (hoy se repite la misma consulta 6 veces), 3) gunicorn
 con varios workers en el `Procfile` (red de seguridad de infraestructura:
 que un request lento no bloquee toda la app), 4) añadir los índices que
 faltan en `publicacion_cambio`/`usuario`/`unidad` (hoy solo tienen la PK).
+Worktree `turnos-factibles-y-causas` (rama
+`worktree-turnos-factibles-y-causas`, creada desde `origin/staging` en
+`dfc0557`, que ya incluye el PR #21 mergeado -- ver más abajo). Motivado por
+tres peticiones del usuario tras usar la app en producción:
+
+a. Los desplegables de turno en `/documentos-cambio/nuevo` y
+   `/documentos-cambio/registrar-papel` listan todas las `FranjaHoraria` del
+   grupo, aunque el trabajador elegido no curre ese turno ese día concreto --
+   deberían filtrarse por lo que el usuario realmente tiene asignado en la
+   planilla ese día.
+b. `comprobar_factibilidad` (`app/services/factibilidad_documento_cambio.py`)
+   devuelve `no_factible` sin decir *por qué* (corta en el primer fallo que
+   encuentra) -- la supervisora necesita ver el motivo concreto (no trabaja
+   ese turno / no está libre / rompe el límite de días consecutivos / rompe
+   el descanso nocturno) para cada participante.
+c. "Hojas de cambio encadenadas": permitir registrar una hoja que depende de
+   otra hoja todavía pendiente de autorizar, sin que salga `no_factible`
+   solo porque los efectos de la primera aún no están volcados a la
+   planilla real.
+
+Van en **dos PRs separados** porque (c) es bastante más grande y arriesgado
+que (a)+(b).
+
+- **PR 1 (mergeado como PR #23): Bloque A + Bloque B.**
+  - [x] Bloque A — Filtrado de `<select>` de turno por planilla real: HECHO.
+  - [x] Bloque B — Motivos de no factibilidad: HECHO.
+- [x] Bloque C — Hojas de cambio encadenadas: HECHO.
+  - [x] Modelo: columna `DocumentoCambio.depende_de_id` (FK self-referential nullable) + relación `depende_de`.
+  - [x] Migración: `0de75e74af26` (un solo paso, nullable sin backfill).
+  - [x] Servicio de overlay: `_construir_overlay()` recorre la cadena de predecesores pendientes y construye conjuntos `added`/`removed` de turnos. Funciones de factibilidad (`_trabaja_turno`, `_libre_para_turno`, `_trabaja_el_dia`, `_contar_dias_consecutivos_trabajados`, `_viola_limite_dias_consecutivos`, `_viola_descanso_nocturno`) aceptan parámetro `overlay` opcional; sin overlay, comportamiento idéntico al actual.
+  - [x] Servicio de recálculo: `_recalcular_factibilidad_dependientes()` se llama desde `autorizar_documento`, `denegar_documento` y `anular_documento` para actualizar `factibilidad_estado`/`factibilidad_motivos` de todos los documentos que dependen del documento modificado.
+  - [x] Rutas: `nueva()` y `registrar_papel()` aceptan `depende_de_id` del formulario y pasan `hojas_pendientes` a las plantillas. Nuevo helper `_hojas_pendientes_encadenables()`.
+  - [x] UI: select opcional "Esta hoja depende de otra" en `nuevo.html` y `registrar_papel.html` listando hojas pendientes de la misma unidad. Badge "Encadenada a" en `ver.html` y `supervisora.html`.
+  - [x] Tests: 13 nuevos (2 modelo + 4 overlay + 3 recálculo + 4 rutas), 143 pasando. 3 tests de PDF con fallo preexistente (incompatibilidad `openssl_md5` en Python 3.8, no relacionado con este cambio).
+- [x] Style: intensificados los colores de la fila de números de día (`#94a3b8`) y de los botones solo-supervisora en la navbar (mayor opacidad amber).
+
+- **PR 2 (completado en `staging`): Bloque C — hojas de cambio encadenadas.**
+  Implementado tras mergear el PR 1. Diseño acordado con el usuario:
+  - Los números de hoja (`DocumentoCambio.numero_unidad`) son relativos a
+    `unidad_id` (`_siguiente_numero_unidad`, `UniqueConstraint("unidad_id",
+    "numero_unidad", ...)`), **no** un identificador global -- el
+    encadenado debe referenciar siempre por el `id` real (autoincrement,
+    único de verdad), nunca por `numero_unidad`, para evitar ambigüedad
+    entre unidades.
+  - Nueva columna nullable `DocumentoCambio.depende_de_id` (FK
+    self-referential a `DocumentoCambio.id`). Migración de un solo paso
+    (nullable, sin backfill necesario -- no rompe el patrón de tres pasos
+    porque no es `NOT NULL`).
+  - UI en el alta de una hoja: select opcional "¿Esta hoja depende de otra
+    hoja aún no autorizada?", listando las hojas pendientes de la misma
+    `unidad_id` como p.ej. `"Hoja nº 12 (14/03) -- cedes noche a Ana,
+    recibes tarde de Ana"` (el `value` del `<option>` es el `id` real;
+    mostrar `numero_unidad` como texto es seguro porque la lista ya está
+    acotada a una sola unidad).
+  - Backend: construir un "overlay" del estado hipotético de la planilla
+    (estado real + deltas de la cadena de documentos predecesores aún
+    pendientes) y hacer que las funciones auxiliares de
+    `factibilidad_documento_cambio.py` (`_trabaja_turno`,
+    `_libre_para_turno`, `_trabaja_el_dia`,
+    `_contar_dias_consecutivos_trabajados`) consulten ese overlay en vez de
+    `TurnoPlanilla`/`EstadoDiaPlanilla` directamente -- sin cadena, el
+    overlay es un no-op y el comportamiento actual no cambia (compatible
+    hacia atrás).
+  - Si se deniega/anula un predecesor, hay que recalcular la factibilidad
+    de la hoja dependiente (puede volver a `no_factible`); una vez
+    autorizado el predecesor (`volcar_documento_a_planillas` aplicado), la
+    dependiente pasa a comprobarse contra el estado real directamente (deja
+    de necesitar el overlay).
 
 ## Paso anterior
-fix(matching): las cadenas de 3 y 4 bandas (`crear_match_cadena_3`,
-`crear_match_cadena_4` en `app/matching/service.py`) solo registraban en
-`MatchParticipacion` el `turno_cedido_id` que cada banda cede a la
-siguiente del ciclo, nunca el `turno_aceptado_id` que recibe de la
-anterior — a diferencia de `crear_match_directo`, que ya resolvía ambos
-lados con `_primer_aceptado_que_cubre`. Consecuencia: al confirmarse una
-cadena, `confirmar_participacion` marcaba `resuelto` el turno cedido pero
-nunca el aceptado, así que una publicación multi-turno que solo resolvía
-parcialmente por una cadena volvía a estar activa (`parcialmente_resuelta`,
-correcto) pero seguía mostrando como pendiente el día ya conseguido.
-Reportado por el usuario en producción tras confirmar un cambio a 4 bandas
-(publicación 818: recibió el 2026-08-07 de Blanca De la Calle vía el ciclo
-Alejandro Vilches→Victoria Hernández-Mansilla→Blanca→Guillén→Alejandro;
-`turno_aceptado` id 2104 seguía en `abierto` tras el cierre). Diagnosticado
-leyendo en solo lectura la BD de producción (Railway) antes de tocar
-código. Fix: ambas funciones calculan ahora también el `turno_aceptado`
-que cada banda recibe (mismo helper `_primer_aceptado_que_cubre` que ya
-usaba el match directo) y lo enlazan en la participación; no hace falta
-tocar `confirmar_participacion`, que ya comprobaba
-`turno_aceptado_id is not None`. 4 tests de regresión nuevos (2 por cadena:
-cada participación tiene `turno_aceptado_id`, y caso de extremo a extremo
-con publicación multi-turno que verifica que el turno conseguido queda
-`resuelto` y el resto de turnos intacto) · 887 tests passing.
+Rama `feature/planilla-supervision-highlights` (PR #22 mergeada): 4 mejoras
+visuales de `/planilla/supervision` pedidas por el usuario.
 
-Pendiente: el `turno_aceptado` 2104 de la publicación 818 de producción
-sigue con el dato viejo (`abierto`) porque el fix no es retroactivo — el
-usuario no ha pedido corregirlo todavía, solo el fix de código. Si lo pide,
-es un `UPDATE` de una fila puntual, no una migración de esquema.
+Rama `fix/planilla-supervision-followups` (a partir de `staging`, ya con la
+lista de 9 mejoras anterior mergeada). Lista de 8 seguimientos pedidos por el
+usuario tras probar `/planilla/supervision` y `/documentos-cambio/supervisora`
+en vivo:
 
-## Paso anterior
-fix(dashboard): investigado un reporte del usuario de que, en cadenas de
-3/4 bandas, la tarjeta de "Pendientes" no reflejaba nuevas confirmaciones
-de otros participantes al recargar. No se pudo reproducir ningún bug de
-datos/plantilla: se comprobó con varios órdenes de confirmación (segundo
-confirmador, el propio primer confirmador recargando tras la segunda
-confirmación de otro) tanto con el cliente de test de Flask como contra
-un servidor real (`flask run`) con sesiones HTTP independientes por
-usuario (cookies separadas) — en todos los casos el HTML recargado ya
-traía el ✓ correcto. Como la página del dashboard es dinámica y personal
-(depende de qué haya confirmado cada participante) y no llevaba ninguna
-cabecera anti-caché, se añade `Cache-Control: no-store` a la respuesta
-de `main.index` como medida defensiva: si la causa real era caché del
-navegador o de algún intermediario entre el usuario y Railway, queda
-eliminada; si vuelve a reportarse, ya no puede deberse a eso. 4 tests
-nuevos (2ª confirmación reflejada, primer confirmador ve la 2ª
-confirmación de otro, cabecera no-store) · 884 tests passing.
+### Detalle de la ronda anterior (8 seguimientos, ya mergeada en `staging`)
+- [x] 1. Color propio (ámbar) para los botones solo-supervisora del nav, para
+  distinguirlos de un vistazo de la fila de usuario normal de arriba
+  (`.nav-supervisora-row a` en `main.css`).
+- [x] 2. Los usuarios eliminados (`Usuario.eliminado`, nueva property que
+  comprueba `password_hash == 'CUENTA_ELIMINADA'`) ya no aparecen en
+  `/planilla/supervision` (filtrado en la ruta `index`).
+- [x] 3. Bug real encontrado y corregido: el commit anterior (`e7df65d`) solo
+  había verificado que "añadir turno extra sin sustituir" funcionaba en la
+  planilla propia del trabajador (`/planilla/dia/añadir`), **no** en el editor
+  de la supervisora. `ajustar_turno_trabajador` (servicio) siempre borraba
+  todo el día antes de aplicar la selección; ahora acepta `sustituir: bool =
+  True` y, si es `False` y hay `franja_id`, añade sin tocar lo que ya había.
+  La ruta `/planilla/supervision/ajustar` acepta un nuevo campo de formulario
+  `anadir_extra`; el modal de la plantilla añade un checkbox "Añadir turno
+  extra" que solo se muestra cuando la selección es un turno concreto (no un
+  estado ni "vaciar"). Tests de regresión a nivel de servicio y de ruta.
+- [x] 4. El modal de "Modificar turno" de `/planilla/supervision` incluye
+  ahora un enlace "📄 Registrar cambio manualmente (papel)" que lleva a
+  `/documentos-cambio/registrar-papel` preseleccionando trabajador y fecha
+  (`registrar_papel` acepta `usuario1_id`/`fecha` por query string en GET).
+- [x] 5. Botón "Registrar cambio desde papel" con clase propia
+  `.btn-registrar-papel` (ámbar, con emoji 📄) en vez de `btn-secondary`
+  genérico, tanto en `/documentos-cambio/supervisora` como en el nuevo enlace
+  del punto 4.
+- [x] 6. `registrar_documento_cambio_papel` comprueba la factibilidad antes de
+  aplicar el cambio: si sale `no_factible`, hace rollback, lanza
+  `CambioNoFactibleError` (nueva excepción) y no crea ni aplica nada; la ruta
+  `registrar_papel` la captura y muestra un aviso en vez de aplicar el
+  cambio. `no_verificado` sigue dejando pasar (no hay planilla suficiente
+  para *saber* que es inviable, distinto de saber que sí lo es).
+- [x] 7. Las hojas de cambio (`DocumentoCambio`/`ParticipanteDocumentoCambio`)
+  ya no dependen del nombre en vivo de `Usuario` para documentos completos:
+  nuevo campo `nombre_congelado` (nullable, migración `fce42d5845ad`, sin
+  backfill porque el proyecto todavía no ha llegado a producción) en
+  `ParticipanteDocumentoCambio`, con la propiedad `nombre_mostrar` (=
+  `nombre_congelado or usuario.nombre`). Se rellena en el momento de
+  completarse el documento: en `registrar_documento_cambio_papel` (nace
+  completo) y en `firmar_documento` cuando `todos_han_firmado()`. Plantillas
+  (`ver.html`, `lista.html`, `supervisora.html`) y generación de PDF/notas
+  ilog (`app/services/documento_cambio.py`) cambiadas a `nombre_mostrar`.
+  `eliminar_cuenta()` no necesitó tocarse. Se muestra siempre el nombre
+  congelado para documentos completos (no solo cuando la cuenta ya no
+  existe), para que el PDF sea estable en el tiempo. Tests de regresión a
+  nivel de modelo, servicio (firma digital y papel, incluyendo PDF) y ruta
+  (`/documentos-cambio/supervisora` tras `eliminar_cuenta`).
+- [x] 8. Confirmado el hueco real que sospechaba el usuario sobre
+  `origen_papel` (commit `4d3636d3`): la columna sí se usaba en
+  `documento_cambio/ver.html` y `supervisora.html`, pero **no** en
+  `documento_cambio/lista.html` ("Mis hojas de cambio", la vista de cada
+  trabajador) -- ahí no había ninguna insignia "Papel". Añadida + test de
+  regresión.
+- [x] 9. UX del modal "Modificar turno" de `/planilla/supervision`
+  reordenado: el checkbox "Añadir turno extra" del punto 3 solo aparecía
+  *después* de elegir el turno concreto, lo cual no era evidente para la
+  supervisora al probarlo en vivo. Sustituido por un `radiogroup` de dos
+  opciones ("Modificar turno del día" / "Añadir turno extra (doblaje)")
+  que se muestra *antes* del desplegable de turno/estado; al elegir
+  "añadir", se deshabilitan las opciones no aplicables ("Vaciar día" y el
+  optgroup de estados especiales, que no tienen sentido en un doblaje).
+  Sin cambios de backend (la ruta/servicio ya soportaban `sustituir=False`
+  desde el punto 3). Cobertura nueva a nivel e2e con Playwright
+  (`e2e/test_planilla_supervision.py`, 3 tests: orden visual del radio
+  antes que el select, deshabilitado de estados especiales en modo
+  "añadir", y que añadir un turno extra no borra el turno existente del
+  día). 49 tests en verde (`test_rutas_planilla_supervision.py` +
+  `test_servicio_planilla_supervision.py` + el nuevo fichero e2e).
+- [x] 10. El radiogroup del punto 9 seguía sin ser evidente al usarlo en
+  vivo (dos radios + un desplegable compartido para todo: turnos, estados
+  y "vaciar" era demasiado indirecto). Rediseño a UI de filas con iconos:
+  el modal ahora lista una fila por cada turno/estado ya asignado ese día,
+  cada una con "✎" (modificar esa franja concreta por otra) y "−"
+  (eliminarla, sin tocar el resto -- soporta doblajes); debajo, un botón
+  "+ Añadir" muestra el formulario para dar de alta un turno o estado
+  nuevo. El icono de papel del punto 4 se queda sin texto visible (solo el
+  emoji) para que el modal sea más visual. Backend: dos rutas nuevas,
+  `POST /planilla/supervision/turno/eliminar` y
+  `POST /planilla/supervision/turno/editar`, más los servicios
+  `eliminar_turno_trabajador`/`editar_turno_trabajador` (reutilizan
+  `eliminar_turno`/`añadir_turno` de `app/services/planilla.py`) --
+  `ajustar_turno_trabajador` y su ruta `/ajustar` se conservan para
+  "añadir turno nuevo" / asignar estado / vaciar día. Regla de sustitución
+  simplificada: elegir un turno en el "+" siempre añade (nunca vacía el
+  día), elegir un estado especial o "vaciar" siempre sustituye todo el
+  día -- ya no hace falta el checkbox/radio de modo. Los datos de cada
+  celda (turnos + estado) se serializan a JSON en la ruta (`_turnos_a_json`,
+  `_estado_a_json`) y se pintan en el modal por JS sin peticiones extra.
+  Tests: cobertura completa a nivel de ruta para las dos rutas nuevas,
+  test de ruta para los atributos JSON de la celda, y reescritura completa
+  de `e2e/test_planilla_supervision.py` (5 tests Playwright: iconos
+  editar/eliminar en la fila, eliminar quita solo esa franja, editar
+  sustituye solo esa franja, añadir no pierde el turno existente, icono de
+  papel sin texto). 68 tests en verde (`test_rutas_planilla_supervision.py`
+  + `test_servicio_planilla_supervision.py` + `e2e/test_planilla_supervision.py`).
 
-feat(dashboard): en las tarjetas de match de cadenas de 3/4 bandas
-(`cadena_3`/`cadena_4`), se añade una fila de "chips" que muestra a cada
-participante con ✓ (confirmado, chip verde) u ○ (pendiente) — a petición
-del usuario: cuando una parte confirma, las demás reciben aviso y el
-cambio pasa a "Pendientes de confirmar", pero hasta ahora no se veía quién
-de los 3/4 ya había confirmado y a quién había que esperar. Los datos ya
-existían en el modelo (`MatchParticipacion.confirmado` por fila,
-`otras_parts`/`mi_part` ya se pasaban a la plantilla), así que es solo
-`dashboard.html` + CSS nuevo (`.match-confirmaciones`,
-`.match-confirmaciones-item[--ok]`), sin cambios de backend. Se muestra
-mientras el match no esté `confirmado_total` (en ese estado ya hay un
-mensaje de "confirmado por todas las partes" que lo deja claro). No se
-aplica a matches directos (2 bandas): ahí ya queda claro con el badge
-existente ("Pendiente de tu confirmación" / "Esperando al otro usuario").
-Verificado además del test HTTP con un smoke manual: servidor Flask real
-contra una base Postgres temporal, cadena de 4 con una confirmación ya
-hecha, `curl` autenticado a `/?estado=pendiente` confirma el HTML
-esperado (✓ Ana, ○ Tú/María/Luis). Catálogo i18n actualizado (nuevo
-`msgid "Tú"`, antes solo existía como parte de frases más largas como
-"Tú libras:"). 1 test nuevo (`test_cadena_4.py`) · 880 tests passing.
-
-refactor(dashboard): rediseño de cómo Activos muestra las publicaciones con
-match — sustituye el enfoque anterior (botón "Editar" metido en la
-match-card) por tarjetas separadas, a petición del usuario: la tarjeta de
-la publicación original (editable, con sus turnos aún `abierto`) se sigue
-mostrando en Activos aunque tenga un match `propuesto`, y junto a ella
-aparece la tarjeta de ese match (sin botón "Editar" — solo
-Confirmar/Rechazar). Pendientes (matches `confirmado_parcial`) mantiene su
-comportamiento anterior sin cambios: sigue sin tarjeta de publicación
-propia y conserva el botón "Editar" en la match-card, que era la única vía
-de edición para ese caso.
-
-En `app/routes/main.py`: eliminada `_query_con_match_activo` (excluía de
-Activos toda pub con match `propuesto` o `confirmado_parcial`); tanto el
-filtro de la pestaña Activos como el recuento de `_conteos_tabs` pasan a
-excluir solo por `_query_pendientes` (`confirmado_parcial`), dejando que las
-pubs con match `propuesto` se cuenten y muestren también como tarjeta
-propia. En `dashboard.html`, el enlace "Editar" de la match-card en la rama
-"pendiente de confirmar" ahora solo aparece si `match.estado ==
-'confirmado_parcial'` (la rama "ya confirmado, esperando a los demás" es
-exclusiva de Pendientes, así que mantiene su Editar sin condición).
-
-Tests actualizados/nuevos en `test_dashboard.py`: renombrado el test que
-verificaba la exclusión (ahora deja claro que es solo por
-`confirmado_parcial`), nuevo test que comprueba que Activos muestra ambas
-tarjetas para un match `propuesto` y que el botón Editar aparece una sola
-vez (en la original, no en la de match), y ajustado el contador esperado
-de la pestaña Activos (pasa de 1 a 2, ya que ahora son dos tarjetas).
-Catálogo i18n actualizado (pybabel extract/update/compile) · 879 tests
-passing.
-
-fix(dashboard): una publicación con un match activo (`propuesto` o
-`confirmado_parcial`), aunque sea parcial — por ejemplo, pedía varios días y
-solo uno hizo match —, desaparecía por completo de "Mis cambios > Activos"
-(y de "Pendientes"): la pestaña excluye la tarjeta de publicación editable
-en cuanto existe cualquier match activo, y en su lugar solo se mostraba la
-match-card, que no tenía botón "Editar". El usuario quedaba sin forma de
-modificar la publicación aunque otros turnos suyos siguieran sin resolver.
-Añadido enlace "Editar" (a `publicaciones.editar`, vía
-`mi_part.publicacion_id`) en ambas ramas de acciones de la match-card en
-`dashboard.html` (pendiente de confirmar y ya confirmada esperando a los
-demás) — cubre tanto Activos (`propuesto`) como Pendientes
-(`confirmado_parcial`). El backend (`editar_publicacion`) ya rechazaba y
-recreaba los matches activos de la publicación al guardar cambios, así que
-no hizo falta tocar la lógica de negocio. Dos tests nuevos en
-`test_dashboard.py` (uno por cada estado de match) que comprueban que el
-enlace de edición aparece en el HTML. Catálogo i18n actualizado (pybabel
-extract/update/compile) · 876 tests passing.
-
-feat(dashboard): el botón "Avisar por WhatsApp" que ya existía para los
-matches `cadena_4` (con el texto completo de quién libra/trabaja cada día,
-para reenviar a los otros 3) se extiende a `cadena_3` — antes ese bloque en
-`dashboard.html` comprobaba `match.tipo == 'cadena_4'` explícitamente y
-dejaba fuera las cadenas de 3 bandas. Ahora comprueba `es_cadena` (ya
-definido arriba como `match.tipo in ('cadena_3', 'cadena_4')`) y el texto
-del mensaje se adapta según `match.tipo` ("listo para cerrar entre los 3/4").
-Nuevo test en `test_cadena_3.py` (mismo patrón que el ya existente en
-`test_cadena_4.py`: verifica que aparece el botón wa.me y que el texto usa
-el nombre de cada usuario en vez de "Tú libras/trabajas"). Catálogo i18n
-actualizado (pybabel extract/update/compile).
-
-feat(editar): el calendario tap-to-select de `/publicar` (elegir franja +
-tocar días) se extiende a `/editar`, que hasta ahora seguía usando las
-filas manuales "fecha + tipo de turno" con un botón "+ Añadir otro turno" —
-inconsistente con el flujo de publicar y sin forma de tocar varios días de
-un tirón. `app/static/js/calendario-turnos.js` gana la opción
-`seleccionInicial` (array de `[fecha, franjaId]`) para precargar la
-selección del widget con los turnos ya guardados de la publicación (usa
-`'0'` para "cualquier turno" en aceptados); si no hay `prefillFecha`
-explícito, el mes inicial visible pasa a ser el de la fecha más temprana
-de esa selección en vez de siempre el mes actual. `editar.html` pasa de
-las filas manuales a los mismos `<div id="cal-cedidos">`/`cal-aceptados`
-que `publicar.html`, con los datos de precarga embebidos como JSON
-(`<script type="application/json">`) — el backend no cambia: sigue
-generando los mismos inputs ocultos `fecha_/franja_{prefix}_N` que ya
-consumía `_extraer_turnos`, así que `editar_publicacion()` y su reemplazo
-íntegro de turnos_cedidos/turnos_aceptados quedan intactos (mismo
-comportamiento de siempre ante ediciones de publicaciones parcialmente
-resueltas). Nuevo `e2e/test_editar_publicacion.py` (2 tests, mismo patrón
-de `test_publicar.py`: precarga visible + varios días de un tirón).
-Catálogo i18n actualizado (pybabel extract/update/compile). 876 tests
-unitarios passing.
-
-feat(auth): login persistente ("recuérdame" siempre activo, como una app) —
-`login_user(usuario, remember=True)` en los tres puntos de entrada
-(`registro`, `login`, `login/demo`) en vez del `login_user(usuario)` sin
-"remember" que había. Flask-Login guarda entonces una cookie
-`remember_token` independiente de la cookie de sesión (dura 365 días por
-defecto), así que aunque el navegador/PWA se cierre y la cookie de sesión
-(no permanente) desaparezca, la siguiente petición se re-autentica sola a
-partir de la cookie "remember me" — sin tocar `user_loader` ni el modelo
-`Usuario`. La única forma de perder la sesión sigue siendo la acción
-explícita del usuario (`auth.logout`, que ya limpiaba la cookie vía
-`session["_remember"]="clear"` de Flask-Login). Añadido también
-`SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE = "Lax"` (base
-`Config`) y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE = True` en
-`ProductionConfig` (Railway sirve siempre sobre HTTPS). 4 tests nuevos en
-`tests/test_auth_routes.py` (cookie se fija en login/login-demo/registro,
-sesión sobrevive a perder la cookie de sesión simulando cierre de la app,
-logout limpia la cookie) · 874 tests passing. Implementado en un worktree
-sobre `staging`.
-
-feat(matches): desconfirmar un match ya confirmado por el propio usuario,
-por si cambia de idea antes de que el cambio quede cerrado del todo.
-Nuevo `POST /matches/<id>/desconfirmar` + `desconfirmar_participacion()`
-en `app/services/matches.py`: pone `confirmado=False`/`fecha_confirmacion=
-None` en la participación propia y recalcula el estado del match —
-`confirmado_parcial` si alguna otra parte sigue confirmada (relevante en
-cadenas de 3+), o `propuesto` si nadie más lo está. Reutiliza
-`_get_match_validado` (bloquea con 409 si el match ya está
-`confirmado_total`/`rechazado`, igual que confirmar/rechazar); 409
-también si el usuario no tenía nada que desconfirmar. Notifica a las
-demás partes (`Notificacion` tipo `desconfirmacion` + push, reutilizando
-la preferencia `notif_confirmacion_parcial`). Botón "Desconfirmar" en el
-dashboard junto al aviso "Has confirmado. Esperando...". Catálogo i18n
-actualizado (pybabel extract/update/compile). 11 tests nuevos (servicio +
-ruta + caso de cadena a 3). 816 tests passing. Implementado en un
-worktree sobre `staging`.
-
-B19 en marcha: "ocasiones a 4" (cadena de intercambio A→B→C→D→A), siguiendo el
-mismo patrón que la cadena a 3 (B13). Paso 1 completado: motor puro
-`detectar_cadena_4` en `app/matching/engine.py`. Paso 2 completado: capa de
-servicio `buscar_cadenas_4_para`/`crear_match_cadena_4` (triple bucle
-anidado, ciclo completo, sin sintéticas todavía) en
-`app/matching/service.py` · 12 tests en `tests/test_cadena_4.py` mirroring
-`test_cadena_3.py`. Paso 3 completado: `buscar_cadenas_4_para`/`crear_match_cadena_4` enganchados
-en las 3 rutas que ya disparan cadena_3 (`/publicar`, editar, contraoferta
-— `app/routes/publicaciones.py`) · 1 test de integración de ruta nuevo.
-Paso 4 completado: badge "¡Cambio a 4 bandas!" en `dashboard.html`,
-generalizando los checks hardcodeados `match.tipo == 'cadena_3'` (ahora
-`es_cadena = match.tipo in ('cadena_3','cadena_4')`) · 1 test de ruta
-nuevo. Paso 5 completado: columna `sintetica_pub_intermedio_id` en
-`PublicacionCambio` (nullable, guarda la banda real intermedia "B" de un
-trío A→B→C ya cerrado cuando la sintética completa el hueco C→D→A;
-siempre NULL en sintéticas de cadena_3) + migración `f182c4111872`
-(`flask db heads` → 1 head; downgrade con nombre de constraint explícito
-`fk_sintetica_pub_intermedio`, igual que `e8e3d3c815bd`). Paso 6
-completado: capa de servicio para cadenas parciales de 4 (3 bandas reales
-+ 1 hueco) en `app/matching/service.py` — `buscar_cadenas_parciales_4_para`
-(mismo bucle que `buscar_cadenas_3_para` pero exige que el 3er eslabón NO
-cierre, si no sería ya una cadena_3 completa), `crear_pub_sintetica`
-extendida con `pub_intermedio` opcional (mismo cálculo cedido/aceptado que
-cadena_3, solo depende de los 2 extremos del hueco), `crear_aviso_oportunidad_4`
-(3 destinatarios, cada uno referencia al siguiente del ciclo),
-`procesar_cadena_parcial_4` (combinador) y `crear_cadena_4_desde_sintetica`
-· textos/prefs de push añadidos en `app/push/sender.py` · 12 tests en
-`tests/test_sintetica_4.py` mirroring `test_pub_sintetica.py`. Nota de
-entorno: la BD de test compartida (`turnero_test`) puede tener el esquema
-desactualizado si hay otro job/worktree corriendo tests en paralelo con un
-modelo distinto (create_all() no altera columnas en tablas ya existentes);
-si aparecen errores "UndefinedColumn", usar una BD de test privada vía
-`TEST_DATABASE_URL` para verificar antes de sospechar de un bug real.
-Fix aplicado tras el paso 6: `buscar_cadenas_parciales_4_para` asumía que
-la publicación consultada era siempre la primera banda (A); un camino
-abierto A→B→C no tiene la simetría rotacional de un ciclo cerrado, así
-que si publicaba último el intermedio o el final del trío, no se
-detectaba. Ahora busca las 3 posiciones y devuelve el trío completo
-`(pub_a, pub_b, pub_c)` en vez de asumir el rol de la publicación
-consultada · 2 tests nuevos (detección desde el intermedio y desde el
-final). Paso 7 completado: enganchado todo en `app/routes/publicaciones.py`
-— `buscar_cadenas_parciales_4_para`/`procesar_cadena_parcial_4` en las 3
-rutas que ya disparan cadena_3 (`/publicar`, editar, contraoferta); nuevo
-helper `_resolver_sintetica(pub, sint)` que branchea entre
-`crear_cadena_3_desde_sintetica`/`crear_cadena_4_desde_sintetica` según
-`sint.sintetica_pub_intermedio_id`, usado en esas 3 rutas y en
-`me_interesa` (que también generaliza el flash de éxito según
-`match.tipo`) · 4 tests de integración nuevos (publicar cierra el hueco
-generando la sintética, publicar el 4º cierra la cadena, «Me interesa»
-sobre una sintética de cadena_4). 199 tests relacionados (sintética,
-cadena, matching, publicar, contraoferta, me_interesa) passing. Siguiente
-paso: ciclo de vida — `_cancelar_sinteticas_de`/`_eliminar_sinteticas_de`
-en `app/services/publicaciones.py` deben incluir
-`sintetica_pub_intermedio_id == pub_id` en el filtro OR, para que
-cancelar/eliminar la publicación intermedia también cascada a la
-sintética de cadena_4.
-
-Paso 8 completado: `_cancelar_sinteticas_de`/`_eliminar_sinteticas_de`
-(`app/services/publicaciones.py`) incluyen ahora
-`sintetica_pub_intermedio_id == pub_id` en su filtro OR — antes, cancelar
-o eliminar la banda intermedia de un trío no tocaba la sintética
-dependiente (bug real confirmado por test: quedaba `abierta` al cancelar,
-y `ForeignKeyViolation` al eliminar). 4 tests nuevos (cancelar cada una de
-las 3 bandas reales, eliminar la intermedia sin error) · 64 tests
-relacionados passing.
-
-Paso 9 completado: etiqueta "Oportunidad a 4" distinguida de "Oportunidad
-a 3" en calendario y buscador, según `sintetica_pub_intermedio_id` —
-`resumen_publicaciones` (`app/services/calendario_mercado.py`) añade
-`es_sintetica_4`; `app/routes/calendario.py` elige la etiqueta con ese
-campo; `_cargar_sint_info` (`app/routes/main.py`) añade `pub_intermedio`;
-`app/templates/main/cambios.html` branchea badge + mensaje ("Cambio a 4
-con X, Y y Z") cuando hay banda intermedia. Catálogo i18n actualizado
-(pybabel extract/update/compile). 6 tests nuevos (2 servicio, 2 ruta
-calendario, 1 ruta cambios) · 106 tests relacionados passing. Siguiente
-paso: preferencia de usuario para mostrar/ocultar oportunidades a 3 y a 4
-por separado en el calendario (Ofertas/Peticiones).
-
-Paso 10 completado: columnas `mostrar_oportunidad_3`/`mostrar_oportunidad_4`
-en `Usuario` (booleanas, default True, server_default — mismo patrón de
-un solo paso que `notif_*`) + migración `fe34f9af4a2b`. `_candidatas`/
-`construir_calendario_mes` (`app/services/calendario_mercado.py`) aceptan
-esos dos flags y excluyen las sintéticas del tipo correspondiente.
-`app/routes/calendario.py` los lee de `current_user` al construir el
-calendario, y expone `POST /calendario/preferencias` (checkboxes con
-auto-submit `onchange`, sin página de ajustes separada — el control vive
-directamente en la vista del calendario, junto al selector Ofertas/
-Peticiones, tal y como pidió el usuario). Catálogo i18n actualizado. 6
-tests nuevos (2 servicio, 3 ruta calendario, con `#, fuzzy` corregido a
-mano tras `pybabel update` porque emparejó mal 2 msgid nuevos con una
-traducción existente). **B19 completo: 854 tests unitarios passing.**
-Nota: `.backlog` no está versionado en git (archivo local sin trackear
-solo en el checkout original del usuario) — no se puede actualizar desde
-este worktree; queda pendiente que el usuario tache a mano la línea
-"cambios a 4". Alcance completo de B19 (visto con el usuario):
-detección + confirmación de ciclos completos de 4, sintéticas/avisos para
-cadenas parciales de 4 (3 bandas reales + 1 hueco) igual que ya hace la
-cadena a 3, y una preferencia de usuario para mostrar/ocultar oportunidades
-a 3 y a 4 por separado en el calendario (Ofertas/Peticiones).
-feat(publicar): calendario tap-to-select para turnos cedidos/aceptados —
-una usuaria pidió un modo más ágil de ofrecer/pedir muchos turnos en vez de
-añadirlos uno a uno. Se validó primero un mockup interactivo (Artifact) con
-el usuario antes de implementar. Sustituye las filas manuales "fecha + tipo
-de turno" de `/publicar` por: elegir la franja (chip) y tocar los días de
-un calendario mensual; se puede repetir el ciclo con otra franja para
-mezclar tipos de turno en la misma publicación. Reutiliza `.planilla-cal`/
-`.cal-celda`/`.cal-bandas-row`/`.cal-banda` (mismo patrón visual que
-`/calendario` y `/planilla`) en vez de inventar un componente nuevo.
-
-- El backend no cambia: el widget (`app/static/js/calendario-turnos.js`,
-  clase `CalendarioTurnos`) genera los mismos inputs ocultos
-  `fecha_{prefix}_N`/`franja_{prefix}_N` (renumerados de forma contigua en
-  cada render) que ya parseaba `_extraer_turnos` en
-  `app/routes/publicaciones.py`.
-- Las franjas del selector son las mismas que ya devolvía la ruta
-  (`FranjaHoraria` scoped por `grupo_intercambio_id`), así que las franjas
-  personalizadas que un usuario crea desde "¿No encuentras tu tipo de
-  turno?" aparecen como chip igual que Mañana/Tarde/Noche/Diurno 12h/
-  Nocturno 12h — requisito explícito del usuario, cubierto sin lógica
-  nueva, solo pasando los datos ya existentes al JS
-  (`_franjas_a_json`, nuevo helper en `publicaciones.py`).
-- Un día tocado con 2+ franjas se pinta con el mismo patrón de "bandas"
-  que ya usa el calendario de mercado (`.cal-bandas-row`/`.cal-banda`),
-  en vez de inventar un tratamiento visual nuevo para el caso multi-franja.
-- Prefill desde `/calendario?fecha=&modo=` (Ronda 2, Paso 2): ya no es un
-  `value=""` en un `<input>` estático (no existe tal input ahora); el mes
-  correcto se abre solo y el día se marca con un aro naranja
-  (`data-sugerida="true"`) hasta que el usuario confirma tocando una franja
-  y ese día. Los 4 tests de integración de prefill (`tests/test_publicar.py`)
-  se reescribieron para comprobar las constantes JS embebidas
-  (`PREFILL_FECHA`/`PREFILL_MODO`) en vez del `value=""` que ya no existe;
-  el test e2e de drill-down (`test_dia_vacio_ofrece_publicar_cambio`) se
-  actualizó a la nueva aserción `data-sugerida="true"`.
-- e2e reescritos para tocar franja+día en vez de `fill()`/`select_option()`
-  sobre inputs que ya no existen: `e2e/test_publicar.py` (+1 test nuevo,
-  `test_publicar_varios_turnos_de_una_franja_de_un_tap`, el caso de uso que
-  motivó el cambio), `e2e/test_sintetica_golden_path.py` y
-  `e2e/test_sintetica_staging.py` (este último no se ejecuta en local,
-  actualizado igualmente por consistencia).
-- Catálogo i18n actualizado (`pybabel extract/update/compile`); de paso
-  puso al día ~26 strings pendientes de commits anteriores que nunca habían
-  pasado por `pybabel update` (no relacionados con este cambio, solo
-  arrastre de deuda técnica de i18n detectado al ejecutar el comando).
-- 815 tests unitarios/integración + 29 tests e2e relevantes (backend
-  `test_publicar.py` + los 4 e2e de publicar + drill-down + golden path 3
-  bandas + auth) passing en ventanas sin contención. Nota: la BD Postgres
-  local de test (`turnero_test`) es compartida entre sesiones/worktrees
-  concurrentes de este entorno — se observaron `UndefinedTable`/
-  `ObjectDeletedError`/deadlocks en `tests/test_turnos_unidad.py`,
-  `tests/test_push.py`, `tests/test_publicar_junte.py` etc. al correr la
-  suite completa mientras otra sesión ejecutaba pytest en paralelo contra
-  la misma BD; confirmado no relacionado con este cambio (esos ficheros no
-  se tocaron y las mismas pruebas pasan limpias en solitario). Mismo
-  fenómeno ya documentado en una entrada anterior de este fichero.
-- Trabajo hecho en worktree `worktree-calendario-multi-select` sobre
-  `staging` (pedido explícito del usuario), pendiente de revisión/push.
-
-Siguiente: decidir si este mismo widget se reutiliza en `editar.html` y
-`contraoferta.html` (mismo patrón turno-row hoy) — fuera de alcance de
-este paso, el usuario solo pidió el flujo de publicar.
-
----
-
-Fix: regenerar la unidad de demo fallaba con `ForeignKeyViolation` en
-`match_cambio` (`notificacion_match_id_fkey`) porque `_borrar_demo()`
-(`app/services/demo.py`) borraba `match_cambio` antes que `notificacion`,
-y `notificacion.match_id` tiene FK a `match_cambio.id`. En producción, los
-matches reales de la unidad demo generan notificaciones (`nuevo_match`,
-etc. — `app/matching/service.py`) que sobreviven al primer reset; al
-regenerar de nuevo, esas notificaciones huérfanas bloqueaban el borrado.
-Corregido el orden: `notificacion` se borra antes que
-`match_participacion`/`match_cambio`. Test de regresión añadido en
-`tests/test_demo.py::test_reset_demo_con_notificaciones_de_match_pendientes`
-(crea una notificación con `match_id` tras el primer `reset_demo()` y
-verifica que el segundo no lanza la excepción). 805 tests passing.
-
-Fix de producción: `SQLALCHEMY_ENGINE_OPTIONS` con `pool_pre_ping=True` +
-`pool_recycle=280` en `ProductionConfig` — Railway cierra conexiones
-ociosas a Postgres y el pool por defecto reutilizaba conexiones muertas,
-provocando `SSL SYSCALL error: EOF detected` en `/auth/login` y otras
-rutas (visto en logs de Railway). 776 tests passing.
-
-B18 rediseñado: el modo "Juntes de noches" del calendario pasó de un grid
-día-a-día (como Ofertas/Peticiones) a filas por semana natural con la
-distribución trabaja/libra desplegable (ver más abajo, rama
-`feat/calendario-juntes-semanas` sobre `staging`, push directo pedido por
-el usuario). Motivo: un junte es un patrón semanal completo, no una noche
-suelta — un mockup (Artifact) se validó con el usuario antes de implementar.
-
-Botón "Probar con una cuenta demo" añadido también en la portada (`/`,
-`main.index`), junto a "Crear cuenta"/"Entrar" (antes solo estaba en
-`/auth/login`) — mismo flag `demo_login_enabled` (`DEMO_LOGIN_EMAIL`
-configurada), mismo endpoint `auth.login_demo`.
-
-`APP_BASE_URL` en staging: al probar el feedback en staging tras el fix de
-producción, el email volvió a rebotar — el enlace usaba
-`turnero-staging.up.railway.app` (mismo problema que producción, staging
-nunca tuvo dominio propio). Corregido igual que producción: dominio
-`staging.turnero.xyz` añadido en Railway (servicio `turnero`, entorno
-`staging`) y `APP_BASE_URL=https://staging.turnero.xyz` configurada en ese
-servicio. Importante: NO apuntar `APP_BASE_URL` de staging a
-`app.turnero.xyz` (el de producción) — el email quedaría enlazando a la
-app de producción con tokens/datos de la BD de staging, rota. Pendiente
-de acción manual del usuario (no lo puede hacer el agente): añadir en el
-DNS de `turnero.xyz` el `CNAME staging → ezh8vdkw.up.railway.app` y el
-`TXT _railway-verify.staging → railway-verify=03ea54e3d41023334f9b4de5d77f467d20e0c8a4f159b483a68e7b28b8f7ab79`.
-
-Añadido `APP_BASE_URL` + dominio propio `app.turnero.xyz` (ver más abajo).
-Pendiente de acción manual del usuario (no lo puede hacer el agente): crear
-en el DNS de `turnero.xyz` el registro `CNAME app → hfdey1z5.up.railway.app`
-y el `TXT _railway-verify.app → railway-verify=4bcf313781d937050c193da1180bb73a1f3c44d36b20420277a63d57e1817b98`
-(dado por `railway domain app.turnero.xyz`), y una vez verificado el dominio
-en Railway, configurar `APP_BASE_URL=https://app.turnero.xyz` como variable
-de entorno en production. Hasta entonces `url_absoluta()` usa el host de la
-petición entrante como antes (sin romper nada).
-
-Pendiente de acción manual del usuario (no lo puede hacer el agente):
-crear cuenta en resend.com, verificar un dominio propio en
-resend.com/domains, generar una API key, y configurar `RESEND_API_KEY` y
-`RESEND_FROM_EMAIL` como variables de entorno en Railway (production y
-staging). Hasta entonces, `enviar_email()` detecta la ausencia de
-`RESEND_API_KEY`, no intenta conectar, registra un warning y devuelve
-`False` sin romper el flujo — el fallback manual de admin
-(`/admin/feedback/<id>/restablecer-contrasena`) sigue disponible.
-
-Siguiente: decidir el próximo punto del backlog.
-
-Nota: `e2e/test_sintetica_staging.py` apunta a la app real de Railway
-(STAGING_URL) y no se ejecuta salvo necesidad explícita, para no seguir
-escribiendo usuarios de prueba en la base de datos compartida de staging.
-
-Análisis de datos de producción (2026-07-08): de 361 publicaciones tipo
-`cambio`, 137 son reales y 224 sintéticas (oportunidad a 3 detectada); de
-esas 224, ninguna había terminado en match confirmado y solo 1 tenía un
-"me interesa" registrado. Causa raíz: `crear_pub_sintetica()` no disparaba
-ninguna notificación proactiva a terceros, y el aviso a los dos usuarios
-originales enlazaba a un callejón sin salida. Arreglos aplicados:
-- La sintética ahora pasa por `notificar_busquedas_guardadas()` al
-  crearse, igual que cualquier publicación normal.
-- El aviso `aviso_oportunidad_3` en `/avisos` enlaza al panel (dashboard,
-  donde ya vive la sección "oportunidades a 3") en vez de al listado
-  filtrado por el nombre del otro usuario original.
-Se descartó una tercera solución (re-escanear candidatas reales ya
-existentes contra sintéticas nuevas de forma retroactiva): el caso que
-resolvía es poco frecuente y el aviso a terceros ya cubre el hueco real,
-así que añadir esa lógica era sobre-ingeniería para el problema real.
-
-fix(dashboard): las oportunidades a 4 no aparecían en la pestaña Activos
-(reportado por el usuario, investigado conectando a la BD de producción).
-Dos bugs de código confirmados y corregidos:
-- `avisos_interes` en `app/routes/main.py` (sección de avisos de Activos)
-  solo filtraba `tipo="aviso_oportunidad_3"`, a diferencia de la ruta
-  `/avisos` que ya incluía ambos tipos — nunca mostraba un
-  `aviso_oportunidad_4` aunque existiera. Añadido `aviso_oportunidad_4` al
-  filtro.
-- La tarjeta de publicación puente (`oportunidades_3` en el dashboard)
-  incluye en su query tanto sintéticas de cadena_3 como de cadena_4 (no
-  filtra por `sintetica_pub_intermedio_id`), pero la plantilla
-  (`dashboard.html`) etiquetaba siempre "Oportunidad a 3 bandas" y solo
-  mencionaba a los dos extremos, nunca al intermediario — una oportunidad
-  a 4 era indistinguible de una a 3. Ahora la plantilla distingue
-  `es_cadena_4` (vía `sint_info[...].pub_intermedio`), cambia badge/texto/
-  mensaje de WhatsApp a "a 4" y menciona al intermediario en el header.
-- 3 tests de regresión nuevos en `tests/test_sintetica_4.py`. 872 tests
-  passing.
-
-Investigada además una anomalía real en producción, sin causa confirmada:
-la edición de la publicación 818 (usuario 7) generó 24 oportunidades a 4 y
-12 a 3, pero ninguna de las 36 generó una `Notificacion` para el propio
-usuario 7 (0 de 20 pares únicos esperados en el rol "C" del trío — el
-usuario que hace la edición), mientras que los otros dos roles del mismo
-lote sí se comportaron perfectamente (22/22 y 10/10 pares únicos
-esperados, con deduplicación correcta). Se intentó reproducir con 5
-variantes de fidelidad creciente contra una BD de test privada — llamada
-directa a `crear_aviso_oportunidad_4`, ruta `/publicar` con varios tríos,
-ruta `/editar` con sintéticas previas canceladas, y una réplica a escala
-1:1 de los 24 tríos de producción (mismo patrón de repetición de
-`pub_a`/intermedio) — y en los 5 casos el código funcionó correctamente
-(100% de las notificaciones esperadas). No se ha podido determinar la
-causa raíz; no se ha aplicado ningún cambio especulativo para no
-enmascarar un problema real. Hipótesis más plausible sin confirmar: un
-posible doble envío del formulario de edición (no hay protección contra
-doble clic en `/publicaciones/<id>/editar`). Pendiente: decidir con el
-usuario si se añade logging de diagnóstico temporal para capturar la
-próxima ocurrencia, y/o protección anti-doble-envío en el formulario como
-mitigación preventiva independiente de la causa.
+Todos los tests afectados en verde (incluidos los del punto 7, ya
+implementado tras confirmación del usuario). PR #21 abierto en borrador
+contra `staging`. Pendiente: mergear esta rama en `staging` y empujar a
+`origin`.
 
 ## Backlog (fuente: .backlog)
 - [x] B19: "Cambios a 4" — cadena de intercambio a 4 bandas (ciclos completos, sintéticas/avisos para huecos parciales, badges, preferencia de visualización en calendario) ✓
@@ -648,124 +382,8 @@ mitigación preventiva independiente de la causa.
 - [x] B16: Invitar a un compañero — enlace WhatsApp + URL pre-rellenada ✓
 - [x] B17: Fix push acumulativo — contador basado en Notificacion.leida, se resetea al visitar Compatibles ✓
 
-## Pasos completados
-- [x] feat(cuenta): eliminar cuenta · servicio eliminar_cuenta (rechaza matches, cancela publicaciones, anonimiza datos) · ruta POST /auth/perfil/cuenta/eliminar · zona de peligro en perfil_cuenta.html · 13 tests · 449 tests passing
-- [x] feat(admin): eliminar usuario con página de confirmación · servicio eliminar_usuario_admin maneja todos los FK (BusquedaGuardada, Suscripciones, notif. ajenas) · GET /admin/usuarios/<id>/eliminar muestra pub count · 5 tests nuevos · 454 tests passing
-- [x] feat(cambios): filtro tipo_fecha (cedido / aceptado) en /cambios · distingue «quiere librar esa fecha» de «ofrece trabajar esa fecha» · actualiza busquedas_guardadas y publicacion_cumple_filtros · 3 tests nuevos · 457 tests passing
-- [x] feat(matching): aviso de interés (cambio↔cambio solapamiento unilateral) · notificación aviso_interes para ambas partes · badge naranja en avisos · push notification · 9 tests · 466 tests passing
-- [x] feat(matching): generador de cambios a 3 bandas · PublicacionCambio sintética (es_sintetica+FKs) · migración e8e3d3c815bd · crear_pub_sintetica / buscar_sinteticas_que_coinciden_con / crear_cadena_3_desde_sintetica · ciclo de vida: cancelar pub fuente cancela sintética (cancelar + editar + caducidad) · badge «Oportunidad a 3» en búsqueda · excluye sintéticas del dashboard propio · 11 tests · 87 tests passing en suite relacionada
-- [x] feat(matching): aviso a ambas partes cuando se genera la sintética · tipo aviso_sintetica · push notification · idempotente · 2 tests
-- [x] fix(avisos): aviso_interes y aviso_sintetica aparecen en /avisos y cuentan en el badge · el filtro de la ruta solo incluía 3 tipos y excluía los dos nuevos
-- [x] feat(matching): flujo «Me interesa» sobre pub sintética cierra cadena_3 directamente · sin necesidad de que el tercer usuario publique su propio cambio · copia cedidos/aceptados de la sintética sin invertir · llama crear_cadena_3_desde_sintetica · 2 tests nuevos · 15 tests en suite sintetica · 481 tests passing
-- [x] feat(ui): dashboard Activos muestra tarjeta «Oportunidad a 3 bandas» (azul) y «Interés parcial» (naranja) para los dos usuarios implicados en la sintética
-- [x] feat(planilla): planilla de turnos mensual · modelos TurnoPlanilla+PlanillaMes · servicio CRUD (añadir/eliminar/publicar/despublicar) · motor compatibilidad puro (turnos_solapan, libres/compatibles por día, con/sin nombres según planilla publicada) · UI /planilla con navegación mensual y doblajes · enlace en nav · flash de compatibilidad al publicar cambio · 45 tests
-- [x] feat(planilla): validación 100% estricta al publicar mes (días sin cumplimentar bloquean) · compatibilidad persistente en BD (CompatibilidadPlanilla) · tarjeta "Disponibilidad en planilla" en Activos · trigger de recálculo al publicar planilla · 558 tests
-- [x] feat(planilla): relleno masivo · relleno por rango (del día N al día M con un turno/estado, 1 clic) · selección múltiple con checkboxes por día + barra flotante · "Marcar todos/Ninguno" · 9 tests · 567 tests
-- [x] feat(ui): botón de compartir por WhatsApp en tarjetas «Oportunidad a 3 bandas» · texto con fechas y enlace directo a la pub sintética
-- [x] feat(planilla): notas por día + volcado de cambios confirmados · modelo NotaDia · campo volcado_planilla en MatchParticipacion · migración 58a556f9da30 · servicios guardar_nota_dia/get_notas_mes/get_matches_pendientes_volcar/volcar_matches_a_planilla · rutas /planilla/dia/nota y /planilla/volcar-cambios · banner en planilla con cambios pendientes · <details> editables por día · 23 tests · 590 tests passing
-- [x] feat(planilla): calendario compacto + color por tipo de turno · columna FranjaHoraria.color + color_texto · paleta general + paleta oscura noche/nocturno · auto-asignación y backfill migración e2f9e8059eaa · chips con color propio · celda diagonal en doblaje · scroll-anchor en acciones de día único · 592 tests passing
-- [x] test(e2e): golden path local con tres usuarios (Ana/Pedro/Carlos) · headed · Playwright · pausa 5 s en pantallas clave · Carlos cierra el triángulo con «Me interesa»
-- [x] test(e2e): golden path contra staging en Railway · registro de usuarios via UI (cascade hospital) · selector específico para el botón de la tarjeta sintética · diagnóstico en aserciones
-- [x] merge(staging→main): todo el bloque de cambio a 3 bandas fusionado en producción · conflictos resueltos a favor de staging · 481 tests passing · deploy en Railway
-- [x] feat(analytics): clics «Me interesa» + cambios activos acumulados en gráfica + backfill match.fecha_creacion NULLs · Event "me_interesa" en ruta me_interesa · fecha_cierre en PublicacionCambio (event listener ORM + caducidad bulk) · migración 40d574d237f8 · nueva serie "activas (acumulado)" en chart · tarjeta contador me_interesa · 7 tests nuevos · 19 passing en suite analytics
-- [x] Fase 0, paso 1: git init · estructura de carpetas · requirements.txt · config.py · app factory · health check · test passing · Procfile
-- [x] Fase 0, paso 2: Flask-Babel configurado · catálogo `es` · test de locale passing
-- [x] Fase 1, paso 1: modelos Hospital, GrupoIntercambio y Unidad · conftest con PostgreSQL · 8 tests passing
-- [x] Fase 1, paso 2: modelos Categoria (con seed idempotente) y FranjaHoraria · 15 tests passing
-- [x] Fase 1, paso 3: modelo Usuario · hash de contraseña · Flask-Login UserMixin · grupo_intercambio accesible · 20 tests passing
-- [x] Fase 1, paso 4: modelos PublicacionCambio, TurnoCedido, TurnoAceptado · resolución parcial · actualizar_estado() · 29 tests passing
-- [x] Fase 1, paso 5: modelos MatchCambio, MatchParticipacion, Notificacion · extensible a N bandas · migración inicial generada y aplicada
-- [x] Fase 2, paso 1: servicio de registro (encontrar_o_crear hospital/unidad/categoría) · formulario RegistroForm y LoginForm · rutas /auth/registro, /auth/login, /auth/logout · plantillas HTML · CSS básico · 52 tests passing
-- [x] Fase 3, paso 1: dashboard del usuario · ruta / diferenciada por auth · lista de publicaciones propias · empty state · 57 tests passing
-- [x] Fase 3, paso 2: ruta /publicar · servicio publicar_cambio · formulario con slots numerados · múltiples turnos cedidos · validación mínimo 1 cedido · 64 tests passing
-- [x] Fase 3, paso 3: POST /publicaciones/<id>/cancelar · guarda "cancelada" · 403 si ajena · 409 si ya inactiva · 70 tests passing
-- [x] Fase 4, paso 1: motor de matching puro (sin DB) · detectar_match_directo · 8 tests UAT-3.1/3.2/3.3 · 78 tests passing
-- [x] Fase 4, paso 2: servicio buscar_matches_para · filtros categoría/grupo/estado · 84 tests passing
-- [x] Fase 4, paso 3: crear_match_directo · MatchCambio + 2 MatchParticipacion + 2 Notificacion · disparado desde /publicar · 88 tests passing
-- [x] Fase 5, paso 1: POST /matches/<id>/confirmar y /rechazar · confirmado_parcial → confirmado_total · resuelve turnos · Notificacion confirmacion_parcial/rechazo · 102 tests passing
-- [x] Fase 6, paso 1: servicio caducar_publicaciones_expiradas(hoy) · caduca si todos los turnos cedidos abiertos son pasados · 110 tests passing
-- [x] Fase 6, paso 2: caducidad disparada en GET / (dashboard) · 111 tests passing
-- [x] Fase 7, paso 1: enviar_push + POST /push/suscribir · guarda subscription · silent ante excepciones WebPush · 118 tests passing
-- [x] Fase 7, paso 2: push integrado en crear_match_directo, confirmar_participacion y rechazar_match · 121 tests passing
-- [x] Fase 8, paso 1: /manifest.json + /sw.js + /push/vapid-public-key · sw.js con push/install/fetch handlers · 126 tests passing
-- [x] Fase 8, paso 2: base.html — <link rel="manifest">, meta theme-color, registro SW, suscripción push automática para usuarios autenticados · iconos PNG 192×512 · 130 tests passing
-- [x] Despliegue: Railway · PostgreSQL · variables de entorno · flask db upgrade automático · UAT 130/130
-- [x] Fase 9, paso 1: cascade hospital→unidad en registro y perfil · ruta /auth/perfil · API /auth/api/unidades · botón Actualizar + Activar notificaciones en dashboard · enlace Mi perfil en nav · 140 tests passing
-- [x] Fase 9, paso 2: campo es_admin en Usuario · migración · CLI flask init-admin · panel /admin (usuarios, hospitales, unidades, categorías, publicaciones) · 153 tests passing
-- [x] Fase 9, paso 3: jerarquía geográfica País > Provincia > Ciudad > Hospital · modelos Pais/Provincia/Ciudad · migración · API /auth/api/provincias|ciudades|hospitales · cascade JS 4 niveles · CRUD admin para países/provincias/ciudades · panel de perfil y registro actualizados · 155 tests passing
-- [x] Fase 9, paso 4: visor /cambios · filtro por mes y/o día · restringe a mismo grupo+categoría · enlace en nav · 166 tests passing
-- [x] Fix: formularios anidados en /publicar · el form de «nueva franja» estaba dentro del form principal · el navegador fusionaba ambos e incluía accion=nueva_franja en el submit principal · bloqueaba la publicación a todos los usuarios · solución: mover el form de nueva franja fuera del form principal
-- [x] Calidad: hook git pre-push · ejecuta pytest tests/ antes de cada push · aborta si algún test falla · script instalable en scripts/install-hooks.sh
-- [x] Calidad: tests E2E con Playwright · 6 tests en e2e/ contra Chromium headless · cubren login, rutas protegidas, publicación de turno, validación server-side y regresión del bug de formularios anidados · pytest e2e/ los ejecuta · no bloquean el hook pre-push (que solo corre tests/)
-- [x] Calidad: smoke test post-deploy · scripts/smoke_test.py · 7 checks HTTP contra la URL de producción · detecta app caída, migraciones rotas y estáticos inaccesibles · uso: python scripts/smoke_test.py https://tu-app.railway.app
-- [x] feat: enlace «Mis cambios» añadido a la barra de navegación (apunta al dashboard /)
-- [x] feat: footer de contacto rediseñado con separador, texto descriptivo y estilos integrados
-- [x] feat: selector de tipo de publicación rediseñado como tarjetas con borde, negrita y descripción secundaria
-- [x] feat: nuevo tipo de publicación «Junte de noches» · formulario asistido con selector de semana, cadencia (LMVD / MJS) y cuadrícula de 7 noches · el servidor deriva automáticamente cedidos y aceptados · matching usa el motor existente · 8 tests · 223 tests passing
-- [x] fix(migration): patrón nullable→backfill→NOT NULL aplicado a tipo en publicacion_cambio y cualquier_franja en turno_aceptado · crashes de deploy resueltos
-- [x] feat: sistema de feedback por email · ruta /feedback · envío a domingofestivo@gmail.com via Gmail SMTP · prerellena email si el usuario está autenticado · 7 tests
-- [x] fix(feedback): guarda feedback en BD en vez de SMTP síncrono · nuevo modelo Feedback · vista /admin/feedback · 9 tests · 225 passing
-- [x] chore: pipeline CI/CD completo · GitHub Actions (suite completa + smoke test post-deploy) · pytest-testmon en pre-push local · Railway gate bloqueado hasta que CI pase
-- [x] feat(avisos): campana en nav con badge rojo · panel /avisos con lista de publicaciones de seguidos · Notificacion.publicacion_id · context processor avisos_no_leidos · 314 tests passing
-- [x] style(admin/feedback): panel en tarjetas responsive · selección múltiple para marcar leídos · ruta bulk POST /admin/feedback/marcar-leidos · 316 tests passing
-- [x] refactor+perf: resolver_geo/hospital/unidad extraídos a services/registro · _conteos_tabs consolida confirmada+caducada en 1 GROUP BY · 316 tests passing
-- [x] fix(ui): «Me interesa» en publicaciones Regalo omite el diálogo de selección de turno y pasa directamente a pendiente de confirmar · backend auto-usa los turnos_aceptados del regalo como cedidos de la petición espejo · 375 tests passing
-- [x] fix(ui): «Me interesa» en Petición de turno único pasa directo sin diálogo · _pub_js_data añade cualquierFranja a cedidos y defiende contra franja_horaria=None · con varios cedidos o cedido de cualquier turno mantiene el diálogo · 376 tests passing
-- [x] feat(ui): tarjetas de match muestran «libra» y «trabaja» de cada parte implicada · _calcular_trabajas() aplica fórmula (i-1)%N sobre el ciclo de participaciones · cubre cambio directo, cadena a 3 bandas y coincidencias parciales · 376 tests passing
-- [x] ops: Sentry/GlitchTip integrado · sentry-sdk[flask] · _init_sentry() en app factory · condicionado a SENTRY_DSN · traces_sample_rate=0.1 · sin impacto en tests ni dev local · 376 tests passing
-- [x] ops: tabla event para funnel · modelo Event · migración · servicio registrar_evento (silencioso) · enganches en publicar_cambio, crear_match_directo, crear_cadena_3 y confirmar_participacion · 5 tests · 381 tests passing
-- [x] ops: evento publication_cancelled · enganche en cancelar_publicacion · 1 test · 382 tests passing
-- [x] ops: evento match_cancelled · enganche en rechazar_match para todos los participantes · scripts/funnel_queries.sql con 5 queries de funnel · 1 test · 383 tests passing
-- [x] feat: búsquedas guardadas con alertas · modelo BusquedaGuardada · servicio puro publicacion_cumple_filtros · notificar_busquedas_guardadas integrado en publicar_cambio · rutas CRUD · pestaña "Mis alertas" en /cambios · botón "Guardar como alerta" con filtros activos · notificación alerta_busqueda_guardada en panel /avisos y push · migración · 33 tests · 416 tests passing
-- [x] feat(ux): UX refactor /cambios + push toggle búsquedas guardadas · título "Buscar cambios" · tabs en formato visual · botón "Guardar búsqueda como alerta" junto a filtrar/limpiar (HTML5 form= attribute) · pestaña Activos combina matches+publicaciones abiertas (backcompat via _ALIASES_ESTADO) · toggle notif_busqueda_guardada en panel notificaciones · aviso alerta_busqueda_guardada enlaza a /cambios con filtros de búsqueda (busqueda_guardada_id FK con ondelete=SET NULL) · migración e93a778414b8 · 419 tests passing
-- [x] fix(matching): cancelar/editar/eliminar una publicación con un match activo (propuesto/confirmado_parcial) ya no lo deja huérfano ni lo borra en silencio · nuevo `_rechazar_matches_activos_de_publicacion` reutiliza `rechazar_match` (notifica a la contraparte + registra evento match_cancelled) antes de tocar los turnos · `_eliminar_matches_de_publicacion` ahora solo borra el MatchCambio si se queda sin ninguna participación, preservando el historial de rechazo · detectado analizando por qué la tasa de confirmación de matches en producción era tan baja (18%) · 8 tests nuevos + 6 tests existentes actualizados a la nueva semántica · 675 tests passing
-- [x] feat(calendario): Paso 1 — servicio puro `construir_calendario_mes` (app/services/calendario_mercado.py) · agrupa TurnoAceptado (modo "ofertas") o TurnoCedido (modo "peticiones") abiertos, por fecha y franja, para tipos cambio/regalo/peticion/cambio_dia (excluye junte) · respeta visibilidad (misma categoría+grupo), excluye propias/sintéticas/no-activas/fuera de mes · clave especial "cualquiera" para turnos con cualquier_franja · 18 tests · 693 tests passing
-- [x] feat(calendario): Paso 2 — ruta `GET /calendario` (app/routes/calendario.py) · navegación mensual anyo/mes igual que `/planilla` · selector ofertas/peticiones vía query param `modo` (con fallback a "ofertas" si es inválido) · plantilla mínima sin colores ni drill-down todavía (calendario/calendario.html) · blueprint registrado en app/__init__.py · 7 tests · 700 tests passing
-- [x] feat(calendario): Paso 3 — grid visual mensual reutilizando `.planilla-cal`/`.cal-celda` de `/planilla` · nueva función pura `preparar_celdas_mes` (color sólido si hay 1 franja ese día, estilo "multi" neutro + tooltip con nombres si hay varias, clave especial para "cualquiera") · CSS nuevo (.calendario-modo-selector, .calendario-ayuda-texto) · catálogo i18n actualizado (pybabel extract/update/compile) · 4 tests nuevos · 704 tests passing
-- [x] feat(calendario): Paso 4 — drill-down día→franja→publicaciones · nueva `resumen_publicaciones` (autor+tipo) en calendario_mercado.py · datos del mes embebidos como JSON (`<script type="application/json">`) en la página, JS vanilla navega los 3 niveles con pila de "volver" sin llamadas adicionales al servidor · panel modal deslizante (.calendario-panel) · fix de bug real: `_, num_dias = calendar.monthrange(...)` shadowaba el `_()` de flask_babel importado en el mismo módulo, rompiendo la ruta en cuanto se usó gettext · 1 test nuevo · 707 tests passing
-- [x] feat(calendario): Paso 5 — el nivel franja→publicaciones enlaza directamente a `/cambios` filtrado (mes/dia/tipo_fecha/usuario/franja) en vez de reimplementar la tarjeta completa y el modal «Me interesa» dentro del calendario · decisión de diseño: reutilizar la página de búsqueda ya existente (con «Me interesa»/«Contraoferta» ya funcionales) en vez de duplicar esa lógica · nuevo test e2e (e2e/test_calendario_drilldown.py, Playwright) que ejerce el click real día→franja→enlace y detectó un bug real: `.calendario-panel { display:flex }` pisaba por especificidad CSS el `display:none` del atributo `hidden`, dejando el overlay interceptando clics aunque estuviera "oculto" · corregido con `.calendario-panel[hidden] { display:none }` · 707 tests unitarios + 1 e2e passing
-- [x] feat(calendario): Paso 6 — enlace "Calendario" en el menú principal (base.html, junto a "Buscar cambios") · smoke test `test_smoke_calendario_get` · catálogo i18n actualizado · 708 tests passing. Feature completa (Pasos 1-6); modo "Juntes de noches" queda en backlog (B18)
-- [x] feat(calendario): Ronda 2, Paso 1 — colores distintos por modo en el selector Ofertas/Peticiones (verde/teal vs. ámbar/naranja, sólido si activo) en vez de azul/gris genérico · solo CSS, sin test automatizado (sin lógica de negocio) · 708 tests passing
-- [x] feat(publicar): Ronda 2, Paso 2 — prefill de fecha/modo en `/publicar` vía `?fecha=&modo=` · modo "ofertas" precarga el primer turno aceptado, "peticiones" el primer turno cedido · valores inválidos (fecha no-ISO o modo desconocido) se ignoran en silencio, sin prefill · 4 tests nuevos · 712 tests passing
-- [x] feat(calendario): Ronda 2, Paso 3 — botón fijo "Publicar cambio" bajo el grid · cualquier día (con o sin ofertas) abre el panel de drill-down; si está vacío muestra "Nadie ha publicado nada este día todavía" + enlace a `/publicar?fecha=&modo=` precargado (usa el Paso 2) · 1 test de ruta + 1 test e2e nuevo (día vacío → enlace correcto → aterriza en /publicar con el campo precargado) · 713 tests unitarios + 2 e2e passing
-- [x] feat(calendario): Ronda 2, Paso 4 — título corto "Calendario" (antes "Calendario de cambios") + icono ⓘ "¿Cómo funciona?" con banner de ayuda inline, replicando el patrón exacto de `/planilla` (mismas clases CSS `.planilla-ayuda-link`/`.planilla-onboarding-*`, mismo control por localStorage) · banner enlaza a `main.como_funciona` con anchor `#calendario` (preparado para el Paso 5) · 1 test nuevo · 714 tests unitarios + 2 e2e passing
-- [x] feat(onboarding): Ronda 2, Paso 5 — nueva sección "1. Descubre cambios en el calendario" en `/como-funciona` (con `id="calendario"` para el anchor del banner del Paso 4), renumerando el resto de secciones (2→8) · 1 test nuevo (verifica orden) · 715 tests unitarios + 2 e2e passing
-- [x] feat(nav): Ronda 2, Paso 6 (último) — el calendario pasa a ser la pantalla de inicio: redirect de login/registro (guard ya-autenticado + login exitoso) apunta a `calendario.index` en vez de `main.index`, logo de la cabecera y CTA final de "Cómo funciona" también · orden del menú: "Calendario" antes que "Mis cambios" · no se toca la ruta `main.index` ni sus redirects post-acción (publicar/cancelar/editar siguen llevando a "Mis cambios") · 5 tests nuevos · 720 tests unitarios + 2 e2e passing. **Ronda 2 completa (Pasos 1-6).**
-- [x] fix(e2e): fixture compartido `usuario` sin `onboarding_visto=True` (redirigía a /como-funciona en vez de a la pantalla de inicio) + `_login` de `test_sintetica_golden_path.py` actualizado a `/calendario/` tras el Paso 6 + aserciones obsoletas de `aviso_interes`/"Interés parcial" reescritas al aviso combinado `aviso_oportunidad_3` actual · 9/9 tests e2e locales passing (`test_sintetica_staging.py` deliberadamente no ejecutado, apunta a Railway real)
-- [x] feat(calendario): bandas de color por franja en días con varios tipos distintos — `preparar_celdas_mes` genera un `linear-gradient` de cortes duros (una banda de igual ancho por franja, ordenadas por `hora_inicio`, sin transición) en vez del color neutro anterior · tope de 4 franjas distintas antes de caer al tratamiento neutro con nº de tipos (más bandas serían ilegibles en ~40px) · sin etiqueta superpuesta en el caso de bandas (el propio patrón de color ya informa) · 4 tests nuevos + 1 actualizado · 723 tests unitarios + 9 e2e passing
-- [x] fix(calendario): `_gradiente_bandas` devolvía `linear-gradient(...)` suelto, sin el prefijo `background:` ni el `;` final — CSS inválido que el navegador descarta en silencio, dejando la celda en blanco/negro por defecto en vez de con las bandas de color. Detectado por el usuario probando en staging (confirmado leyendo en solo lectura la BD de staging y ejecutando las funciones reales contra datos reales del 20 de septiembre). Corregido devolviendo la declaración CSS completa (`background: linear-gradient(...); color: #ffffff;`) · test reforzado para comprobar el formato exacto de la declaración, no solo que contuviera las palabras · 723 tests unitarios + 9 e2e passing
-- [x] feat(calendario): letra por banda además del color — sustituido el `linear-gradient` de una sola celda por sub-elementos independientes (`celda.bandas`: lista de {color, letra}, uno por franja, ordenados por hora_inicio), cada uno con su color sólido y su inicial (o "?" para "cualquier turno") · más fiable que superponer texto sobre un gradiente CSS · nuevas clases `.cal-bandas-row`/`.cal-banda` · tests reescritos para comprobar la lista de bandas en vez del string de gradiente · 723 tests unitarios + 9 e2e passing
-- [x] fix(calendario): color de texto por banda en vez de blanco fijo — al pensar en turnos personalizados (que reciclan la misma paleta que los de serie) se detectó que un color claro de la paleta (amarillo `#EAB308`, cian `#06B6D4`) dejaría la letra casi ilegible en blanco. `celda.bandas` ahora lleva también `color_texto` (mismo cálculo de brillo que ya usa el caso de una sola franja) · 1 test de regresión nuevo · 724 tests unitarios + 9 e2e passing
-- [x] feat(calendario): oportunidades a 3 bandas (publicaciones sintéticas) incluidas en el calendario — se quita el filtro `es_sintetica.is_(False)` de `_candidatas` (tienen tipo 'cambio' y sus turnos ya están orientados desde la perspectiva del tercer usuario, así que encajan sin más en el mapeo ofertas/peticiones existente) · `resumen_publicaciones` devuelve también `es_sintetica`, y la ruta usa esa marca para etiquetarlas como "Oportunidad a 3" en el drill-down en vez de la etiqueta genérica de tipo · 4 tests nuevos (2 servicio + 1 resumen + 1 ruta) · 727 tests unitarios + 9 e2e passing
-- [x] feat(calendario): salto directo a publicaciones cuando el día solo tiene un tipo de turno — se ahorra el paso intermedio de elegir franja (pendiente desde la fase de planificación, nunca se había implementado) · de paso se detectó y corrigió otro caso del bug de especificidad CSS `[hidden]`: `.btn { display: inline-block }` pisaba el `display:none` implícito del atributo `hidden` en el botón "Volver", dejándolo siempre visible · arreglado con `.btn[hidden] { display: none }`, igual que se hizo antes con `.calendario-panel[hidden]` · 1 test e2e nuevo + 1 actualizado · 727 tests unitarios + 10 e2e passing
-- [x] Integrar pytest e2e/ en el ciclo de CI/CD de Railway (GitHub Actions o similar) ✓
-- [x] Añadir APP_URL al .env local y smoke test integrado en GitHub Actions post-deploy ✓
-- [x] fix(admin): la contraseña temporal al restablecer cuenta desde el panel de feedback ya no se muestra en un flash message (el admin reportó que no lo veía) · ahora se envía como `Notificacion` tipo `contrasena_restablecida` (nuevo campo `mensaje` en el modelo, migración `9310c6bbcb55`) al usuario afectado, visible en /avisos y contando en el badge de la campana · 5 tests nuevos
-- [x] feat(push): aviso push a todos los administradores (`es_admin=True`) al crearse cualquier Feedback (formulario de contacto o solicitud de recuperación) · las solicitudes de recuperación de contraseña van marcadas como urgentes (cabecera `Urgency: high` en `enviar_push`, nuevo parámetro `urgente`) · 5 tests nuevos
-- [x] fix(calendario): oportunidades a 3 mostradas al revés (ofertas↔peticiones) — reportado por el usuario en producción (turno del 6/8 de Victoria). Causa: `crear_pub_sintetica()` guarda como `turno_cedido` de la sintética el ACEPTADO real de pub_a (una oferta) y como `turno_aceptado` el CEDIDO real de pub_b (una petición) — necesario para el matching de la cadena a 3 (`buscar_sinteticas_que_coinciden_con` compara cedido-con-cedido y aceptado-con-aceptado del mismo día, no en cruce). `construir_calendario_mes` aplicaba a las sintéticas el mismo mapeo genérico que a las publicaciones normales (`turno_cedido`→peticiones, `turno_aceptado`→ofertas), mostrándolas invertidas. Corregido separando candidatas normales/sintéticas y consultando la tabla contraria para las sintéticas. Verificado contra producción (Railway, solo lectura) antes de tocar código: pub 785 de Victoria (real) correcta en peticiones; sintéticas 787/789/790 con esa misma noche mal clasificada en ofertas, confirmando la hipótesis. Los dos tests que fijaban el comportamiento anterior como correcto se corrigieron + 1 test de regresión nuevo que reproduce el caso real vía `crear_pub_sintetica()` · 732 tests unitarios passing
-- [x] feat(email): servicio de envío vía Resend HTTPS API (`app/services/email.py`) — Railway bloquea los puertos SMTP salientes en el plan Hobby (confirmado con la documentación oficial y varios hilos del foro), así que el reintento con Gmail SMTP se descarta a favor de una API HTTPS, que no está bloqueada. `enviar_email()` nunca lanza: sin `RESEND_API_KEY` configurada, sin conexión o con respuesta de error, registra y devuelve `False` en vez de tumbar el flujo que lo llama. Config `RESEND_API_KEY`/`RESEND_FROM_EMAIL`; limpieza del bloque `MAIL_*` de Flask-Mail en `config.py`, que llevaba muerto desde que se eliminó esa dependencia en el commit `5c05ea4` y nadie lo había limpiado · 4 tests
-- [x] feat(auth): modelo y migración `PasswordResetToken` (token de un solo uso, hash SHA-256 en BD, expiración a 60 min) · columnas `fecha_creacion`/`fecha_expiracion` declaradas `timezone=True` a propósito: con `TIMESTAMP` naive, la sesión local de Postgres (`Europe/Madrid`) reinterpreta el datetime aware UTC como hora local al guardarlo, desplazando la expiración ~2h y rompiendo la comparación tras un commit/recarga — detectado por un test que fallaba de forma intermitente
-- [x] feat(auth): servicio `password_reset.py` — `generar_token_reset`/`obtener_usuario_por_token`/`consumir_token`, invalida cualquier token anterior sin usar del mismo usuario al generar uno nuevo · 8 tests
-- [x] feat(auth): recuperación de contraseña self-service — sustituye el flujo manual (el usuario pedía por un ticket de feedback y el admin generaba una contraseña temporal a mano) por `/auth/recuperar-contrasena` + `/auth/restablecer-contrasena/<token>`, con el mismo mensaje de éxito exista o no el email (anti-enumeración) y envío del enlace por email vía Resend · el reseteo manual de admin (`/admin/feedback/<id>/restablecer-contrasena`) se mantiene como fallback si el email no llega · 12 tests · 758 tests passing
-- [x] feat(feedback): email a todos los admins (además del push ya existente) cuando llega un feedback nuevo de tipo error/sugerencia · excluye a propósito el tipo `recuperacion`, que ya está cubierto por el flujo self-service y solo queda como fallback manual poco frecuente · reutiliza la misma consulta de admins que ya usaba el push · 5 tests
-- [x] feat(demo): amplía el contenido de la unidad de demostración (`app/services/demo.py`), que se notó demasiado escasa en producción · bots 5→20 · publicaciones abiertas de bots generadas a partir de plantillas cicladas en 4 rondas (7→28) · matches `confirmado_total` entre bots 1→4 (nuevo helper `_match_confirmado_total`) · `_sembrar_planillas` generalizado para dar planilla a todos los usuarios (antes hardcodeado a 8) en vez de dejar sin planilla a los bots nuevos · cuentas demo (Ana/Carlos/Elena) y sus escenarios de match sin cambios · 4 tests nuevos · 776 tests passing
-- [x] fix(db): `SQLALCHEMY_ENGINE_OPTIONS` con `pool_pre_ping=True` + `pool_recycle=280` en `ProductionConfig` — Railway cierra conexiones ociosas a Postgres, el pool por defecto (sin ping) reutilizaba conexiones muertas y causaba `SSL SYSCALL error: EOF detected` en `/auth/login` y otras rutas (visto en logs de producción) · sin test dedicado (config de infraestructura, no lógica de negocio) · 776 tests passing
-- [x] feat(admin): panel de Analytics — scroll horizontal en el gráfico de líneas existente (contenedor con ancho fijo `nº puntos × 44px` dentro de `overflow-x:auto`, sin forzar scroll si el contenido cabe) + segundo gráfico de barras con desplegable de un único indicador (cambios publicados, matches, cambios eliminados, planillas publicadas, clics «Me interesa», confirmados, activos acumulados) y su propia granularidad día/semana/mes · nuevas series temporales `eliminadas` (`AuditEliminacion.fecha`) y `planillas_publicadas` (nuevo `Event` `planilla_publicada`, registrado en `POST /planilla/<a>/<m>/publicar`) añadidas a `/admin/analytics/data` · paleta de las 2 series nuevas validada con el script de la skill dataviz (teal `#0d9488` / dorado `#a16207`, 8 colores categóricos, todos los checks en PASS) · bug real de layout encontrado y corregido de paso: `.admin-layout { align-items: flex-start }` en el breakpoint móvil (`flex-direction: column`) hacía que `.admin-content` se dimensionara por su contenido en vez de por el contenedor, rompiendo cualquier `overflow-x` de un descendiente — corregido con `align-items: stretch` solo dentro de esa media query · verificado con Playwright headless (móvil 500px con scroll contenido + escritorio 1280px sin overflow, selector de métrica e granularidad probados con datos reales insertados y luego limpiados de la BD de desarrollo local) · 6 tests nuevos · 763 tests passing
-- [x] fix(datos): columna `notificacion.mensaje` ausente en la BD de `staging` pese a que `alembic_version` ya marcaba el head correcto — la migración `9310c6bbcb55` (main) se insertó en el historial *después* de que `staging` ya hubiera llegado a la revisión siguiente (`6085c41640ba`, password reset), así que al fusionar ambas ramas Alembic vio "ya estoy en head" y nunca ejecutó su `ALTER TABLE` en staging, aunque el código (y producción, desplegada en otro orden) ya esperaban la columna — causaba un 500 en cualquier página que tocara `Notificacion` (detectado por el usuario en GlitchTip tras una prueba manual de feedback). Diagnosticado comparando `alembic_version` y el esquema completo (`information_schema.columns`) de ambas bases vía `railway` CLI + `psql` de solo lectura; corregido aplicando en staging el mismo `ALTER TABLE notificacion ADD COLUMN mensaje TEXT` que la migración habría ejecutado (columna nullable, sin tocar `alembic_version` porque ya apuntaba al head correcto) · esquemas de producción y staging verificados idénticos tras el fix
-- [x] feat(feedback): email a todos los admins cuando llega un feedback nuevo (`/feedback`), complementando el aviso push existente — el push depende de que el admin tenga la suscripción activa en ese navegador/dispositivo, el email siempre llega · reutiliza `enviar_email` (Resend) y el patrón de plantilla HTML de `email/recuperar_password.html` · nueva plantilla `email/nuevo_feedback.html` (tipo, contacto si lo hay, descripción, enlace a `/admin/feedback`) · 2 tests nuevos
-- [x] feat(calendario): B18 — tercer modo "Juntes de noches" en el calendario visual, junto a Ofertas/Peticiones · a diferencia de esos dos modos (donde cedido/aceptado son direccionales y `construir_calendario_mes` elige un único modelo), en un junte cedido y aceptado son las dos caras de la misma permuta semanal, así que el modo `juntes` combina ambas tablas en vez de elegir una · nueva entrada `"juntes": ("junte",)` en `_TIPOS_POR_MODO` · añadida la etiqueta `junte` que faltaba en `tipo_labels` de la ruta (antes se colaba el tipo crudo en el drill-down) · tercer botón morado en el selector (`--juntes`, a juego con el `#9333ea` que ya usa "cualquier franja") · JS `_urlPublicacion` no fija `tipo_fecha` en modo juntes (no direccional; `/cambios` ya hace el OR correcto) · catálogo i18n actualizado (pybabel extract/update/compile) · 7 tests nuevos (servicio + ruta) · 779 tests passing · rama `feat/calendario-juntes-noches` sobre `staging`
-- [x] fix(email): los avisos de feedback a `guillen@delbarrioblanco.net` rebotaban en producción (`last_event: bounced` en Resend) — diagnosticado enviando pruebas directas a la API de Resend: un email con enlace a `*.up.railway.app` rebota siempre (con o sin HTTPS), uno sin ese enlace se entrega bien, así que el filtro de correo del destinatario bloquea específicamente los enlaces al dominio compartido de Railway, no el envío en sí. Añadido `url_absoluta()` en `app/services/email.py` (usa `APP_BASE_URL` si está configurada, si no cae al `url_for(_external=True)` de siempre) y aplicado a los dos enlaces salientes existentes (aviso de feedback y recuperación de contraseña). Se añade el dominio propio `app.turnero.xyz` como custom domain en Railway (`web-production-0f001.up.railway.app` se deja intacto y sigue sirviendo el mismo servicio sin redirección: los usuarios que ya instalaron la PWA desde ese origen no pueden "migrarse" a otro origen, es una limitación del propio modelo de PWA) · 2 tests nuevos
-- [x] feat(calendario): rediseño del modo "Juntes de noches" — de grid día-a-día a filas por semana con distribución trabaja/libra desplegable, tras validar un mockup (Artifact) con el usuario · nuevo módulo `app/services/junte_semanal.py` (`calcular_distribucion`, `resumen_textual`, `lista_es`, `DIAS_CORTOS`), compartido entre `main.py::_junte_info` (WA/resumen en /cambios y /dashboard) y el calendario — elimina la duplicación de la lógica LMVD/MJS que antes vivía solo en `main.py` · el cálculo del lunes de la semana pasa de "primer turno_cedido insertado" a `min()` de todas las fechas del junte (más robusto, mismo resultado en todos los casos reales) · revertido el soporte de `construir_calendario_mes`/`_TIPOS_POR_MODO` para `modo="juntes"` (quedaba como código muerto tras el rediseño: ya no lo llama la ruta) · nuevas `construir_semanas_juntes`/`preparar_semanas_juntes` en `calendario_mercado.py`: agregan por lunes natural en vez de por día, generan la tira de 7 días (trabaja=verde/libra=naranja, mismos colores que Ofertas/Peticiones) y marcan semanas parciales (a caballo entre meses) · plantilla con `<details>/<summary>` nativo (sin JS) para el desplegable por semana; el grid+JS de drill-down de ofertas/peticiones queda intacto, solo se salta para `modo=juntes` · enlace "Ver publicación" usa `/cambios?pub_id=` (ya soportado) en vez del flujo día+franja+usuario de ofertas/peticiones · catálogo i18n actualizado · 10 tests nuevos (`test_junte_semanal.py`, `test_calendario_semanas_juntes.py`) + 2 tests de ruta reescritos · verificación afectada por sesiones concurrentes compartiendo la BD Postgres local de test (deadlocks/errores de sesión ajenos a este cambio); los ficheros de test relevantes (junte_semanal, calendario_mercado, calendario_ruta, calendario_semanas_juntes, combinaciones_match, cambios, dashboard, publicar_junte) pasan limpios en ventanas sin contención · rama `feat/calendario-juntes-semanas` sobre `staging`, push directo pedido por el usuario
-- [x] feat(auth): botón "Probar con una cuenta demo" también en la portada (`main.index`, `/`), junto a "Crear cuenta"/"Entrar" — antes solo estaba en `/auth/login`. `main.index` calcula `demo_login_enabled` igual que la vista de login (`bool(DEMO_LOGIN_EMAIL)`) y la plantilla añade el mismo `<form>`/botón dentro del `.btn-group` existente, sin bloque nuevo (verificado visualmente con Playwright en 420px y 1200px: el botón queda alineado junto a los otros dos, con estilo `btn-secondary` para distinguirlo como acción alternativa) · 2 tests nuevos
-- [x] feat(matches): desconfirmar un match ya confirmado por el propio usuario, por si cambia de idea antes de que el cambio quede cerrado del todo · `POST /matches/<id>/desconfirmar` + `desconfirmar_participacion()` reutiliza `_get_match_validado` (409 si el match ya está `confirmado_total`/`rechazado`, o si el usuario no había confirmado) · recalcula el estado del match a `confirmado_parcial` si otra parte sigue confirmada (cadenas de 3+) o a `propuesto` si no · notifica a las demás partes (`Notificacion` tipo `desconfirmacion` + push) · botón "Desconfirmar" en el dashboard · catálogo i18n actualizado · 11 tests nuevos · 816 tests passing
-- [x] feat(publicar): calendario tap-to-select (elegir franja + tocar días) sustituye las filas manuales de `/publicar` · mockup Artifact validado con el usuario antes de implementar · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · franjas dinámicas por grupo, incluidas las personalizadas por el usuario (chip automático) · multi-franja el mismo día con `.cal-bandas-row` reutilizado de `/calendario` · prefill desde `/calendario` pasa de `value=""` a resaltado `data-sugerida` · `app/static/js/calendario-turnos.js` nuevo · e2e reescritos (4+1 test nuevo en `test_publicar.py`, golden path, drill-down) · 18 tests backend + 11 e2e relevantes passing
-- [x] feat(auth): login persistente ("recuérdame" siempre activo) — `login_user(..., remember=True)` en registro/login/login-demo + `SESSION_COOKIE_SAMESITE`/`REMEMBER_COOKIE_SAMESITE="Lax"` y `SESSION_COOKIE_SECURE`/`REMEMBER_COOKIE_SECURE=True` en producción · el usuario ya no pierde la sesión al cerrar el navegador/PWA, solo con logout explícito · 4 tests nuevos · 874 tests passing
-- [x] feat(editar): el calendario tap-to-select de `/publicar` se extiende a `/editar`, sustituyendo las filas manuales "fecha + tipo de turno" · `calendario-turnos.js` gana la opción `seleccionInicial` para precargar la selección con los turnos ya guardados (mes inicial = el de la fecha más temprana precargada) · backend sin cambios (mismos inputs ocultos `fecha_/franja_{prefix}_N`) · 2 tests e2e nuevos (`e2e/test_editar_publicacion.py`) · catálogo i18n actualizado · 876 tests unitarios passing
-- [x] fix(dashboard): una publicación con un match activo (`propuesto` o `confirmado_parcial`), aunque sea parcial, desaparecía por completo de "Mis cambios > Activos" y "Pendientes" en vez de seguir editable · añadido enlace "Editar" en la match-card para ese caso
-- [x] refactor(dashboard): tarjetas separadas para publicación original y match en Activos, a petición del usuario, en vez del botón "Editar" metido en la match-card · 879 tests passing
-- [x] feat(dashboard): las tarjetas de match de cadenas de 3/4 bandas muestran quién ya confirmó (✓, chip verde) y quién falta (○) — solo plantilla + CSS, el dato (`MatchParticipacion.confirmado`) ya existía · se muestra mientras el match no esté `confirmado_total` · catálogo i18n actualizado · 1 test nuevo · 880 tests passing
-- [x] fix(dashboard): investigado el reporte de que la tarjeta de Pendientes no reflejaba nuevas confirmaciones de otros al recargar — no se pudo reproducir ningún bug de datos/plantilla (verificado con test client y con servidor real + sesiones HTTP independientes); se añade `Cache-Control: no-store` a `main.index` como medida defensiva ante caché de navegador/proxy, ya que la página es dinámica y personal y no llevaba cabecera anti-caché · 4 tests nuevos · 884 tests passing
-- [x] fix(matching): `crear_match_cadena_3`/`crear_match_cadena_4` no registraban el `turno_aceptado_id` que cada banda recibe de la anterior en el ciclo (solo el `turno_cedido_id` que cede), así que al confirmarse una cadena el turno ya conseguido nunca se marcaba `resuelto` y seguía apareciendo como pendiente en la publicación reactivada · reportado por el usuario en producción (match cadena_4 confirmado, publicación 818) · fix reutiliza `_primer_aceptado_que_cubre` (ya usado por `crear_match_directo`) · 4 tests de regresión nuevos · 887 tests passing
+## Historial completo
+El registro detallado de pasos y fases anteriores (previo al último resumido arriba), y el checklist histórico completo de pasos completados, están en `PROGRESS_ARCHIVE.md`. No hace falta leerlo para reanudar el trabajo — solo consultarlo si se necesita el contexto de una decisión antigua.
 
 ## Notas / decisiones / asunciones pendientes
 - Sin campo teléfono en ningún modelo ni formulario (decisión explícita del usuario).
@@ -775,3 +393,20 @@ mitigación preventiva independiente de la causa.
 - El motor de matching se implementa como módulo puro sin acoplamiento a Flask ni SQLAlchemy.
 - Los conflictos de pip (streamlit, spyder) son del sistema y no afectan al proyecto.
 - conftest.py empuja un app context fresco por test para aislar g (Flask-Login) y la sesión SQLAlchemy. Necesario porque en Flask 3.x g está scoped al app context (no al request context) y Flask-Login cachea current_user en g._login_user.
+
+### Hoja de cambios digital (Fase 10) — decisiones tomadas con el usuario
+- Fase 1 explícitamente: sin cadenas a 3/4 bandas, sin juntes de noches, mono-cuenta (las dos firmas se hacen desde el mismo dispositivo/cuenta).
+- Se genera el documento aunque no se haya comprobado factibilidad contra planillas (decisión consciente: el objetivo inmediato es tener un prototipo que enseñar a los jefes, no bloquear por falta de verificación). La comprobación de factibilidad es un paso posterior.
+- Firma dibujada con el dedo (canvas) por decisión explícita del usuario para dar sensación de formalidad ante su supervisora, aunque no tenga valor legal reforzado — de ahí `hash_documento` en `FirmaDocumentoCambio` como rastro real por detrás del gesto visual.
+- El documento generado debe ser visualmente lo más fiel posible a `hojacambios.png` (formulario real "SOLICITUD DE CAMBIO DE TURNO O GUARDIA" del Hospital Universitario La Paz, guardado en la raíz del repo).
+- Las dos rejillas L-M-X-J-V-S-D del impreso son para juntes de noches (fuera de alcance ahora) — se renderizan en blanco/estáticas, sin datos.
+- El bloque "INFORME POR PARTE DE LA SUPERVISORA" (Favorable/Desfavorable + firma) no se usa en la práctica según el usuario, pero se mantiene en el documento generado como bloque estático/en blanco, sin tercer firmante ni lógica funcional.
+- Plantilla: HTML/Jinja2 + renderizado a PDF con WeasyPrint (no Word/LibreOffice), generado bajo demanda (no se persiste el PDF, evita el problema de disco efímero en Railway) — pendiente de implementar.
+- `ESPECIFICACION.md` pendiente de actualizar (ver nota en el paso anterior): el principio "no deja constancia oficial... no es un documento de RRHH" queda desactualizado con esta funcionalidad.
+- Bug preexistente encontrado en `app/templates/publicaciones/publicar.html` (no arreglado, fuera de alcance de esta fase): usa clases `alert`/`alert--{{cat}}` para los flash messages, que no existen en `main.css` (solo `flash`/`flash--*` están definidas), y además duplica el bloque `get_flashed_messages` que `base.html` ya renderiza globalmente — el mensaje sale dos veces, una con estilo y otra en texto plano sin caja. Las plantillas nuevas de `documento_cambio` no repiten el patrón. Pendiente decidir si merece su propio paso de limpieza.
+
+- [x] fix(documento-cambio): la decisión de la supervisora (autorizar/denegar en `ver.html`) mostraba dos recuadros de firma duplicados, uno por cada `<form>` independiente (`autorizar-form`/`denegar-form`) · fusionados en un único `<form id="decision-form">` con un solo lienzo de firma y dos acciones vía `formaction` en los botones "Autorizar"/"Denegar" (y en sus respectivos "usar firma guardada") · el textarea de motivo pasa a ser común a ambas acciones (ya no `required` en HTML: el servidor ya validaba y redirigía con flash si faltaba, sin esa validación ninguna ruta se rompe) · `firma-canvas.js::initFirmaForm` generalizado para soportar varios botones `.firma-usar-guardada` en el mismo formulario (antes asumía uno solo) y estos pasan a ser botones `type="submit"` reales con `formaction` propio en vez de disparar `form.requestSubmit()`/`form.submit()` a mano (se simplifica el JS: el navegador ya respeta `formaction` al hacer clic) · mismo cambio aplicado al botón "Firmar con firma guardada" de la sección de firma del participante, por coherencia con el nuevo mecanismo · 1 test nuevo (`test_decision_supervisora_muestra_un_unico_recuadro_de_firma`) · 65 tests de `test_rutas_documento_cambio.py` + 90 de auth/dashboard passing
+
+- [x] fix(documento-cambio): `comprobar_factibilidad` marcaba como `no_factible` cambios en papel legítimos cuando el día cedido caía dentro de la racha de días consecutivos (o era la noche anterior/siguiente) del día que ese mismo participante recibía en el mismo documento — detectado en staging al intentar registrar un cambio real (Ana García cede "Mañana" el 1/7 y recibe "Diurno 12h" el 4/7): su racha ya publicada llegaba a 12 días seguidos sin descontar el 1/7, por encima del límite de 8 del grupo, aunque ese día deja de ser suyo con el propio cambio · `_trabaja_el_dia`, `_contar_dias_consecutivos_trabajados`, `_viola_limite_dias_consecutivos` y `_viola_descanso_nocturno` reciben ahora `fecha_cedida` (el `turno_cede_fecha` del participante en ese documento) y tratan ese día como no trabajado al evaluar la racha/descanso del día recibido · 2 tests nuevos (racha con día cedido de por medio, descanso nocturno con la noche cedida como día anterior) · 11 tests de `test_servicio_factibilidad_documento_cambio.py` + 178 de los módulos relacionados de `documento_cambio` passing
+
+- [x] style(planilla-supervision): 4 mejoras visuales de `/planilla/supervision` pedidas por el usuario. De las 4, 2 ya estaban implementadas de rondas anteriores sin cambios necesarios: botones solo-supervisora con color propio (`.nav-supervisora-row a`) y resaltado de fila al clicar el nombre de un trabajador (`.supervision-fila-resaltada`, ya soporta varios trabajadores resaltados a la vez de forma independiente). Las 2 restantes sí requerían trabajo: (1) la fila de números de día en la cabecera no se distinguía de la fila de contadores de presencia justo encima (ambas con el mismo fondo `#f5f7fa` heredado de `.supervision-matriz thead th`) — nueva clase `supervision-dianum-fila` en el `<tr>` con fondo propio (`#e2e8f0`), excluyendo vía `:not()` las celdas que ya tienen fondo de "hoy"/fin de semana para no pisarlas; (2) los días con doblaje (más de un turno el mismo día) no resaltaban visualmente, solo se veían los chips apilados — en vez del borde negro grueso que proponía el usuario, se usa `box-shadow: inset 0 0 0 3px` en ámbar (mismo acento ya usado para lo "de supervisora"/papel) sobre una nueva clase `supervision-celda--doblaje`: un borde real hubiera desplazado la cuadrícula al chocar con `border-collapse: collapse` de la tabla, mientras que el inset shadow no participa en el colapso de bordes ni compite con los fondos de "hoy"/fin de semana/fila resaltada, que son la misma propiedad `background`. 3 tests nuevos (clase de doblaje presente con 2 turnos, ausente con 1, clase de la fila de números de día) · 48 tests de `planilla_supervision` (rutas + servicio) passing

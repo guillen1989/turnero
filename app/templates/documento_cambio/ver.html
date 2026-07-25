@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Hoja de cambio') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Hoja de cambio') }} <span class="documento-numero">{{ _('cambio #%(numero)s del %(fecha)s', numero=documento.numero_unidad, fecha=documento.fecha_creacion.strftime('%d/%m/%Y')) }}</span></h1>
+
+  {% if documento.origen_papel %}
+    <p><span class="badge-draft">{{ _('Registrado desde hoja de papel') }}</span> {{ _('Este cambio se firmó en papel; la supervisora lo registró manualmente en el sistema.') }}</p>
+  {% endif %}
+
+  {% if documento.depende_de_id and documento.depende_de %}
+    <p class="dependencia-badge">
+      <span class="badge-draft">{{ _('Encadenada a:') }}</span>
+      <a href="{{ url_for('documento_cambio.ver', documento_id=documento.depende_de.id) }}">
+        {{ _('Hoja nº %(numero)s del %(fecha)s', numero=documento.depende_de.numero_unidad, fecha=documento.depende_de.fecha_creacion.strftime('%d/%m/%Y')) }}
+      </a>
+    </p>
+  {% endif %}
+
+  {% if documento.estado == 'completo' %}
+    <div class="flash flash--success documento-completo-banner">{{ _('Las dos firmas están recogidas. La hoja de cambio está completa.') }}</div>
+    <a href="{{ url_for('documento_cambio.pdf', documento_id=documento.id) }}" class="btn btn-primary">{{ _('Generar PDF') }}</a>
+  {% else %}
+    <span class="badge-draft">{{ _('Pendiente de firma') }}</span>
+  {% endif %}
+
+  {% if documento.factibilidad_estado == 'factible' %}
+    <p><span class="badge-success">{{ _('Verificado contra la planilla') }}</span> {{ _('El cambio es factible según las planillas subidas de ambos.') }}</p>
+  {% elif documento.factibilidad_estado == 'no_factible' %}
+    <div class="flash flash--danger">
+      {{ _('Atención: según las planillas subidas, este cambio no parece factible. Revisa los datos antes de firmar.') }}
+      {% if documento.factibilidad_motivos %}
+        <ul style="margin: 0.5rem 0 0 0;">
+          {% for motivo in documento.factibilidad_motivos.split('\n') %}
+            <li>{{ motivo }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  {% else %}
+    <p><span class="badge-draft">{{ _('Factibilidad no verificada') }}</span> {{ _('Falta la planilla publicada de alguna de las dos personas para ese mes. Comprueba manualmente que no haya conflictos.') }}</p>
+  {% endif %}
+
+  {% if documento.anulado %}
+    <div class="flash flash--danger">
+      <strong>{{ _('Cambio anulado') }}</strong>
+      {% if documento.motivo_anulacion %}<p>{{ _('Motivo') }}: {{ documento.motivo_anulacion }}</p>{% endif %}
+    </div>
+  {% elif documento.estado == 'completo' %}
+    {% if documento.decision_supervisora == 'autorizado' %}
+      <p><span class="badge-success">{{ _('Autorizado por la supervisora') }}</span> {{ _('Ya se ha aplicado a las planillas.') }}</p>
+      {% if current_user.es_supervisora %}
+      <section class="turnos-section">
+        <h2>{{ _('Anular este cambio') }}</h2>
+        {% if puede_anular %}
+        <form method="post" action="{{ url_for('documento_cambio.anular', documento_id=documento.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="form-group">
+            <label for="motivo_anulacion">{{ _('Motivo de la anulación') }}</label>
+            <textarea id="motivo_anulacion" name="motivo" rows="2" required placeholder="{{ _('Explica por qué se anula, lo verán los dos implicados.') }}"></textarea>
+          </div>
+          <button type="submit" class="btn btn-danger">{{ _('Anular') }}</button>
+        </form>
+        {% else %}
+        <p class="form-hint">{{ motivo_no_anulable }}</p>
+        {% endif %}
+      </section>
+      {% endif %}
+    {% elif documento.decision_supervisora == 'denegado' %}
+      <div class="flash flash--danger">
+        <strong>{{ _('Denegado por la supervisora') }}</strong>
+        {% if documento.motivo_denegacion %}<p>{{ _('Motivo') }}: {{ documento.motivo_denegacion }}</p>{% endif %}
+      </div>
+    {% elif current_user.es_supervisora %}
+      <section class="turnos-section">
+        <h2>{{ _('Decisión de la supervisora') }}</h2>
+        <p>{{ _('Tu firma queda recogida en la hoja, igual que la de los dos implicados.') }}</p>
+        <form method="post" id="decision-form" action="{{ url_for('documento_cambio.autorizar', documento_id=documento.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="imagen_firma" value="">
+          <div class="form-group">
+            <label for="motivo">{{ _('Motivo de la denegación') }}</label>
+            <textarea id="motivo" name="motivo" rows="2" placeholder="{{ _('Solo necesario si deniegas. Explica por qué, lo verán los dos implicados.') }}"></textarea>
+          </div>
+          <div class="firma-box">
+            <canvas class="firma-canvas" width="500" height="180"></canvas>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
+          {% if current_user.firma_guardada %}
+          <button type="submit" formaction="{{ url_for('documento_cambio.autorizar', documento_id=documento.id) }}" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Autorizar con firma guardada') }}</button>
+          <button type="submit" formaction="{{ url_for('documento_cambio.denegar', documento_id=documento.id) }}" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Denegar con firma guardada') }}</button>
+          {% else %}
+          <label class="firma-guardar-opcion" style="display:block; margin:0.5rem 0; font-size:0.9rem">
+            <input type="checkbox" name="guardar_firma" checked>
+            {{ _('Guardar esta firma para futuras decisiones') }}
+          </label>
+          {% endif %}
+          <button type="submit" formaction="{{ url_for('documento_cambio.autorizar', documento_id=documento.id) }}" class="btn btn-primary">{{ _('Autorizar') }}</button>
+          <button type="submit" formaction="{{ url_for('documento_cambio.denegar', documento_id=documento.id) }}" class="btn btn-danger">{{ _('Denegar') }}</button>
+        </form>
+      </section>
+    {% else %}
+      <p><span class="badge-draft">{{ _('Pendiente de autorización de la supervisora') }}</span></p>
+    {% endif %}
+  {% endif %}
+
+  <section class="turnos-section">
+    <h2>{{ _('Datos del cambio') }}</h2>
+    {% for p in documento.participantes %}
+    <div class="card">
+      <strong>{{ p.nombre_mostrar }}</strong>
+      <p>{{ _('Cede') }}: {{ p.turno_cede_franja.nombre }} — {{ p.turno_cede_fecha.strftime('%d/%m/%Y') }}</p>
+      <p>{{ _('Recibe') }}: {{ p.turno_recibe_franja.nombre }} — {{ p.turno_recibe_fecha.strftime('%d/%m/%Y') }}</p>
+      {% if documento.origen_papel %}
+        <span class="badge-draft">{{ _('Firmado en papel') }}</span>
+      {% elif p.usuario_id in ids_firmantes %}
+        <span class="badge-success">{{ _('Firmado') }}</span>
+      {% else %}
+        <span class="badge-draft">{{ _('Sin firmar') }}</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  {% if puedo_firmar %}
+  <section class="turnos-section">
+    <h2>{{ _('Tu firma') }}</h2>
+    <p>{{ _('Dibuja tu firma con el dedo en el recuadro.') }}</p>
+    <form method="post" id="firma-form" action="{{ url_for('documento_cambio.firmar', documento_id=documento.id, participante_id=mi_participante.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="imagen_firma" value="">
+      <div class="firma-box">
+        <canvas class="firma-canvas" width="500" height="180"></canvas>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm firma-limpiar">{{ _('Borrar') }}</button>
+      {% if current_user.firma_guardada %}
+      <button type="submit" class="btn btn-secondary btn-sm firma-usar-guardada" data-firma="{{ current_user.firma_guardada }}">{{ _('Firmar con firma guardada') }}</button>
+      {% else %}
+      <label class="firma-guardar-opcion" style="display:block; margin:0.5rem 0; font-size:0.9rem">
+        <input type="checkbox" name="guardar_firma" checked>
+        {{ _('Guardar esta firma para futuras firmas') }}
+      </label>
+      {% endif %}
+      <button type="submit" class="btn btn-primary">{{ _('Guardar firma') }}</button>
+    </form>
+  </section>
+  {% elif documento.estado != 'completo' and mi_participante %}
+  <section class="turnos-section">
+    <p>{{ _('Ya has firmado. Esperando a que la otra parte firme también.') }}</p>
+  </section>
+  {% endif %}
+
+  {% if notas_ilog %}
+  <section class="turnos-section">
+    <h2>{{ _('Notas para ilog') }}</h2>
+    <p>{{ _('Copia cada texto en la nota del día correspondiente, en la planilla de cada trabajador.') }}</p>
+    {% for nota in notas_ilog %}
+    <div class="card">
+      <strong>{{ nota.nombre }} — {{ nota.fecha.strftime('%d/%m/%Y') }}</strong>
+      <textarea class="nota-ilog-texto" readonly rows="2" id="nota-ilog-{{ loop.index }}">{{ nota.texto }}</textarea>
+      <button type="button" class="btn btn-secondary btn-sm"
+        data-copiado-label="{{ _('Copiado') }}"
+        onclick="copiarAlPortapapeles(this, document.getElementById('nota-ilog-{{ loop.index }}').value)">
+        {{ _('Copiar') }}
+      </button>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='js/firma-canvas.js') }}"></script>
+{% if puedo_firmar %}
+<script>initFirmaForm('firma-form');</script>
+{% endif %}
+{% if documento.estado == 'completo' and not documento.anulado and documento.decision_supervisora == 'pendiente' and current_user.es_supervisora %}
+<script>initFirmaForm('decision-form');</script>
+{% endif %}
+{% endblock %}

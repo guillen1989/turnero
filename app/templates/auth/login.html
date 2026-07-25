@@ -47,7 +47,23 @@
     </div>
   </form>
 
-  {% if demo_login_enabled %}
+  {% if demo_login_enabled and demo_supervisora_login_enabled %}
+  <div class="form-group">
+    <p class="form-footer">{{ _('Probar con una cuenta demo:') }}</p>
+    <div class="btn-group">
+      <form method="POST" action="{{ url_for('auth.login_demo') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="tipo" value="trabajador">
+        <button type="submit" class="btn btn-secondary btn-full">{{ _('Trabajador') }}</button>
+      </form>
+      <form method="POST" action="{{ url_for('auth.login_demo') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="tipo" value="supervisora">
+        <button type="submit" class="btn btn-secondary btn-full">{{ _('Supervisora') }}</button>
+      </form>
+    </div>
+  </div>
+  {% elif demo_login_enabled %}
   <form method="POST" action="{{ url_for('auth.login_demo') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="form-group">

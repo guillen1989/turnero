@@ -9,6 +9,7 @@ from app.extensions import db
 from app.models import BusquedaGuardada, CompatibilidadPlanilla, FranjaHoraria, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
 from app.services.caducidad import caducar_publicaciones_expiradas
 from app.services.junte_semanal import calcular_distribucion, resumen_textual
+from app.services.matches import calcular_trabajas
 
 bp = Blueprint("main", __name__)
 
@@ -44,44 +45,19 @@ def como_funciona():
     return render_template("main/como_funciona.html")
 
 
+@bp.get("/funcionalidades")
+def funcionalidades():
+    """Página pública con el detalle de todas las funcionalidades, enlazada
+    desde la portada para quien todavía no tiene cuenta."""
+    return render_template("main/funcionalidades.html")
+
+
 def _mi_participacion(match, usuario_id):
     return next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
 
 
 def _otras_participaciones(match, usuario_id):
     return [p for p in match.participaciones if p.publicacion.usuario_id != usuario_id]
-
-
-def _calcular_trabajas(match):
-    """Para cada participación devuelve un dict {fecha, franja} del turno que trabaja,
-    o None si no trabaja nada (coincidencia parcial).
-
-    Regla: en el ciclo A→B→C→A cada participante trabaja el turno cedido del
-    participante anterior.  Para coincidencias parciales (regalo/petición), quien
-    tiene turno_aceptado ya lo trabaja explícitamente; quien no tiene ningún
-    'trabaja' recibe None.
-    """
-    partes = sorted(match.participaciones, key=lambda p: p.id)
-    n = len(partes)
-    trabajas = {}
-    for i, part in enumerate(partes):
-        if part.turno_aceptado:
-            ta = part.turno_aceptado
-            cualquier = ta.cualquier_franja
-            trabajas[part.id] = {
-                "fecha": ta.fecha.strftime("%d/%m/%Y"),
-                "franja": None if cualquier else ta.franja_horaria.nombre,
-            }
-        elif part.turno_cedido:
-            prev = partes[(i - 1) % n]
-            tc = prev.turno_cedido  # None para coincidencias parciales
-            trabajas[part.id] = (
-                {"fecha": tc.fecha.strftime("%d/%m/%Y"), "franja": tc.franja_horaria.nombre}
-                if tc else None
-            )
-        else:
-            trabajas[part.id] = None
-    return trabajas
 
 
 def _partners_confirmados(usuario_id):
@@ -157,7 +133,7 @@ def _matches_para_tab(usuario_id, estado_match):
         mi = _mi_participacion(match, usuario_id)
         otras = _otras_participaciones(match, usuario_id)
         if mi and otras:
-            resultado.append((match, mi, otras, _calcular_trabajas(match)))
+            resultado.append((match, mi, otras, calcular_trabajas(match)))
     return resultado
 
 
@@ -383,7 +359,12 @@ def index():
         response.headers["Cache-Control"] = "no-store"
         return response
     demo_login_enabled = bool(current_app.config.get("DEMO_LOGIN_EMAIL"))
-    return render_template("main/index.html", demo_login_enabled=demo_login_enabled)
+    demo_supervisora_login_enabled = bool(current_app.config.get("DEMO_SUPERVISORA_LOGIN_EMAIL"))
+    return render_template(
+        "main/index.html",
+        demo_login_enabled=demo_login_enabled,
+        demo_supervisora_login_enabled=demo_supervisora_login_enabled,
+    )
 
 
 @bp.get("/cambios")

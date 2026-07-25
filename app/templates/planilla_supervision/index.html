@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Supervisión de planilla') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block main_class %}container container--full{% endblock %}
+
+{% block content %}
+{% set MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+{% set DIAS_SEMANA = ['L','M','X','J','V','S','D'] %}
+
+<div class="form-container form-container--ancho">
+
+  <div class="planilla-header">
+    <div class="planilla-header-titulo">
+      <h1>{{ _('Supervisión de planilla') }}</h1>
+    </div>
+
+    <div class="planilla-mes-nav">
+      <a href="{{ url_for('planilla_supervision.index', anyo=prev_anyo, mes=prev_mes) }}" class="btn btn-secondary btn-sm">&#8249;</a>
+      <span class="planilla-mes-titulo">{{ MESES[mes - 1] }} {{ anyo }}</span>
+      <a href="{{ url_for('planilla_supervision.index', anyo=next_anyo, mes=next_mes) }}" class="btn btn-secondary btn-sm">&#8250;</a>
+    </div>
+  </div>
+
+  {% if not trabajadores %}
+    <p class="form-hint">{{ _('No hay trabajadores en tu unidad todavía.') }}</p>
+  {% else %}
+  <p class="form-hint">{{ _('Haz clic en el día de un trabajador para modificar su turno.') }}</p>
+  <div class="table-scroll">
+    <table class="supervision-matriz">
+      <thead>
+        {% for franja in franjas %}
+          <tr class="supervision-presencia-fila">
+            <th class="supervision-col-trabajador supervision-presencia-etiqueta">{{ franja.nombre }}</th>
+            {% for dia in dias %}
+              {% set conteo = conteos_presencia.get((dia, franja.id), 0) %}
+              <th class="supervision-col-dia supervision-presencia-conteo{% if dia == hoy %} supervision-col-dia--hoy{% endif %}{% if dia.weekday() >= 5 %} supervision-col-dia--finde{% endif %}">{{ conteo if conteo else '' }}</th>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+        <tr class="supervision-dianum-fila">
+          <th class="supervision-col-trabajador">{{ _('Trabajador') }}</th>
+          {% for dia in dias %}
+            <th class="supervision-col-dia{% if dia == hoy %} supervision-col-dia--hoy{% endif %}{% if dia.weekday() >= 5 %} supervision-col-dia--finde{% endif %}">
+              <span class="supervision-dia-num">{{ dia.day }}</span>
+              <span class="supervision-dia-semana">{{ DIAS_SEMANA[dia.weekday()] }}</span>
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for trabajador in trabajadores %}
+          <tr>
+            <td class="supervision-col-trabajador" onclick="this.closest('tr').classList.toggle('supervision-fila-resaltada')" title="{{ _('Resaltar fila') }}">{{ trabajador.nombre }}</td>
+            {% for dia in dias %}
+              {% set clave = (trabajador.id, dia) %}
+              {% set turnos_dia = turnos_por_usuario_dia.get(clave, []) %}
+              {% set estado_dia = estados_por_usuario_dia.get(clave) %}
+              {% set cambio = cambios_por_usuario_dia.get(clave) %}
+              {% set ajuste = ajustes_por_usuario_dia.get(clave) %}
+              <td class="supervision-celda{% if dia == hoy %} supervision-celda--hoy{% endif %}{% if dia.weekday() >= 5 %} supervision-celda--finde{% endif %}{% if turnos_dia|length > 1 %} supervision-celda--doblaje{% endif %}">
+                <button type="button" class="supervision-celda-btn"
+                        data-usuario-id="{{ trabajador.id }}"
+                        data-usuario-nombre="{{ trabajador.nombre }}"
+                        data-fecha="{{ dia.isoformat() }}"
+                        data-fecha-label="{{ dia.day }} {{ MESES[mes - 1] }} {{ anyo }}"
+                        data-turnos='{{ turnos_json_por_usuario_dia.get(clave, [])|tojson }}'
+                        data-estado='{{ estados_json_por_usuario_dia.get(clave)|tojson }}'
+                        onclick="supAjustarAbrir(this)"
+                        title="{{ _('Modificar turno') }}">
+                  {% if estado_dia %}
+                    <span class="planilla-turno-chip planilla-turno-chip--{{ estado_dia.tipo }} supervision-chip">
+                      {{ etiquetas_estado[estado_dia.tipo] }}
+                    </span>
+                  {% endif %}
+                  {% for turno in turnos_dia %}
+                    <span class="planilla-turno-chip supervision-chip"
+                          style="background:{{ turno.franja_horaria.color or '#3B82F6' }}; color:{{ turno.franja_horaria.color_texto }};">
+                      {{ turno.franja_horaria.nombre }}
+                    </span>
+                  {% endfor %}
+                </button>
+                {% if cambio %}
+                  <a href="{{ url_for('documento_cambio.ver', documento_id=cambio.documento.id) }}"
+                     class="supervision-cambio-badge"
+                     title="{{ cambio.descripcion }}">
+                    &#8646;
+                  </a>
+                {% endif %}
+                {% if ajuste %}
+                  <span class="supervision-ajuste-badge"
+                        title="{{ _('Modificado por la supervisora') }}: {{ ajuste.descripcion_anterior }} &#8594; {{ ajuste.descripcion_nueva }}{% if ajuste.motivo %} ({{ ajuste.motivo }}){% endif %}">
+                    &#9998;
+                  </span>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+</div>
+
+{# ── Modal: modificar turno de un día ── #}
+<div id="sup-ajuste-modal" class="sup-ajuste-modal" style="display:none" role="dialog" aria-modal="true" aria-label="{{ _('Modificar turno') }}">
+  <div class="sup-ajuste-panel">
+    <button type="button" class="sup-ajuste-cerrar" onclick="supAjustarCerrar()" aria-label="{{ _('Cerrar') }}">&times;</button>
+    <h3>{{ _('Modificar turno') }}</h3>
+    <p class="sup-ajuste-quien"><strong id="sup-ajuste-nombre"></strong> — <span id="sup-ajuste-fecha-label"></span></p>
+
+    <div id="sup-ajuste-filas" class="sup-ajuste-filas"></div>
+
+    <button type="button" class="btn btn-secondary btn-sm sup-ajuste-anadir-btn" id="sup-ajuste-anadir-btn"
+            onclick="supAjustarMostrarForm('anadir')">
+      + {{ _('Añadir') }}
+    </button>
+
+    <form id="sup-ajuste-form" method="post" action="{{ url_for('planilla_supervision.ajustar') }}" style="display:none">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="usuario_id" id="sup-ajuste-usuario-id">
+      <input type="hidden" name="fecha" id="sup-ajuste-fecha">
+      <input type="hidden" name="anyo" value="{{ anyo }}">
+      <input type="hidden" name="mes" value="{{ mes }}">
+      <input type="hidden" name="franja_actual_id" id="sup-ajuste-franja-actual-id">
+      <select name="seleccion" id="sup-ajuste-seleccion" class="planilla-select" required
+              aria-label="{{ _('Nuevo turno o estado') }}">
+        <option value="">{{ _('— elige —') }}</option>
+        <option value="vaciar" id="sup-ajuste-opt-vaciar">{{ _('Vaciar día (sin turno ni estado)') }}</option>
+        <optgroup label="{{ _('Estado del día') }}" id="sup-ajuste-optgroup-estado">
+          <option value="libre">{{ _('Libre') }}</option>
+          <option value="vacaciones">{{ _('Vacaciones') }}</option>
+          <option value="no_disponible">{{ _('No disponible para cambios') }}</option>
+        </optgroup>
+        {% if franjas %}
+        <optgroup label="{{ _('Turno') }}">
+          {% for franja in franjas %}<option value="{{ franja.id }}">{{ franja.nombre }}</option>{% endfor %}
+        </optgroup>
+        {% endif %}
+      </select>
+      <textarea name="motivo" id="sup-ajuste-motivo" class="dia-nota-textarea" rows="2"
+                placeholder="{{ _('Motivo (opcional)') }}"></textarea>
+      <div class="sup-ajuste-actions">
+        <button type="submit" class="btn btn-primary btn-sm">{{ _('Guardar') }}</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="supAjustarOcultarForm()">{{ _('Cancelar') }}</button>
+      </div>
+    </form>
+
+    <a id="sup-ajuste-registrar-papel" href="#" class="btn btn-registrar-papel btn-sm sup-ajuste-papel-link"
+       title="{{ _('Registrar cambio manualmente (papel)') }}" aria-label="{{ _('Registrar cambio manualmente (papel)') }}">
+      📄
+    </a>
+  </div>
+</div>
+
+{# ── Formularios ocultos: acciones directas sobre un turno concreto de una fila ── #}
+<form id="sup-turno-eliminar-form" method="post" action="{{ url_for('planilla_supervision.turno_eliminar') }}" style="display:none">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="usuario_id" id="sup-turno-eliminar-usuario-id">
+  <input type="hidden" name="fecha" id="sup-turno-eliminar-fecha">
+  <input type="hidden" name="anyo" value="{{ anyo }}">
+  <input type="hidden" name="mes" value="{{ mes }}">
+  <input type="hidden" name="franja_id" id="sup-turno-eliminar-franja-id">
+</form>
+
+<script>
+const T_SUP_AJUSTE = {
+  editar: "{{ _('Modificar') }}",
+  eliminar: "{{ _('Eliminar') }}",
+};
+const URL_SUP_AJUSTAR = "{{ url_for('planilla_supervision.ajustar') }}";
+const URL_SUP_TURNO_EDITAR = "{{ url_for('planilla_supervision.turno_editar') }}";
+const URL_SUP_REGISTRAR_PAPEL = "{{ url_for('documento_cambio.registrar_papel') }}";
+
+let supAjusteCtx = null;
+
+function supAjustarAbrir(btn) {
+  supAjusteCtx = { usuarioId: btn.dataset.usuarioId, fecha: btn.dataset.fecha };
+
+  document.getElementById('sup-ajuste-nombre').textContent = btn.dataset.usuarioNombre;
+  document.getElementById('sup-ajuste-fecha-label').textContent = btn.dataset.fechaLabel;
+
+  const turnos = JSON.parse(btn.dataset.turnos || '[]');
+  const estado = btn.dataset.estado ? JSON.parse(btn.dataset.estado) : null;
+  supAjustarPintarFilas(turnos, estado);
+  supAjustarOcultarForm();
+
+  document.getElementById('sup-ajuste-registrar-papel').href =
+    URL_SUP_REGISTRAR_PAPEL + "?usuario1_id=" + encodeURIComponent(btn.dataset.usuarioId) +
+    "&fecha=" + encodeURIComponent(btn.dataset.fecha);
+  document.getElementById('sup-ajuste-modal').style.display = 'flex';
+}
+
+function supAjustarCerrar() {
+  document.getElementById('sup-ajuste-modal').style.display = 'none';
+}
+
+function supAjustarPintarFilas(turnos, estado) {
+  const contenedor = document.getElementById('sup-ajuste-filas');
+  contenedor.innerHTML = '';
+  turnos.forEach(function (turno) { contenedor.appendChild(supAjustarCrearFilaTurno(turno)); });
+  if (estado) contenedor.appendChild(supAjustarCrearFilaEstado(estado));
+}
+
+function supAjustarCrearFilaBoton(texto, titulo, onClick) {
+  const boton = document.createElement('button');
+  boton.type = 'button';
+  boton.className = 'sup-ajuste-fila-btn';
+  boton.title = titulo;
+  boton.setAttribute('aria-label', titulo);
+  boton.textContent = texto;
+  boton.onclick = onClick;
+  return boton;
+}
+
+function supAjustarCrearFilaTurno(turno) {
+  const fila = document.createElement('div');
+  fila.className = 'sup-ajuste-fila';
+
+  const nombre = document.createElement('span');
+  nombre.className = 'sup-ajuste-fila-nombre';
+  nombre.textContent = turno.nombre;
+  fila.appendChild(nombre);
+
+  fila.appendChild(supAjustarCrearFilaBoton('✎', T_SUP_AJUSTE.editar, function () {
+    supAjustarMostrarForm('editar', turno.franja_id);
+  }));
+  fila.appendChild(supAjustarCrearFilaBoton('−', T_SUP_AJUSTE.eliminar, function () {
+    supAjustarEliminarTurno(turno.franja_id);
+  }));
+  return fila;
+}
+
+function supAjustarCrearFilaEstado(estado) {
+  const fila = document.createElement('div');
+  fila.className = 'sup-ajuste-fila';
+
+  const nombre = document.createElement('span');
+  nombre.className = 'sup-ajuste-fila-nombre';
+  nombre.textContent = estado.etiqueta;
+  fila.appendChild(nombre);
+
+  fila.appendChild(supAjustarCrearFilaBoton('−', T_SUP_AJUSTE.eliminar, supAjustarVaciarDia));
+  return fila;
+}
+
+function supAjustarEliminarTurno(franjaId) {
+  document.getElementById('sup-turno-eliminar-usuario-id').value = supAjusteCtx.usuarioId;
+  document.getElementById('sup-turno-eliminar-fecha').value = supAjusteCtx.fecha;
+  document.getElementById('sup-turno-eliminar-franja-id').value = franjaId;
+  document.getElementById('sup-turno-eliminar-form').submit();
+}
+
+function supAjustarVaciarDia() {
+  const form = document.getElementById('sup-ajuste-form');
+  const seleccion = document.getElementById('sup-ajuste-seleccion');
+  document.getElementById('sup-ajuste-usuario-id').value = supAjusteCtx.usuarioId;
+  document.getElementById('sup-ajuste-fecha').value = supAjusteCtx.fecha;
+  form.action = URL_SUP_AJUSTAR;
+  seleccion.name = 'seleccion';
+  seleccion.value = 'vaciar';
+  form.submit();
+}
+
+function supAjustarMostrarForm(modo, franjaActualId) {
+  const form = document.getElementById('sup-ajuste-form');
+  const seleccion = document.getElementById('sup-ajuste-seleccion');
+  const esEdicion = modo === 'editar';
+
+  document.getElementById('sup-ajuste-usuario-id').value = supAjusteCtx.usuarioId;
+  document.getElementById('sup-ajuste-fecha').value = supAjusteCtx.fecha;
+  document.getElementById('sup-ajuste-franja-actual-id').value = esEdicion ? franjaActualId : '';
+  document.getElementById('sup-ajuste-motivo').value = '';
+  seleccion.value = '';
+  seleccion.name = esEdicion ? 'franja_nueva_id' : 'seleccion';
+  document.getElementById('sup-ajuste-opt-vaciar').disabled = esEdicion;
+  document.getElementById('sup-ajuste-optgroup-estado').disabled = esEdicion;
+  form.action = esEdicion ? URL_SUP_TURNO_EDITAR : URL_SUP_AJUSTAR;
+
+  form.style.display = 'block';
+  document.getElementById('sup-ajuste-anadir-btn').style.display = 'none';
+}
+
+function supAjustarOcultarForm() {
+  document.getElementById('sup-ajuste-form').style.display = 'none';
+  document.getElementById('sup-ajuste-anadir-btn').style.display = '';
+}
+</script>
+{% endblock %}

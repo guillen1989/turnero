@@ -139,6 +139,11 @@
     {{ form.es_admin.label }}
   </div>
 
+  <div class="form-group form-check">
+    {{ form.es_supervisora() }}
+    {{ form.es_supervisora.label }}
+  </div>
+
   <div class="form-group">
     {{ form.submit(class="btn btn-primary") }}
     <a href="{{ url_for('admin.usuarios') }}" class="btn btn-secondary">{{ _('Cancelar') }}</a>

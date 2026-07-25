@@ -14,6 +14,12 @@ from app.models import (
 from app.extensions import db
 from app.services.registro import registrar_usuario
 
+# PNG 1x1 transparente válido, usado como firma de prueba.
+FIRMA_VALIDA = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4"
+    "2mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
+
 
 def _usuario_y_login(client, email="test@test.es"):
     insertar_categorias_semilla()
@@ -107,6 +113,163 @@ def test_dashboard_tab_compatible_muestra_match_propuesto(client, db):
     assert b"Pedro" in resp.data
     assert b"Confirmar" in resp.data
     assert b"Rechazar" in resp.data
+
+
+def test_dashboard_match_simetrico_confirmar_abre_modal_de_firma(client, db):
+    """Un match directo simétrico (cambio↔cambio, ambos ceden y reciben con
+    franja concreta) admite DocumentoCambio: el botón Confirmar abre el
+    modal de firma en vez de enviar el formulario directamente."""
+    ana = _usuario_y_login(client, email="ana@test.es")
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = _publicacion(ana, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
+    pub_pedro = _publicacion(pedro, franja, fecha_cedida=date(2026, 9, 2), fecha_aceptada=date(2026, 9, 1))
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_ana.id,
+        turno_cedido_id=pub_ana.turnos_cedidos[0].id, turno_aceptado_id=pub_ana.turnos_aceptados[0].id,
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_pedro.id,
+        turno_cedido_id=pub_pedro.turnos_cedidos[0].id, turno_aceptado_id=pub_pedro.turnos_aceptados[0].id,
+    ))
+    db.session.commit()
+
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert 'id="modal-firma"' in html
+    assert 'id="firma-canvas"' in html
+    assert 'onclick="abrirModalFirma(this.closest(\'form\'))"' in html
+    assert '<input type="hidden" name="firma" class="firma-input">' in html
+
+
+def test_dashboard_modal_firma_muestra_boton_de_firma_guardada_si_el_usuario_tiene_una(client, db):
+    ana = _usuario_y_login(client, email="ana@test.es")
+    ana.firma_guardada = FIRMA_VALIDA
+    db.session.commit()
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = _publicacion(ana, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
+    pub_pedro = _publicacion(pedro, franja, fecha_cedida=date(2026, 9, 2), fecha_aceptada=date(2026, 9, 1))
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_ana.id,
+        turno_cedido_id=pub_ana.turnos_cedidos[0].id, turno_aceptado_id=pub_ana.turnos_aceptados[0].id,
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_pedro.id,
+        turno_cedido_id=pub_pedro.turnos_cedidos[0].id, turno_aceptado_id=pub_pedro.turnos_aceptados[0].id,
+    ))
+    db.session.commit()
+
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert 'id="btn-firma-usar-guardada"' in html
+    assert f'data-firma="{FIRMA_VALIDA}"' in html
+
+
+def test_dashboard_modal_firma_ofrece_guardarla_si_el_usuario_no_tiene_una(client, db):
+    ana = _usuario_y_login(client, email="ana@test.es")
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = _publicacion(ana, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
+    pub_pedro = _publicacion(pedro, franja, fecha_cedida=date(2026, 9, 2), fecha_aceptada=date(2026, 9, 1))
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_ana.id,
+        turno_cedido_id=pub_ana.turnos_cedidos[0].id, turno_aceptado_id=pub_ana.turnos_aceptados[0].id,
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_pedro.id,
+        turno_cedido_id=pub_pedro.turnos_cedidos[0].id, turno_aceptado_id=pub_pedro.turnos_aceptados[0].id,
+    ))
+    db.session.commit()
+
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert 'id="chk-guardar-firma"' in html
+    assert 'class="guardar-firma-input"' in html
+
+
+def test_dashboard_modal_firma_no_ofrece_guardarla_si_el_usuario_ya_tiene_una(client, db):
+    ana = _usuario_y_login(client, email="ana@test.es")
+    ana.firma_guardada = FIRMA_VALIDA
+    db.session.commit()
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = _publicacion(ana, franja, fecha_cedida=date(2026, 9, 1), fecha_aceptada=date(2026, 9, 2))
+    pub_pedro = _publicacion(pedro, franja, fecha_cedida=date(2026, 9, 2), fecha_aceptada=date(2026, 9, 1))
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_ana.id,
+        turno_cedido_id=pub_ana.turnos_cedidos[0].id, turno_aceptado_id=pub_ana.turnos_aceptados[0].id,
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub_pedro.id,
+        turno_cedido_id=pub_pedro.turnos_cedidos[0].id, turno_aceptado_id=pub_pedro.turnos_aceptados[0].id,
+    ))
+    db.session.commit()
+
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert 'id="chk-guardar-firma"' not in html
+
+
+def test_dashboard_match_asimetrico_confirmar_no_abre_modal_de_firma(client, db):
+    """Un match asimétrico (regalo/petición) no admite DocumentoCambio: el
+    botón Confirmar sigue enviando el formulario directamente, como antes."""
+    ana = _usuario_y_login(client, email="ana@test.es")
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    pedro = registrar_usuario("Pedro", "pedro@test.es", "password123", "Hospital T", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    pub_ana = PublicacionCambio(usuario_id=ana.id, tipo="peticion")
+    db.session.add(pub_ana)
+    db.session.flush()
+    tc_ana = TurnoCedido(publicacion_id=pub_ana.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    db.session.add(tc_ana)
+
+    pub_pedro = PublicacionCambio(usuario_id=pedro.id, tipo="regalo")
+    db.session.add(pub_pedro)
+    db.session.flush()
+    ta_pedro = TurnoAceptado(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    db.session.add(ta_pedro)
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_ana.id, turno_cedido_id=tc_ana.id))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_pedro.id, turno_aceptado_id=ta_pedro.id))
+    db.session.commit()
+
+    resp = client.get("/")
+    html = resp.data.decode()
+    assert "abrirModalFirma(this.closest('form'))" not in html
 
 
 def test_dashboard_activos_muestra_pub_sin_match(client, db):
@@ -587,10 +750,10 @@ def test_confirmar_total_resuelve_turno_aceptado(client, db):
     db.session.commit()
 
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
     client.get("/auth/logout")
     client.post("/auth/login", data={"email": "pedro@test.es", "password": "password123"})
-    client.post(f"/matches/{match.id}/confirmar")
+    client.post(f"/matches/{match.id}/confirmar", data={"firma": FIRMA_VALIDA})
 
     db.session.refresh(ta_ana)
     db.session.refresh(ta_pedro)

@@ -357,8 +357,7 @@ def test_publicar_c_genera_cadena_3(client, db):
 # ---------------------------------------------------------------------------
 
 def test_crear_sintetica_no_genera_notificaciones(db):
-    """crear_pub_sintetica crea la pub pero no genera notificaciones a Ana/Pedro; las
-    genera crear_aviso_oportunidad_3 llamada desde procesar_aviso_y_sintetica."""
+    """crear_pub_sintetica crea la pub pero no genera notificaciones a Ana/Pedro."""
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     m = _franja(ana.unidad.grupo_intercambio_id)
