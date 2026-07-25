@@ -29,10 +29,12 @@ def analytics():
         "oportunidades_3": PublicacionCambio.query.filter(
             PublicacionCambio.es_sintetica.is_(True),
             PublicacionCambio.sintetica_pub_intermedio_id.is_(None),
+            PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
         ).count(),
         "oportunidades_4": PublicacionCambio.query.filter(
             PublicacionCambio.es_sintetica.is_(True),
             PublicacionCambio.sintetica_pub_intermedio_id.isnot(None),
+            PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
         ).count(),
         "activas": PublicacionCambio.query.filter(
             PublicacionCambio.es_sintetica.is_(False),
@@ -209,6 +211,7 @@ def analytics_data():
             PublicacionCambio.query.filter(
                 PublicacionCambio.es_sintetica.is_(True),
                 PublicacionCambio.sintetica_pub_intermedio_id.is_(None),
+                PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
             )
             .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
             .filter(Usuario.unidad_id == unidad_id)
@@ -218,6 +221,7 @@ def analytics_data():
             PublicacionCambio.query.filter(
                 PublicacionCambio.es_sintetica.is_(True),
                 PublicacionCambio.sintetica_pub_intermedio_id.isnot(None),
+                PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
             )
             .join(Usuario, Usuario.id == PublicacionCambio.usuario_id)
             .filter(Usuario.unidad_id == unidad_id)
@@ -272,10 +276,12 @@ def analytics_data():
         t_oportunidades_3 = PublicacionCambio.query.filter(
             PublicacionCambio.es_sintetica.is_(True),
             PublicacionCambio.sintetica_pub_intermedio_id.is_(None),
+            PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
         ).count()
         t_oportunidades_4 = PublicacionCambio.query.filter(
             PublicacionCambio.es_sintetica.is_(True),
             PublicacionCambio.sintetica_pub_intermedio_id.isnot(None),
+            PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
         ).count()
         t_activas = PublicacionCambio.query.filter(
             PublicacionCambio.es_sintetica.is_(False),

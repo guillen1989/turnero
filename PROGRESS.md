@@ -31,6 +31,29 @@ posteriores (parecía contención de la BD de test, pero era un import que
 faltaba). Verificar con `pyflakes` tras cualquier split de este tipo antes de
 fiarte de los resultados de tests que fallan con errores de BD poco claros.
 
+## Mantenimiento reciente (independiente de la Fase 10 — limpieza de sintéticas huérfanas)
+PR contra `staging` con 2 cambios detectados al analizar el fan-out combinatorio
+del motor de matching en producción:
+- [x] `app/services/caducidad.py`: las publicaciones sintéticas (`es_sintetica`)
+  cuyo padre A o B deja de estar activo se **eliminan** en vez de solo marcarse
+  `cancelada`. Antes se acumulaban sin límite (en producción llegaron a ser el
+  70% de la tabla `publicacion_cambio`). El borrado respeta el orden de FKs
+  (`MatchParticipacion` → `MatchCambio`/`Notificacion` huérfanos →
+  `Notificacion`/`TurnoCedido`/`TurnoAceptado` → `PublicacionCambio`).
+- [x] `app/routes/admin/analytics.py`: los contadores `oportunidades_3` y
+  `oportunidades_4` (vista `/admin/analytics` y endpoint `/analytics/data`, con
+  y sin filtro por unidad) no filtraban por `estado`, así que las sintéticas
+  ya `cancelada`/`caducada` inflaban el conteo de oportunidades reales.
+
+Pendiente, fuera de alcance de este PR (anotado, no implementado):
+- El fan-out combinatorio en sí (`buscar_cadenas_parciales_4_para` /
+  `buscar_avisos_interes_para` generan todas las combinaciones sin límite) no
+  se ha limitado con un top-K; queda documentado como mejora futura.
+- `cancelar_publicacion`/`editar_publicacion` (vía `_cancelar_sinteticas_de`
+  en `app/services/publicaciones.py`) tienen el mismo defecto de origen
+  (cancelan sintéticas sin borrarlas) pero no se tocaron en este PR para no
+  ampliar su alcance.
+
 ## Fase actual
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
