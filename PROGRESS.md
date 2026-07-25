@@ -54,6 +54,35 @@ Pendiente, fuera de alcance de este PR (anotado, no implementado):
   (cancelan sintéticas sin borrarlas) pero no se tocaron en este PR para no
   ampliar su alcance.
 
+## Mantenimiento reciente (independiente de la Fase 10 — supervisoras multiunidad)
+Implementación de `PLAN_SUPERVISORAS_MULTIUNIDAD.md`: las supervisoras podrán
+gestionar varias unidades (no solo la suya), vía tabla N:M `unidad_supervisada`
+independiente de `Usuario.unidad_id`/`categoria_id`. 7 pasos con TDD y un
+commit por paso.
+
+- [x] Paso 1 — Modelo: `UnidadSupervisada` (`app/models/unidad_supervisada.py`,
+  PK compuesta `usuario_id`+`unidad_id`), relaciones
+  `Usuario.unidades_supervisadas` / `Unidad.supervisoras`
+  (`secondary="unidad_supervisada"`). Migración `666dde3fff3c` (generada con
+  `flask db migrate`, un único head) crea la tabla y hace backfill (`INSERT
+  ... SELECT id, unidad_id FROM usuario WHERE es_supervisora = true`) para las
+  supervisoras ya existentes. Tests en `tests/test_models_unidad_supervisada.py`.
+- [x] Paso 2 — Servicio `app/services/supervision.py`:
+  `unidades_supervisadas_de(usuario)` (ordenadas por nombre) y
+  `puede_supervisar(usuario, unidad)`. Tests en
+  `tests/test_servicio_supervision.py`.
+- [ ] Paso 3 — Rutas `planilla_supervision.py`: parámetro `unidad_id`,
+  `_unidad_supervisada_o_403`, sustituir usos de `current_user.unidad`.
+  Pendiente actualizar 3 ficheros de test que crean supervisoras sin
+  `UnidadSupervisada` asociada: `tests/test_rutas_planilla_supervision.py`,
+  `tests/test_reglas_comprobacion.py`, `e2e/test_planilla_supervision.py`.
+- [ ] Paso 4 — Plantilla: selector de unidad.
+- [ ] Paso 5 — Formulario admin: asignar unidades supervisadas.
+- [ ] Paso 6 — Contraseña por invitación para supervisoras creadas por el
+  admin (reutilizar `password_reset.py`/`email.py` en vez de contraseña en
+  texto plano tecleada por el admin).
+- [ ] Paso 7 — Limpieza y prueba manual end-to-end.
+
 ## Fase actual
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
