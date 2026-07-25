@@ -64,8 +64,8 @@ El desarrollo se estructura en **pasos pequeños**, cada uno terminado en un com
 Un "paso" es una unidad de trabajo pequeña y coherente (idealmente: un test + su implementación + refactor). Cada paso sigue SIEMPRE este ciclo:
 1. Trabaja el paso con TDD (rojo → verde → refactor).
 2. Asegúrate de que **todos** los tests pasan.
-3. Actualiza `PROGRESS.md`: marca el paso como completado y registra cuál es el siguiente paso.
-4. Haz **un único commit** que incluya el código, los tests y el `PROGRESS.md` actualizado.
+3. Actualiza `PROGRESS.md`: marca el paso como completado y registra cuál es el siguiente paso. Si el archivo ha crecido demasiado (ver sección siguiente), aprovecha para mover las entradas más antiguas a `PROGRESS_ARCHIVE.md`.
+4. Haz **un único commit** que incluya el código, los tests y el `PROGRESS.md` (y, si aplica, `PROGRESS_ARCHIVE.md`) actualizados.
 
 El **primer paso** del proyecto debe incluir inicializar el repositorio git y crear el `PROGRESS.md` inicial.
 
@@ -73,14 +73,16 @@ Mantén los pasos suficientemente pequeños como para que cada uno quepa con hol
 
 ---
 
-## Seguimiento del progreso: `PROGRESS.md`
-Mantén en la raíz un archivo `PROGRESS.md` que sea la **fuente de verdad** del estado del desarrollo. Debe contener, como mínimo:
+## Seguimiento del progreso: `PROGRESS.md` + `PROGRESS_ARCHIVE.md`
+Mantén en la raíz un archivo `PROGRESS.md` que sea la **fuente de verdad** del estado *actual* del desarrollo. Se lee entero al empezar cada sesión, así que debe contener solo lo necesario para reanudar el trabajo — no el historial completo del proyecto. Debe contener, como mínimo:
 - La fase y el paso actuales.
-- La lista de pasos ya completados (checklist).
 - El siguiente paso concreto a abordar.
+- Un resumen breve de los últimos pasos completados (no el checklist histórico completo).
 - Notas pendientes: decisiones tomadas, asunciones hechas, dudas a consultar.
 
 Como el `PROGRESS.md` se actualiza dentro del commit de cada paso, el último commit siempre refleja el estado real del proyecto.
+
+**Mantén `PROGRESS.md` corto (orientativamente, por debajo de ~300 líneas).** Al leerse entero en cada sesión, un archivo que crece sin límite desperdicia contexto. Cuando el archivo supere ese tamaño, o al cerrar una fase, mueve las entradas de pasos/fases anteriores que ya no aporten contexto inmediato a `PROGRESS_ARCHIVE.md`, un archivo hermano en la raíz que acumula el historial completo (narrativa de pasos anteriores + checklist histórico de pasos completados). `PROGRESS_ARCHIVE.md` **no se lee automáticamente al reanudar sesión** — solo se consulta bajo demanda, cuando hace falta el contexto de una decisión antigua. No tiene límite de tamaño: es un archivo de solo-anexar. Para el historial commit a commit, `git log` sigue siendo la fuente autoritativa.
 
 Estructura orientativa de `PROGRESS.md`:
 ```
@@ -92,10 +94,13 @@ Fase X — <nombre>
 ## Paso actual / siguiente paso
 <descripción del próximo paso concreto>
 
-## Pasos completados
-- [x] Fase 0, paso 1: ...
-- [x] Fase 0, paso 2: ...
-- [ ] Fase 1, paso 1: ...
+## Últimos pasos completados
+- [x] ...
+- [x] ...
+(solo los más recientes/relevantes para retomar el trabajo; el resto vive en PROGRESS_ARCHIVE.md)
+
+## Historial completo
+El registro detallado de fases y pasos anteriores está en `PROGRESS_ARCHIVE.md`.
 
 ## Notas / decisiones / asunciones pendientes
 - ...
@@ -105,7 +110,7 @@ Fase X — <nombre>
 
 ## Cómo reanudar el trabajo (al empezar cada sesión)
 1. Lee este `CLAUDE.md`.
-2. Lee `PROGRESS.md` para saber en qué paso se quedó el desarrollo y cuál es el siguiente.
+2. Lee `PROGRESS.md` para saber en qué paso se quedó el desarrollo y cuál es el siguiente (no hace falta leer `PROGRESS_ARCHIVE.md`; solo consúltalo si necesitas el contexto de una decisión antigua).
 3. Revisa `git log` para ver los últimos commits y `git status` para ver si hay cambios sin confirmar.
    - Si el árbol de trabajo está limpio: continúa con el siguiente paso indicado en `PROGRESS.md`.
    - Si hay cambios sin confirmar (interrupción a mitad de un paso): ejecuta los tests para entender el estado, decide si completar o descartar esos cambios, y deja el repositorio en un estado consistente antes de seguir.
