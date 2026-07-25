@@ -1,5 +1,5 @@
 """Tests de publicaciones sintéticas (generador de cambios a 3 bandas)."""
-from datetime import date
+from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -322,16 +322,21 @@ def test_publicar_c_genera_cadena_3(client, db):
     m = _franja(ana.unidad.grupo_intercambio_id)
     t = _franja_tarde(ana.unidad.grupo_intercambio_id)
 
-    pub_a = _pub_cambio(ana, [(date(2026, 7, 10), m)], [(date(2026, 8, 3), t)])
-    pub_b = _pub_cambio(pedro, [(date(2026, 7, 21), m)], [(date(2026, 7, 10), m)])
+    hoy = date.today()
+    fecha_cede_a = hoy + timedelta(days=10)
+    fecha_pide_a = hoy + timedelta(days=40)
+    fecha_cede_b = hoy + timedelta(days=20)
+
+    pub_a = _pub_cambio(ana, [(fecha_cede_a, m)], [(fecha_pide_a, t)])
+    pub_b = _pub_cambio(pedro, [(fecha_cede_b, m)], [(fecha_cede_a, m)])
     sint = crear_pub_sintetica(pub_a, pub_b)
 
     client.post("/auth/login", data={"email": "carlos@test.es", "password": "password123"})
     client.post("/publicar", data={
         "tipo": "cambio",
-        "fecha_cedida_0": "2026-08-03",
+        "fecha_cedida_0": fecha_pide_a.isoformat(),
         "franja_cedida_0": str(t.id),
-        "fecha_aceptada_0": "2026-07-21",
+        "fecha_aceptada_0": fecha_cede_b.isoformat(),
         "franja_aceptada_0": str(m.id),
     })
 
