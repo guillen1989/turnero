@@ -40,6 +40,7 @@ Reglas:
 - Framework de tests: pytest.
 - Prioriza los tests sobre la lógica de negocio crítica: el motor de matching y las reglas de negocio (condiciones de coincidencia, resolución parcial, visibilidad por categoría/grupo, confirmación, caducidad).
 - Los UAT de `especificacion-app-cambio-turnos.md` son el criterio de aceptación de cada funcionalidad.
+- **Ejecuta los tests con `pytest --testmon` (selecciona solo los tests afectados por los cambios) en vez de la suite completa.** La suite completa tarda varios minutos contra la base de datos de test real; resérvala para antes de un push/PR o cuando desconfíes de la selección de testmon.
 
 ### 2. Clean Code
 - Nombres descriptivos y honestos para variables, funciones y clases.
