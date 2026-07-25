@@ -4,6 +4,40 @@
 Fase 9 — Mejoras post-MVP
 
 ## Paso actual / siguiente paso
+perf(publicaciones): eliminar una publicación con sintéticas dependientes
+tardaba ~10s en producción y provocaba un `WORKER TIMEOUT` de gunicorn —
+`_eliminar_sinteticas_de`/`_eliminar_matches_de_publicacion` hacían una
+tanda de consultas/deletes por cada sintética en un bucle Python (hasta
+225 sintéticas dependientes vistas en producción para una sola
+publicación real). Reescrito a deletes/updates en bloque
+(`.filter(...).delete(synchronize_session=False)` /
+`.update(..., synchronize_session=False)`) que operan sobre la lista
+completa de ids de una vez: `_eliminar_matches_de_publicacion` ahora
+delega en la nueva `_eliminar_matches_de_publicaciones` (acepta una lista
+de ids), y `_eliminar_sinteticas_de` calcula todos los `sint_ids` con una
+sola query y borra notificaciones/turnos/publicaciones sintéticas con 4
+deletes en bloque en vez de 4×N. Como las FK de `TurnoCedido`/
+`TurnoAceptado` → `publicacion_cambio` no tienen `ondelete=CASCADE` a
+nivel de BD (el `cascade="all, delete-orphan"` del modelo es solo de ORM
+y no actúa en deletes en bloque), el orden de borrado sigue siendo
+explícito: participaciones/matches → notificaciones → turnos →
+publicaciones. 2 tests nuevos en `tests/test_editar_eliminar_publicacion.py`:
+uno de integración (elimina una pub con 5 sintéticas dependientes vía
+HTTP y verifica que todas —y sus turnos— desaparecen) y uno de regresión
+de rendimiento con el fixture `query_counter` ya existente (comprueba que
+el nº de SELECTs al eliminar una publicación con 5 sintéticas es igual
+que con 1, no proporcional a N) para detectar si el problema vuelve a
+aparecer.
+
+Siguiente: investigar (sin implementar todavía, a la espera de que el
+usuario decida) una mejora en el motor de matching (`app/matching/service.py`)
+para acotar el crecimiento sin límite de publicaciones sintéticas por
+cadena_3/cadena_4 — la causa de fondo de las 225 sintéticas por
+publicación real vistas en producción, que es lo que hacía tan doloroso
+el N+1 ahora corregido, y que seguirá generando volumen creciente en la
+BD y en el dashboard aunque el borrado ya no sea lento.
+
+## Paso anterior
 perf(db): `publicacion_cambio`, `usuario` y `unidad` no tenían más índice
 que la PK (`\d publicacion_cambio` en producción lo confirmó), pese a que
 `usuario_id`, `estado`, `es_sintetica` y `tipo` de `publicacion_cambio`,
