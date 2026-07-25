@@ -254,6 +254,63 @@ def test_eliminar_publicacion_fuente_con_sintetica_dependiente_no_da_error(clien
     assert db.session.get(PublicacionCambio, sint_id) is None
 
 
+def test_eliminar_publicacion_con_varias_sinteticas_borra_todas(client, db):
+    """Eliminar pub_a con varias sintéticas dependientes debe borrarlas todas,
+    junto con sus turnos y matches, sin ForeignKeyViolation."""
+    from app.matching.service import crear_pub_sintetica
+
+    u1 = _usuario(email="u1@test.es")
+    pub_a = _pub(u1, date(2026, 10, 1), date(2026, 10, 2))
+
+    sint_ids = []
+    for i in range(5):
+        u_b = _usuario(email=f"b{i}@test.es")
+        pub_b = _pub(u_b, date(2026, 10, 2 + i), date(2026, 10, 1))
+        sint = crear_pub_sintetica(pub_a, pub_b)
+        sint_ids.append(sint.id)
+
+    pub_a_id = pub_a.id
+    _login(client, u1.email)
+    resp = client.post(f"/publicaciones/{pub_a_id}/eliminar", follow_redirects=False)
+
+    assert resp.status_code == 302
+    assert db.session.get(PublicacionCambio, pub_a_id) is None
+    for sint_id in sint_ids:
+        assert db.session.get(PublicacionCambio, sint_id) is None
+        assert TurnoCedido.query.filter_by(publicacion_id=sint_id).count() == 0
+        assert TurnoAceptado.query.filter_by(publicacion_id=sint_id).count() == 0
+
+
+def test_eliminar_publicacion_con_sinteticas_no_crece_con_n(app, db, query_counter):
+    """Regresión: eliminar una publicación con N sintéticas dependientes no debe
+    hacer un número de consultas proporcional a N (N+1). Antes del fix, borrar
+    una publicación con 225 sintéticas dependientes en producción tardaba ~10s
+    y provocaba un WORKER TIMEOUT de gunicorn.
+
+    Llama a eliminar_publicacion directamente (no via HTTP) para no mezclar
+    en el conteo las queries de login/current_user, que son ruido ajeno al
+    fix y no escalan con N."""
+    from app.matching.service import crear_pub_sintetica
+    from app.services.publicaciones import eliminar_publicacion
+
+    def _eliminar_con_n_sinteticas(n):
+        u1 = _usuario(email=f"fuente{n}@test.es")
+        pub_a = _pub(u1, date(2026, 10, 1), date(2026, 10, 2))
+        for i in range(n):
+            u_b = _usuario(email=f"b{n}_{i}@test.es")
+            pub_b = _pub(u_b, date(2026, 10, 2 + i), date(2026, 10, 1))
+            crear_pub_sintetica(pub_a, pub_b)
+
+        query_counter.selects = 0
+        eliminar_publicacion(pub_a)
+        return query_counter.selects
+
+    selects_con_1 = _eliminar_con_n_sinteticas(1)
+    selects_con_5 = _eliminar_con_n_sinteticas(5)
+
+    assert selects_con_5 == selects_con_1
+
+
 def test_eliminar_con_notificacion_publicacion_id_no_da_error(client, db):
     """Eliminar una publicación que tiene notificaciones por publicacion_id no debe dar 500.
 

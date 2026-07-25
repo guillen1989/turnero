@@ -107,9 +107,15 @@ def _cancelar_sinteticas_de(pub_id):
     Incluye sintetica_pub_intermedio_id: en una sintética de cadena_4 esa
     columna guarda la banda real intermedia del trío (B), que también debe
     invalidar la sintética si cancela su publicación.
+
+    UPDATE en bloque (no una fila por sintética en un bucle Python): una
+    publicación puede tener cientos de sintéticas dependientes (motor de
+    matching sin límite de generación) y un bucle con una consulta o
+    actualización por fila multiplicaba los tiempos de respuesta por ese
+    número de sintéticas.
     """
     from sqlalchemy import or_
-    dependientes = PublicacionCambio.query.filter(
+    PublicacionCambio.query.filter(
         PublicacionCambio.es_sintetica.is_(True),
         PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
         or_(
@@ -117,37 +123,67 @@ def _cancelar_sinteticas_de(pub_id):
             PublicacionCambio.sintetica_pub_b_id == pub_id,
             PublicacionCambio.sintetica_pub_intermedio_id == pub_id,
         ),
-    ).all()
-    for sint in dependientes:
-        sint.estado = "cancelada"
+    ).update({"estado": "cancelada"}, synchronize_session=False)
 
 
-def _eliminar_matches_de_publicacion(pub_id):
-    """Desvincula esta publicación de cualquier match que la involucre, para
-    poder borrar/reemplazar sus turnos sin violar la FK de MatchParticipacion.
+def _eliminar_matches_de_publicaciones(pub_ids):
+    """Desvincula las publicaciones de `pub_ids` de cualquier match que las
+    involucre, para poder borrarlas/reemplazar sus turnos sin violar la FK de
+    MatchParticipacion.
 
     Solo borra el MatchCambio (y sus notificaciones) por completo si se queda
     sin ninguna otra participación; si el match tenía más partes (p. ej. un
     rechazo ya registrado por `_rechazar_matches_activos_de_publicacion` para
     la contraparte), el match y su notificación de rechazo se preservan como
     historial.
+
+    Versión en bloque (acepta una lista de ids): antes se llamaba una vez por
+    publicación en un bucle Python al eliminar las sintéticas dependientes de
+    una publicación, lo que suponía varias consultas secuenciales por cada
+    una (hasta 225 sintéticas vistas en producción, causando un WORKER
+    TIMEOUT de gunicorn al eliminar). Con `synchronize_session=False` porque
+    los objetos borrados no se vuelven a usar en la sesión tras esta función.
     """
-    participaciones = MatchParticipacion.query.filter_by(publicacion_id=pub_id).all()
-    match_ids = {p.match_id for p in participaciones}
-    for p in participaciones:
-        db.session.delete(p)
+    if not pub_ids:
+        return
+
+    match_ids = {
+        row.match_id for row in
+        MatchParticipacion.query
+        .filter(MatchParticipacion.publicacion_id.in_(pub_ids))
+        .with_entities(MatchParticipacion.match_id)
+        .all()
+    }
+    MatchParticipacion.query.filter(
+        MatchParticipacion.publicacion_id.in_(pub_ids)
+    ).delete(synchronize_session=False)
     # Flush antes de continuar: garantiza que MatchParticipacion (que puede referenciar
     # TurnoAceptado via turno_aceptado_id) se elimine antes que TurnoAceptado.
     db.session.flush()
 
-    for match_id in match_ids:
-        le_quedan_participaciones = (
-            MatchParticipacion.query.filter_by(match_id=match_id).count() > 0
-        )
-        if not le_quedan_participaciones:
-            Notificacion.query.filter_by(match_id=match_id).delete()
-            MatchCambio.query.filter_by(id=match_id).delete()
+    if match_ids:
+        con_participaciones = {
+            row.match_id for row in
+            MatchParticipacion.query
+            .filter(MatchParticipacion.match_id.in_(match_ids))
+            .with_entities(MatchParticipacion.match_id)
+            .distinct()
+            .all()
+        }
+        huerfanos = match_ids - con_participaciones
+        if huerfanos:
+            Notificacion.query.filter(
+                Notificacion.match_id.in_(huerfanos)
+            ).delete(synchronize_session=False)
+            MatchCambio.query.filter(
+                MatchCambio.id.in_(huerfanos)
+            ).delete(synchronize_session=False)
     db.session.flush()
+
+
+def _eliminar_matches_de_publicacion(pub_id):
+    """Ver `_eliminar_matches_de_publicaciones`: versión para una sola publicación."""
+    _eliminar_matches_de_publicaciones([pub_id])
 
 
 def editar_publicacion(pub, turnos_cedidos, turnos_aceptados, mensaje=None, tipo=None):
@@ -188,20 +224,45 @@ def _eliminar_sinteticas_de(pub_id):
 
     _cancelar_sinteticas_de solo marca estado='cancelada' pero las filas siguen
     en DB referenciando la pub padre via FK, lo que bloquea el DELETE posterior.
+
+    En bloque (no una sintética a la vez en un bucle Python): una publicación
+    puede tener cientos de sintéticas dependientes, y hacer una tanda de
+    consultas/deletes por cada una provocaba un WORKER TIMEOUT de gunicorn al
+    eliminar. TurnoCedido/TurnoAceptado se borran explícitamente porque su FK
+    a publicacion_cambio no tiene ondelete=CASCADE a nivel de BD (el
+    cascade="all, delete-orphan" del modelo es solo de ORM y no actúa en
+    deletes en bloque).
     """
     from sqlalchemy import or_
-    dependientes = PublicacionCambio.query.filter(
-        PublicacionCambio.es_sintetica.is_(True),
-        or_(
-            PublicacionCambio.sintetica_pub_a_id == pub_id,
-            PublicacionCambio.sintetica_pub_b_id == pub_id,
-            PublicacionCambio.sintetica_pub_intermedio_id == pub_id,
-        ),
-    ).all()
-    for sint in dependientes:
-        _eliminar_matches_de_publicacion(sint.id)
-        Notificacion.query.filter_by(publicacion_id=sint.id).delete()
-        db.session.delete(sint)
+    sint_ids = [
+        row.id for row in
+        PublicacionCambio.query.filter(
+            PublicacionCambio.es_sintetica.is_(True),
+            or_(
+                PublicacionCambio.sintetica_pub_a_id == pub_id,
+                PublicacionCambio.sintetica_pub_b_id == pub_id,
+                PublicacionCambio.sintetica_pub_intermedio_id == pub_id,
+            ),
+        )
+        .with_entities(PublicacionCambio.id)
+        .all()
+    ]
+    if not sint_ids:
+        return
+
+    _eliminar_matches_de_publicaciones(sint_ids)
+    Notificacion.query.filter(
+        Notificacion.publicacion_id.in_(sint_ids)
+    ).delete(synchronize_session=False)
+    TurnoCedido.query.filter(
+        TurnoCedido.publicacion_id.in_(sint_ids)
+    ).delete(synchronize_session=False)
+    TurnoAceptado.query.filter(
+        TurnoAceptado.publicacion_id.in_(sint_ids)
+    ).delete(synchronize_session=False)
+    PublicacionCambio.query.filter(
+        PublicacionCambio.id.in_(sint_ids)
+    ).delete(synchronize_session=False)
     db.session.flush()
 
 
