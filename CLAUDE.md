@@ -1,9 +1,9 @@
 # CLAUDE.md — Convenciones y método de trabajo
 
-> Este archivo define **cómo** se desarrolla este proyecto. El **qué** (requisitos, modelo de dominio, reglas de negocio, casos de uso y UAT) está en `ESPECIFICACION.md`. Consulta siempre `ESPECIFICACION.md` antes de implementar cualquier funcionalidad.
+> Este archivo define **cómo** se desarrolla este proyecto. El **qué** (requisitos, modelo de dominio, reglas de negocio, casos de uso y UAT) está en `especificacion-app-cambio-turnos.md`. Consulta siempre `especificacion-app-cambio-turnos.md` antes de implementar cualquier funcionalidad.
 
 ## El proyecto en una frase
-PWA (web app instalable) para que personal sanitario intercambie turnos entre compañeros de su misma categoría y unidad. Detalle completo en `ESPECIFICACION.md`.
+PWA (web app instalable) para que personal sanitario intercambie turnos entre compañeros de su misma categoría y unidad. Detalle completo en `especificacion-app-cambio-turnos.md`.
 
 ## Stack
 - Backend: Python + Flask
@@ -13,7 +13,7 @@ PWA (web app instalable) para que personal sanitario intercambie turnos entre co
 - PWA: manifest + service worker + Web Push
 
 ## Internacionalización (i18n) — OBLIGATORIO desde el primer commit
-El MVP se construye solo en español, pero la app debe diseñarse desde el principio para soportar varios idiomas sin refactor posterior, ya que está planeada su escalabilidad a otros países (ver `ESPECIFICACION.md`).
+El MVP se construye solo en español, pero la app debe diseñarse desde el principio para soportar varios idiomas sin refactor posterior, ya que está planeada su escalabilidad a otros países (ver `especificacion-app-cambio-turnos.md`).
 
 **Mecanismo:** [Flask-Babel](https://python-babel.github.io/flask-babel/), el estándar de facto para i18n en Flask, basado en el sistema `gettext`.
 - Los textos se marcan en el código con `gettext()` (o su alias `_()`) y en las plantillas Jinja con `{{ _('texto') }}`.
@@ -39,7 +39,7 @@ Reglas:
 - No se escribe código de producción sin un test que lo justifique.
 - Framework de tests: pytest.
 - Prioriza los tests sobre la lógica de negocio crítica: el motor de matching y las reglas de negocio (condiciones de coincidencia, resolución parcial, visibilidad por categoría/grupo, confirmación, caducidad).
-- Los UAT de `ESPECIFICACION.md` son el criterio de aceptación de cada funcionalidad.
+- Los UAT de `especificacion-app-cambio-turnos.md` son el criterio de aceptación de cada funcionalidad.
 
 ### 2. Clean Code
 - Nombres descriptivos y honestos para variables, funciones y clases.
@@ -160,7 +160,7 @@ Si por cualquier razón creas el archivo manualmente, ejecuta `flask db heads` a
 ---
 
 ## Principios de diseño irrenunciables
-(Detalle completo en `ESPECIFICACION.md`; aquí, como recordatorio permanente:)
+(Detalle completo en `especificacion-app-cambio-turnos.md`; aquí, como recordatorio permanente:)
 - **Extensibilidad del matching:** el MVP resuelve solo coincidencias 1 a 1, pero el modelo de datos y la interfaz del motor de matching deben permitir cadenas de 3, 4 o más bandas en el futuro sin rediseño.
 - **Resolución parcial:** una publicación puede ceder varios turnos; cada uno se resuelve por separado y la publicación solo se cierra cuando todos están resueltos.
 - **Visibilidad restringida:** un usuario solo ve y casa con publicaciones de su misma categoría profesional y su mismo grupo de intercambio.
