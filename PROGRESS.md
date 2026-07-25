@@ -1,5 +1,36 @@
 # Estado del desarrollo
 
+## Mantenimiento reciente (independiente de la Fase 10 — ahorro de tokens en sesiones de Claude Code)
+PR contra `staging` con 3 cambios para reducir el gasto de tokens de las sesiones
+de Claude Code (el gasto se había disparado con el tamaño del proyecto):
+- [x] `app/routes/admin.py` (1194 líneas, 38 rutas) dividido en el paquete
+  `app/routes/admin/` (10 módulos por dominio: `vista_general`, `usuarios`,
+  `geografia`, `publicaciones`, `feedback`, `demo`, `franjas`, `analytics`,
+  más `__init__.py` con `bp`/`admin_required` y `helpers.py` con los
+  `_choices_*` compartidos). Mismos 38 endpoints (`url_for("admin.xxx")` sin
+  cambios), verificado con `test_admin.py` + `test_admin_analytics.py` (47
+  tests) y conteo de rutas registradas.
+- [x] `tests/test_rutas_documento_cambio.py` (1942 líneas, 85 tests) dividido
+  en 8 archivos por escenario (`test_documento_cambio_{creacion,firma,lista,
+  registro_papel,supervision,anular,bloque,encadenadas}.py`) + un módulo
+  nuevo `tests/helpers_documento_cambio.py` con los helpers/constantes
+  compartidos (`_setup`, `_login`, `_FIRMA_PNG`, `_crear_documento_completo`,
+  etc.). Los 85 tests siguen pasando.
+- [x] `AGENTS.md` (casi duplicado de `CLAUDE.md`, ya divergente) reducido a un
+  stub que remite a `CLAUDE.md` como única fuente, para no volver a mantener
+  las convenciones dos veces.
+- [x] Reforzada en `CLAUDE.md` la recomendación de usar `pytest --testmon` en
+  vez de la suite completa en el día a día.
+
+Nota para la próxima sesión: al dividir `app/routes/admin.py`, el primer
+intento de split olvidó el import de `request` en `geografia.py`; al dividir
+el test file, dos archivos nuevos olvidaron importar `_mes_actual_y_siguiente`/
+`_crear_documento_completo` de `helpers_documento_cambio.py` — el `NameError`
+resultante dejaba una transacción a medias que causaba deadlocks en tests
+posteriores (parecía contención de la BD de test, pero era un import que
+faltaba). Verificar con `pyflakes` tras cualquier split de este tipo antes de
+fiarte de los resultados de tests que fallan con errores de BD poco claros.
+
 ## Fase actual
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
