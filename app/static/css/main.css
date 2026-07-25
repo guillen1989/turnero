@@ -88,12 +88,15 @@ body {
 .main-nav a:hover { background: rgba(255,255,255,0.12); text-decoration: none; }
 
 /* Enlaces solo-supervisora: color propio para distinguirlos de un vistazo
-   de las opciones de usuario normal de la fila/sección de arriba. */
-.nav-supervisora-row a {
+   de las opciones de usuario normal de la fila/sección de arriba.
+   Especificidad ".main-nav .nav-supervisora-row a" (0,2,1) para ganar siempre
+   a ".main-nav a" (0,1,1), que se redefine dentro del media query de escritorio
+   más abajo en el archivo y si no pisaba este color en pantallas >=601px. */
+.main-nav .nav-supervisora-row a {
   background: rgba(245, 158, 11, 0.45);
   border: 1px solid rgba(245, 158, 11, 0.65);
 }
-.nav-supervisora-row a:hover { background: rgba(245, 158, 11, 0.65); }
+.main-nav .nav-supervisora-row a:hover { background: rgba(245, 158, 11, 0.65); }
 
 .main-nav .nav-section-sep {
   border: none;
