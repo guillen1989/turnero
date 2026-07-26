@@ -156,13 +156,13 @@
             {% if documento.factibilidad_estado == 'factible' %}
               <span class="badge-success">{{ _('Factible') }}</span>
             {% elif documento.factibilidad_estado == 'no_factible' %}
-              <span class="badge-draft"
+              <span class="badge-danger"
                 {% if documento.factibilidad_motivos %}
                   title="{{ documento.factibilidad_motivos }}"
                 {% endif %}
               >{{ _('No factible') }}</span>
             {% else %}
-              <span class="badge-draft">{{ _('Sin verificar') }}</span>
+              <span class="badge-warning">{{ _('Sin verificar') }}</span>
             {% endif %}
           </td>
           <td>
