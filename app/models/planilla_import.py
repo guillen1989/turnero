@@ -45,6 +45,7 @@ class MapeoTrabajadorPlanilla(db.Model):
     numero_empleado = db.Column(db.String(20), nullable=False)
     nombre_planilla = db.Column(db.String(200), nullable=False)
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=True)
+    descartado = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
 
     unidad = db.relationship("Unidad")
     usuario = db.relationship("Usuario")
