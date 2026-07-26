@@ -5,6 +5,15 @@
 {% block content %}
 <div class="form-container">
   <h1>{{ _('Reglas de comprobación') }}</h1>
+  {% if unidades_supervisadas|length > 1 %}
+    <select class="planilla-select" aria-label="{{ _('Unidad') }}"
+            onchange="window.location.href=this.value">
+      {% for u in unidades_supervisadas %}
+        <option value="{{ url_for('planilla_supervision.reglas', unidad_id=u.id) }}"
+                {% if u.id == unidad.id %}selected{% endif %}>{{ u.nombre }}</option>
+      {% endfor %}
+    </select>
+  {% endif %}
   <p>{{ _('Estas reglas se usan para comprobar si un cambio de turno es factible antes de autorizarlo.') }}</p>
 
   <form method="post">

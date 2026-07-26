@@ -159,3 +159,65 @@ def test_icono_de_papel_no_lleva_texto_visible(page, live_server, escenario_supe
 
     enlace = modal.locator("#sup-ajuste-registrar-papel")
     assert enlace.inner_text().strip() == "📄"
+
+
+@pytest.fixture
+def escenario_multiunidad(e2e_app, clean_e2e_db):
+    with e2e_app.app_context():
+        hospital = Hospital(nombre="H-e2e-multi")
+        grupo = GrupoIntercambio()
+        db.session.add_all([hospital, grupo])
+        db.session.commit()
+
+        unidad = Unidad(nombre="UCI", hospital=hospital, grupo_intercambio=grupo)
+        otra_unidad = Unidad(nombre="Urgencias", hospital=hospital, grupo_intercambio=grupo)
+        categoria = Categoria(nombre="Cat-e2e-multi")
+        db.session.add_all([unidad, otra_unidad, categoria])
+        db.session.commit()
+
+        supervisora = Usuario(
+            nombre="Supervisora", email="sup@e2e-multi.es", unidad=unidad,
+            categoria=categoria, es_supervisora=True, onboarding_visto=True,
+        )
+        supervisora.set_password("pass1234")
+        ana = Usuario(
+            nombre="Ana", email="ana@e2e-multi.es", unidad=unidad, categoria=categoria,
+            onboarding_visto=True,
+        )
+        ana.set_password("pass1234")
+        cris = Usuario(
+            nombre="Cris", email="cris@e2e-multi.es", unidad=otra_unidad, categoria=categoria,
+            onboarding_visto=True,
+        )
+        cris.set_password("pass1234")
+        db.session.add_all([supervisora, ana, cris])
+        db.session.commit()
+        db.session.add_all([
+            UnidadSupervisada(usuario_id=supervisora.id, unidad_id=unidad.id),
+            UnidadSupervisada(usuario_id=supervisora.id, unidad_id=otra_unidad.id),
+        ])
+        db.session.commit()
+
+        return {
+            "supervisora_email": "sup@e2e-multi.es",
+            "unidad_nombre": unidad.nombre,
+            "otra_unidad_nombre": otra_unidad.nombre,
+        }
+
+
+def test_selector_de_unidad_cambia_los_trabajadores_mostrados(
+    page, live_server, escenario_multiunidad
+):
+    _login_supervisora(page, live_server, escenario_multiunidad["supervisora_email"])
+    page.goto(f"{live_server}/planilla/supervision/")
+
+    selector = page.locator('select[aria-label="Unidad"]')
+    assert selector.count() == 1
+    assert "Ana" in page.locator(".supervision-matriz tbody").inner_text()
+    assert "Cris" not in page.locator(".supervision-matriz tbody").inner_text()
+
+    selector.select_option(label=escenario_multiunidad["otra_unidad_nombre"])
+    page.wait_for_load_state("networkidle")
+
+    assert "Cris" in page.locator(".supervision-matriz tbody").inner_text()
+    assert "Ana" not in page.locator(".supervision-matriz tbody").inner_text()

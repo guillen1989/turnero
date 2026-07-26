@@ -88,9 +88,14 @@ commit por paso.
   `scripts/seed_staging.py` (afecta a `tests/test_seed_staging_uco.py`).
   Tests nuevos: acceso a 2 unidades por separado y 403 en una tercera no
   supervisada (`index` y `ajustar`), más 403 en `reglas`.
-- [ ] Paso 4 — Plantilla: selector de unidad (visible solo si
-  `unidades_supervisadas` tiene más de un elemento; probar manualmente en
-  navegador).
+- [x] Paso 4 — Selector de unidad en `index.html` y `reglas.html`: un
+  `<select>` junto al título (clase `planilla-select`, `onchange` navega con
+  `window.location.href`), visible solo si `unidades_supervisadas` tiene más
+  de un elemento (oculto para el caso legado de una sola unidad). Verificado
+  con un test E2E nuevo (Playwright, `e2e/test_planilla_supervision.py::
+  test_selector_de_unidad_cambia_los_trabajadores_mostrados`) que confirma
+  que cambiar la opción del selector cambia los trabajadores mostrados en la
+  matriz, en vez de una prueba manual en navegador.
 - [ ] Paso 5 — Formulario admin: asignar unidades supervisadas.
 - [ ] Paso 6 — Contraseña por invitación para supervisoras creadas por el
   admin (reutilizar `password_reset.py`/`email.py` en vez de contraseña en

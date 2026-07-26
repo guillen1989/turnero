@@ -629,6 +629,31 @@ def test_index_contador_de_presencia_vacio_si_nadie_trabaja_esa_franja_ese_dia(d
 
 # ── multiunidad ──────────────────────────────────────────────────────────────
 
+def test_index_no_muestra_selector_de_unidad_si_solo_supervisa_una(db, client):
+    crear_usuario, unidad, _, _ = _setup(db, "gg")
+    supervisora = crear_usuario("Super", "super_gg@h.es", supervisora=True)
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    assert 'aria-label="Unidad"' not in resp.data.decode("utf-8")
+
+
+def test_index_muestra_selector_de_unidad_si_supervisa_varias(db, client):
+    crear_usuario, unidad, otra_unidad, _ = _setup(db, "hh")
+    supervisora = crear_usuario("Super", "super_hh@h.es", supervisora=True)
+    db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=otra_unidad.id))
+    db.session.commit()
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert 'aria-label="Unidad"' in html
+    assert unidad.nombre in html
+    assert otra_unidad.nombre in html
+
+
 def test_index_supervisora_de_dos_unidades_ve_cada_una_por_separado(db, client):
     crear_usuario, unidad, otra_unidad, franja_m = _setup(db, "aa")
     supervisora = crear_usuario("Super", "super_aa@h.es", supervisora=True)
