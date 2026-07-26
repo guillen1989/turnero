@@ -20,6 +20,7 @@ from app.services.planilla_supervision import (
     get_turnos_mes_unidad,
 )
 from app.services.supervision import unidad_supervisada_o_403, unidades_supervisadas_de
+from app.services.feature_flags import requiere_feature
 
 bp = Blueprint("planilla_supervision", __name__, url_prefix="/planilla/supervision")
 
@@ -77,6 +78,7 @@ def _resolver_seleccion(seleccion, grupo_id):
 
 @bp.get("/")
 @login_required
+@requiere_feature("planilla_supervision_multiunidad")
 def index():
     unidad = unidad_supervisada_o_403(current_user, request.args.get("unidad_id", type=int))
 
@@ -137,6 +139,7 @@ def index():
 
 @bp.route("/reglas", methods=["GET", "POST"])
 @login_required
+@requiere_feature("planilla_supervision_multiunidad")
 def reglas():
     if request.method == "POST":
         unidad_id = request.form.get("unidad_id", type=int)
@@ -163,6 +166,7 @@ def reglas():
 
 @bp.post("/ajustar")
 @login_required
+@requiere_feature("planilla_supervision_multiunidad")
 def ajustar():
     unidad = unidad_supervisada_o_403(current_user, request.form.get("unidad_id", type=int))
 
@@ -208,6 +212,7 @@ def ajustar():
 
 @bp.post("/turno/eliminar")
 @login_required
+@requiere_feature("planilla_supervision_multiunidad")
 def turno_eliminar():
     unidad = unidad_supervisada_o_403(current_user, request.form.get("unidad_id", type=int))
 
@@ -238,6 +243,7 @@ def turno_eliminar():
 
 @bp.post("/turno/editar")
 @login_required
+@requiere_feature("planilla_supervision_multiunidad")
 def turno_editar():
     unidad = unidad_supervisada_o_403(current_user, request.form.get("unidad_id", type=int))
 

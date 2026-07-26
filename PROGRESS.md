@@ -1,5 +1,68 @@
 # Estado del desarrollo
 
+## Mantenimiento reciente (independiente de la Fase 10 — infraestructura de feature flags)
+Implementación de `docs/FEATURE_FLAGS.md`, Fase A (infraestructura agnóstica de
+features concretas), en worktree/branch `feature/feature-flags` desde
+`origin/staging`. PR de esta fase va contra `staging`, no contra `main`.
+- [x] Paso 1 — Modelo `FeatureFlag` (`clave` única, `descripcion`,
+  `activo_global` con default `False`) + tests
+  (`tests/test_models_feature_flag.py`).
+- [x] Paso 2 — Modelo `FeatureFlagUnidad` (N:M flag↔unidad, mismo patrón que
+  `UnidadSupervisada`) + relación `FeatureFlag.unidades_habilitadas` /
+  backref `Unidad.feature_flags_habilitados` + tests
+  (`tests/test_models_feature_flag_unidad.py`).
+- [x] Paso 3 — Migración Alembic `7be3ca3f48b9` (tablas nuevas, sin filas
+  previas → un solo paso, sin el patrón de tres pasos de `NOT NULL`).
+  `flask db heads` da un único head.
+- [x] Paso 4 — Servicio `app/services/feature_flags.py` (`feature_activa` +
+  `crear_flag`/`activar_global`/`desactivar_global`/`habilitar_para_unidad`/
+  `deshabilitar_para_unidad`) + tests (`tests/test_servicio_feature_flags.py`,
+  cubre flag inexistente → False, activo_global gana aunque la unidad no
+  esté en la lista, unidad en la lista gana aunque activo_global sea False).
+- [x] Paso 5 — Decorador `requiere_feature` (404, nunca "próximamente") +
+  `feature_activa` disponible en plantillas vía `app.jinja_env.globals`
+  (mismo patrón que `match_admite_documento_cambio`/`get_locale`, no
+  `@app.context_processor`) + tests de integración
+  (`tests/test_integracion_feature_flags.py`).
+- [x] Paso 6 — UI admin `/admin/feature-flags` (`app/routes/admin/feature_flags.py`
+  + `app/templates/admin/feature_flags.html`, enlace en el nav de
+  `base_admin.html`): listado con toggle de `activo_global` y `<select
+  multiple>` de unidades por flag, respaldado por
+  `sincronizar_unidades_habilitadas` (mismo patrón que
+  `sincronizar_unidades_supervisadas`), reusando `_choices_unidades()`.
+  Verificado con tests de ruta (`tests/test_admin_feature_flags.py`) y
+  manualmente contra un servidor de desarrollo real (login, listado,
+  toggle + selección de unidad persistidos).
+
+Fase A completa (los 6 pasos), lista para PR contra `staging`.
+
+La Fase B (aplicar flags a funcionalidades concretas de `staging`) requiere
+decisión explícita del usuario sobre qué ocultar, y se aborda en PR(s)
+separados posteriores — no se mezcla con este.
+
+### Fase B — Aplicar flags a funcionalidades concretas de staging
+
+Flags aplicados (worktree `feature/feature-flags`, mismo que Fase A):
+
+- [x] Seed de datos: migración `c90b9b61f0f8` inserta los 3 flags con
+  `activo_global=False` (hoja_cambio_digital, planilla_supervision_multiunidad,
+  importacion_planilla).
+- [x] `hoja_cambio_digital` — 15 rutas de `documento_cambio.py` protegidas con
+  `@requiere_feature("hoja_cambio_digital")`, enlaces de nav en `base.html`
+  (usuario y supervisora) ocultos condicionalmente. 4 tests.
+- [x] `planilla_supervision_multiunidad` — 5 rutas de
+  `planilla_supervision.py` protegidas, enlaces de nav en `base.html`
+  ocultos. 4 tests.
+- [x] `importacion_planilla` — 4 rutas de `planilla_import.py` protegidas,
+  enlace de nav en `base.html` oculto. 4 tests.
+
+Total: 12 tests nuevos de feature flags aplicados, 35 tests de feature flags
+en total pasando.
+
+Pendiente: el usuario debe decidir si abordar cadenas 3/4 bandas (más complejo,
+sin rutas propias — requeriría condicionar el motor de matching) en esta misma
+o en otra PR.
+
 ## Mantenimiento reciente (independiente de la Fase 10 — ahorro de tokens en sesiones de Claude Code)
 PR contra `staging` con 3 cambios para reducir el gasto de tokens de las sesiones
 de Claude Code (el gasto se había disparado con el tamaño del proyecto):

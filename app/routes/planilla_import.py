@@ -12,6 +12,7 @@ from app.services.planilla_matching import (
     vincular_usuario,
 )
 from app.services.supervision import puede_supervisar, unidad_supervisada_o_403, unidades_supervisadas_de
+from app.services.feature_flags import requiere_feature
 
 bp = Blueprint("planilla_import", __name__, url_prefix="/planilla/importar")
 
@@ -27,6 +28,7 @@ def _usuario_de_la_unidad(usuario_id, unidad_id):
 
 @bp.get("/")
 @login_required
+@requiere_feature("importacion_planilla")
 def index():
     unidad = unidad_supervisada_o_403(current_user, request.args.get("unidad_id", type=int))
     return render_template(
@@ -40,6 +42,7 @@ def index():
 
 @bp.post("/")
 @login_required
+@requiere_feature("importacion_planilla")
 def subir():
     unidad = unidad_supervisada_o_403(current_user, request.form.get("unidad_id", type=int))
 
@@ -77,6 +80,7 @@ def subir():
 
 @bp.route("/codigos", methods=["GET", "POST"])
 @login_required
+@requiere_feature("importacion_planilla")
 def codigos():
     if request.method == "POST":
         unidad_id = request.form.get("unidad_id", type=int)
@@ -104,6 +108,7 @@ def codigos():
 
 @bp.post("/<int:mapeo_id>/vincular")
 @login_required
+@requiere_feature("importacion_planilla")
 def vincular(mapeo_id):
     mapeo = MapeoTrabajadorPlanilla.query.get_or_404(mapeo_id)
     if not puede_supervisar(current_user, mapeo.unidad):

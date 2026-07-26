@@ -39,6 +39,9 @@ def create_app(config_name=None):
     from app.services.documento_cambio import match_admite_documento_cambio
     app.jinja_env.globals["match_admite_documento_cambio"] = match_admite_documento_cambio
 
+    from app.services.feature_flags import feature_activa_para_usuario_actual
+    app.jinja_env.globals["feature_activa"] = feature_activa_para_usuario_actual
+
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "info"

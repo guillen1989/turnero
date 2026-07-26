@@ -26,6 +26,8 @@ from app.models.documento_cambio import (
     DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio,
     ESTADOS_DOCUMENTO_CAMBIO, ESTADOS_FACTIBILIDAD, ESTADOS_DECISION_SUPERVISORA,
 )
+from app.models.feature_flag import FeatureFlag
+from app.models.feature_flag_unidad import FeatureFlagUnidad
 
 __all__ = [
     "Pais",
@@ -66,4 +68,6 @@ __all__ = [
     "ESTADOS_DECISION_SUPERVISORA",
     "MapeoCodigoTurno",
     "MapeoTrabajadorPlanilla",
+    "FeatureFlag",
+    "FeatureFlagUnidad",
 ]
