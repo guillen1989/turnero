@@ -754,39 +754,13 @@ def buscar_avisos_interes_para(publicacion, candidatas=None):
     return resultado
 
 
-def crear_aviso_oportunidad_3(pub_a, pub_b):
-    """
-    Crea una Notificacion combinada de tipo 'aviso_oportunidad_3' para cada usuario.
-    Reemplaza el par aviso_interes + aviso_sintetica en un único aviso.
-    Idempotente: no duplica si ya existe para el mismo par.
-    """
-    for destinatario_id, pub_ref in (
-        (pub_a.usuario_id, pub_b),
-        (pub_b.usuario_id, pub_a),
-    ):
-        existe = Notificacion.query.filter_by(
-            usuario_id=destinatario_id,
-            publicacion_id=pub_ref.id,
-            tipo="aviso_oportunidad_3",
-        ).first()
-        if not existe:
-            db.session.add(Notificacion(
-                usuario_id=destinatario_id,
-                publicacion_id=pub_ref.id,
-                tipo="aviso_oportunidad_3",
-            ))
-    db.session.commit()
-
-    enviar_push_condicional(pub_a.usuario, "aviso_oportunidad_3")
-    enviar_push_condicional(pub_b.usuario, "aviso_oportunidad_3")
-
 
 def crear_aviso_oportunidad_4(pub_a, pub_b, pub_c):
     """
     Crea una Notificacion combinada de tipo 'aviso_oportunidad_4' para cada
     uno de los 3 usuarios reales del trío A→B→C (falta un cuarto para
     cerrar el ciclo). Cada destinatario referencia al siguiente en el
-    ciclo, igual que crear_aviso_oportunidad_3 hace con el par.
+    ciclo.
     Idempotente: no duplica si ya existe para el mismo trío.
     """
     for destinatario_id, pub_ref in (
@@ -825,8 +799,8 @@ def procesar_cadena_parcial_4(pub_a, pub_b, pub_c):
 
 def procesar_aviso_y_sintetica(pub, candidata):
     """
-    Crea la pub sintética y el aviso combinado para un par (pub, candidata)
-    con solapamiento unilateral. Determina automáticamente la dirección A→B.
+    Crea la pub sintética para un par (pub, candidata) con solapamiento
+    unilateral. Determina automáticamente la dirección A→B.
     """
     cedidos_pub = _cedidos_abiertos(pub)
     aceptados_candidata = _aceptados(candidata)
@@ -836,7 +810,6 @@ def procesar_aviso_y_sintetica(pub, candidata):
     else:
         # pub acepta el cedido de candidata → candidata=A, pub=B
         crear_pub_sintetica(candidata, pub)
-    crear_aviso_oportunidad_3(pub, candidata)
 
 
 def crear_pub_sintetica(pub_a, pub_b, pub_intermedio=None):

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Vincular con la planilla') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('¿Eres tú en la planilla?') }}</h1>
+  <p>
+    {{ _('Hemos encontrado un trabajador pendiente de vincular en tu unidad cuyo nombre coincide con el tuyo:') }}
+  </p>
+  <p><strong>{{ mapeo.nombre_planilla }}</strong> ({{ _('nº de empleado') }} {{ mapeo.numero_empleado }})</p>
+  <p>
+    {{ _('Si lo confirmas, tus turnos de la planilla se asignarán automáticamente a tu cuenta.') }}
+  </p>
+
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="confirmar" value="si">
+    <button type="submit" class="btn btn-primary">{{ _('Sí, soy yo') }}</button>
+  </form>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-secondary">{{ _('No soy yo') }}</button>
+  </form>
+</div>
+{% endblock %}

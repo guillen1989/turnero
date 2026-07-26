@@ -151,6 +151,40 @@ def test_analytics_data_totals_distingue_oportunidades_3_y_4(client, db):
     assert data["totals"]["oportunidades_4"] == 1
 
 
+def test_analytics_data_totals_excluye_sinteticas_canceladas_o_caducadas(client, db):
+    """oportunidades_3/4 solo cuentan sintéticas todavía activas: una cancelada
+    o caducada ya no es una oportunidad real para nadie."""
+    from app.models import PublicacionCambio
+    admin = _setup_admin(client)
+    _db.session.add(PublicacionCambio(usuario_id=admin.id, tipo="cambio", es_sintetica=True))
+    _db.session.add(PublicacionCambio(
+        usuario_id=admin.id, tipo="cambio", es_sintetica=True, estado="cancelada",
+    ))
+    _db.session.add(PublicacionCambio(
+        usuario_id=admin.id, tipo="cambio", es_sintetica=True, estado="caducada",
+    ))
+    _db.session.commit()
+
+    resp = client.get("/admin/analytics/data?granularity=month")
+    data = json.loads(resp.data)
+    assert data["totals"]["oportunidades_3"] == 1
+
+
+def test_analytics_stats_excluye_sinteticas_canceladas_o_caducadas(client, db):
+    """La vista HTML /admin/analytics usa el mismo contador que /analytics/data."""
+    from app.models import PublicacionCambio
+    admin = _setup_admin(client)
+    _db.session.add(PublicacionCambio(usuario_id=admin.id, tipo="cambio", es_sintetica=True))
+    _db.session.add(PublicacionCambio(
+        usuario_id=admin.id, tipo="cambio", es_sintetica=True, estado="cancelada",
+    ))
+    _db.session.commit()
+
+    resp = client.get("/admin/analytics")
+    assert resp.status_code == 200
+    assert b'id="stat-oportunidades-3">1<' in resp.data
+
+
 def test_analytics_data_totals_cuenta_eliminadas(client, db):
     from app.models import PublicacionCambio
     from app.services.publicaciones import eliminar_publicacion

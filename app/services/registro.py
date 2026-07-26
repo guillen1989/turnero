@@ -1,4 +1,8 @@
+import secrets
 from datetime import time
+
+from flask import render_template
+from flask_babel import gettext as _
 
 from app.extensions import db
 from app.models import (
@@ -7,6 +11,8 @@ from app.models import (
     MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio,
     BusquedaGuardada, SuscripcionPublicaciones,
 )
+from app.services.email import enviar_email, url_absoluta
+from app.services.password_reset import TOKEN_TTL_MINUTOS, generar_token_reset
 
 _OPCION_NUEVA = 0
 
@@ -356,3 +362,19 @@ def registrar_usuario(
     db.session.commit()
     usuario._es_nueva_unidad = is_new
     return usuario
+
+
+def crear_supervisora_con_invitacion(usuario):
+    """Da de alta la contraseña de `usuario` con un valor aleatorio desconocido
+    y le envía un email para que establezca la suya propia (mismo flujo que
+    "recuperar contraseña", con texto adaptado a una invitación)."""
+    usuario.set_password(secrets.token_urlsafe(32))
+    db.session.commit()
+
+    token = generar_token_reset(usuario)
+    enlace = url_absoluta("auth.restablecer_password", token=token)
+    cuerpo_html = render_template(
+        "email/invitacion_supervisora.html",
+        usuario=usuario, enlace=enlace, ttl_minutos=TOKEN_TTL_MINUTOS,
+    )
+    enviar_email(usuario.email, _("Se ha creado tu cuenta de supervisora en Turnero"), cuerpo_html)

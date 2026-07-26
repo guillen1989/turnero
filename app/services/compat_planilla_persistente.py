@@ -40,6 +40,33 @@ def calcular_y_guardar_compatibilidad(pub):
     db.session.commit()
 
 
+def actualizar_compat_tras_importar_mes(grupo, anyo: int, mes: int):
+    """Recalcula compatibilidad para todas las publicaciones activas del grupo
+    que tienen turnos cedidos en el mes indicado.
+    """
+    from sqlalchemy import extract
+    from app.models import PublicacionCambio, TurnoCedido, Usuario, Unidad
+
+    pubs = (
+        PublicacionCambio.query
+        .filter_by(es_sintetica=False)
+        .filter(PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]))
+        .join(TurnoCedido)
+        .filter(
+            extract("year", TurnoCedido.fecha) == anyo,
+            extract("month", TurnoCedido.fecha) == mes,
+        )
+        .join(Usuario)
+        .join(Unidad)
+        .filter(Unidad.grupo_intercambio_id == grupo.id)
+        .distinct()
+        .all()
+    )
+
+    for pub in pubs:
+        calcular_y_guardar_compatibilidad(pub)
+
+
 def actualizar_compat_tras_publicar_planilla(usuario, anyo: int, mes: int):
     """Al publicar la planilla de un mes, recalcula la compatibilidad de las
     publicaciones propias que tienen cedidos en ese mes.

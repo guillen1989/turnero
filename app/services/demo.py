@@ -57,7 +57,7 @@ DEMO_ACCOUNTS = [
     ("Carlos Demo",  "demo2@turnero.com"),
     ("Elena Demo",   "demo3@turnero.com"),
 ]
-_BOT_ACCOUNTS = [
+BOT_ACCOUNTS = [
     ("María García",     "bot.maria@demo.turnero.com"),
     ("Javier López",     "bot.javier@demo.turnero.com"),
     ("Sofía Ruiz",       "bot.sofia@demo.turnero.com"),
@@ -100,7 +100,7 @@ _BOT_PUB_TEMPLATES = [
 ]
 _RONDAS_PUBLICACIONES_BOT = 4
 
-_DEMO_EMAILS = {email for _, email in DEMO_ACCOUNTS + _BOT_ACCOUNTS}
+_DEMO_EMAILS = {email for _, email in DEMO_ACCOUNTS + BOT_ACCOUNTS}
 
 
 def _hoy(offset=0):
@@ -307,17 +307,30 @@ def _borrar_demo():
 
 # ─── seed ────────────────────────────────────────────────────────────────────
 
-def _sembrar_demo():
-    insertar_categorias_semilla()
-    db.session.flush()
-    cat_enf = Categoria.query.filter_by(nombre="Enfermería").first()
+def sembrar_contenido_bot(unidad, categoria, incluir_planillas=True,
+                           cuentas_demo=None, cuentas_bot=None):
+    """Crea las 23 cuentas sintéticas (3 demo navegables + 20 bots) dentro de
+    `unidad`, con publicaciones abiertas y matches en varios estados. No hace
+    commit ni toca a los usuarios ya existentes de `unidad` -- responsabilidad
+    del llamador. Reutilizable tanto por la unidad de demostración aislada
+    (`_sembrar_demo`) como por una unidad real a la que se le quiera añadir
+    contenido de ejemplo sin tocar sus usuarios existentes (ver
+    scripts/seed_staging.py).
 
-    pais      = encontrar_o_crear_pais(DEMO_PAIS)
-    provincia = encontrar_o_crear_provincia(DEMO_PROVINCIA, pais)
-    ciudad    = encontrar_o_crear_ciudad(DEMO_CIUDAD, provincia)
-    hospital  = encontrar_o_crear_hospital(DEMO_HOSPITAL, ciudad)
-    unidad, _ = encontrar_o_crear_unidad(DEMO_UNIDAD, hospital, cat_enf)
-    db.session.flush()
+    `incluir_planillas=False` omite las planillas del mes actual/siguiente
+    (pensadas para la demo aislada, siempre "hoy"); úsalo cuando el llamador
+    vaya a generar sus propias planillas con fechas fijas para todo el
+    grupo, evitando turnos duplicados el mismo día.
+
+    `cuentas_demo`/`cuentas_bot`: por defecto DEMO_ACCOUNTS/BOT_ACCOUNTS,
+    pero un llamador que siembre en una base de datos donde ya exista la
+    unidad de demostración aislada (mismo email = mismo `Usuario`, columna
+    única) debe pasar sus propias listas para no chocar con ella -- ver
+    scripts/seed_staging.py, que usa emails distintos para su propia
+    ampliación de UCO·La Paz·Enfermería.
+    """
+    cuentas_demo = cuentas_demo if cuentas_demo is not None else DEMO_ACCOUNTS
+    cuentas_bot  = cuentas_bot if cuentas_bot is not None else BOT_ACCOUNTS
 
     g = unidad.grupo_intercambio
     man  = _franja(g, "Mañana")
@@ -328,13 +341,13 @@ def _sembrar_demo():
 
     # Cuentas demo
     ana, carlos, elena = [
-        _usuario(nombre, email, unidad, cat_enf)
-        for nombre, email in DEMO_ACCOUNTS
+        _usuario(nombre, email, unidad, categoria)
+        for nombre, email in cuentas_demo
     ]
     # Bots
     bots = [
-        _usuario(nombre, email, unidad, cat_enf)
-        for nombre, email in _BOT_ACCOUNTS
+        _usuario(nombre, email, unidad, categoria)
+        for nombre, email in cuentas_bot
     ]
     maria, javier, sofia, pedro, laura = bots[:5]
     marta, diego, lucia, alejandro, carmen, raul = bots[5:11]
@@ -397,11 +410,29 @@ def _sembrar_demo():
     _match_confirmado_total(lucia, alejandro, 9,  12, noch, man, base_offset=8)
     _match_confirmado_total(carmen, raul,     13, 16, d12, n12,  base_offset=9)
 
-    _sembrar_planillas(
-        usuarios=[ana, carlos, elena] + bots,
-        franjas=franjas,
-        grupo=g,
-    )
+    if incluir_planillas:
+        _sembrar_planillas(
+            usuarios=[ana, carlos, elena] + bots,
+            franjas=franjas,
+            grupo=g,
+        )
+
+    return {"cuentas_demo": (ana, carlos, elena), "bots": bots, "franjas": franjas}
+
+
+def _sembrar_demo():
+    insertar_categorias_semilla()
+    db.session.flush()
+    cat_enf = Categoria.query.filter_by(nombre="Enfermería").first()
+
+    pais      = encontrar_o_crear_pais(DEMO_PAIS)
+    provincia = encontrar_o_crear_provincia(DEMO_PROVINCIA, pais)
+    ciudad    = encontrar_o_crear_ciudad(DEMO_CIUDAD, provincia)
+    hospital  = encontrar_o_crear_hospital(DEMO_HOSPITAL, ciudad)
+    unidad, _ = encontrar_o_crear_unidad(DEMO_UNIDAD, hospital, cat_enf)
+    db.session.flush()
+
+    sembrar_contenido_bot(unidad, cat_enf)
 
     db.session.commit()
 

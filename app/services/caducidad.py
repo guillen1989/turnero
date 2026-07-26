@@ -1,10 +1,19 @@
+from __future__ import annotations
+
 from datetime import date, datetime, timezone
 
 from flask import current_app
 from sqlalchemy import exists, select as sa_select, update as sa_update
 
 from app.extensions import db
-from app.models import PublicacionCambio, TurnoCedido, TurnoAceptado
+from app.models import (
+    MatchCambio,
+    MatchParticipacion,
+    Notificacion,
+    PublicacionCambio,
+    TurnoCedido,
+    TurnoAceptado,
+)
 
 # Fecha de la última ejecución en este proceso. Con un único worker de gunicorn
 # esto evita repetir el UPDATE en cada request del mismo día calendario.
@@ -86,30 +95,76 @@ def caducar_publicaciones_expiradas(hoy=None):
     n1 = db.session.execute(stmt_cedidos).rowcount
     n2 = db.session.execute(stmt_regalos).rowcount
 
-    # Cancela sintéticas cuyo pub_a o pub_b ya no está activo.
+    # Elimina (no solo cancela) las sintéticas cuyo pub_a o pub_b ya no está
+    # activo: son huérfanas y ya no pueden dar lugar a un match, así que no
+    # tiene sentido conservarlas. Antes se hacía un UPDATE a 'cancelada' que
+    # nunca las borraba, acumulando filas sin límite (en producción llegaron
+    # a ser el 70% de la tabla publicacion_cambio).
     padre_a = PublicacionCambio.__table__.alias("padre_a")
     padre_b = PublicacionCambio.__table__.alias("padre_b")
-    stmt_sinteticas = (
-        sa_update(PublicacionCambio)
-        .where(
-            PublicacionCambio.es_sintetica.is_(True),
-            PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
-            exists(
-                sa_select(padre_a.c.id).where(
-                    padre_a.c.id == PublicacionCambio.sintetica_pub_a_id,
-                    padre_a.c.estado.not_in(("abierta", "parcialmente_resuelta")),
-                )
-            ) | exists(
-                sa_select(padre_b.c.id).where(
-                    padre_b.c.id == PublicacionCambio.sintetica_pub_b_id,
-                    padre_b.c.estado.not_in(("abierta", "parcialmente_resuelta")),
-                )
-            ),
+    sint_ids = [
+        row[0] for row in db.session.execute(
+            sa_select(PublicacionCambio.id).where(
+                PublicacionCambio.es_sintetica.is_(True),
+                PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
+                exists(
+                    sa_select(padre_a.c.id).where(
+                        padre_a.c.id == PublicacionCambio.sintetica_pub_a_id,
+                        padre_a.c.estado.not_in(("abierta", "parcialmente_resuelta")),
+                    )
+                ) | exists(
+                    sa_select(padre_b.c.id).where(
+                        padre_b.c.id == PublicacionCambio.sintetica_pub_b_id,
+                        padre_b.c.estado.not_in(("abierta", "parcialmente_resuelta")),
+                    )
+                ),
+            )
         )
-        .values(estado="cancelada", fecha_cierre=datetime.now(timezone.utc))
-        .execution_options(synchronize_session=False)
-    )
-    db.session.execute(stmt_sinteticas)
+    ]
+    if sint_ids:
+        # Por si alguna sintética llegara a tener un match propuesto contra
+        # ella directamente (no ocurre en el flujo actual, que solo usa las
+        # publicaciones reales A/B/C como partes del match), se desvincula
+        # antes de borrar para no violar la FK de MatchParticipacion.
+        match_ids = {
+            row[0] for row in
+            db.session.execute(
+                sa_select(MatchParticipacion.match_id)
+                .where(MatchParticipacion.publicacion_id.in_(sint_ids))
+            )
+        }
+        MatchParticipacion.query.filter(
+            MatchParticipacion.publicacion_id.in_(sint_ids)
+        ).delete(synchronize_session=False)
+        if match_ids:
+            con_participaciones = {
+                row[0] for row in
+                db.session.execute(
+                    sa_select(MatchParticipacion.match_id)
+                    .where(MatchParticipacion.match_id.in_(match_ids))
+                    .distinct()
+                )
+            }
+            huerfanos = match_ids - con_participaciones
+            if huerfanos:
+                Notificacion.query.filter(
+                    Notificacion.match_id.in_(huerfanos)
+                ).delete(synchronize_session=False)
+                MatchCambio.query.filter(
+                    MatchCambio.id.in_(huerfanos)
+                ).delete(synchronize_session=False)
+        Notificacion.query.filter(
+            Notificacion.publicacion_id.in_(sint_ids)
+        ).delete(synchronize_session=False)
+        TurnoCedido.query.filter(
+            TurnoCedido.publicacion_id.in_(sint_ids)
+        ).delete(synchronize_session=False)
+        TurnoAceptado.query.filter(
+            TurnoAceptado.publicacion_id.in_(sint_ids)
+        ).delete(synchronize_session=False)
+        PublicacionCambio.query.filter(
+            PublicacionCambio.id.in_(sint_ids)
+        ).delete(synchronize_session=False)
 
     total = n1 + n2
     db.session.commit()

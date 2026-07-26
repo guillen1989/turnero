@@ -1,0 +1,107 @@
+from datetime import time
+from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, Usuario, UnidadSupervisada
+
+
+def _crear_usuario(db, es_supervisora, email, sufijo="a"):
+    hospital = Hospital(nombre=f"H-{sufijo}")
+    grupo = GrupoIntercambio()
+    db.session.add_all([hospital, grupo])
+    db.session.commit()
+
+    unidad = Unidad(nombre="UCI", hospital=hospital, grupo_intercambio=grupo)
+    categoria = Categoria(nombre=f"Cat-{sufijo}")
+    db.session.add_all([unidad, categoria])
+    db.session.commit()
+
+    usuario = Usuario(
+        nombre="Ana", email=email, unidad=unidad, categoria=categoria,
+        es_supervisora=es_supervisora,
+    )
+    usuario.set_password("pass")
+    db.session.add(usuario)
+    db.session.commit()
+    if es_supervisora:
+        db.session.add(UnidadSupervisada(usuario_id=usuario.id, unidad_id=unidad.id))
+        db.session.commit()
+    return usuario, grupo
+
+
+def _login(client, email):
+    client.post("/auth/login", data={"email": email, "password": "pass"})
+
+
+def test_grupo_intercambio_tiene_limite_de_8_dias_consecutivos_por_defecto(db):
+    grupo = GrupoIntercambio()
+    db.session.add(grupo)
+    db.session.commit()
+    assert grupo.limite_dias_consecutivos == 8
+
+
+def test_get_reglas_requiere_supervisora(client, db):
+    usuario, _ = _crear_usuario(db, es_supervisora=False, email="normal@test.es")
+    _login(client, usuario.email)
+    resp = client.get("/planilla/supervision/reglas")
+    assert resp.status_code == 403
+
+
+def test_get_reglas_muestra_el_limite_actual(client, db):
+    usuario, grupo = _crear_usuario(db, es_supervisora=True, email="sup@test.es")
+    _login(client, usuario.email)
+    resp = client.get("/planilla/supervision/reglas")
+    assert resp.status_code == 200
+    assert b"8" in resp.data
+
+
+def test_post_reglas_actualiza_el_limite(client, db):
+    usuario, grupo = _crear_usuario(db, es_supervisora=True, email="sup2@test.es")
+    _login(client, usuario.email)
+    resp = client.post("/planilla/supervision/reglas", data={
+        "limite_dias_consecutivos": "10",
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    db.session.refresh(grupo)
+    assert grupo.limite_dias_consecutivos == 10
+
+
+def test_post_reglas_rechaza_valores_no_positivos(client, db):
+    usuario, grupo = _crear_usuario(db, es_supervisora=True, email="sup3@test.es")
+    _login(client, usuario.email)
+    resp = client.post("/planilla/supervision/reglas", data={
+        "limite_dias_consecutivos": "0",
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+    db.session.refresh(grupo)
+    assert grupo.limite_dias_consecutivos == 8
+
+
+def test_get_reglas_no_muestra_selector_de_unidad_si_solo_supervisa_una(client, db):
+    usuario, _ = _crear_usuario(db, es_supervisora=True, email="sup5@test.es")
+    _login(client, usuario.email)
+    resp = client.get("/planilla/supervision/reglas")
+    assert resp.status_code == 200
+    assert 'aria-label="Unidad"' not in resp.data.decode("utf-8")
+
+
+def test_get_reglas_muestra_selector_de_unidad_si_supervisa_varias(client, db):
+    usuario, _ = _crear_usuario(db, es_supervisora=True, email="sup6@test.es")
+    usuario_otra, _ = _crear_usuario(
+        db, es_supervisora=False, email="otra@test.es", sufijo="otra"
+    )
+    db.session.add(
+        UnidadSupervisada(usuario_id=usuario.id, unidad_id=usuario_otra.unidad_id)
+    )
+    db.session.commit()
+    _login(client, usuario.email)
+    resp = client.get("/planilla/supervision/reglas")
+    assert resp.status_code == 200
+    assert 'aria-label="Unidad"' in resp.data.decode("utf-8")
+
+
+def test_get_reglas_unidad_no_supervisada_devuelve_403(client, db):
+    usuario, _ = _crear_usuario(db, es_supervisora=True, email="sup4@test.es")
+    usuario_ajeno, _ = _crear_usuario(
+        db, es_supervisora=False, email="ajena@test.es", sufijo="ajena"
+    )
+    _login(client, usuario.email)
+    resp = client.get(f"/planilla/supervision/reglas?unidad_id={usuario_ajeno.unidad_id}")
+    assert resp.status_code == 403

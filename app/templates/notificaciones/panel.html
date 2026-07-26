@@ -92,6 +92,25 @@
     </form>
   </section>
 
+  <!-- Sección 1bis: Email -->
+  <section class="notif-section card">
+    <h2 class="notif-section-title">{{ _('Email') }}</h2>
+    <form method="post" action="{{ url_for('notificaciones.guardar_email') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="notif-toggle-row">
+        <label class="notif-toggle-label" for="notif_email_documento_cambio">
+          {{ _('Recibir por email la hoja de cambio cuando quede firmada por las dos partes') }}
+        </label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="notif_email_documento_cambio" name="notif_email_documento_cambio"
+                 {% if current_user.notif_email_documento_cambio %}checked{% endif %}
+                 onchange="this.form.submit()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </form>
+  </section>
+
   <!-- Sección 2: Suscripciones a publicaciones de compañeros -->
   <section class="notif-section card">
     <h2 class="notif-section-title">{{ _('Seguir compañeros') }}</h2>

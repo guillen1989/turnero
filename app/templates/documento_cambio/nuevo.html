@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Nueva hoja de cambio') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1>{{ _('Nueva hoja de cambio') }}</h1>
+  <p>{{ _('Rellena los datos del cambio. Por defecto, tu compañero/a firmará más tarde desde su propia cuenta.') }}</p>
+
+  <form method="post" id="nueva-hoja-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label for="companero_id">{{ _('Compañero/a con quien cambias') }}</label>
+      <select id="companero_id" name="companero_id" required>
+        <option value="">{{ _('— Selecciona —') }}</option>
+        {% for c in companeros %}
+        <option value="{{ c.id }}">{{ c.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if hojas_pendientes %}
+    <section class="turnos-section">
+      <h2>{{ _('¿Esta hoja depende de otra aún no autorizada?') }}</h2>
+      <p class="form-hint">{{ _('Si este cambio solo se puede hacer si primero se autoriza otra hoja pendiente de tu misma unidad, selecciónala aquí. Si no, déjala en blanco.') }}</p>
+      <div class="form-group">
+        <label for="depende_de_id">{{ _('Depende de') }}</label>
+        <select id="depende_de_id" name="depende_de_id">
+          <option value="">{{ _('— Ninguna —') }}</option>
+          {% for h in hojas_pendientes %}
+          <option value="{{ h.id }}">{{ _('Hoja nº %(numero)s (%(fecha)s)', numero=h.numero_unidad, fecha=h.fecha_creacion.strftime('%d/%m')) }}
+            — {% for p in h.participantes %}{{ p.nombre_mostrar }} {{ _('cede') }} {{ p.turno_cede_franja.nombre }}{% if not loop.last %}, {% endif %}{% endfor %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="turnos-section">
+      <h2>{{ _('Tu turno que cedes') }}</h2>
+      <div class="turno-row">
+        <div class="turno-row-campo">
+          <label for="turno_cede_fecha">{{ _('Día') }}</label>
+          <input type="date" id="turno_cede_fecha" name="turno_cede_fecha" required>
+        </div>
+        <div class="turno-row-campo">
+          <label for="turno_cede_franja_id">{{ _('Turno') }}</label>
+          <select id="turno_cede_franja_id" name="turno_cede_franja_id" required>
+            <option value="">{{ _('— Selecciona —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="turnos-section">
+      <h2>{{ _('El turno que recibes a cambio') }}</h2>
+      <div class="turno-row">
+        <div class="turno-row-campo">
+          <label for="turno_recibe_fecha">{{ _('Día') }}</label>
+          <input type="date" id="turno_recibe_fecha" name="turno_recibe_fecha" required>
+        </div>
+        <div class="turno-row-campo">
+          <label for="turno_recibe_franja_id">{{ _('Turno') }}</label>
+          <select id="turno_recibe_franja_id" name="turno_recibe_franja_id" required>
+            <option value="">{{ _('— Selecciona —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="turnos-section">
+      <label class="form-check">
+        <input type="checkbox" id="firmar_ambos" name="firmar_ambos">
+        {{ _('Estamos juntos ahora mismo: firmar los dos ya') }}
+      </label>
+      <p class="form-hint">{{ _('Si no lo marcas, tu compañero/a firmará más tarde desde su propia cuenta.') }}</p>
+
+      <div id="firmas-ambos-box" style="display:none;">
+        <h2>{{ _('Tu firma') }}</h2>
+        <input type="hidden" name="imagen_firma_propia" value="">
+        <div class="firma-box">
+          <canvas id="firma-canvas-propia" class="firma-canvas" width="500" height="180"></canvas>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="firma-propia-limpiar">{{ _('Borrar') }}</button>
+        {% if current_user.firma_guardada %}
+        <button type="button" class="btn btn-secondary btn-sm" id="firma-propia-usar-guardada"
+                data-firma="{{ current_user.firma_guardada }}">{{ _('Usar mi firma guardada') }}</button>
+        {% else %}
+        <label class="firma-guardar-opcion" style="display:block; margin:0.5rem 0; font-size:0.9rem">
+          <input type="checkbox" name="guardar_firma" checked>
+          {{ _('Guardar mi firma para futuras firmas') }}
+        </label>
+        {% endif %}
+
+        <h2>{{ _('Firma de tu compañero/a') }}</h2>
+        <input type="hidden" name="imagen_firma_companero" value="">
+        <div class="firma-box">
+          <canvas id="firma-canvas-companero" class="firma-canvas" width="500" height="180"></canvas>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="firma-companero-limpiar">{{ _('Borrar') }}</button>
+      </div>
+    </section>
+
+    <button type="submit" class="btn btn-primary">{{ _('Crear hoja de cambio') }}</button>
+  </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/firma-canvas.js') }}"></script>
+<script src="{{ url_for('static', filename='js/filtro-turnos-planilla.js') }}"></script>
+<script>
+(function () {
+  var checkbox = document.getElementById('firmar_ambos');
+  var box = document.getElementById('firmas-ambos-box');
+  var canvasPropia = document.getElementById('firma-canvas-propia');
+  var canvasCompanero = document.getElementById('firma-canvas-companero');
+  var form = document.getElementById('nueva-hoja-form');
+
+  setupFirmaCanvas(canvasPropia);
+  setupFirmaCanvas(canvasCompanero);
+
+  var companeroSelect = document.getElementById('companero_id');
+  var cedeFecha = document.getElementById('turno_cede_fecha');
+  var recibeFecha = document.getElementById('turno_recibe_fecha');
+
+  var actualizarCede = initFiltroTurno(
+    document.getElementById('turno_cede_franja_id'),
+    function () { return {{ current_user.id }}; },
+    function () { return cedeFecha.value; }
+  );
+  var actualizarRecibe = initFiltroTurno(
+    document.getElementById('turno_recibe_franja_id'),
+    function () { return companeroSelect.value; },
+    function () { return recibeFecha.value; }
+  );
+  cedeFecha.addEventListener('change', actualizarCede);
+  recibeFecha.addEventListener('change', actualizarRecibe);
+  companeroSelect.addEventListener('change', actualizarRecibe);
+
+  checkbox.addEventListener('change', function () {
+    box.style.display = checkbox.checked ? 'block' : 'none';
+  });
+
+  document.getElementById('firma-propia-limpiar').addEventListener('click', function () {
+    canvasPropia._limpiar();
+    form.querySelector('input[name="imagen_firma_propia"]').value = '';
+  });
+  document.getElementById('firma-companero-limpiar').addEventListener('click', function () {
+    canvasCompanero._limpiar();
+    form.querySelector('input[name="imagen_firma_companero"]').value = '';
+  });
+
+  var btnGuardada = document.getElementById('firma-propia-usar-guardada');
+  if (btnGuardada) {
+    btnGuardada.addEventListener('click', function () {
+      canvasPropia._limpiar();
+      form.querySelector('input[name="imagen_firma_propia"]').value = btnGuardada.dataset.firma;
+    });
+  }
+
+  form.addEventListener('submit', function (e) {
+    if (!checkbox.checked) return;
+    var inputPropia = form.querySelector('input[name="imagen_firma_propia"]');
+    var inputCompanero = form.querySelector('input[name="imagen_firma_companero"]');
+    if (canvasPropia._haFirmado()) {
+      inputPropia.value = canvasPropia.toDataURL('image/png');
+    }
+    if (canvasCompanero._haFirmado()) {
+      inputCompanero.value = canvasCompanero.toDataURL('image/png');
+    }
+    if (!inputPropia.value || !inputCompanero.value) {
+      e.preventDefault();
+      alert('{{ _("Dibujad las dos firmas antes de guardar.") }}');
+    }
+  });
+})();
+</script>
+{% endblock %}

@@ -5,6 +5,9 @@ class GrupoIntercambio(db.Model):
     __tablename__ = "grupo_intercambio"
 
     id = db.Column(db.Integer, primary_key=True)
+    limite_dias_consecutivos = db.Column(
+        db.Integer, nullable=False, default=8, server_default="8"
+    )
 
     unidades = db.relationship("Unidad", back_populates="grupo_intercambio", lazy="dynamic")
     franjas_horarias = db.relationship("FranjaHoraria", back_populates="grupo_intercambio", lazy="dynamic")

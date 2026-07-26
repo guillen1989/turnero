@@ -4,6 +4,7 @@ from app.models.ciudad import Ciudad
 from app.models.hospital import Hospital
 from app.models.grupo_intercambio import GrupoIntercambio
 from app.models.unidad import Unidad
+from app.models.unidad_supervisada import UnidadSupervisada
 from app.models.categoria import Categoria, insertar_categorias_semilla
 from app.models.franja_horaria import FranjaHoraria
 from app.models.usuario import Usuario
@@ -17,8 +18,16 @@ from app.models.event import Event
 from app.models.busqueda_guardada import BusquedaGuardada
 from app.models.audit import AuditEliminacion
 from app.models.planilla import (
-    TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, CompatibilidadPlanilla, NotaDia, SalienteDia, TIPOS_ESTADO_DIA
+    TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, CompatibilidadPlanilla, NotaDia, SalienteDia,
+    AjustePlanillaSupervisora, TIPOS_ESTADO_DIA,
 )
+from app.models.planilla_import import MapeoCodigoTurno, MapeoTrabajadorPlanilla
+from app.models.documento_cambio import (
+    DocumentoCambio, ParticipanteDocumentoCambio, FirmaDocumentoCambio,
+    ESTADOS_DOCUMENTO_CAMBIO, ESTADOS_FACTIBILIDAD, ESTADOS_DECISION_SUPERVISORA,
+)
+from app.models.feature_flag import FeatureFlag
+from app.models.feature_flag_unidad import FeatureFlagUnidad
 
 __all__ = [
     "Pais",
@@ -27,6 +36,7 @@ __all__ = [
     "Hospital",
     "GrupoIntercambio",
     "Unidad",
+    "UnidadSupervisada",
     "Categoria",
     "FranjaHoraria",
     "Usuario",
@@ -50,4 +60,14 @@ __all__ = [
     "SalienteDia",
     "TIPOS_ESTADO_DIA",
     "insertar_categorias_semilla",
+    "DocumentoCambio",
+    "ParticipanteDocumentoCambio",
+    "FirmaDocumentoCambio",
+    "ESTADOS_DOCUMENTO_CAMBIO",
+    "ESTADOS_FACTIBILIDAD",
+    "ESTADOS_DECISION_SUPERVISORA",
+    "MapeoCodigoTurno",
+    "MapeoTrabajadorPlanilla",
+    "FeatureFlag",
+    "FeatureFlagUnidad",
 ]
