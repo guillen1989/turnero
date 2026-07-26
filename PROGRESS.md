@@ -125,7 +125,14 @@ commit por paso.
   en `clean_db` (conftest) que crea y activa los 3 flags existentes tras
   cada truncate. Ajustados los tests de feature flags (`test_feature_flag_*.py`)
   para usar `desactivar_global` en vez de `crear_flag` (los flags ya los
-  crea el conftest). Suite completa pendiente de ejecutar por timeout;
-  tests clave (planilla_supervision, planilla_import, admin, feature flags,
-  documento_cambio) todos verdes. Queda pendiente: prueba manual end-to-end
-  en navegador antes de abrir el PR.
+  crea el conftest). Activación también en `e2e/conftest.py::clean_e2e_db`.
+  Suite completa pendiente de ejecutar por timeout; tests clave todos verdes.
+- [x] Paso 9 — Test E2E del flujo completo descrito en el Paso 7 del plan:
+  `e2e/test_supervisora_multiunidad_e2e.py` cubre (1) login fallido con
+  contraseña trivial (la cuenta se creó con contraseña aleatoria),
+  (2) generación de token y establecimiento de contraseña vía
+  `auth/restablecer-password/<token>`, (3) login exitoso como supervisora,
+  (4) selector de unidad funcional en `/planilla/supervision/` y
+  `/planilla/importar/` (cambiar de UCI a Urgencias muestra distintos
+  trabajadores). No ejecutado en este entorno (Playwright sin navegadores);
+  validar con `pytest e2e/test_supervisora_multiunidad_e2e.py` al abrir el PR.
