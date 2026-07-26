@@ -24,7 +24,17 @@ features concretas), en worktree/branch `feature/feature-flags` desde
   (mismo patrón que `match_admite_documento_cambio`/`get_locale`, no
   `@app.context_processor`) + tests de integración
   (`tests/test_integracion_feature_flags.py`).
-- [ ] Paso 6 — UI admin `/admin/feature-flags`.
+- [x] Paso 6 — UI admin `/admin/feature-flags` (`app/routes/admin/feature_flags.py`
+  + `app/templates/admin/feature_flags.html`, enlace en el nav de
+  `base_admin.html`): listado con toggle de `activo_global` y `<select
+  multiple>` de unidades por flag, respaldado por
+  `sincronizar_unidades_habilitadas` (mismo patrón que
+  `sincronizar_unidades_supervisadas`), reusando `_choices_unidades()`.
+  Verificado con tests de ruta (`tests/test_admin_feature_flags.py`) y
+  manualmente contra un servidor de desarrollo real (login, listado,
+  toggle + selección de unidad persistidos).
+
+Fase A completa (los 6 pasos), lista para PR contra `staging`.
 
 La Fase B (aplicar flags a funcionalidades concretas de `staging`) requiere
 decisión explícita del usuario sobre qué ocultar, y se aborda en PR(s)

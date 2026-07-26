@@ -22,6 +22,7 @@ def admin_required(f):
 from app.routes.admin import (  # noqa: E402,F401
     analytics,
     demo,
+    feature_flags,
     feedback,
     franjas,
     geografia,

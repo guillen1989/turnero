@@ -3,7 +3,7 @@ from functools import wraps
 from flask import abort
 
 from app.extensions import db
-from app.models import FeatureFlag
+from app.models import FeatureFlag, FeatureFlagUnidad
 
 
 def feature_activa(clave, unidad=None):
@@ -51,6 +51,22 @@ def deshabilitar_para_unidad(clave, unidad):
     if unidad in flag.unidades_habilitadas:
         flag.unidades_habilitadas.remove(unidad)
         db.session.commit()
+
+
+def sincronizar_unidades_habilitadas(flag, unidad_ids):
+    """Deja las FeatureFlagUnidad del flag exactamente en unidad_ids."""
+    deseadas = set(unidad_ids)
+    actuales = {unidad.id for unidad in flag.unidades_habilitadas}
+
+    for unidad_id in deseadas - actuales:
+        db.session.add(FeatureFlagUnidad(feature_flag_id=flag.id, unidad_id=unidad_id))
+
+    a_quitar = actuales - deseadas
+    if a_quitar:
+        FeatureFlagUnidad.query.filter(
+            FeatureFlagUnidad.feature_flag_id == flag.id,
+            FeatureFlagUnidad.unidad_id.in_(a_quitar),
+        ).delete(synchronize_session=False)
 
 
 def _unidad_usuario_actual():
