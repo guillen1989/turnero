@@ -40,6 +40,29 @@ La Fase B (aplicar flags a funcionalidades concretas de `staging`) requiere
 decisión explícita del usuario sobre qué ocultar, y se aborda en PR(s)
 separados posteriores — no se mezcla con este.
 
+### Fase B — Aplicar flags a funcionalidades concretas de staging
+
+Flags aplicados (worktree `feature/feature-flags`, mismo que Fase A):
+
+- [x] Seed de datos: migración `c90b9b61f0f8` inserta los 3 flags con
+  `activo_global=False` (hoja_cambio_digital, planilla_supervision_multiunidad,
+  importacion_planilla).
+- [x] `hoja_cambio_digital` — 15 rutas de `documento_cambio.py` protegidas con
+  `@requiere_feature("hoja_cambio_digital")`, enlaces de nav en `base.html`
+  (usuario y supervisora) ocultos condicionalmente. 4 tests.
+- [x] `planilla_supervision_multiunidad` — 5 rutas de
+  `planilla_supervision.py` protegidas, enlaces de nav en `base.html`
+  ocultos. 4 tests.
+- [x] `importacion_planilla` — 4 rutas de `planilla_import.py` protegidas,
+  enlace de nav en `base.html` oculto. 4 tests.
+
+Total: 12 tests nuevos de feature flags aplicados, 35 tests de feature flags
+en total pasando.
+
+Pendiente: el usuario debe decidir si abordar cadenas 3/4 bandas (más complejo,
+sin rutas propias — requeriría condicionar el motor de matching) en esta misma
+o en otra PR.
+
 ## Mantenimiento reciente (independiente de la Fase 10 — ahorro de tokens en sesiones de Claude Code)
 PR contra `staging` con 3 cambios para reducir el gasto de tokens de las sesiones
 de Claude Code (el gasto se había disparado con el tamaño del proyecto):
