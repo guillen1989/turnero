@@ -21,22 +21,15 @@ class Usuario(UserMixin, db.Model):
     notif_confirmado_total = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     notif_publicacion = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     notif_busqueda_guardada = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
-    notif_email_documento_cambio = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     mostrar_oportunidad_3 = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     mostrar_oportunidad_4 = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
-    mostrar_disponibilidad = db.Column(db.Boolean, nullable=False, default=True, server_default="true")
     es_admin = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
-    es_supervisora = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
     onboarding_visto = db.Column(db.Boolean, nullable=False, default=False, server_default="false")
-    firma_guardada = db.Column(db.Text, nullable=True)
     fecha_registro = db.Column(
         db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
 
     unidad = db.relationship("Unidad", back_populates="usuarios")
-    unidades_supervisadas = db.relationship(
-        "Unidad", secondary="unidad_supervisada", back_populates="supervisoras"
-    )
     categoria = db.relationship("Categoria", back_populates="usuarios")
     publicaciones = db.relationship("PublicacionCambio", back_populates="usuario", lazy="dynamic")
     notificaciones = db.relationship("Notificacion", back_populates="usuario", lazy="dynamic")
@@ -87,10 +80,6 @@ class Usuario(UserMixin, db.Model):
             self.email.endswith("@demo.turnero.com")
             or self.email in ("demo1@turnero.com", "demo2@turnero.com", "demo3@turnero.com")
         )
-
-    @property
-    def eliminado(self):
-        return self.password_hash == "CUENTA_ELIMINADA"
 
     def __repr__(self):
         return f"<Usuario {self.email}>"

@@ -1,4 +1,3 @@
-from app.services.validacion_cambio_dia import validar_publicacion_cambio_dia
 from app.extensions import db
 from app.models import AuditEliminacion, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, SuscripcionPublicaciones, TurnoCedido, TurnoAceptado, Usuario
 from app.push.sender import enviar_push_condicional
@@ -35,7 +34,6 @@ def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, 
             cualquier_franja=cualquier,
         ))
 
-    validar_publicacion_cambio_dia(pub)
     db.session.commit()
     registrar_evento(usuario_id, "publication_created", pub.id)
     db.session.commit()

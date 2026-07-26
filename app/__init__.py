@@ -36,12 +36,6 @@ def create_app(config_name=None):
     from flask_babel import get_locale
     app.jinja_env.globals["get_locale"] = get_locale
 
-    from app.services.documento_cambio import match_admite_documento_cambio
-    app.jinja_env.globals["match_admite_documento_cambio"] = match_admite_documento_cambio
-
-    from app.services.feature_flags import feature_activa_para_usuario_actual
-    app.jinja_env.globals["feature_activa"] = feature_activa_para_usuario_actual
-
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "info"
@@ -85,15 +79,6 @@ def create_app(config_name=None):
     from app.routes.calendario import bp as calendario_bp
     app.register_blueprint(calendario_bp)
 
-    from app.routes.documento_cambio import bp as documento_cambio_bp
-    app.register_blueprint(documento_cambio_bp)
-
-    from app.routes.planilla_import import bp as planilla_import_bp
-    app.register_blueprint(planilla_import_bp)
-
-    from app.routes.planilla_supervision import bp as planilla_supervision_bp
-    app.register_blueprint(planilla_supervision_bp)
-
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 
@@ -111,10 +96,6 @@ def create_app(config_name=None):
                         "aviso_oportunidad_3",
                         "aviso_oportunidad_4",
                         "contrasena_restablecida",
-                        "documento_cambio_pendiente_firma",
-                        "documento_cambio_completo",
-                        "documento_cambio_autorizado",
-                        "documento_cambio_denegado",
                     ]),
                     Notificacion.leida.is_(False),
                 ).count()

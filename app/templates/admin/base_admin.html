@@ -15,7 +15,6 @@
     <a href="{{ url_for('admin.franjas') }}" class="admin-nav-link{% if 'franja' in request.endpoint %} active{% endif %}">{{ _('Turnos') }}</a>
     <a href="{{ url_for('admin.analytics') }}" class="admin-nav-link{% if 'analytics' in request.endpoint %} active{% endif %}">{{ _('Analytics') }}</a>
     <a href="{{ url_for('admin.feedback') }}" class="admin-nav-link{% if 'feedback' in request.endpoint %} active{% endif %}">{{ _('Feedback') }}</a>
-    <a href="{{ url_for('admin.feature_flags') }}" class="admin-nav-link{% if 'feature_flag' in request.endpoint %} active{% endif %}">{{ _('Feature flags') }}</a>
   </nav>
   <div class="admin-content">
     {% block admin_content %}{% endblock %}

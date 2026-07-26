@@ -62,7 +62,6 @@ def compatibilidad_para_cedido(
     compañeros_mismo_grupo = [
         u for u in compañeros_con_planilla
         if u.grupo_intercambio.id == grupo_solicitante.id
-        and u.mostrar_disponibilidad
     ]
 
     libres = []
