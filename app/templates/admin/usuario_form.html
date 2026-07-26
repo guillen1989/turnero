@@ -140,8 +140,14 @@
   </div>
 
   <div class="form-group form-check">
-    {{ form.es_supervisora() }}
+    {{ form.es_supervisora(id="es-supervisora-check") }}
     {{ form.es_supervisora.label }}
+  </div>
+
+  <div class="form-group" id="unidades-supervisadas-group" style="display:none">
+    {{ form.unidades_supervisadas.label }}
+    {{ form.unidades_supervisadas() }}
+    {% for e in form.unidades_supervisadas.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
   </div>
 
   <div class="form-group">
@@ -159,5 +165,13 @@
   }
   select.addEventListener('change', toggleNueva);
   toggleNueva();
+
+  var supervisoraCheck = document.getElementById('es-supervisora-check');
+  var unidadesGroup = document.getElementById('unidades-supervisadas-group');
+  function toggleUnidadesSupervisadas() {
+    unidadesGroup.style.display = supervisoraCheck.checked ? 'block' : 'none';
+  }
+  supervisoraCheck.addEventListener('change', toggleUnidadesSupervisadas);
+  toggleUnidadesSupervisadas();
 </script>
 {% endblock %}

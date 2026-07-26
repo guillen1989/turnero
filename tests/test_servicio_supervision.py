@@ -1,5 +1,9 @@
 from app.models import Usuario, Hospital, GrupoIntercambio, Unidad, Categoria, UnidadSupervisada
-from app.services.supervision import unidades_supervisadas_de, puede_supervisar
+from app.services.supervision import (
+    puede_supervisar,
+    sincronizar_unidades_supervisadas,
+    unidades_supervisadas_de,
+)
 
 
 def _crear_contexto(db):
@@ -67,3 +71,34 @@ def test_puede_supervisar_devuelve_false_para_unidad_no_asociada(db):
     usuario, _, _, unidad_ajena = _crear_contexto(db)
 
     assert puede_supervisar(usuario, unidad_ajena) is False
+
+
+def test_sincronizar_unidades_supervisadas_añade_las_nuevas(db):
+    usuario, unidad_uci, unidad_urgencias, unidad_ajena = _crear_contexto(db)
+
+    sincronizar_unidades_supervisadas(
+        usuario, {unidad_uci.id, unidad_urgencias.id, unidad_ajena.id}
+    )
+    db.session.commit()
+
+    assert {u.id for u in unidades_supervisadas_de(usuario)} == {
+        unidad_uci.id, unidad_urgencias.id, unidad_ajena.id,
+    }
+
+
+def test_sincronizar_unidades_supervisadas_quita_las_que_sobran(db):
+    usuario, unidad_uci, unidad_urgencias, _ = _crear_contexto(db)
+
+    sincronizar_unidades_supervisadas(usuario, {unidad_uci.id})
+    db.session.commit()
+
+    assert {u.id for u in unidades_supervisadas_de(usuario)} == {unidad_uci.id}
+
+
+def test_sincronizar_unidades_supervisadas_vacio_quita_todas(db):
+    usuario, _, _, _ = _crear_contexto(db)
+
+    sincronizar_unidades_supervisadas(usuario, set())
+    db.session.commit()
+
+    assert unidades_supervisadas_de(usuario) == []

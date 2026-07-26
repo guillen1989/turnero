@@ -144,6 +144,127 @@ def test_admin_elimina_usuario(client, db):
     assert Usuario.query.filter_by(email="borrar@test.es").count() == 0
 
 
+def test_admin_elimina_supervisora_con_unidad_supervisada(client, db):
+    """Regression: borrar una supervisora con filas en unidad_supervisada
+    violaba la FK al no limpiarlas antes de borrar el usuario."""
+    from app.extensions import db as _db
+    from app.models import UnidadSupervisada
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="supervisora@test.es")
+    u.es_supervisora = True
+    _db.session.commit()
+    _db.session.add(UnidadSupervisada(usuario_id=u.id, unidad_id=u.unidad_id))
+    _db.session.commit()
+
+    resp = client.post(
+        f"/admin/usuarios/{u.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(email="supervisora@test.es").count() == 0
+
+
+def test_admin_crea_supervisora_asigna_unidades_supervisadas(client, db):
+    from app.extensions import db as _db
+    from app.models import UnidadSupervisada
+    from app.services.registro import encontrar_o_crear_unidad
+    _login_admin(client, db)
+    hospital = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    unidad_extra, _is_new = encontrar_o_crear_unidad("UCI Extra", hospital)
+    _db.session.commit()
+
+    resp = client.post(
+        "/admin/usuarios/nuevo",
+        data={
+            "nombre": "Nueva Supervisora",
+            "email": "supervisora_nueva@test.es",
+            "password": "contraseña123",
+            "hospital_id": "0",
+            "hospital_nuevo": "Hospital Admin Test",
+            "unidad_id": "0",
+            "unidad_nuevo": "Urgencias Nueva",
+            "categoria_id": _cat_id(db),
+            "categoria_nueva": "",
+            "es_admin": False,
+            "es_supervisora": True,
+            "unidades_supervisadas": [str(unidad_extra.id)],
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    u = Usuario.query.filter_by(email="supervisora_nueva@test.es").first()
+    assert u is not None
+    unidades_ids = {us.unidad_id for us in UnidadSupervisada.query.filter_by(usuario_id=u.id).all()}
+    assert unidades_ids == {u.unidad_id, unidad_extra.id}
+
+
+def test_admin_edita_usuario_actualiza_unidades_supervisadas(client, db):
+    from app.extensions import db as _db
+    from app.models import UnidadSupervisada
+    from app.services.registro import encontrar_o_crear_unidad
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="supervisora_editar@test.es")
+    u.es_supervisora = True
+    _db.session.commit()
+
+    hospital = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    unidad_extra, _is_new = encontrar_o_crear_unidad("UCI Extra Editar", hospital)
+    _db.session.commit()
+
+    resp = client.post(
+        f"/admin/usuarios/{u.id}/editar",
+        data={
+            "nombre": u.nombre,
+            "email": u.email,
+            "password": "",
+            "hospital_id": "0",
+            "hospital_nuevo": "Hospital Admin Test",
+            "unidad_id": "0",
+            "unidad_nuevo": "Urgencias",
+            "categoria_id": _cat_id(db),
+            "categoria_nueva": "",
+            "es_admin": False,
+            "es_supervisora": True,
+            "unidades_supervisadas": [str(unidad_extra.id)],
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    _db.session.refresh(u)
+    unidades_ids = {us.unidad_id for us in UnidadSupervisada.query.filter_by(usuario_id=u.id).all()}
+    assert unidades_ids == {u.unidad_id, unidad_extra.id}
+
+
+def test_admin_desmarca_es_supervisora_limpia_unidades_supervisadas(client, db):
+    from app.extensions import db as _db
+    from app.models import UnidadSupervisada
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="ex_supervisora@test.es")
+    u.es_supervisora = True
+    _db.session.commit()
+    _db.session.add(UnidadSupervisada(usuario_id=u.id, unidad_id=u.unidad_id))
+    _db.session.commit()
+
+    resp = client.post(
+        f"/admin/usuarios/{u.id}/editar",
+        data={
+            "nombre": u.nombre,
+            "email": u.email,
+            "password": "",
+            "hospital_id": "0",
+            "hospital_nuevo": "Hospital Admin Test",
+            "unidad_id": "0",
+            "unidad_nuevo": "Urgencias",
+            "categoria_id": _cat_id(db),
+            "categoria_nueva": "",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert UnidadSupervisada.query.filter_by(usuario_id=u.id).count() == 0
+
+
 def test_admin_elimina_usuario_con_publicaciones(client, db):
     """Regression: deleting a user with publications used to raise Internal Server Error."""
     from app.extensions import db as _db

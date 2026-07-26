@@ -96,7 +96,29 @@ commit por paso.
   test_selector_de_unidad_cambia_los_trabajadores_mostrados`) que confirma
   que cambiar la opción del selector cambia los trabajadores mostrados en la
   matriz, en vez de una prueba manual en navegador.
-- [ ] Paso 5 — Formulario admin: asignar unidades supervisadas.
+- [x] Paso 5 — Formulario admin: asignar unidades supervisadas.
+  `sincronizar_unidades_supervisadas(usuario, unidad_ids)` en
+  `app/services/supervision.py` deja las filas `UnidadSupervisada` de un
+  usuario exactamente en el conjunto pedido (añade las que faltan, borra
+  las que sobran). `AdminUsuarioForm` gana un `SelectMultipleField`
+  `unidades_supervisadas` ("Unidades adicionales que supervisa"; la propia
+  unidad del usuario se añade siempre por unión de conjuntos, nunca hay
+  que seleccionarla a mano). Nuevo helper `_choices_unidades()` en
+  `app/routes/admin/helpers.py`. `usuario_nuevo()`/`usuario_editar()`
+  llaman a `sincronizar_unidades_supervisadas(u, seleccionadas | {unidad.id})`
+  si `es_supervisora` es `True` tras guardar, o con conjunto vacío si es
+  `False` (limpia todas las filas). El GET de `usuario_editar()`
+  precarga el multi-select con las unidades ya asociadas, excluyendo la
+  propia. Plantilla `usuario_form.html`: el nuevo `<select multiple>` solo
+  es visible si el checkbox "Supervisora" está marcado (JS, mismo patrón
+  que el toggle ya existente de "categoría nueva"). 6 tests nuevos en
+  `tests/test_servicio_supervision.py` (servicio) y `tests/test_admin.py`
+  (crear supervisora con unidades extra, editar para añadir/quitar, y
+  desmarcar "Supervisora" limpia todas las filas) — en este último, ojo:
+  simular un checkbox desmarcado en WTForms requiere *omitir* la clave del
+  POST, no enviarla con valor `False` (cualquier valor presente, incluida
+  la cadena `"False"`, hace que `BooleanField` lo interprete como
+  marcado).
 - [ ] Paso 6 — Contraseña por invitación para supervisoras creadas por el
   admin (reutilizar `password_reset.py`/`email.py` en vez de contraseña en
   texto plano tecleada por el admin).

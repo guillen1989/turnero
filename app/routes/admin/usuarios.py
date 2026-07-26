@@ -6,7 +6,7 @@ from app.extensions import db
 from app.forms.admin import AdminUsuarioForm
 from app.models import Ciudad, Hospital, Pais, Provincia, Unidad, Usuario
 from app.routes.admin import admin_required, bp
-from app.routes.admin.helpers import _OPCION_NUEVA_CATEGORIA, _choices_cats
+from app.routes.admin.helpers import _OPCION_NUEVA_CATEGORIA, _choices_cats, _choices_unidades
 from app.services.registro import (
     encontrar_o_crear_categoria,
     encontrar_o_crear_hospital,
@@ -16,6 +16,7 @@ from app.services.registro import (
     resolver_hospital,
     resolver_unidad,
 )
+from app.services.supervision import sincronizar_unidades_supervisadas
 
 
 @bp.route("/usuarios")
@@ -30,6 +31,7 @@ def usuarios():
 def usuario_nuevo():
     form = AdminUsuarioForm()
     form.categoria_id.choices = _choices_cats()
+    form.unidades_supervisadas.choices = _choices_unidades()
     if form.validate_on_submit():
         pais_id = request.form.get("pais_id", type=int)
         provincia_id = request.form.get("provincia_id", type=int)
@@ -78,6 +80,11 @@ def usuario_nuevo():
             )
             u.set_password(form.password.data)
             db.session.add(u)
+            db.session.flush()
+            if u.es_supervisora:
+                sincronizar_unidades_supervisadas(
+                    u, set(form.unidades_supervisadas.data) | {unidad.id}
+                )
             db.session.commit()
             flash(_("Usuario creado."), "success")
             return redirect(url_for("admin.usuarios"))
@@ -98,6 +105,7 @@ def usuario_editar(id):
     u = db.session.get(Usuario, id) or abort(404)
     form = AdminUsuarioForm(obj=u)
     form.categoria_id.choices = _choices_cats()
+    form.unidades_supervisadas.choices = _choices_unidades()
     if form.validate_on_submit():
         pais_id = request.form.get("pais_id", type=int)
         provincia_id = request.form.get("provincia_id", type=int)
@@ -141,11 +149,20 @@ def usuario_editar(id):
             u.es_supervisora = form.es_supervisora.data
             if form.password.data:
                 u.set_password(form.password.data)
+            if u.es_supervisora:
+                sincronizar_unidades_supervisadas(
+                    u, set(form.unidades_supervisadas.data) | {unidad.id}
+                )
+            else:
+                sincronizar_unidades_supervisadas(u, set())
             db.session.commit()
             flash(_("Usuario actualizado."), "success")
             return redirect(url_for("admin.usuarios"))
     elif request.method == "GET":
         form.categoria_id.data = u.categoria_id
+        form.unidades_supervisadas.data = [
+            unidad_sup.id for unidad_sup in u.unidades_supervisadas if unidad_sup.id != u.unidad_id
+        ]
 
     current_hospital = u.unidad.hospital
     current_ciudad = current_hospital.ciudad
