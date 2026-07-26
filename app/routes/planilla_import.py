@@ -6,6 +6,7 @@ from app.models import FranjaHoraria, Usuario
 from app.models.planilla_import import MapeoTrabajadorPlanilla
 from app.services.importar_planilla import importar_planilla
 from app.services.planilla_matching import (
+    descartar_trabajadores,
     establecer_mapeo_codigo,
     trabajadores_sin_vincular,
     usuarios_disponibles_para_vincular,
@@ -104,6 +105,22 @@ def codigos():
         unidad=unidad,
         unidades_supervisadas=unidades_supervisadas_de(current_user),
     )
+
+
+@bp.post("/descartar")
+@login_required
+@requiere_feature("importacion_planilla")
+def descartar():
+    unidad = unidad_supervisada_o_403(current_user, request.form.get("unidad_id", type=int))
+    mapeo_ids = request.form.getlist("mapeo_ids", type=int)
+
+    if not mapeo_ids:
+        flash(_("Selecciona al menos un trabajador."), "danger")
+    else:
+        n = descartar_trabajadores(unidad, mapeo_ids)
+        flash(_("%(n)d trabajadores dejados sin asignar.", n=n), "success")
+
+    return redirect(url_for("planilla_import.index", unidad_id=unidad.id))
 
 
 @bp.post("/<int:mapeo_id>/vincular")
