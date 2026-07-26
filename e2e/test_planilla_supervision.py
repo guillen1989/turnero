@@ -12,7 +12,9 @@ from datetime import date, time
 import pytest
 
 from app.extensions import db
-from app.models import Categoria, FranjaHoraria, GrupoIntercambio, Hospital, Unidad, Usuario
+from app.models import (
+    Categoria, FranjaHoraria, GrupoIntercambio, Hospital, Unidad, Usuario, UnidadSupervisada,
+)
 from app.services.planilla import añadir_turno
 
 
@@ -46,6 +48,8 @@ def escenario_supervision(e2e_app, clean_e2e_db):
         )
         trabajador.set_password("pass1234")
         db.session.add_all([supervisora, trabajador])
+        db.session.commit()
+        db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=unidad.id))
         db.session.commit()
 
         hoy = date.today()

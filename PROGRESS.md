@@ -71,12 +71,26 @@ commit por paso.
   `unidades_supervisadas_de(usuario)` (ordenadas por nombre) y
   `puede_supervisar(usuario, unidad)`. Tests en
   `tests/test_servicio_supervision.py`.
-- [ ] Paso 3 — Rutas `planilla_supervision.py`: parámetro `unidad_id`,
-  `_unidad_supervisada_o_403`, sustituir usos de `current_user.unidad`.
-  Pendiente actualizar 3 ficheros de test que crean supervisoras sin
-  `UnidadSupervisada` asociada: `tests/test_rutas_planilla_supervision.py`,
-  `tests/test_reglas_comprobacion.py`, `e2e/test_planilla_supervision.py`.
-- [ ] Paso 4 — Plantilla: selector de unidad.
+- [x] Paso 3 — Rutas `planilla_supervision.py`: `_unidad_supervisada_o_403(unidad_id)`
+  sustituye a `_exigir_supervisora()`, usando `puede_supervisar`; sin
+  `unidad_id`, resuelve a `current_user.unidad` si está entre las
+  supervisadas (compatibilidad con supervisoras de una sola unidad) o si no
+  a la primera de `unidades_supervisadas_de`. `unidad_id` se pasa como
+  querystring en `index()`/`reglas()` (GET) y como campo oculto de formulario
+  en `ajustar`/`turno_eliminar`/`turno_editar` (POST); los redirects a
+  `index` y `reglas` lo propagan para volver a la unidad correcta. Plantilla
+  `planilla_supervision/index.html` actualizada: nav de mes y los 2
+  formularios ocultos llevan `unidad_id`; `reglas.html` también. Se
+  actualizaron los 3 helpers de test que creaban supervisoras sin
+  `UnidadSupervisada` asociada (`tests/test_rutas_planilla_supervision.py`,
+  `tests/test_reglas_comprobacion.py`, `e2e/test_planilla_supervision.py`)
+  para crear esa asociación automáticamente, y también
+  `scripts/seed_staging.py` (afecta a `tests/test_seed_staging_uco.py`).
+  Tests nuevos: acceso a 2 unidades por separado y 403 en una tercera no
+  supervisada (`index` y `ajustar`), más 403 en `reglas`.
+- [ ] Paso 4 — Plantilla: selector de unidad (visible solo si
+  `unidades_supervisadas` tiene más de un elemento; probar manualmente en
+  navegador).
 - [ ] Paso 5 — Formulario admin: asignar unidades supervisadas.
 - [ ] Paso 6 — Contraseña por invitación para supervisoras creadas por el
   admin (reutilizar `password_reset.py`/`email.py` en vez de contraseña en

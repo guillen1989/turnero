@@ -9,6 +9,7 @@
 
   <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="unidad_id" value="{{ unidad.id }}">
 
     <div class="form-group">
       <label for="limite_dias_consecutivos">{{ _('Máximo de días de trabajo seguidos') }}</label>
