@@ -14,8 +14,11 @@ features concretas), en worktree/branch `feature/feature-flags` desde
 - [x] Paso 3 — Migración Alembic `7be3ca3f48b9` (tablas nuevas, sin filas
   previas → un solo paso, sin el patrón de tres pasos de `NOT NULL`).
   `flask db heads` da un único head.
-- [ ] Paso 4 — Servicio `app/services/feature_flags.py` (`feature_activa` +
-  gestión de flags).
+- [x] Paso 4 — Servicio `app/services/feature_flags.py` (`feature_activa` +
+  `crear_flag`/`activar_global`/`desactivar_global`/`habilitar_para_unidad`/
+  `deshabilitar_para_unidad`) + tests (`tests/test_servicio_feature_flags.py`,
+  cubre flag inexistente → False, activo_global gana aunque la unidad no
+  esté en la lista, unidad en la lista gana aunque activo_global sea False).
 - [ ] Paso 5 — Decorador `requiere_feature` + context processor Jinja
   `feature_activa`.
 - [ ] Paso 6 — UI admin `/admin/feature-flags`.
