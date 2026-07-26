@@ -1,3 +1,7 @@
+from functools import wraps
+
+from flask import abort
+
 from app.extensions import db
 from app.models import FeatureFlag
 
@@ -47,3 +51,28 @@ def deshabilitar_para_unidad(clave, unidad):
     if unidad in flag.unidades_habilitadas:
         flag.unidades_habilitadas.remove(unidad)
         db.session.commit()
+
+
+def _unidad_usuario_actual():
+    from flask_login import current_user
+    if not current_user.is_authenticated:
+        return None
+    return getattr(current_user, "unidad", None)
+
+
+def feature_activa_para_usuario_actual(clave):
+    return feature_activa(clave, _unidad_usuario_actual())
+
+
+def requiere_feature(clave):
+    """Oculta una ruta entera con 404 si el flag no está activo (nunca un
+    mensaje "próximamente" que confirmaría que la funcionalidad existe)."""
+
+    def decorador(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if not feature_activa_para_usuario_actual(clave):
+                abort(404)
+            return f(*args, **kwargs)
+        return decorated
+    return decorador

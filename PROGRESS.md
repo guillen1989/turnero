@@ -19,8 +19,11 @@ features concretas), en worktree/branch `feature/feature-flags` desde
   `deshabilitar_para_unidad`) + tests (`tests/test_servicio_feature_flags.py`,
   cubre flag inexistente → False, activo_global gana aunque la unidad no
   esté en la lista, unidad en la lista gana aunque activo_global sea False).
-- [ ] Paso 5 — Decorador `requiere_feature` + context processor Jinja
-  `feature_activa`.
+- [x] Paso 5 — Decorador `requiere_feature` (404, nunca "próximamente") +
+  `feature_activa` disponible en plantillas vía `app.jinja_env.globals`
+  (mismo patrón que `match_admite_documento_cambio`/`get_locale`, no
+  `@app.context_processor`) + tests de integración
+  (`tests/test_integracion_feature_flags.py`).
 - [ ] Paso 6 — UI admin `/admin/feature-flags`.
 
 La Fase B (aplicar flags a funcionalidades concretas de `staging`) requiere
