@@ -144,6 +144,49 @@ commit por paso.
   contraseña sigue dando error de validación, sin tocar ese flujo).
 - [ ] Paso 7 — Limpieza y prueba manual end-to-end.
 
+## Cambios de turno en el día (independiente de la Fase 10 — plan en `docs/CAMBIOS_DE_TURNO_EN_EL_DIA.md`)
+Ejecución del plan de 8 fases/17 pasos para permitir cambios de turno dentro del
+mismo día (`cambio_dia`). Premisa del plan confirmada: el motor de
+matching/volcado/documento_cambio es agnóstico al tipo de publicación, así que
+la mayor parte del trabajo es tests de regresión sobre código ya existente, no
+funcionalidad nueva.
+
+- [x] Fase 1 — especificación actualizada (`especificacion-app-cambio-turnos.md`:
+  campo `tipo`, regla de negocio 2ter, CU7bis, UAT-2.4) + validador nuevo
+  `app/services/validacion_cambio_dia.py` (todos los turnos cedidos/aceptados de
+  una publicación `cambio_dia` deben ser de la misma fecha), enganchado en
+  `publicar_cambio()`. 6 tests en `tests/test_cambio_dia_validacion.py`.
+- [x] Fase 2 — ya estaba implementada antes de empezar este plan (unificada en
+  `/publicar` con un selector de tipo, no una ruta dedicada como sugería el
+  plan): 8 tests preexistentes en `tests/test_publicar_cambio_dia.py`
+  verificados sin cambios.
+- [x] Fase 3, paso 3.1 — matching: 5 tests nuevos en
+  `tests/test_matching_cambio_dia.py` confirman que `buscar_matches_para`/
+  `crear_match_directo` (motor agnóstico al tipo) detectan y confirman matches
+  `directo_2` entre publicaciones `cambio_dia` igual que un cambio normal.
+- [x] Fase 3, paso 3.2 — volcado a planilla: 4 tests nuevos en
+  `tests/test_volcado_cambio_dia.py` (cobertura estructural; no llega a
+  ejercer `volcar_matches_a_planilla` de extremo a extremo — pendiente si se
+  necesita más profundidad).
+- [x] Fase 3, paso 3.3 — inicialmente bloqueado: los modelos `DocumentoCambio`/
+  `ParticipanteDocumentoCambio` no existían en el punto de partida de este
+  worktree. Al hacer `git rebase origin/staging` se incorporó la Fase 10 (hoja
+  de cambio digital, mergeada por otra sesión mientras tanto), que sí los
+  implementa. `match_admite_documento_cambio`/`crear_documento_cambio_desde_match`
+  no distinguen por `PublicacionCambio.tipo`, así que un match `directo_2`
+  `cambio_dia` genera su `DocumentoCambio` igual que uno normal — 2 tests
+  nuevos en `tests/test_documento_cambio_cambio_dia.py`.
+
+Siguiente: Fase 4 en adelante (integración con supervisión, factibilidad,
+caducidad, dashboard, e2e/UAT) — confirmar para cada una si necesita tests
+propios o si, como en 3.1-3.3, el código ya es agnóstico al tipo.
+
+Nota de entorno: este worktree se creó desde un punto de `staging` anterior a
+3 PRs ya mergeados en `origin/staging` (Fase 10 completa, supervisoras
+multiunidad, feature flags). Se hizo `git rebase origin/staging` sin
+conflictos antes de continuar la Fase 3 — los 4 commits de este plan se
+reescribieron con nuevos hashes al rebasar.
+
 ## Fase actual
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
 
