@@ -171,9 +171,9 @@
             {% elif documento.decision_supervisora == 'autorizado' %}
               <span class="badge-success">{{ _('Aceptado') }}</span>
             {% elif documento.decision_supervisora == 'denegado' %}
-              <span class="badge-draft">{{ _('Rechazado') }}</span>
+              <span class="badge-danger">{{ _('Rechazado') }}</span>
             {% else %}
-              <span class="badge-draft">{{ _('Pendiente de decisión') }}</span>
+              <span class="badge-warning">{{ _('Pendiente de decisión') }}</span>
             {% endif %}
           </td>
           <td>{{ documento.motivo_denegacion or '' }}</td>

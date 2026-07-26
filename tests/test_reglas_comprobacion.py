@@ -1,5 +1,5 @@
 from datetime import time
-from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, Usuario
+from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, Usuario, UnidadSupervisada
 
 
 def _crear_usuario(db, es_supervisora, email, sufijo="a"):
@@ -20,6 +20,9 @@ def _crear_usuario(db, es_supervisora, email, sufijo="a"):
     usuario.set_password("pass")
     db.session.add(usuario)
     db.session.commit()
+    if es_supervisora:
+        db.session.add(UnidadSupervisada(usuario_id=usuario.id, unidad_id=unidad.id))
+        db.session.commit()
     return usuario, grupo
 
 
@@ -69,3 +72,36 @@ def test_post_reglas_rechaza_valores_no_positivos(client, db):
     assert resp.status_code == 200
     db.session.refresh(grupo)
     assert grupo.limite_dias_consecutivos == 8
+
+
+def test_get_reglas_no_muestra_selector_de_unidad_si_solo_supervisa_una(client, db):
+    usuario, _ = _crear_usuario(db, es_supervisora=True, email="sup5@test.es")
+    _login(client, usuario.email)
+    resp = client.get("/planilla/supervision/reglas")
+    assert resp.status_code == 200
+    assert 'aria-label="Unidad"' not in resp.data.decode("utf-8")
+
+
+def test_get_reglas_muestra_selector_de_unidad_si_supervisa_varias(client, db):
+    usuario, _ = _crear_usuario(db, es_supervisora=True, email="sup6@test.es")
+    usuario_otra, _ = _crear_usuario(
+        db, es_supervisora=False, email="otra@test.es", sufijo="otra"
+    )
+    db.session.add(
+        UnidadSupervisada(usuario_id=usuario.id, unidad_id=usuario_otra.unidad_id)
+    )
+    db.session.commit()
+    _login(client, usuario.email)
+    resp = client.get("/planilla/supervision/reglas")
+    assert resp.status_code == 200
+    assert 'aria-label="Unidad"' in resp.data.decode("utf-8")
+
+
+def test_get_reglas_unidad_no_supervisada_devuelve_403(client, db):
+    usuario, _ = _crear_usuario(db, es_supervisora=True, email="sup4@test.es")
+    usuario_ajeno, _ = _crear_usuario(
+        db, es_supervisora=False, email="ajena@test.es", sufijo="ajena"
+    )
+    _login(client, usuario.email)
+    resp = client.get(f"/planilla/supervision/reglas?unidad_id={usuario_ajeno.unidad_id}")
+    assert resp.status_code == 403

@@ -5,6 +5,7 @@ from datetime import date, time
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario,
     DocumentoCambio, ParticipanteDocumentoCambio, AjustePlanillaSupervisora,
+    UnidadSupervisada,
 )
 from app.services.planilla import añadir_turno, establecer_estado_dia
 
@@ -31,6 +32,9 @@ def _setup(db, sufijo="a"):
         usuario.set_password(password)
         db.session.add(usuario)
         db.session.commit()
+        if supervisora:
+            db.session.add(UnidadSupervisada(usuario_id=usuario.id, unidad_id=u.id))
+            db.session.commit()
         return usuario
 
     return crear_usuario, unidad, otra_unidad, franja_m
@@ -621,3 +625,95 @@ def test_index_contador_de_presencia_vacio_si_nadie_trabaja_esa_franja_ese_dia(d
     fin = html.index("</tr>", inicio)
     fila = html[inicio:fin]
     assert ">0<" not in fila
+
+
+# ── multiunidad ──────────────────────────────────────────────────────────────
+
+def test_index_no_muestra_selector_de_unidad_si_solo_supervisa_una(db, client):
+    crear_usuario, unidad, _, _ = _setup(db, "gg")
+    supervisora = crear_usuario("Super", "super_gg@h.es", supervisora=True)
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    assert 'aria-label="Unidad"' not in resp.data.decode("utf-8")
+
+
+def test_index_muestra_selector_de_unidad_si_supervisa_varias(db, client):
+    crear_usuario, unidad, otra_unidad, _ = _setup(db, "hh")
+    supervisora = crear_usuario("Super", "super_hh@h.es", supervisora=True)
+    db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=otra_unidad.id))
+    db.session.commit()
+    _login(client, supervisora.email)
+
+    resp = client.get("/planilla/supervision/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert 'aria-label="Unidad"' in html
+    assert unidad.nombre in html
+    assert otra_unidad.nombre in html
+
+
+def test_index_supervisora_de_dos_unidades_ve_cada_una_por_separado(db, client):
+    crear_usuario, unidad, otra_unidad, franja_m = _setup(db, "aa")
+    supervisora = crear_usuario("Super", "super_aa@h.es", supervisora=True)
+    db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=otra_unidad.id))
+    db.session.commit()
+    ana = crear_usuario("Ana", "ana_aa@h.es", u=unidad)
+    cris = crear_usuario("Cris", "cris_aa@h.es", u=otra_unidad)
+    _login(client, supervisora.email)
+
+    resp_unidad = client.get(f"/planilla/supervision/?anyo=2026&mes=7&unidad_id={unidad.id}")
+    assert resp_unidad.status_code == 200
+    html_unidad = resp_unidad.data.decode("utf-8")
+    assert "Ana" in html_unidad
+    assert "Cris" not in html_unidad
+
+    resp_otra = client.get(f"/planilla/supervision/?anyo=2026&mes=7&unidad_id={otra_unidad.id}")
+    assert resp_otra.status_code == 200
+    html_otra = resp_otra.data.decode("utf-8")
+    assert "Cris" in html_otra
+    assert "Ana" not in html_otra
+
+
+def test_index_unidad_no_supervisada_devuelve_403(db, client):
+    crear_usuario, unidad, _, _ = _setup(db, "bb")
+    _, unidad_ajena, _, _ = _setup(db, "cc")
+    supervisora = crear_usuario("Super", "super_bb@h.es", supervisora=True)
+    _login(client, supervisora.email)
+
+    resp = client.get(f"/planilla/supervision/?unidad_id={unidad_ajena.id}")
+    assert resp.status_code == 403
+
+
+def test_ajustar_en_segunda_unidad_supervisada_funciona(db, client):
+    crear_usuario, unidad, otra_unidad, franja_m = _setup(db, "dd")
+    supervisora = crear_usuario("Super", "super_dd@h.es", supervisora=True)
+    db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=otra_unidad.id))
+    db.session.commit()
+    cris = crear_usuario("Cris", "cris_dd@h.es", u=otra_unidad)
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": cris.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": "libre", "unidad_id": otra_unidad.id,
+    }, follow_redirects=True)
+    assert resp.status_code == 200
+
+    ajuste = AjustePlanillaSupervisora.query.filter_by(usuario_id=cris.id).first()
+    assert ajuste is not None
+
+
+def test_ajustar_unidad_no_supervisada_devuelve_403(db, client):
+    crear_usuario, unidad, _, franja_m = _setup(db, "ee")
+    _, unidad_ajena, _, _ = _setup(db, "ff")
+    supervisora = crear_usuario("Super", "super_ee@h.es", supervisora=True)
+    ana = crear_usuario("Ana", "ana_ee@h.es")
+    _login(client, supervisora.email)
+
+    resp = client.post("/planilla/supervision/ajustar", data={
+        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
+        "seleccion": "libre", "unidad_id": unidad_ajena.id,
+    })
+    assert resp.status_code == 403
+    assert AjustePlanillaSupervisora.query.count() == 0

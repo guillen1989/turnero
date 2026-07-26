@@ -13,12 +13,21 @@
   <div class="planilla-header">
     <div class="planilla-header-titulo">
       <h1>{{ _('Supervisión de planilla') }}</h1>
+      {% if unidades_supervisadas|length > 1 %}
+        <select class="planilla-select" aria-label="{{ _('Unidad') }}"
+                onchange="window.location.href=this.value">
+          {% for u in unidades_supervisadas %}
+            <option value="{{ url_for('planilla_supervision.index', anyo=anyo, mes=mes, unidad_id=u.id) }}"
+                    {% if u.id == unidad.id %}selected{% endif %}>{{ u.nombre }}</option>
+          {% endfor %}
+        </select>
+      {% endif %}
     </div>
 
     <div class="planilla-mes-nav">
-      <a href="{{ url_for('planilla_supervision.index', anyo=prev_anyo, mes=prev_mes) }}" class="btn btn-secondary btn-sm">&#8249;</a>
+      <a href="{{ url_for('planilla_supervision.index', anyo=prev_anyo, mes=prev_mes, unidad_id=unidad.id) }}" class="btn btn-secondary btn-sm">&#8249;</a>
       <span class="planilla-mes-titulo">{{ MESES[mes - 1] }} {{ anyo }}</span>
-      <a href="{{ url_for('planilla_supervision.index', anyo=next_anyo, mes=next_mes) }}" class="btn btn-secondary btn-sm">&#8250;</a>
+      <a href="{{ url_for('planilla_supervision.index', anyo=next_anyo, mes=next_mes, unidad_id=unidad.id) }}" class="btn btn-secondary btn-sm">&#8250;</a>
     </div>
   </div>
 
@@ -124,6 +133,7 @@
       <input type="hidden" name="fecha" id="sup-ajuste-fecha">
       <input type="hidden" name="anyo" value="{{ anyo }}">
       <input type="hidden" name="mes" value="{{ mes }}">
+      <input type="hidden" name="unidad_id" value="{{ unidad.id }}">
       <input type="hidden" name="franja_actual_id" id="sup-ajuste-franja-actual-id">
       <select name="seleccion" id="sup-ajuste-seleccion" class="planilla-select" required
               aria-label="{{ _('Nuevo turno o estado') }}">
@@ -162,6 +172,7 @@
   <input type="hidden" name="fecha" id="sup-turno-eliminar-fecha">
   <input type="hidden" name="anyo" value="{{ anyo }}">
   <input type="hidden" name="mes" value="{{ mes }}">
+  <input type="hidden" name="unidad_id" value="{{ unidad.id }}">
   <input type="hidden" name="franja_id" id="sup-turno-eliminar-franja-id">
 </form>
 

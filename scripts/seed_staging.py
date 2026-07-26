@@ -40,7 +40,7 @@ from app.models import (
     MatchCambio, MatchParticipacion,
     FranjaHoraria, Notificacion,
     EstadoDiaPlanilla, PlanillaMes, SalienteDia, TurnoPlanilla,
-    DocumentoCambio,
+    DocumentoCambio, UnidadSupervisada,
 )
 from app.services.registro import (
     encontrar_o_crear_pais,
@@ -681,6 +681,8 @@ def _upsert_supervisora_uco(unidad):
     )
     supervisora.set_password(UCO_SUPERVISORA_PASSWORD)
     db.session.add(supervisora)
+    db.session.flush()
+    db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=unidad.id))
     db.session.flush()
     return supervisora
 
