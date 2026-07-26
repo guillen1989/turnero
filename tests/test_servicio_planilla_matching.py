@@ -6,6 +6,7 @@ from app.services.planilla_matching import (
     resolver_o_crear_trabajador,
     vincular_usuario,
     trabajadores_sin_vincular,
+    descartar_trabajadores,
 )
 from app.extensions import db
 
@@ -178,3 +179,66 @@ def test_sugerir_trabajador_planilla_no_sugiere_coincidencia_parcial(db):
 
     from app.services.planilla_matching import sugerir_trabajador_planilla
     assert sugerir_trabajador_planilla(unidad, "Ana Pérez") is None
+
+
+def test_descartar_trabajadores_deja_de_aparecer_como_pendiente(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    trabajador = resolver_o_crear_trabajador(unidad, "12345", "PÉREZ, ANA")
+
+    n = descartar_trabajadores(unidad, [trabajador.id])
+
+    assert n == 1
+    assert trabajadores_sin_vincular(unidad) == []
+
+
+def test_descartar_trabajadores_admite_varios_a_la_vez(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    a = resolver_o_crear_trabajador(unidad, "111", "PÉREZ, ANA")
+    b = resolver_o_crear_trabajador(unidad, "222", "GÓMEZ, LUIS")
+    c = resolver_o_crear_trabajador(unidad, "333", "RUIZ, PABLO")
+
+    n = descartar_trabajadores(unidad, [a.id, b.id])
+
+    assert n == 2
+    assert trabajadores_sin_vincular(unidad) == [c]
+
+
+def test_descartar_trabajadores_ignora_ids_de_otra_unidad(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    otro_hospital = Hospital(nombre="Otro hospital")
+    db.session.add(otro_hospital)
+    db.session.commit()
+    otra_unidad = Unidad(nombre="Otra", hospital=otro_hospital, grupo_intercambio=grupo)
+    db.session.add(otra_unidad)
+    db.session.commit()
+    de_otra_unidad = resolver_o_crear_trabajador(otra_unidad, "444", "TORRES, EVA")
+
+    n = descartar_trabajadores(unidad, [de_otra_unidad.id])
+
+    assert n == 0
+    assert trabajadores_sin_vincular(otra_unidad) == [de_otra_unidad]
+
+
+def test_descartar_trabajadores_ignora_ya_vinculados(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    usuario = Usuario(nombre="Ana Pérez", email="ana@hospital.es", unidad=unidad, categoria=categoria)
+    usuario.set_password("segura123")
+    db.session.add(usuario)
+    db.session.commit()
+    vinculado = resolver_o_crear_trabajador(unidad, "12345", "PÉREZ, ANA")
+    vincular_usuario(vinculado, usuario)
+
+    n = descartar_trabajadores(unidad, [vinculado.id])
+
+    assert n == 0
+
+
+def test_reimportar_reactiva_un_trabajador_descartado(db):
+    grupo, unidad, categoria, manyana, tarde = _crear_contexto(db)
+    trabajador = resolver_o_crear_trabajador(unidad, "12345", "PÉREZ, ANA")
+    descartar_trabajadores(unidad, [trabajador.id])
+    assert trabajadores_sin_vincular(unidad) == []
+
+    reimportado = resolver_o_crear_trabajador(unidad, "12345", "PÉREZ, ANA")
+
+    assert trabajadores_sin_vincular(unidad) == [reimportado]

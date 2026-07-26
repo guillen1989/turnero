@@ -136,3 +136,55 @@ commit por paso.
   `/planilla/importar/` (cambiar de UCI a Urgencias muestra distintos
   trabajadores). No ejecutado en este entorno (Playwright sin navegadores);
   validar con `pytest e2e/test_supervisora_multiunidad_e2e.py` al abrir el PR.
+
+## Fixes puntuales sobre supervisoras multiunidad / importación de planilla
+Tres bugs reportados tras el trabajo anterior, corregidos en una rama aparte
+(`fix-supervisor-unidad-planilla`, worktree desde `staging`):
+
+- [x] Descubribilidad del selector de unidad: el `<select class="planilla-select">`
+  de `planilla_import/index.html`, `planilla_import/codigos.html`,
+  `planilla_supervision/index.html` y `planilla_supervision/reglas.html` solo
+  tenía `aria-label`, sin texto visible — nada indicaba que ahí se podía
+  alternar de unidad. Añadida `<label for="planilla-select-unidad">{{ _('Unidad') }}:</label>`
+  visible delante de cada selector (clase nueva `.planilla-select-label` en
+  `main.css`).
+- [x] `/auth/perfil` para supervisoras: antes permitían cambiar su propia
+  unidad/hospital desde el formulario normal, lo cual no tiene sentido — solo
+  deben poder alternar entre las unidades que un administrador les asignó
+  para supervisar (`UnidadSupervisada`), nunca su unidad base. La ruta
+  `perfil()` en `app/routes/auth.py` ahora comprueba `current_user.es_supervisora`
+  antes de tocar `PerfilForm` y, si lo es, renderiza una plantilla nueva de
+  solo lectura (`auth/perfil_supervisora.html`: hospital/unidad/categoría
+  como texto, con nota explicando que el cambio de unidad supervisada se
+  hace desde el selector de las pantallas de planilla) — así un POST
+  manipulado tampoco puede cambiar la unidad, porque no se procesa. Tests en
+  `tests/test_auth_routes.py`.
+- [x] `/planilla/importar`: los trabajadores sin vincular se quedaban en
+  pantalla para siempre. Añadida columna `descartado` (bool, `server_default
+  'false'`, migración `576142da40ac`) a `MapeoTrabajadorPlanilla`.
+  `trabajadores_sin_vincular()` excluye los descartados;
+  `resolver_o_crear_trabajador()` reactiva (`descartado = False`) un
+  trabajador si vuelve a aparecer en una importación posterior. Nueva ruta
+  `POST /planilla/importar/descartar` (servicio
+  `descartar_trabajadores(unidad, mapeo_ids)`) y checkboxes + "seleccionar
+  todos" + botón "Dejar sin asignar" en `planilla_import/index.html` (usa
+  `form="descartar-form"` para no anidar `<form>`). Tests en
+  `tests/test_servicio_planilla_matching.py` (5 nuevos, todos verdes) y
+  `tests/test_rutas_importar_planilla.py` (4 nuevos, verdes en aislado).
+
+### Nota sobre flakiness de test pre-existente (no introducida por este trabajo)
+`tests/test_rutas_importar_planilla.py` falla de forma no determinista
+cuando se ejecuta el archivo completo (`ObjectDeletedError`/`IntegrityError`
+en objetos como `Categoria`/`Usuario`), incluso en el archivo **original sin
+modificar** (verificado con una copia temporal de `git show HEAD:...`) y con
+orden de tests fijo (`-p no:randomly`). Cada test pasa de forma fiable en
+aislado. No se identificó la causa raíz exacta (se investigó
+`clean_db`/`_activar_feature_flags_de_test` en `conftest.py` y se descartó
+paralelismo externo — no hay procesos `pytest`/`xdist` concurrentes contra
+la misma BD). Queda como deuda de infraestructura de test a investigar
+aparte; no bloquea estos tres fixes.
+
+## Siguiente paso
+Ninguno pendiente de estos tres fixes. Abrir PR contra `staging` y, si se
+retoma este hilo, investigar la flakiness de
+`tests/test_rutas_importar_planilla.py` descrita arriba.

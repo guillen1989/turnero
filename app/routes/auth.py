@@ -367,6 +367,9 @@ def api_unidades():
 @bp.route("/perfil", methods=["GET", "POST"])
 @login_required
 def perfil():
+    if current_user.es_supervisora:
+        return render_template("auth/perfil_supervisora.html")
+
     form = PerfilForm()
     form.categoria_id.choices = _choices_categorias()
 

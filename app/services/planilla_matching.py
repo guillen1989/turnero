@@ -55,6 +55,7 @@ def resolver_o_crear_trabajador(unidad, numero_empleado: str, nombre_planilla: s
         db.session.add(trabajador)
     else:
         trabajador.nombre_planilla = nombre_planilla
+        trabajador.descartado = False
     db.session.commit()
     return trabajador
 
@@ -69,10 +70,27 @@ def vincular_usuario(trabajador: MapeoTrabajadorPlanilla, usuario) -> MapeoTraba
 def trabajadores_sin_vincular(unidad) -> list[MapeoTrabajadorPlanilla]:
     """Trabajadores de esa unidad que ya aparecieron en alguna planilla
     importada pero todavía no tienen Usuario asociado. Para que la
-    supervisora los revise."""
+    supervisora los revise. Excluye los que se han dejado sin asignar
+    explícitamente (ver `descartar_trabajadores`)."""
     return MapeoTrabajadorPlanilla.query.filter_by(
-        unidad_id=unidad.id, usuario_id=None
+        unidad_id=unidad.id, usuario_id=None, descartado=False
     ).all()
+
+
+def descartar_trabajadores(unidad, mapeo_ids: list[int]) -> int:
+    """Deja sin asignar los mapeos pendientes indicados de esa unidad: dejan
+    de aparecer en `trabajadores_sin_vincular` hasta que un evento de la app
+    (p. ej. una nueva importación de planilla) los reactive. Ignora ids que
+    no sean de esa unidad o que ya estén vinculados a un usuario."""
+    trabajadores = MapeoTrabajadorPlanilla.query.filter(
+        MapeoTrabajadorPlanilla.id.in_(mapeo_ids),
+        MapeoTrabajadorPlanilla.unidad_id == unidad.id,
+        MapeoTrabajadorPlanilla.usuario_id.is_(None),
+    ).all()
+    for trabajador in trabajadores:
+        trabajador.descartado = True
+    db.session.commit()
+    return len(trabajadores)
 
 
 def usuarios_disponibles_para_vincular(unidad) -> list:

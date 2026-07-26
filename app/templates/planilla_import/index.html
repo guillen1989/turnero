@@ -7,7 +7,8 @@
   <div class="planilla-header-titulo">
     <h1>{{ _('Importar planilla') }}</h1>
     {% if unidades_supervisadas|length > 1 %}
-      <select class="planilla-select" aria-label="{{ _('Unidad') }}"
+      <label for="planilla-select-unidad" class="planilla-select-label">{{ _('Unidad') }}:</label>
+      <select id="planilla-select-unidad" class="planilla-select" aria-label="{{ _('Unidad') }}"
               onchange="window.location.href=this.value">
         {% for u in unidades_supervisadas %}
           <option value="{{ url_for('planilla_import.index', unidad_id=u.id) }}"
@@ -32,9 +33,14 @@
 
   <h2>{{ _('Trabajadores sin cuenta vinculada') }}</h2>
   {% if pendientes %}
+    <form id="descartar-form" method="post" action="{{ url_for('planilla_import.descartar') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="unidad_id" value="{{ unidad.id }}">
+    </form>
     <table class="tabla-datos">
       <thead>
         <tr>
+          <th><input type="checkbox" id="seleccionar-todos-pendientes" aria-label="{{ _('Seleccionar todos') }}"></th>
           <th>{{ _('Nombre en la planilla') }}</th>
           <th>{{ _('Número de empleado') }}</th>
           <th>{{ _('Vincular a') }}</th>
@@ -43,6 +49,9 @@
       <tbody>
         {% for pendiente in pendientes %}
           <tr>
+            <td>
+              <input type="checkbox" class="pendiente-checkbox" name="mapeo_ids" value="{{ pendiente.id }}" form="descartar-form" aria-label="{{ _('Seleccionar %(nombre)s', nombre=pendiente.nombre_planilla) }}">
+            </td>
             <td>{{ pendiente.nombre_planilla }}</td>
             <td>{{ pendiente.numero_empleado }}</td>
             <td>
@@ -61,6 +70,15 @@
         {% endfor %}
       </tbody>
     </table>
+    <button type="submit" form="descartar-form" class="btn btn-secondary btn-sm">{{ _('Dejar sin asignar') }}</button>
+    <p class="form-hint">{{ _('Los trabajadores que dejes sin asignar dejarán de aparecer aquí. Volverán a mostrarse si vuelven a aparecer en una futura importación de planilla.') }}</p>
+    <script>
+      document.getElementById('seleccionar-todos-pendientes').addEventListener('change', function () {
+        document.querySelectorAll('.pendiente-checkbox').forEach(function (checkbox) {
+          checkbox.checked = this.checked;
+        }, this);
+      });
+    </script>
   {% else %}
     <p>{{ _('No hay trabajadores pendientes de vincular.') }}</p>
   {% endif %}
