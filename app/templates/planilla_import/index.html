@@ -4,16 +4,28 @@
 
 {% block content %}
 <div class="form-container">
-  <h1>{{ _('Importar planilla') }}</h1>
+  <div class="planilla-header-titulo">
+    <h1>{{ _('Importar planilla') }}</h1>
+    {% if unidades_supervisadas|length > 1 %}
+      <select class="planilla-select" aria-label="{{ _('Unidad') }}"
+              onchange="window.location.href=this.value">
+        {% for u in unidades_supervisadas %}
+          <option value="{{ url_for('planilla_import.index', unidad_id=u.id) }}"
+                  {% if u.id == unidad.id %}selected{% endif %}>{{ u.nombre }}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
+  </div>
 
   <form method="post" action="{{ url_for('planilla_import.subir') }}" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="unidad_id" value="{{ unidad.id }}">
     <div class="form-group">
       <label for="archivo">{{ _('Archivo de planilla') }}</label>
       <input type="file" id="archivo" name="archivo" required>
     </div>
     <button type="submit" class="btn btn-primary">{{ _('Subir e importar') }}</button>
-    <a href="{{ url_for('planilla_import.codigos') }}" class="btn btn-secondary">
+    <a href="{{ url_for('planilla_import.codigos', unidad_id=unidad.id) }}" class="btn btn-secondary">
       {{ _('Configurar códigos de turno') }}
     </a>
   </form>
