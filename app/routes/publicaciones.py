@@ -523,14 +523,22 @@ def _crear_publicacion_espejo(pub_a):
         return publicar_cambio(current_user.id, [], [(tc.fecha, tc.franja_horaria_id)], tipo="regalo")
 
     if tipo == "junte":
-        cedidos_b = [(ta.fecha, ta.franja_horaria_id) for ta in pub_a.turnos_aceptados]
+        cedidos_b = [
+            (ta.fecha, ta.franja_horaria_id)
+            for ta in pub_a.turnos_aceptados
+            if not ta.cualquier_franja
+        ]
         aceptados_b = [(tc.fecha, tc.franja_horaria_id) for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
         if not cedidos_b or not aceptados_b:
             raise ValueError(_("El junte ya no tiene turnos disponibles."))
         return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="junte")
 
     if tipo == "cambio_dia":
-        cedidos_b = [(ta.fecha, ta.franja_horaria_id) for ta in pub_a.turnos_aceptados]
+        cedidos_b = [
+            (ta.fecha, ta.franja_horaria_id)
+            for ta in pub_a.turnos_aceptados
+            if not ta.cualquier_franja
+        ]
         aceptados_b = [(tc.fecha, tc.franja_horaria_id) for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
         if not cedidos_b or not aceptados_b:
             raise ValueError(_("Este cambio de turno ya no está disponible."))

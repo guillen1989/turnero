@@ -52,6 +52,7 @@ Reglas:
 
 ### 3. Control de versiones con Git
 - Todo el desarrollo se versiona con git desde el primer paso.
+- Para todas las tareas, crea un worktree desde la rama staging. El resultado de la tarea debes entregarlo como Pull Request contra staging.
 - Commits atómicos: un commit por paso completado (ver sección 4).
 - Mensajes de commit claros, en presente y con prefijo de tipo. Ejemplos:
   - `feat: añade publicación de cambio multi-turno`

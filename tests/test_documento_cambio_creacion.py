@@ -201,3 +201,40 @@ def test_post_nuevo_firmando_ambos_guarda_firma_propia_si_se_pide(db, client):
     # No se ha guardado por error la firma del compañero en su cuenta.
     db.session.refresh(juan)
     assert juan.firma_guardada is None
+
+
+def test_get_nuevo_incluye_toggle_de_cambio_en_el_dia(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "cd1")
+    claudia = crear_usuario("Claudia Pérez", "claudiacd1@h.es")
+    crear_usuario("Juan Rodríguez", "juancd1@h.es")
+    _login(client, claudia.email)
+
+    resp = client.get("/documentos-cambio/nuevo")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert 'id="es_cambio_dia"' in html
+    assert 'name="es_cambio_dia"' in html
+
+
+def test_post_nuevo_cambio_en_el_dia_misma_fecha_distinta_franja(db, client):
+    from app.models import DocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "cd2")
+    claudia = crear_usuario("Claudia Pérez", "claudiacd2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juancd2@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "es_cambio_dia": "on",
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-07",
+        "turno_recibe_franja_id": tarde.id,
+    })
+
+    assert resp.status_code == 302
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+    fechas = {p.turno_cede_fecha for p in documento.participantes}
+    assert fechas == {date(2026, 7, 7)}
