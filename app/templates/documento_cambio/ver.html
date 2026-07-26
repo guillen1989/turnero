@@ -40,7 +40,7 @@
       {% endif %}
     </div>
   {% else %}
-    <p><span class="badge-draft">{{ _('Factibilidad no verificada') }}</span> {{ _('Falta la planilla publicada de alguna de las dos personas para ese mes. Comprueba manualmente que no haya conflictos.') }}</p>
+    <p><span class="badge-warning">{{ _('Factibilidad no verificada') }}</span> {{ _('Falta la planilla publicada de alguna de las dos personas para ese mes. Comprueba manualmente que no haya conflictos.') }}</p>
   {% endif %}
 
   {% if documento.anulado %}

@@ -31,7 +31,7 @@
       {% if documento.factibilidad_estado == 'factible' %}
         <span class="badge-success">{{ _('Factible') }}</span>
       {% elif documento.factibilidad_estado == 'no_factible' %}
-        <span class="badge-draft">{{ _('No factible') }}</span>
+        <span class="badge-danger">{{ _('No factible') }}</span>
       {% endif %}
       {% if documento.estado == 'completo' %}
         {% if documento.decision_supervisora == 'autorizado' %}
