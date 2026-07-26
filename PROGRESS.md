@@ -7,8 +7,10 @@ features concretas), en worktree/branch `feature/feature-flags` desde
 - [x] Paso 1 — Modelo `FeatureFlag` (`clave` única, `descripcion`,
   `activo_global` con default `False`) + tests
   (`tests/test_models_feature_flag.py`).
-- [ ] Paso 2 — Modelo `FeatureFlagUnidad` (N:M flag↔unidad, mismo patrón que
-  `UnidadSupervisada`).
+- [x] Paso 2 — Modelo `FeatureFlagUnidad` (N:M flag↔unidad, mismo patrón que
+  `UnidadSupervisada`) + relación `FeatureFlag.unidades_habilitadas` /
+  backref `Unidad.feature_flags_habilitados` + tests
+  (`tests/test_models_feature_flag_unidad.py`).
 - [ ] Paso 3 — Migración Alembic (tablas nuevas, sin filas previas → un solo
   paso, sin el patrón de tres pasos de `NOT NULL`).
 - [ ] Paso 4 — Servicio `app/services/feature_flags.py` (`feature_activa` +
