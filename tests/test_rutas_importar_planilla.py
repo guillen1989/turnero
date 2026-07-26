@@ -267,6 +267,79 @@ def test_configurar_codigos_en_segunda_unidad_supervisada_usa_su_grupo(db, clien
     assert MapeoCodigoTurno.query.filter_by(codigo="T2").first().franja_horaria_id == tarde2.id
 
 
+# ── dejar sin asignar ────────────────────────────────────────────────────────
+
+def test_descartar_quita_al_trabajador_de_pendientes(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "s")
+    supervisora = crear_usuario("Super", "super_s@h.es", supervisora=True)
+    trabajador = resolver_o_crear_trabajador(unidad, "99999", "GÓMEZ, LUIS")
+    _login(client, supervisora.email)
+
+    resp = client.post(
+        "/planilla/importar/descartar",
+        data={"unidad_id": unidad.id, "mapeo_ids": [str(trabajador.id)]},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert "GÓMEZ, LUIS" not in resp.data.decode("utf-8")
+
+
+def test_descartar_admite_varios_seleccionados(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "t")
+    supervisora = crear_usuario("Super", "super_t@h.es", supervisora=True)
+    a = resolver_o_crear_trabajador(unidad, "1", "GÓMEZ, LUIS")
+    b = resolver_o_crear_trabajador(unidad, "2", "RUIZ, PABLO")
+    _login(client, supervisora.email)
+
+    resp = client.post(
+        "/planilla/importar/descartar",
+        data={"unidad_id": unidad.id, "mapeo_ids": [str(a.id), str(b.id)]},
+        follow_redirects=True,
+    )
+    html = resp.data.decode("utf-8")
+    assert "GÓMEZ, LUIS" not in html
+    assert "RUIZ, PABLO" not in html
+
+
+def test_descartar_en_unidad_no_supervisada_devuelve_403(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "u")
+    supervisora = crear_usuario("Super", "super_u@h.es", supervisora=True)
+    _, _, unidad_ajena, _, _ = _setup(db, "v")
+    trabajador = resolver_o_crear_trabajador(unidad_ajena, "99999", "GÓMEZ, LUIS")
+    _login(client, supervisora.email)
+
+    resp = client.post(
+        "/planilla/importar/descartar",
+        data={"unidad_id": unidad_ajena.id, "mapeo_ids": [str(trabajador.id)]},
+    )
+    assert resp.status_code == 403
+
+
+def test_descartar_reimportar_lo_vuelve_a_mostrar(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "w")
+    supervisora = crear_usuario("Super", "super_w@h.es", supervisora=True)
+    trabajador = resolver_o_crear_trabajador(unidad, "11111", "PEREZ, ANA")
+    _login(client, supervisora.email)
+
+    from app.services.planilla_matching import establecer_mapeo_codigo
+    establecer_mapeo_codigo(grupo, "M", manyana)
+    establecer_mapeo_codigo(grupo, "T", tarde)
+
+    client.post(
+        "/planilla/importar/descartar",
+        data={"unidad_id": unidad.id, "mapeo_ids": [str(trabajador.id)]},
+    )
+
+    resp = client.post(
+        "/planilla/importar/",
+        data={"archivo": (io.BytesIO(CONTENIDO.encode("latin-1")), "planilla.xls")},
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert "PEREZ, ANA" in resp.data.decode("utf-8")
+
+
 def test_configurar_codigos_en_unidad_no_supervisada_devuelve_403(db, client):
     crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "s")
     supervisora = crear_usuario("Super", "super_s@h.es", supervisora=True)
