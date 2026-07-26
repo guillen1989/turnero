@@ -119,9 +119,29 @@ commit por paso.
   POST, no enviarla con valor `False` (cualquier valor presente, incluida
   la cadena `"False"`, hace que `BooleanField` lo interprete como
   marcado).
-- [ ] Paso 6 — Contraseña por invitación para supervisoras creadas por el
-  admin (reutilizar `password_reset.py`/`email.py` en vez de contraseña en
-  texto plano tecleada por el admin).
+- [x] Paso 6 — Contraseña por invitación para supervisoras creadas por el
+  admin. Nueva `crear_supervisora_con_invitacion(usuario)` en
+  `app/services/registro.py`: pone una contraseña aleatoria desconocida
+  (`secrets.token_urlsafe(32)`), reutiliza `generar_token_reset` (sin
+  cambios, ya era genérico) y `enviar_email` con la plantilla nueva
+  `email/invitacion_supervisora.html` (copia de `recuperar_password.html`
+  con texto de invitación), enlazando a la vista ya existente
+  `auth.restablecer_password` (sin tocar). En `usuario_nuevo()`
+  (`app/routes/admin/usuarios.py`): si `es_supervisora` es `True`, el
+  campo contraseña deja de ser obligatorio y no se usa — se pone un valor
+  aleatorio temporal antes del primer `flush()` (necesario por la columna
+  `NOT NULL`) y, tras el `commit()` inicial, se llama a
+  `crear_supervisora_con_invitacion(u)` (que vuelve a generar la
+  contraseña real y envía el email). `usuario_editar()` no necesitó
+  cambios: ya trataba la contraseña como opcional. Plantilla
+  `usuario_form.html`: el campo contraseña se oculta con JS y se muestra
+  en su lugar un aviso ("se enviará un email de invitación") cuando el
+  checkbox "Supervisora" está marcado — mismo `<script>` que ya
+  alternaba el selector de unidades del Paso 5. 3 tests nuevos en
+  `tests/test_admin.py` (crea supervisora sin contraseña y envía
+  invitación con enlace a `restablecer_password`; la contraseña generada
+  no coincide con ningún valor conocido; crear un usuario normal sin
+  contraseña sigue dando error de validación, sin tocar ese flujo).
 - [ ] Paso 7 — Limpieza y prueba manual end-to-end.
 
 ## Fase actual

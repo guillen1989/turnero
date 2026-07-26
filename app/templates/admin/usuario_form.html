@@ -20,10 +20,14 @@
     {% for e in form.email.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
   </div>
 
-  <div class="form-group">
+  <div class="form-group" id="password-group">
     {{ form.password.label }}
     {{ form.password() }}
     {% for e in form.password.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+  </div>
+
+  <div class="form-group" id="password-invitacion-aviso" style="display:none">
+    <p>{{ _('No hace falta contraseña: se enviará un email de invitación para que la establezca ella misma.') }}</p>
   </div>
 
   <div class="form-group">
@@ -168,8 +172,13 @@
 
   var supervisoraCheck = document.getElementById('es-supervisora-check');
   var unidadesGroup = document.getElementById('unidades-supervisadas-group');
+  var passwordGroup = document.getElementById('password-group');
+  var passwordAviso = document.getElementById('password-invitacion-aviso');
   function toggleUnidadesSupervisadas() {
-    unidadesGroup.style.display = supervisoraCheck.checked ? 'block' : 'none';
+    var esSupervisora = supervisoraCheck.checked;
+    unidadesGroup.style.display = esSupervisora ? 'block' : 'none';
+    passwordGroup.style.display = esSupervisora ? 'none' : 'block';
+    passwordAviso.style.display = esSupervisora ? 'block' : 'none';
   }
   supervisoraCheck.addEventListener('change', toggleUnidadesSupervisadas);
   toggleUnidadesSupervisadas();

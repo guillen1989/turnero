@@ -1,3 +1,5 @@
+import secrets
+
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import current_user
@@ -8,6 +10,7 @@ from app.models import Ciudad, Hospital, Pais, Provincia, Unidad, Usuario
 from app.routes.admin import admin_required, bp
 from app.routes.admin.helpers import _OPCION_NUEVA_CATEGORIA, _choices_cats, _choices_unidades
 from app.services.registro import (
+    crear_supervisora_con_invitacion,
     encontrar_o_crear_categoria,
     encontrar_o_crear_hospital,
     encontrar_o_crear_unidad,
@@ -59,7 +62,7 @@ def usuario_nuevo():
         if not cat_id and not cat_nueva:
             flash(_("Indica una categoría o escribe una nueva."), "danger")
             errores = True
-        if not errores and not form.password.data:
+        if not errores and not form.es_supervisora.data and not form.password.data:
             flash(_("La contraseña es obligatoria para usuarios nuevos."), "danger")
             errores = True
 
@@ -78,7 +81,10 @@ def usuario_nuevo():
                 es_admin=form.es_admin.data,
                 es_supervisora=form.es_supervisora.data,
             )
-            u.set_password(form.password.data)
+            if u.es_supervisora:
+                u.set_password(secrets.token_urlsafe(32))
+            else:
+                u.set_password(form.password.data)
             db.session.add(u)
             db.session.flush()
             if u.es_supervisora:
@@ -86,6 +92,8 @@ def usuario_nuevo():
                     u, set(form.unidades_supervisadas.data) | {unidad.id}
                 )
             db.session.commit()
+            if u.es_supervisora:
+                crear_supervisora_con_invitacion(u)
             flash(_("Usuario creado."), "success")
             return redirect(url_for("admin.usuarios"))
 

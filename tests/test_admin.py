@@ -199,6 +199,89 @@ def test_admin_crea_supervisora_asigna_unidades_supervisadas(client, db):
     assert unidades_ids == {u.unidad_id, unidad_extra.id}
 
 
+def test_admin_crea_supervisora_no_exige_password_y_envia_invitacion(client, db):
+    from unittest.mock import patch
+    _login_admin(client, db)
+
+    with patch("app.services.registro.enviar_email", return_value=True) as mock_enviar:
+        resp = client.post(
+            "/admin/usuarios/nuevo",
+            data={
+                "nombre": "Supervisora Invitada",
+                "email": "invitada@test.es",
+                "password": "",
+                "hospital_id": "0",
+                "hospital_nuevo": "Hospital Admin Test",
+                "unidad_id": "0",
+                "unidad_nuevo": "Urgencias Invitada",
+                "categoria_id": _cat_id(db),
+                "categoria_nueva": "",
+                "es_admin": False,
+                "es_supervisora": True,
+            },
+            follow_redirects=True,
+        )
+    assert resp.status_code == 200
+    u = Usuario.query.filter_by(email="invitada@test.es").first()
+    assert u is not None
+
+    mock_enviar.assert_called_once()
+    destinatario = mock_enviar.call_args[0][0]
+    assert destinatario == "invitada@test.es"
+    cuerpo_html = mock_enviar.call_args[0][2]
+    assert "/auth/restablecer-contrasena/" in cuerpo_html
+
+
+def test_admin_crea_supervisora_password_generada_no_es_conocida(client, db):
+    from unittest.mock import patch
+    _login_admin(client, db)
+
+    with patch("app.services.registro.enviar_email", return_value=True):
+        client.post(
+            "/admin/usuarios/nuevo",
+            data={
+                "nombre": "Supervisora Sin Password",
+                "email": "sinpassword@test.es",
+                "password": "",
+                "hospital_id": "0",
+                "hospital_nuevo": "Hospital Admin Test",
+                "unidad_id": "0",
+                "unidad_nuevo": "Urgencias Sin Password",
+                "categoria_id": _cat_id(db),
+                "categoria_nueva": "",
+                "es_admin": False,
+                "es_supervisora": True,
+            },
+            follow_redirects=True,
+        )
+    u = Usuario.query.filter_by(email="sinpassword@test.es").first()
+    assert u is not None
+    assert not u.check_password("")
+    assert not u.check_password("contraseña123")
+
+
+def test_admin_crea_usuario_normal_sigue_exigiendo_password(client, db):
+    _login_admin(client, db)
+    resp = client.post(
+        "/admin/usuarios/nuevo",
+        data={
+            "nombre": "Usuario Normal Sin Password",
+            "email": "normal_sin_pass@test.es",
+            "password": "",
+            "hospital_id": "0",
+            "hospital_nuevo": "Hospital Admin Test",
+            "unidad_id": "0",
+            "unidad_nuevo": "Urgencias Normal",
+            "categoria_id": _cat_id(db),
+            "categoria_nueva": "",
+            "es_admin": False,
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(email="normal_sin_pass@test.es").count() == 0
+
+
 def test_admin_edita_usuario_actualiza_unidades_supervisadas(client, db):
     from app.extensions import db as _db
     from app.models import UnidadSupervisada
