@@ -13,7 +13,7 @@ instance/
 .coverage
 htmlcov/
 .backlog
-.backlog.swo
+.backlog.*
 .notes
 .notes.*
 .testmondata

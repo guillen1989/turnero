@@ -83,7 +83,7 @@ Mantén en la raíz un archivo `PROGRESS.md` que sea la **fuente de verdad** del
 
 Como el `PROGRESS.md` se actualiza dentro del commit de cada paso, el último commit siempre refleja el estado real del proyecto.
 
-**Mantén `PROGRESS.md` corto (orientativamente, por debajo de ~300 líneas).** Al leerse entero en cada sesión, un archivo que crece sin límite desperdicia contexto. Cuando el archivo supere ese tamaño, o al cerrar una fase, mueve las entradas de pasos/fases anteriores que ya no aporten contexto inmediato a `PROGRESS_ARCHIVE.md`, un archivo hermano en la raíz que acumula el historial completo (narrativa de pasos anteriores + checklist histórico de pasos completados). `PROGRESS_ARCHIVE.md` **no se lee automáticamente al reanudar sesión** — solo se consulta bajo demanda, cuando hace falta el contexto de una decisión antigua. No tiene límite de tamaño: es un archivo de solo-anexar. Para el historial commit a commit, `git log` sigue siendo la fuente autoritativa.
+**Mantén `PROGRESS.md` corto (por debajo de 300 líneas, sin excepciones).** Cuando el archivo supere ese tamaño, o al cerrar una fase, mueve las entradas de pasos/fases anteriores que ya no aporten contexto inmediato a `PROGRESS_ARCHIVE.md` `PROGRESS_ARCHIVE.md` **no se lee automáticamente al reanudar sesión** — solo se consulta bajo demanda, cuando hace falta el contexto de una decisión antigua. No tiene límite de tamaño: es un archivo de solo-anexar. Para el historial commit a commit, `git log` sigue siendo la fuente autoritativa.
 
 Estructura orientativa de `PROGRESS.md`:
 ```
