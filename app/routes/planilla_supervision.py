@@ -8,7 +8,6 @@ from flask_login import current_user, login_required
 from app.extensions import db
 from app.models.franja_horaria import FranjaHoraria
 from app.models.planilla import ETIQUETAS_ESTADO, TIPOS_ESTADO_DIA
-from app.models.unidad import Unidad
 from app.models.usuario import Usuario
 from app.services.planilla_supervision import (
     ajustar_turno_trabajador,
@@ -20,21 +19,9 @@ from app.services.planilla_supervision import (
     get_estados_mes_unidad,
     get_turnos_mes_unidad,
 )
-from app.services.supervision import puede_supervisar, unidades_supervisadas_de
+from app.services.supervision import unidad_supervisada_o_403, unidades_supervisadas_de
 
 bp = Blueprint("planilla_supervision", __name__, url_prefix="/planilla/supervision")
-
-
-def _unidad_supervisada_o_403(unidad_id):
-    unidades = unidades_supervisadas_de(current_user)
-    if not unidades:
-        abort(403)
-    if unidad_id is None:
-        return current_user.unidad if current_user.unidad in unidades else unidades[0]
-    unidad = db.session.get(Unidad, unidad_id)
-    if unidad is None or not puede_supervisar(current_user, unidad):
-        abort(403)
-    return unidad
 
 
 def _usuario_de_la_unidad(usuario_id, unidad_id):
@@ -91,7 +78,7 @@ def _resolver_seleccion(seleccion, grupo_id):
 @bp.get("/")
 @login_required
 def index():
-    unidad = _unidad_supervisada_o_403(request.args.get("unidad_id", type=int))
+    unidad = unidad_supervisada_o_403(current_user, request.args.get("unidad_id", type=int))
 
     hoy = date.today()
     anyo = request.args.get("anyo", hoy.year, type=int)
@@ -155,7 +142,7 @@ def reglas():
         unidad_id = request.form.get("unidad_id", type=int)
     else:
         unidad_id = request.args.get("unidad_id", type=int)
-    unidad = _unidad_supervisada_o_403(unidad_id)
+    unidad = unidad_supervisada_o_403(current_user, unidad_id)
     grupo = unidad.grupo_intercambio
 
     if request.method == "POST":
@@ -177,7 +164,7 @@ def reglas():
 @bp.post("/ajustar")
 @login_required
 def ajustar():
-    unidad = _unidad_supervisada_o_403(request.form.get("unidad_id", type=int))
+    unidad = unidad_supervisada_o_403(current_user, request.form.get("unidad_id", type=int))
 
     trabajador = _usuario_de_la_unidad(
         request.form.get("usuario_id", type=int), unidad.id
@@ -222,7 +209,7 @@ def ajustar():
 @bp.post("/turno/eliminar")
 @login_required
 def turno_eliminar():
-    unidad = _unidad_supervisada_o_403(request.form.get("unidad_id", type=int))
+    unidad = unidad_supervisada_o_403(current_user, request.form.get("unidad_id", type=int))
 
     trabajador = _usuario_de_la_unidad(
         request.form.get("usuario_id", type=int), unidad.id
@@ -252,7 +239,7 @@ def turno_eliminar():
 @bp.post("/turno/editar")
 @login_required
 def turno_editar():
-    unidad = _unidad_supervisada_o_403(request.form.get("unidad_id", type=int))
+    unidad = unidad_supervisada_o_403(current_user, request.form.get("unidad_id", type=int))
 
     trabajador = _usuario_de_la_unidad(
         request.form.get("usuario_id", type=int), unidad.id

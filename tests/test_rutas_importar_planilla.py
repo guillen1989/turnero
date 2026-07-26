@@ -2,7 +2,10 @@ import io
 from datetime import time
 
 from app.extensions import db
-from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario, TurnoPlanilla
+from app.models import (
+    Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario, TurnoPlanilla,
+    UnidadSupervisada,
+)
 from app.models.planilla_import import MapeoTrabajadorPlanilla, MapeoCodigoTurno
 from app.services.planilla_matching import resolver_o_crear_trabajador, vincular_usuario
 
@@ -30,12 +33,15 @@ def _setup(db, sufijo="a"):
     db.session.add_all([categoria, unidad, manyana, tarde])
     db.session.commit()
 
-    def crear_usuario(nombre, email, password="password123", supervisora=False):
-        u = Usuario(nombre=nombre, email=email, unidad=unidad, categoria=categoria, es_supervisora=supervisora)
-        u.set_password(password)
-        db.session.add(u)
+    def crear_usuario(nombre, email, password="password123", supervisora=False, u=unidad):
+        usuario = Usuario(nombre=nombre, email=email, unidad=u, categoria=categoria, es_supervisora=supervisora)
+        usuario.set_password(password)
+        db.session.add(usuario)
         db.session.commit()
-        return u
+        if supervisora:
+            db.session.add(UnidadSupervisada(usuario_id=usuario.id, unidad_id=u.id))
+            db.session.commit()
+        return usuario
 
     return crear_usuario, grupo, unidad, manyana, tarde
 
@@ -163,3 +169,130 @@ def test_vincular_prohibido_si_el_mapeo_es_de_otra_unidad(db, client):
         data={"usuario_id": 1},
     )
     assert resp.status_code == 403
+
+
+# ── multiunidad ──────────────────────────────────────────────────────────────
+
+def test_index_con_unidad_id_de_segunda_unidad_supervisada_funciona(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "i")
+    supervisora = crear_usuario("Super", "super_i@h.es", supervisora=True)
+
+    _, _, otra_unidad, _, _ = _setup(db, "j")
+    db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=otra_unidad.id))
+    db.session.commit()
+    resolver_o_crear_trabajador(otra_unidad, "22222", "LOPEZ, MARIA")
+    _login(client, supervisora.email)
+
+    resp = client.get(f"/planilla/importar/?unidad_id={otra_unidad.id}")
+    assert resp.status_code == 200
+    assert "LOPEZ, MARIA" in resp.data.decode("utf-8")
+
+
+def test_index_unidad_no_supervisada_devuelve_403(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "k")
+    supervisora = crear_usuario("Super", "super_k@h.es", supervisora=True)
+    _, _, unidad_ajena, _, _ = _setup(db, "l")
+    _login(client, supervisora.email)
+
+    resp = client.get(f"/planilla/importar/?unidad_id={unidad_ajena.id}")
+    assert resp.status_code == 403
+
+
+def test_subir_en_segunda_unidad_supervisada_importa_ahi(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "m")
+    supervisora = crear_usuario("Super", "super_m@h.es", supervisora=True)
+
+    crear_usuario2, grupo2, otra_unidad, manyana2, tarde2 = _setup(db, "n")
+    db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=otra_unidad.id))
+    db.session.commit()
+    ana = crear_usuario2("Ana Pérez", "ana_n@h.es", u=otra_unidad)
+    trabajador = resolver_o_crear_trabajador(otra_unidad, "11111", "PEREZ, ANA")
+    vincular_usuario(trabajador, ana)
+
+    from app.services.planilla_matching import establecer_mapeo_codigo
+    establecer_mapeo_codigo(grupo2, "M", manyana2)
+    establecer_mapeo_codigo(grupo2, "T", tarde2)
+    _login(client, supervisora.email)
+
+    resp = client.post(
+        "/planilla/importar/",
+        data={
+            "archivo": (io.BytesIO(CONTENIDO.encode("latin-1")), "planilla.xls"),
+            "unidad_id": str(otra_unidad.id),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert TurnoPlanilla.query.filter_by(usuario_id=ana.id).count() == 2
+
+
+def test_subir_en_unidad_no_supervisada_devuelve_403(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "o")
+    supervisora = crear_usuario("Super", "super_o@h.es", supervisora=True)
+    _, _, unidad_ajena, _, _ = _setup(db, "p")
+    _login(client, supervisora.email)
+
+    resp = client.post(
+        "/planilla/importar/",
+        data={
+            "archivo": (io.BytesIO(CONTENIDO.encode("latin-1")), "planilla.xls"),
+            "unidad_id": str(unidad_ajena.id),
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 403
+
+
+def test_configurar_codigos_en_segunda_unidad_supervisada_usa_su_grupo(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "q")
+    supervisora = crear_usuario("Super", "super_q@h.es", supervisora=True)
+
+    _, grupo2, otra_unidad, manyana2, tarde2 = _setup(db, "r")
+    db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=otra_unidad.id))
+    db.session.commit()
+    _login(client, supervisora.email)
+
+    resp = client.post(
+        "/planilla/importar/codigos",
+        data={
+            f"codigos_{manyana2.id}": "M2",
+            f"codigos_{tarde2.id}": "T2",
+            "unidad_id": str(otra_unidad.id),
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert MapeoCodigoTurno.query.filter_by(codigo="M2").first().franja_horaria_id == manyana2.id
+    assert MapeoCodigoTurno.query.filter_by(codigo="T2").first().franja_horaria_id == tarde2.id
+
+
+def test_configurar_codigos_en_unidad_no_supervisada_devuelve_403(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "s")
+    supervisora = crear_usuario("Super", "super_s@h.es", supervisora=True)
+    _, _, unidad_ajena, _, _ = _setup(db, "t")
+    _login(client, supervisora.email)
+
+    resp = client.get(f"/planilla/importar/codigos?unidad_id={unidad_ajena.id}")
+    assert resp.status_code == 403
+
+
+def test_vincular_en_segunda_unidad_supervisada_funciona(db, client):
+    crear_usuario, grupo, unidad, manyana, tarde = _setup(db, "u")
+    supervisora = crear_usuario("Super", "super_u@h.es", supervisora=True)
+
+    crear_usuario2, grupo2, otra_unidad, manyana2, tarde2 = _setup(db, "v")
+    db.session.add(UnidadSupervisada(usuario_id=supervisora.id, unidad_id=otra_unidad.id))
+    db.session.commit()
+    luis = crear_usuario2("Luis Gómez", "luis_v@h.es", u=otra_unidad)
+    trabajador = resolver_o_crear_trabajador(otra_unidad, "99999", "GÓMEZ, LUIS")
+    _login(client, supervisora.email)
+
+    resp = client.post(
+        f"/planilla/importar/{trabajador.id}/vincular",
+        data={"usuario_id": luis.id},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    recuperado = db.session.get(MapeoTrabajadorPlanilla, trabajador.id)
+    assert recuperado.usuario_id == luis.id

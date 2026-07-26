@@ -1,7 +1,11 @@
+import pytest
+from werkzeug.exceptions import Forbidden
+
 from app.models import Usuario, Hospital, GrupoIntercambio, Unidad, Categoria, UnidadSupervisada
 from app.services.supervision import (
     puede_supervisar,
     sincronizar_unidades_supervisadas,
+    unidad_supervisada_o_403,
     unidades_supervisadas_de,
 )
 
@@ -102,3 +106,72 @@ def test_sincronizar_unidades_supervisadas_vacio_quita_todas(db):
     db.session.commit()
 
     assert unidades_supervisadas_de(usuario) == []
+
+
+# --- unidad_supervisada_o_403 ---
+
+def test_unidad_supervisada_o_403_sin_unidad_id_devuelve_la_propia_si_esta_supervisada(db):
+    usuario, unidad_uci, _, _ = _crear_contexto(db)
+
+    assert unidad_supervisada_o_403(usuario, None) == unidad_uci
+
+
+def test_unidad_supervisada_o_403_sin_unidad_id_devuelve_la_primera_supervisada_si_la_propia_no_lo_esta(db):
+    hospital = Hospital(nombre="Hospital Otro")
+    grupo = GrupoIntercambio()
+    db.session.add_all([hospital, grupo])
+    db.session.commit()
+    unidad_propia = Unidad(nombre="Propia", hospital=hospital, grupo_intercambio=grupo)
+    unidad_supervisada = Unidad(nombre="Supervisada", hospital=hospital, grupo_intercambio=grupo)
+    categoria = Categoria(nombre="Cat Otra")
+    db.session.add_all([unidad_propia, unidad_supervisada, categoria])
+    db.session.commit()
+    usuario = Usuario(
+        nombre="Sin propia supervisada", email="otra@hospital.es",
+        unidad=unidad_propia, categoria=categoria, es_supervisora=True,
+    )
+    usuario.set_password("pass")
+    db.session.add(usuario)
+    db.session.commit()
+    db.session.add(UnidadSupervisada(usuario_id=usuario.id, unidad_id=unidad_supervisada.id))
+    db.session.commit()
+
+    assert unidad_supervisada_o_403(usuario, None) == unidad_supervisada
+
+
+def test_unidad_supervisada_o_403_con_unidad_id_valido_la_devuelve(db):
+    usuario, _, unidad_urgencias, _ = _crear_contexto(db)
+
+    assert unidad_supervisada_o_403(usuario, unidad_urgencias.id) == unidad_urgencias
+
+
+def test_unidad_supervisada_o_403_sin_unidades_supervisadas_aborta(db):
+    hospital = Hospital(nombre="Hospital Sin Nada")
+    grupo = GrupoIntercambio()
+    db.session.add_all([hospital, grupo])
+    db.session.commit()
+    unidad = Unidad(nombre="Sola2", hospital=hospital, grupo_intercambio=grupo)
+    categoria = Categoria(nombre="Cat Sin Nada")
+    db.session.add_all([unidad, categoria])
+    db.session.commit()
+    usuario = Usuario(nombre="Sin nada", email="sinnada@hospital.es", unidad=unidad, categoria=categoria)
+    usuario.set_password("pass")
+    db.session.add(usuario)
+    db.session.commit()
+
+    with pytest.raises(Forbidden):
+        unidad_supervisada_o_403(usuario, None)
+
+
+def test_unidad_supervisada_o_403_con_unidad_id_ajena_aborta(db):
+    usuario, _, _, unidad_ajena = _crear_contexto(db)
+
+    with pytest.raises(Forbidden):
+        unidad_supervisada_o_403(usuario, unidad_ajena.id)
+
+
+def test_unidad_supervisada_o_403_con_unidad_id_inexistente_aborta(db):
+    usuario, _, _, _ = _crear_contexto(db)
+
+    with pytest.raises(Forbidden):
+        unidad_supervisada_o_403(usuario, 999999)

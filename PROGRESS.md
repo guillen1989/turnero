@@ -142,7 +142,39 @@ commit por paso.
   invitación con enlace a `restablecer_password`; la contraseña generada
   no coincide con ningún valor conocido; crear un usuario normal sin
   contraseña sigue dando error de validación, sin tocar ese flujo).
-- [ ] Paso 7 — Limpieza y prueba manual end-to-end.
+- [x] Paso 7 — Limpieza y extensión a `planilla_import.py`. La búsqueda de
+  `current_user.unidad` en contextos de supervisión encontró un hueco real
+  fuera del alcance original de los Pasos 1-6: `app/routes/planilla_import.py`
+  seguía usando `current_user.unidad`/`_exigir_supervisora()` sin soporte
+  multiunidad. Ampliado a petición explícita ("fold it into this PR"):
+  - Extraído `unidad_supervisada_o_403(usuario, unidad_id)` de
+    `planilla_supervision.py` (helper local) a `app/services/supervision.py`
+    (función de servicio compartida, ya probada con 6 tests nuevos en
+    `tests/test_servicio_supervision.py`), siguiendo el precedente de
+    `abort()` en la capa de servicios de
+    `app/services/busquedas_guardadas.py::eliminar_busqueda`.
+    `planilla_supervision.py` refactorizado para usarla (sin cambio de
+    comportamiento, 79 tests verdes).
+  - `planilla_import.py`: `index()`, `subir()`, `codigos()` aceptan
+    `unidad_id` (querystring en GET, campo oculto en POST) vía
+    `unidad_supervisada_o_403`; `vincular()` ya no necesita `unidad_id`
+    porque el `MapeoTrabajadorPlanilla` fija la unidad — se valida con
+    `puede_supervisar(current_user, mapeo.unidad)` en su lugar de
+    `mapeo.unidad_id != current_user.unidad_id`.
+  - Plantillas `planilla_import/index.html` y `codigos.html`: mismo
+    `<select>` de unidad que `planilla_supervision` (visible solo si
+    `unidades_supervisadas|length > 1`) y campo oculto `unidad_id` en los
+    formularios de subir/configurar códigos.
+  - 7 tests nuevos en `tests/test_rutas_importar_planilla.py` (segunda
+    unidad supervisada funciona en `index`/`subir`/`codigos`/`vincular`,
+    y 403 en unidad no supervisada); el helper `_setup` de ese archivo
+    ahora añade `UnidadSupervisada` al crear una supervisora, igual que en
+    `test_rutas_planilla_supervision.py`.
+  - Pendiente antes de dar el PR por cerrado: prueba manual end-to-end en
+    navegador (crear supervisora con 2 unidades, invitación por email,
+    fijar contraseña, cambiar de unidad en `/planilla/supervision/` y
+    `/planilla/importar/`) y ejecutar la suite completa de tests (no solo
+    `--testmon`) una vez antes de abrir el PR.
 
 ## Fase actual
 Fase 10 — Hoja de cambios digital (documento de cambio con firma)
