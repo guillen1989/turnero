@@ -14,6 +14,7 @@ from app.services.documento_cambio import (
     autorizar_documento, denegar_documento, anular_documento, puede_anularse,
     registrar_documento_cambio_papel, CambioNoFactibleError,
 )
+from app.services.feature_flags import requiere_feature
 from app.services.planilla import franjas_trabajadas_en_fecha
 from app.services.registro import crear_franjas_default
 
@@ -94,6 +95,7 @@ def _get_documento_validado(documento_id):
 
 @bp.get("/")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def lista():
     documentos = (
         DocumentoCambio.query
@@ -228,6 +230,7 @@ def _documentos_del_grupo_supervisora(filtros):
 
 @bp.get("/supervisora")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def supervisora():
     if not current_user.es_supervisora:
         abort(403)
@@ -244,6 +247,7 @@ def supervisora():
 
 @bp.get("/api/turnos-disponibles")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def turnos_disponibles():
     """JSON con las franjas que un usuario del mismo grupo de intercambio
     trabaja realmente en una fecha, para repoblar los desplegables de turno
@@ -265,6 +269,7 @@ def turnos_disponibles():
 
 @bp.route("/registrar-papel", methods=["GET", "POST"])
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def registrar_papel():
     """Permite a la supervisora incorporar un cambio que los dos
     trabajadores ya formalizaron en una hoja de papel, para que la planilla
@@ -350,6 +355,7 @@ def registrar_papel():
 
 @bp.route("/nuevo", methods=["GET", "POST"])
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def nueva():
     grupo = current_user.grupo_intercambio
     crear_franjas_default(grupo)
@@ -430,6 +436,7 @@ def nueva():
 
 @bp.get("/<int:documento_id>")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def ver(documento_id):
     documento = _get_documento_validado(documento_id)
     ids_firmantes = {f.usuario_id for f in documento.firmas}
@@ -459,6 +466,7 @@ def ver(documento_id):
 
 @bp.post("/<int:documento_id>/firmar/<int:participante_id>")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def firmar(documento_id, participante_id):
     documento = _get_documento_validado(documento_id)
     participante = next(
@@ -490,6 +498,7 @@ def firmar(documento_id, participante_id):
 
 @bp.get("/<int:documento_id>/pdf")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def pdf(documento_id):
     documento = _get_documento_validado(documento_id)
     if documento.estado != "completo":
@@ -525,6 +534,7 @@ def _guardar_firma_si_se_pide(imagen_firma):
 
 @bp.post("/<int:documento_id>/autorizar")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def autorizar(documento_id):
     documento = _get_documento_para_decision(documento_id)
     imagen_firma = request.form.get("imagen_firma", "")
@@ -539,6 +549,7 @@ def autorizar(documento_id):
 
 @bp.post("/<int:documento_id>/denegar")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def denegar(documento_id):
     documento = _get_documento_para_decision(documento_id)
     motivo = request.form.get("motivo", "").strip()
@@ -569,6 +580,7 @@ def _get_documento_para_anular(documento_id):
 
 @bp.post("/<int:documento_id>/anular")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def anular(documento_id):
     documento, error = _get_documento_para_anular(documento_id)
     if error:
@@ -619,6 +631,7 @@ def _documentos_seleccionados():
 
 @bp.post("/supervisora/bloque/pdf")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def bloque_pdf():
     if not current_user.es_supervisora:
         abort(403)
@@ -660,6 +673,7 @@ def _puede_operar_en_bloque_con_firma():
 
 @bp.post("/supervisora/bloque/aceptar")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def bloque_aceptar():
     if not current_user.es_supervisora:
         abort(403)
@@ -684,6 +698,7 @@ def bloque_aceptar():
 
 @bp.post("/supervisora/bloque/denegar")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def bloque_denegar():
     if not current_user.es_supervisora:
         abort(403)
@@ -712,6 +727,7 @@ def bloque_denegar():
 
 @bp.post("/supervisora/bloque/anular")
 @login_required
+@requiere_feature("hoja_cambio_digital")
 def bloque_anular():
     if not current_user.es_supervisora:
         abort(403)
