@@ -14,7 +14,8 @@
     <div class="planilla-header-titulo">
       <h1>{{ _('Supervisión de planilla') }}</h1>
       {% if unidades_supervisadas|length > 1 %}
-        <select class="planilla-select" aria-label="{{ _('Unidad') }}"
+        <label for="planilla-select-unidad" class="planilla-select-label">{{ _('Unidad') }}:</label>
+        <select id="planilla-select-unidad" class="planilla-select" aria-label="{{ _('Unidad') }}"
                 onchange="window.location.href=this.value">
           {% for u in unidades_supervisadas %}
             <option value="{{ url_for('planilla_supervision.index', anyo=anyo, mes=mes, unidad_id=u.id) }}"
