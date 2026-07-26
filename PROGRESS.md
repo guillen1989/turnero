@@ -176,10 +176,18 @@ funcionalidad nueva.
   no distinguen por `PublicacionCambio.tipo`, así que un match `directo_2`
   `cambio_dia` genera su `DocumentoCambio` igual que uno normal — 2 tests
   nuevos en `tests/test_documento_cambio_cambio_dia.py`.
+- [x] Fase 4, paso 4.1 — sin cambios de código: los tests de 3.3 ya confirman
+  que `crear_documento_cambio_desde_match` funciona para matches `cambio_dia`.
+- [x] Fase 4, paso 4.2 — supervisión: 4 tests nuevos en
+  `tests/test_supervision_cambio_dia.py` confirman que un `DocumentoCambio`
+  con `turno_cede_fecha == turno_recibe_fecha` (mismo día, distinta franja)
+  pasa por el listado de supervisora, `autorizar_documento`, `volcar_documento_a_planillas`
+  y `anular_documento` igual que uno de días distintos — ninguno de estos
+  servicios distingue por fecha_cede vs fecha_recibe.
 
-Siguiente: Fase 4 en adelante (integración con supervisión, factibilidad,
-caducidad, dashboard, e2e/UAT) — confirmar para cada una si necesita tests
-propios o si, como en 3.1-3.3, el código ya es agnóstico al tipo.
+Siguiente: Fase 5 en adelante (factibilidad, caducidad, dashboard, e2e/UAT) —
+confirmar para cada una si necesita tests propios o si, como en 3.1-4.2, el
+código ya es agnóstico al tipo/mismo día.
 
 Nota de entorno: este worktree se creó desde un punto de `staging` anterior a
 3 PRs ya mergeados en `origin/staging` (Fase 10 completa, supervisoras
