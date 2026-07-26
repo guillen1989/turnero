@@ -1,5 +1,26 @@
 # Estado del desarrollo
 
+## Mantenimiento reciente (independiente de la Fase 10 — infraestructura de feature flags)
+Implementación de `docs/FEATURE_FLAGS.md`, Fase A (infraestructura agnóstica de
+features concretas), en worktree/branch `feature/feature-flags` desde
+`origin/staging`. PR de esta fase va contra `staging`, no contra `main`.
+- [x] Paso 1 — Modelo `FeatureFlag` (`clave` única, `descripcion`,
+  `activo_global` con default `False`) + tests
+  (`tests/test_models_feature_flag.py`).
+- [ ] Paso 2 — Modelo `FeatureFlagUnidad` (N:M flag↔unidad, mismo patrón que
+  `UnidadSupervisada`).
+- [ ] Paso 3 — Migración Alembic (tablas nuevas, sin filas previas → un solo
+  paso, sin el patrón de tres pasos de `NOT NULL`).
+- [ ] Paso 4 — Servicio `app/services/feature_flags.py` (`feature_activa` +
+  gestión de flags).
+- [ ] Paso 5 — Decorador `requiere_feature` + context processor Jinja
+  `feature_activa`.
+- [ ] Paso 6 — UI admin `/admin/feature-flags`.
+
+La Fase B (aplicar flags a funcionalidades concretas de `staging`) requiere
+decisión explícita del usuario sobre qué ocultar, y se aborda en PR(s)
+separados posteriores — no se mezcla con este.
+
 ## Mantenimiento reciente (independiente de la Fase 10 — ahorro de tokens en sesiones de Claude Code)
 PR contra `staging` con 3 cambios para reducir el gasto de tokens de las sesiones
 de Claude Code (el gasto se había disparado con el tamaño del proyecto):
