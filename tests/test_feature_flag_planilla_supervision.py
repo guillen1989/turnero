@@ -1,6 +1,6 @@
 from flask_login import FlaskLoginClient
 
-from app.services.feature_flags import crear_flag, activar_global
+from app.services.feature_flags import desactivar_global
 
 
 def _create_supervisora_and_login(app, db, suffix):
@@ -19,7 +19,7 @@ def _create_supervisora_and_login(app, db, suffix):
 
 
 def test_rutas_planilla_supervision_devuelven_404_con_flag_inactivo(app, db):
-    crear_flag("planilla_supervision_multiunidad")
+    desactivar_global("planilla_supervision_multiunidad")
     client, _ = _create_supervisora_and_login(app, db, "ps1")
 
     for ruta in ["/planilla/supervision/", "/planilla/supervision/reglas"]:
@@ -28,8 +28,6 @@ def test_rutas_planilla_supervision_devuelven_404_con_flag_inactivo(app, db):
 
 
 def test_rutas_planilla_supervision_funcionan_con_flag_activo(app, db):
-    crear_flag("planilla_supervision_multiunidad")
-    activar_global("planilla_supervision_multiunidad")
     client, _ = _create_supervisora_and_login(app, db, "ps2")
 
     assert client.get("/planilla/supervision/").status_code == 200
@@ -37,7 +35,7 @@ def test_rutas_planilla_supervision_funcionan_con_flag_activo(app, db):
 
 
 def test_enlaces_planilla_supervision_ausentes_con_flag_inactivo(app, db):
-    crear_flag("planilla_supervision_multiunidad")
+    desactivar_global("planilla_supervision_multiunidad")
     client, _ = _create_supervisora_and_login(app, db, "ps3")
 
     resp = client.get("/")
@@ -48,8 +46,6 @@ def test_enlaces_planilla_supervision_ausentes_con_flag_inactivo(app, db):
 
 
 def test_enlaces_planilla_supervision_presentes_con_flag_activo(app, db):
-    crear_flag("planilla_supervision_multiunidad")
-    activar_global("planilla_supervision_multiunidad")
     client, _ = _create_supervisora_and_login(app, db, "ps4")
 
     resp = client.get("/")

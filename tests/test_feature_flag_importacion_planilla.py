@@ -1,6 +1,6 @@
 from flask_login import FlaskLoginClient
 
-from app.services.feature_flags import crear_flag, activar_global
+from app.services.feature_flags import desactivar_global
 
 
 def _create_supervisora_and_login(app, db, suffix):
@@ -19,7 +19,7 @@ def _create_supervisora_and_login(app, db, suffix):
 
 
 def test_rutas_importar_planilla_devuelven_404_con_flag_inactivo(app, db):
-    crear_flag("importacion_planilla")
+    desactivar_global("importacion_planilla")
     client, _ = _create_supervisora_and_login(app, db, "ip1")
 
     for ruta in ["/planilla/importar/", "/planilla/importar/codigos"]:
@@ -28,15 +28,13 @@ def test_rutas_importar_planilla_devuelven_404_con_flag_inactivo(app, db):
 
 
 def test_rutas_importar_planilla_funcionan_con_flag_activo(app, db):
-    crear_flag("importacion_planilla")
-    activar_global("importacion_planilla")
     client, _ = _create_supervisora_and_login(app, db, "ip2")
 
     assert client.get("/planilla/importar/").status_code == 200
 
 
 def test_enlace_importar_planilla_ausente_con_flag_inactivo(app, db):
-    crear_flag("importacion_planilla")
+    desactivar_global("importacion_planilla")
     client, _ = _create_supervisora_and_login(app, db, "ip3")
 
     resp = client.get("/")
@@ -46,8 +44,6 @@ def test_enlace_importar_planilla_ausente_con_flag_inactivo(app, db):
 
 
 def test_enlace_importar_planilla_presente_con_flag_activo(app, db):
-    crear_flag("importacion_planilla")
-    activar_global("importacion_planilla")
     client, _ = _create_supervisora_and_login(app, db, "ip4")
 
     resp = client.get("/")

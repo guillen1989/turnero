@@ -1,6 +1,6 @@
 from flask_login import FlaskLoginClient
 
-from app.services.feature_flags import crear_flag, activar_global
+from app.services.feature_flags import desactivar_global
 
 
 def _create_and_login(app, db, suffix):
@@ -14,7 +14,7 @@ def _create_and_login(app, db, suffix):
 
 
 def test_rutas_documento_cambio_devuelven_404_con_flag_inactivo(app, db):
-    crear_flag("hoja_cambio_digital")
+    desactivar_global("hoja_cambio_digital")
     client, _ = _create_and_login(app, db, "flag1")
 
     for ruta in ["/documentos-cambio/", "/documentos-cambio/nuevo",
@@ -24,8 +24,6 @@ def test_rutas_documento_cambio_devuelven_404_con_flag_inactivo(app, db):
 
 
 def test_rutas_documento_cambio_funcionan_con_flag_activo(app, db):
-    crear_flag("hoja_cambio_digital")
-    activar_global("hoja_cambio_digital")
     client, _ = _create_and_login(app, db, "flag2")
 
     assert client.get("/documentos-cambio/").status_code == 200
@@ -33,7 +31,7 @@ def test_rutas_documento_cambio_funcionan_con_flag_activo(app, db):
 
 
 def test_enlace_hoja_cambio_ausente_en_nav_con_flag_inactivo(app, db):
-    crear_flag("hoja_cambio_digital")
+    desactivar_global("hoja_cambio_digital")
     client, _ = _create_and_login(app, db, "flag3")
 
     resp = client.get("/")
@@ -42,8 +40,6 @@ def test_enlace_hoja_cambio_ausente_en_nav_con_flag_inactivo(app, db):
 
 
 def test_enlace_hoja_cambio_presente_en_nav_con_flag_activo(app, db):
-    crear_flag("hoja_cambio_digital")
-    activar_global("hoja_cambio_digital")
     client, _ = _create_and_login(app, db, "flag4")
 
     resp = client.get("/")
