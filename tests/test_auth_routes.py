@@ -274,6 +274,51 @@ def test_perfil_actualiza_hospital_y_unidad(client, db):
     assert usuario.unidad.hospital.nombre == "Hospital Nuevo"
 
 
+def _hacer_supervisora(usuario):
+    from app.extensions import db as _db
+    usuario.es_supervisora = True
+    _db.session.commit()
+
+
+def test_get_perfil_supervisora_no_muestra_formulario_editable_de_unidad(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    _hacer_supervisora(usuario)
+
+    resp = client.get("/auth/perfil")
+
+    assert resp.status_code == 200
+    assert b'name="unidad_id"' not in resp.data
+    assert b'name="hospital_id"' not in resp.data
+    assert b"Hospital Test" in resp.data
+    assert b"Urgencias" in resp.data
+
+
+def test_post_perfil_supervisora_no_cambia_la_unidad(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    _hacer_supervisora(usuario)
+
+    resp = client.post(
+        "/auth/perfil",
+        data={
+            "hospital_id": 0,
+            "hospital_nuevo": "Hospital Colado",
+            "unidad_id": 0,
+            "unidad_nuevo": "UCI Colada",
+            "categoria_id": _cat_id(db),
+            "categoria_nueva": "",
+        },
+        follow_redirects=True,
+    )
+
+    assert resp.status_code == 200
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert usuario.unidad.nombre == "Urgencias"
+    assert usuario.unidad.hospital.nombre == "Hospital Test"
+
+
 # --- Perfil / Cuenta ---
 
 def test_get_perfil_cuenta_requiere_autenticacion(client):
