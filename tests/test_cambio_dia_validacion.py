@@ -24,7 +24,9 @@ from app.services.validacion_cambio_dia import ErrorValidacionCambioDia
 def _usuario(email="test@test.es", hospital="H1", unidad="Urgencias", cat_nombre="Enfermería"):
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre=cat_nombre).first()
-    return registrar_usuario("Test", email, "password123", hospital, unidad, cat.id)
+    u = registrar_usuario("Test", email, "password123", hospital, unidad, cat.id)
+    db.session.refresh(u)
+    return u
 
 
 def _franja(grupo_id, nombre="Mañana"):

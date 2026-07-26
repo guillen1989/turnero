@@ -28,6 +28,8 @@ def _match_cambio_dia_simetrico(db):
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
     ana = registrar_usuario("AnaCD", "anacd@test.es", "password123", "Hospital La Paz", "Urgencias", cat.id)
     pedro = registrar_usuario("PedroCD", "pedrocd@test.es", "password123", "Hospital La Paz", "Urgencias", cat.id)
+    db.session.refresh(ana)
+    db.session.refresh(pedro)
     grupo_id = ana.unidad.grupo_intercambio_id
     manana = FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id, nombre="Mañana").first()
     tarde = FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id, nombre="Tarde").first()

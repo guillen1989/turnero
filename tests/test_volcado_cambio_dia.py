@@ -18,7 +18,9 @@ from app.services.registro import registrar_usuario
 def _usuario(email="test@test.es", nombre="Test", hospital="H1", unidad="U1"):
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
-    return registrar_usuario(nombre, email, "password123", hospital, unidad, cat.id)
+    u = registrar_usuario(nombre, email, "password123", hospital, unidad, cat.id)
+    db.session.refresh(u)
+    return u
 
 
 def _franja(grupo_id, nombre="Mañana"):
