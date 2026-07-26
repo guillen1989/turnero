@@ -11,8 +11,9 @@ features concretas), en worktree/branch `feature/feature-flags` desde
   `UnidadSupervisada`) + relación `FeatureFlag.unidades_habilitadas` /
   backref `Unidad.feature_flags_habilitados` + tests
   (`tests/test_models_feature_flag_unidad.py`).
-- [ ] Paso 3 — Migración Alembic (tablas nuevas, sin filas previas → un solo
-  paso, sin el patrón de tres pasos de `NOT NULL`).
+- [x] Paso 3 — Migración Alembic `7be3ca3f48b9` (tablas nuevas, sin filas
+  previas → un solo paso, sin el patrón de tres pasos de `NOT NULL`).
+  `flask db heads` da un único head.
 - [ ] Paso 4 — Servicio `app/services/feature_flags.py` (`feature_activa` +
   gestión de flags).
 - [ ] Paso 5 — Decorador `requiere_feature` + context processor Jinja
