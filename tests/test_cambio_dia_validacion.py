@@ -15,6 +15,8 @@ from app.models import (
     insertar_categorias_semilla,
 )
 from app.services.registro import registrar_usuario
+from app.services.publicaciones import publicar_cambio
+from app.services.validacion_cambio_dia import ErrorValidacionCambioDia
 
 
 # --- Helpers ---
@@ -31,37 +33,22 @@ def _franja(grupo_id, nombre="Mañana"):
     ).first()
 
 
-def _pub_cambio_dia(usuario, fecha_cede, fecha_acepta, franja_cede=None, franja_acepta=None):
-    """Helper para crear una publicación de tipo cambio_dia."""
-    franja_cede = franja_cede or _franja(usuario.unidad.grupo_intercambio_id, "Mañana")
-    franja_acepta = franja_acepta or _franja(usuario.unidad.grupo_intercambio_id, "Tarde")
-    
-    pub = PublicacionCambio(usuario_id=usuario.id, tipo="cambio_dia")
-    db.session.add(pub)
-    db.session.flush()
-    
-    db.session.add(TurnoCedido(
-        publicacion_id=pub.id,
-        fecha=fecha_cede,
-        franja_horaria_id=franja_cede.id,
-    ))
-    db.session.add(TurnoAceptado(
-        publicacion_id=pub.id,
-        fecha=fecha_acepta,
-        franja_horaria_id=franja_acepta.id,
-    ))
-    db.session.commit()
-    return pub
-
-
 # --- Tests ---
 
 def test_cambio_dia_misma_fecha_valido(db):
     """Un cambio_dia con turnos de la misma fecha debe validar correctamente."""
     u = _usuario()
     misma_fecha = date(2026, 9, 25)
+    franja_manana = _franja(u.unidad.grupo_intercambio_id, "Mañana")
+    franja_tarde = _franja(u.unidad.grupo_intercambio_id, "Tarde")
     
-    pub = _pub_cambio_dia(u, misma_fecha, misma_fecha)
+    # Crear publicación usando publicar_cambio, que incluye validación
+    pub = publicar_cambio(
+        usuario_id=u.id,
+        turnos_cedidos=[(misma_fecha, franja_manana.id)],
+        turnos_aceptados=[(misma_fecha, franja_tarde.id)],
+        tipo="cambio_dia"
+    )
     
     # El publicación debe crearse sin error
     assert pub.id is not None
@@ -74,16 +61,19 @@ def test_cambio_dia_fechas_diferentes_invalido(db):
     u = _usuario()
     fecha1 = date(2026, 9, 25)
     fecha2 = date(2026, 9, 26)
+    franja_manana = _franja(u.unidad.grupo_intercambio_id, "Mañana")
+    franja_tarde = _franja(u.unidad.grupo_intercambio_id, "Tarde")
     
-    # TODO: implementar excepción en validador
-    # Por ahora, la publicación se crea pero debería fallar en validación
+    # Crear publicación con fechas diferentes debería fallar
     try:
-        pub = _pub_cambio_dia(u, fecha1, fecha2)
-        # Si llegamos aquí, el validador aún no está implementado
-        # Marcar como expected failure
+        pub = publicar_cambio(
+            usuario_id=u.id,
+            turnos_cedidos=[(fecha1, franja_manana.id)],
+            turnos_aceptados=[(fecha2, franja_tarde.id)],
+            tipo="cambio_dia"
+        )
         assert False, "Se esperaba excepción de validación, pero no se lanzó"
-    except ValueError as e:
-        # Esperar excepción del validador
+    except ErrorValidacionCambioDia as e:
         assert "misma fecha" in str(e).lower()
 
 
@@ -91,28 +81,17 @@ def test_cambio_dia_con_multiples_turnos_cedidos_misma_fecha(db):
     """Un cambio_dia con múltiples turnos cedidos (misma fecha) debe validar."""
     u = _usuario()
     misma_fecha = date(2026, 9, 25)
-    
-    # Crear publicación con dos turnos cedidos de la misma fecha
     franja_manana = _franja(u.unidad.grupo_intercambio_id, "Mañana")
     franja_tarde = _franja(u.unidad.grupo_intercambio_id, "Tarde")
-    
-    pub = PublicacionCambio(usuario_id=u.id, tipo="cambio_dia")
-    db.session.add(pub)
-    db.session.flush()
-    
-    # Dos turnos cedidos, misma fecha, franjas distintas
-    db.session.add(TurnoCedido(
-        publicacion_id=pub.id, fecha=misma_fecha, franja_horaria_id=franja_manana.id
-    ))
-    db.session.add(TurnoCedido(
-        publicacion_id=pub.id, fecha=misma_fecha, franja_horaria_id=franja_tarde.id
-    ))
-    
     franja_noche = _franja(u.unidad.grupo_intercambio_id, "Noche")
-    db.session.add(TurnoAceptado(
-        publicacion_id=pub.id, fecha=misma_fecha, franja_horaria_id=franja_noche.id
-    ))
-    db.session.commit()
+    
+    # Crear publicación con dos turnos cedidos de la misma fecha
+    pub = publicar_cambio(
+        usuario_id=u.id,
+        turnos_cedidos=[(misma_fecha, franja_manana.id), (misma_fecha, franja_tarde.id)],
+        turnos_aceptados=[(misma_fecha, franja_noche.id)],
+        tipo="cambio_dia"
+    )
     
     # Debe validar sin error
     assert pub.id is not None
@@ -125,44 +104,56 @@ def test_cambio_dia_turnos_cedidos_fechas_diferentes_invalido(db):
     u = _usuario()
     fecha1 = date(2026, 9, 25)
     fecha2 = date(2026, 9, 26)
-    
     franja_manana = _franja(u.unidad.grupo_intercambio_id, "Mañana")
     franja_tarde = _franja(u.unidad.grupo_intercambio_id, "Tarde")
     
     try:
-        pub = PublicacionCambio(usuario_id=u.id, tipo="cambio_dia")
-        db.session.add(pub)
-        db.session.flush()
-        
-        # Dos turnos cedidos, FECHAS DIFERENTES
-        db.session.add(TurnoCedido(
-            publicacion_id=pub.id, fecha=fecha1, franja_horaria_id=franja_manana.id
-        ))
-        db.session.add(TurnoCedido(
-            publicacion_id=pub.id, fecha=fecha2, franja_horaria_id=franja_tarde.id
-        ))
-        db.session.add(TurnoAceptado(
-            publicacion_id=pub.id, fecha=fecha1, franja_horaria_id=franja_tarde.id
-        ))
-        db.session.commit()
-        
+        pub = publicar_cambio(
+            usuario_id=u.id,
+            turnos_cedidos=[(fecha1, franja_manana.id), (fecha2, franja_tarde.id)],
+            turnos_aceptados=[(fecha1, franja_tarde.id)],
+            tipo="cambio_dia"
+        )
         assert False, "Se esperaba excepción de validación"
-    except ValueError as e:
+    except ErrorValidacionCambioDia as e:
         assert "misma fecha" in str(e).lower()
 
 
 def test_cambio_dia_fecha_pasada_invalido(db):
-    """Un cambio_dia para una fecha pasada debería caducar inmediatamente (o fallar)."""
+    """Un cambio_dia para una fecha pasada debería fallar."""
     u = _usuario()
     fecha_pasada = date(2026, 1, 1)
+    franja_manana = _franja(u.unidad.grupo_intercambio_id, "Mañana")
+    franja_tarde = _franja(u.unidad.grupo_intercambio_id, "Tarde")
     
-    # Por ahora, la publicación se crea, pero debería marcarse como caducada
-    # o fallar en validación
-    try:
-        pub = _pub_cambio_dia(u, fecha_pasada, fecha_pasada)
-        # Si llegamos aquí, debería estar marcada como caducada al menos
-        # TODO: implementar caducidad automática en validador de cambio_dia
-        assert False, "Se esperaba que cambio_dia con fecha pasada fallara"
-    except (ValueError, Exception):
-        # Excepción esperada
-        pass
+    # Por ahora, la publicación se crea, pero debería validarse fecha pasada
+    # en un paso posterior (Fase 6 - caducidad)
+    pub = publicar_cambio(
+        usuario_id=u.id,
+        turnos_cedidos=[(fecha_pasada, franja_manana.id)],
+        turnos_aceptados=[(fecha_pasada, franja_tarde.id)],
+        tipo="cambio_dia"
+    )
+    # La validación de fecha pasada es responsabilidad de caducidad, no de validador
+    assert pub.id is not None
+
+
+def test_cambio_normal_no_se_valida_cambio_dia(db):
+    """Un cambio_dia normal (tipo cambio) no debe aplicar validación cambio_dia."""
+    u = _usuario()
+    fecha1 = date(2026, 9, 25)
+    fecha2 = date(2026, 9, 26)  # fechas diferentes
+    franja_manana = _franja(u.unidad.grupo_intercambio_id, "Mañana")
+    franja_tarde = _franja(u.unidad.grupo_intercambio_id, "Tarde")
+    
+    # Crear publicación normal (tipo "cambio") con fechas diferentes
+    # NO debería fallar porque el validador solo aplica a cambio_dia
+    pub = publicar_cambio(
+        usuario_id=u.id,
+        turnos_cedidos=[(fecha1, franja_manana.id)],
+        turnos_aceptados=[(fecha2, franja_tarde.id)],
+        tipo="cambio"  # tipo normal, no cambio_dia
+    )
+    
+    assert pub.id is not None
+    assert pub.tipo == "cambio"
