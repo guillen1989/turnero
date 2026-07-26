@@ -65,10 +65,12 @@ def clean_db(app):
     Trunca todas las tablas ANTES del cuerpo del test.
     """
     with app.app_context():
+        _db.session.remove()
         tablas = ", ".join(f'"{t.name}"' for t in _db.metadata.sorted_tables)
         _db.session.execute(text(f"TRUNCATE {tablas} RESTART IDENTITY CASCADE"))
         _db.session.commit()
         yield
+        _db.session.remove()
 
 
 @pytest.fixture

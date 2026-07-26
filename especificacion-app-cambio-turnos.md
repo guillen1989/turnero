@@ -55,10 +55,11 @@
 **PublicaciónDeCambio**
 - id, usuario_id, fecha_creación, estado (abierta / parcialmente_resuelta / confirmada / cancelada / caducada)
 - turnos_que_cede: lista de Turno que el usuario quiere quitarse (puede ser uno o varios)
+- tipo (cambio / regalo / peticion / junte / cambio_dia): categoría de la publicación. El MVP implementa cambio y cambio_dia; los demás quedan para fases futuras.
 - turnos_que_acepta: lista de Turno que el usuario aceptaría trabajar a cambio (puede ser uno o varios)
 - *(Una publicación agrupa TODOS los turnos que un usuario quiere cambiar en un momento dado, no una publicación por turno. Cada turno individual dentro de la publicación puede resolverse de forma independiente — ver regla de negocio 2bis — sin afectar a los demás turnos de la misma publicación.)*
 - *(Nota de diseño: cada publicación se modela como una oferta general — "cedo [X1, X2], acepto cualquiera de [Y1, Y2, Y3]" — lo que permite al motor de matching recombinarlas en cadenas de 3+ sin cambiar el modelo de datos)*
-- **es_sintética** (booleano, por defecto falso) + **sintética_pub_a_id** / **sintética_pub_b_id**: una publicación puede ser generada automáticamente por el propio sistema (no por un usuario) para representar el "hueco" que cerraría un ciclo de 3 bandas entre otras dos publicaciones reales A y B (ver regla de negocio 3). No aparece como propia de nadie en el dashboard del usuario propietario; solo se ofrece a terceros compatibles en el buscador. Se cancela automáticamente si A o B se cancelan, editan o caducan.
+- **es_sintética** (booleano, por defecto falso) + **sintética_pub_a_id** / **sintética_pub_b_id**: una publicación puede ser generada automáticamente por el propio sistema (no por un usuario) para representar el "hueco" que cerraría un ciclo de 3 bandas entre otras dos publicaciones reales A y B (ver regla de negocio 2ter). No aparece como propia de nadie en el dashboard del usuario propietario; solo se ofrece a terceros compatibles en el buscador. Se cancela automáticamente si A o B se cancelan, editan o caducan.
 
 **Match / Coincidencia**
 - id, tipo (directo_2 / cadena_3 / cadena_n — `cadena_n` con n>3 queda fuera del alcance actual)
@@ -97,6 +98,8 @@
    - Si hay varios turnos posibles en cualquiera de los dos lados, basta con que coincida uno cualquiera de cada lado; no es necesario que coincidan todos.
 
 2bis. **Resolución parcial:** Una publicación puede ceder varios turnos a la vez. Cuando uno de esos turnos queda resuelto mediante un match confirmado, ese turno concreto se cierra, pero el resto de turnos de la misma publicación siguen abiertos y disponibles para futuros matches. La publicación en su conjunto solo pasa a estado "confirmada" cuando TODOS sus turnos a ceder han sido resueltos; mientras tanto permanece en estado "parcialmente_resuelta".
+
+2ter. **Cambios de turno dentro del mismo día:** Una publicación de tipo `cambio_dia` es un caso especial donde el usuario quiere cambiar de turno dentro de la misma fecha laboral (ej. cambiar de turno de mañana a turno de tarde el mismo día). Para que una publicación sea válida como `cambio_dia`, TODOS los turnos cedidos y aceptados deben ser de la misma fecha. El motor de matching funciona de forma idéntica a los cambios normales: detecta coincidencias y cadenas, no hay diferencia en las reglas de confirma­ción u otros flujos. La diferencia está en la interfaz y la validación inicial (misma fecha para todos los turnos implicados).
 
 3. **Condición de match en cadena (3 personas):** A cede algo que B acepta; B cede algo que C acepta; C cede algo que A acepta (cierre del ciclo). El sistema detecta estos ciclos automáticamente entre las publicaciones abiertas, por dos vías complementarias:
    - **Detección directa:** cada vez que se publica o edita una publicación tipo "cambio", el sistema busca entre las publicaciones activas del mismo grupo/categoría si existe algún par que, junto con la nueva, cierre un ciclo de 3 bandas. Si lo encuentra, crea el match `cadena_3` inmediatamente, sin intervención del usuario.
@@ -153,6 +156,9 @@ Ana decide que ya no necesita cambiar el turno y cancela su publicación manualm
 ### CU7 — Caducidad automática
 Si nadie confirma un match con Ana antes del 25/06, la publicación de Ana caduca automáticamente al pasar esa fecha y desaparece de las búsquedas activas.
 
+
+### CU7bis — Cambio de turno dentro del mismo día
+Ana tiene turno de mañana el 25/06 pero necesita cambiarlo a turno de tarde del mismo día. Desde la interfaz específica de "cambios en el día", selecciona la fecha 25/06, indica que cede su turno de mañana y acepta el turno de tarde. La publicación se crea como tipo `cambio_dia` y aparece visible para compañeros compatibles. Pedro, que tiene turno de tarde el 25/06 y quiere cambiar a mañana del mismo día, publica su cambio también como `cambio_dia`. El sistema detecta automáticamente la coincidencia y notifica a ambos. Ana y Pedro confirman el match y ambos quedan intercambiados de turno el mismo día.
 ### CU8 — Match en cadena de 3 entre publicaciones ya existentes
 Ana cede mañana del 25, acepta tarde del 26. Andrea cede tarde del 27, acepta mañana del 25. Pedro publica que cede tarde del 26 y acepta tarde del 27, sin haber visto las publicaciones de Ana ni de Andrea. Al publicar, el sistema detecta automáticamente el ciclo Ana→Andrea→Pedro→Ana entre las tres publicaciones y notifica a los tres de un posible cambio a tres bandas, donde cada uno deberá confirmar igualmente su parte.
 
@@ -221,6 +227,12 @@ Formato: Dado [contexto] / Cuando [acción] / Entonces [resultado esperado].
 - Cuando publico un cambio,
 - Entonces solo lo ven enfermeras (mi categoría) de Urgencias o de unidades de mi mismo grupo de intercambio — no lo ve, por ejemplo, un auxiliar, ni una enfermera de otro hospital sin relación.
 
+
+**UAT-2.4 — Publicar un cambio dentro del mismo día**
+- Dado que soy un usuario registrado,
+- Y necesito cambiar un turno a otro turno del mismo día,
+- Cuando uso la interfaz específica de "cambios en el día" y selecciono una fecha, indico el turno que cedo y el que acepto (ambos de la misma fecha),
+- Entonces la publicación se crea como tipo `cambio_dia`, queda visible para usuarios compatibles, y el sistema valida que todos los turnos sean de la misma fecha.
 ### Detección de match
 
 **UAT-3.1 — Match directo 1 a 1**
