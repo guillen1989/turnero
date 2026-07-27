@@ -1,5 +1,38 @@
 # Estado del desarrollo
 
+## Junte de noches en la hoja de cambio digital (worktree `feature/junte-frames-pdf`)
+Primer paso de una iniciativa mayor: que `documento_cambio/pdf.html` también
+sirva para juntes de noches (hasta ahora esas dos rejillas L-M-X-J-V-S-D del
+impreso se renderizaban en blanco/estáticas, ver Fase 10). Este paso es solo
+el layout — añade los `@frame` necesarios, sin tocar el modelo de datos:
+- 18 `@frame` nuevos, coordenadas medidas sobre `hoja-cambio-fondo.png`
+  (905x1280px @ A4, 0.232mm/px): 4 para los nombres (fila "3 noches"/"4
+  noches" x tablas "CORRESPONDE A"/"CAMBIO") y 14 para las 7 columnas de
+  día (L-D) x 2 filas de la tabla "CAMBIO" (la tabla "CORRESPONDE A" ya trae
+  esas marcas impresas en el fondo).
+- Contenido condicionado a un flag nuevo `mostrar_junte` (mismo patrón que
+  el bloque de decisión de la supervisora), para no afectar a los documentos
+  de tipo `cambio`/`cambio_dia` ya existentes.
+- Las filas de la tabla "CAMBIO" son las más ajustadas (~6.15-6.27mm, ver
+  advertencia sobre el mínimo de 6mm en el comentario del propio
+  `pdf.html`) — cubierto con un test de regresión que renderiza el PDF real
+  y comprueba que las 7 marcas de cada fila no se descartan en silencio.
+- Tests nuevos en `tests/test_pdf_junte_frames.py`: renderizan la plantilla
+  directamente (no vía `generar_pdf_documento`) porque `DocumentoCambio`
+  todavía no admite juntes (`match_admite_documento_cambio` los excluye
+  explícitamente, y `ParticipanteDocumentoCambio` solo modela un
+  cede/recibe, no un patrón semanal).
+
+## Siguiente paso
+Para el hilo de junte de noches: decidir y construir el modelo de datos
+(¿nuevo tipo de `DocumentoCambio` o una entidad aparte?) que alimente estos
+frames a partir de una publicación `junte` ya emparejada, y enganchar
+`generar_pdf_documento` (o un servicio equivalente) para pasarle
+`mostrar_junte=True` y los datos reales. Ninguno pendiente para los 4 fixes
+de creación/eliminación de usuarios de la sección anterior — ya en PR contra
+`staging`. Si se retoma ese hilo, investigar la flakiness de
+`tests/test_rutas_importar_planilla.py` descrita arriba (deuda de
+infraestructura de test preexistente, no introducida por ese trabajo).
 ## Mantenimiento reciente (independiente de la Fase 10 — supervisoras multiunidad)
 Implementación de `PLAN_SUPERVISORAS_MULTIUNIDAD.md`: las supervisoras podrán
 gestionar varias unidades (no solo la suya), vía tabla N:M `unidad_supervisada`
@@ -227,36 +260,3 @@ Los 4 fixes viven en los mismos archivos (`usuarios.py`, `registro.py`,
 `usuario_form.html`, plantilla de email renombrada) y se han probado
 juntos; suite completa verde sin regresiones (`pytest -p no:testmon`).
 
-## Junte de noches en la hoja de cambio digital (worktree `feature/junte-frames-pdf`)
-Primer paso de una iniciativa mayor: que `documento_cambio/pdf.html` también
-sirva para juntes de noches (hasta ahora esas dos rejillas L-M-X-J-V-S-D del
-impreso se renderizaban en blanco/estáticas, ver Fase 10). Este paso es solo
-el layout — añade los `@frame` necesarios, sin tocar el modelo de datos:
-- 18 `@frame` nuevos, coordenadas medidas sobre `hoja-cambio-fondo.png`
-  (905x1280px @ A4, 0.232mm/px): 4 para los nombres (fila "3 noches"/"4
-  noches" x tablas "CORRESPONDE A"/"CAMBIO") y 14 para las 7 columnas de
-  día (L-D) x 2 filas de la tabla "CAMBIO" (la tabla "CORRESPONDE A" ya trae
-  esas marcas impresas en el fondo).
-- Contenido condicionado a un flag nuevo `mostrar_junte` (mismo patrón que
-  el bloque de decisión de la supervisora), para no afectar a los documentos
-  de tipo `cambio`/`cambio_dia` ya existentes.
-- Las filas de la tabla "CAMBIO" son las más ajustadas (~6.15-6.27mm, ver
-  advertencia sobre el mínimo de 6mm en el comentario del propio
-  `pdf.html`) — cubierto con un test de regresión que renderiza el PDF real
-  y comprueba que las 7 marcas de cada fila no se descartan en silencio.
-- Tests nuevos en `tests/test_pdf_junte_frames.py`: renderizan la plantilla
-  directamente (no vía `generar_pdf_documento`) porque `DocumentoCambio`
-  todavía no admite juntes (`match_admite_documento_cambio` los excluye
-  explícitamente, y `ParticipanteDocumentoCambio` solo modela un
-  cede/recibe, no un patrón semanal).
-
-## Siguiente paso
-Para el hilo de junte de noches: decidir y construir el modelo de datos
-(¿nuevo tipo de `DocumentoCambio` o una entidad aparte?) que alimente estos
-frames a partir de una publicación `junte` ya emparejada, y enganchar
-`generar_pdf_documento` (o un servicio equivalente) para pasarle
-`mostrar_junte=True` y los datos reales. Ninguno pendiente para los 4 fixes
-de creación/eliminación de usuarios de la sección anterior — ya en PR contra
-`staging`. Si se retoma ese hilo, investigar la flakiness de
-`tests/test_rutas_importar_planilla.py` descrita arriba (deuda de
-infraestructura de test preexistente, no introducida por ese trabajo).
