@@ -132,6 +132,54 @@ def crear_documento_cambio(
     return documento
 
 
+def crear_documento_cambio_junte(
+    creado_por, companero, cedidos, aceptados, depende_de_id=None,
+):
+    """
+    Como crear_documento_cambio, pero para un junte de varias noches: crea
+    una fila espejo por cada noche en vez de una sola.
+
+    cedidos/aceptados son listas de (fecha, franja_id) de creado_por, del
+    mismo formato y misma longitud (una noche cedida se empareja con la
+    noche aceptada de su mismo índice).
+    """
+    documento = DocumentoCambio(
+        creado_por=creado_por,
+        unidad_id=creado_por.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        tipo="junte",
+        depende_de_id=depende_de_id,
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    for (cede_fecha, cede_franja_id), (recibe_fecha, recibe_franja_id) in zip(cedidos, aceptados):
+        documento.participantes.append(ParticipanteDocumentoCambio(
+            usuario=creado_por,
+            turno_cede_fecha=cede_fecha, turno_cede_franja_id=cede_franja_id,
+            turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=recibe_franja_id,
+        ))
+        documento.participantes.append(ParticipanteDocumentoCambio(
+            usuario=companero,
+            turno_cede_fecha=recibe_fecha, turno_cede_franja_id=recibe_franja_id,
+            turno_recibe_fecha=cede_fecha, turno_recibe_franja_id=cede_franja_id,
+        ))
+    db.session.flush()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    documento.factibilidad_estado = estado
+    documento.factibilidad_motivos = "\n".join(motivos) if motivos else None
+
+    _notificar(
+        companero, documento, "documento_cambio_pendiente_firma",
+        _("Hoja de cambio pendiente de firma"),
+        _("%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas.", nombre=creado_por.nombre),
+    )
+
+    db.session.commit()
+    return documento
+
+
 class CambioNoFactibleError(Exception):
     """Se lanza cuando el cambio que se intenta registrar desde papel no es
     factible según las planillas ya publicadas (alguna de las partes no

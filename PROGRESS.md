@@ -34,11 +34,22 @@ generar juntes de verdad, siguiendo los 7 pasos de `docs/PLAN_JUNTE.md`.
   nuevos en `tests/test_servicio_factibilidad_documento_cambio.py`
   (`test_racha_cuenta_las_noches_hermanas_del_mismo_documento`).
 
+- [x] Paso 4 — `app/services/documento_cambio.py`: nueva
+  `crear_documento_cambio_junte(creado_por, companero, cedidos, aceptados,
+  depende_de_id=None)`. `cedidos`/`aceptados` son listas de `(fecha,
+  franja_id)` de `creado_por` (mismo formato que `_extraer_turnos_junte` en
+  `publicaciones.py`), misma longitud; por cada índice crea la fila de
+  `creado_por` y su espejo exacto para `companero` (mismo patrón que
+  `crear_documento_cambio`, pero N filas). Reutiliza
+  `comprobar_factibilidad`, `_notificar` y `_siguiente_numero_unidad` tal
+  cual. Tests en `tests/test_servicio_documento_cambio.py`.
+
 ## Siguiente paso
-Paso 4 de `docs/PLAN_JUNTE.md`: `app/services/documento_cambio.py` — nueva
-`crear_documento_cambio_junte(creado_por, companero, cedidos, aceptados,
-depende_de_id=None)` que crea un `DocumentoCambio(tipo="junte")` y N filas
-espejo por persona (una por noche).
+Paso 5 de `docs/PLAN_JUNTE.md`: `generar_pdf_documento` — rama
+`documento.tipo == "junte"`: agrupar `documento.participantes` por
+`usuario_id`, calcular `distribucion_desde_fechas` por persona y pasar
+`mostrar_junte`/`junte_*` al render; en `pdf.html`, envolver los frames de
+turno único en `{% if not mostrar_junte %}`.
 
 Nota: se detectó flakiness preexistente y no relacionada en
 `tests/test_documento_cambio_creacion.py` (falla de forma no determinista al

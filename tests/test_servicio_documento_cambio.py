@@ -6,7 +6,8 @@ from app.models import (
     NotaDia, DocumentoCambio, ParticipanteDocumentoCambio, PlanillaMes,
 )
 from app.services.documento_cambio import (
-    crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
+    crear_documento_cambio, crear_documento_cambio_junte, firmar_documento,
+    generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, anular_documento,
     registrar_documento_cambio_papel, CambioNoFactibleError,
 )
@@ -968,3 +969,71 @@ def test_al_anular_documento_autorizado_dependientes_pasan_a_no_factible(db):
     anular_documento(doc_a, supervisora, motivo="Error")
     db.session.refresh(doc_b)
     assert doc_b.factibilidad_estado == "no_factible"
+
+
+def test_crear_documento_cambio_junte_genera_filas_espejo_por_noche(db):
+    from app.models import Notificacion
+
+    crear_usuario, manyana, tarde = _setup(db, "junte1")
+    claudia = crear_usuario("Claudia Junte", "claudiajunte1@h.es")
+    juan = crear_usuario("Juan Junte", "juanjunte1@h.es")
+
+    cedidos = [
+        (date(2026, 7, 6), manyana.id),
+        (date(2026, 7, 7), manyana.id),
+        (date(2026, 7, 8), manyana.id),
+    ]
+    aceptados = [
+        (date(2026, 7, 20), manyana.id),
+        (date(2026, 7, 21), manyana.id),
+        (date(2026, 7, 22), manyana.id),
+    ]
+
+    documento = crear_documento_cambio_junte(
+        creado_por=claudia, companero=juan, cedidos=cedidos, aceptados=aceptados,
+    )
+
+    assert documento.tipo == "junte"
+    assert documento.estado == "borrador"
+    assert len(documento.participantes) == 6
+
+    filas_claudia = sorted(
+        (p for p in documento.participantes if p.usuario_id == claudia.id),
+        key=lambda p: p.turno_cede_fecha,
+    )
+    filas_juan = sorted(
+        (p for p in documento.participantes if p.usuario_id == juan.id),
+        key=lambda p: p.turno_cede_fecha,
+    )
+    assert len(filas_claudia) == 3
+    assert len(filas_juan) == 3
+
+    for i, (fecha_cede, franja_id) in enumerate(cedidos):
+        assert filas_claudia[i].turno_cede_fecha == fecha_cede
+        assert filas_claudia[i].turno_cede_franja_id == franja_id
+        assert filas_claudia[i].turno_recibe_fecha == aceptados[i][0]
+        # El compañero es el espejo exacto de cada fila.
+        assert filas_juan[i].turno_cede_fecha == aceptados[i][0]
+        assert filas_juan[i].turno_recibe_fecha == fecha_cede
+
+    notifs_juan = Notificacion.query.filter_by(usuario_id=juan.id, documento_cambio_id=documento.id).all()
+    assert len(notifs_juan) == 1
+    assert notifs_juan[0].tipo == "documento_cambio_pendiente_firma"
+    notifs_claudia = Notificacion.query.filter_by(usuario_id=claudia.id, documento_cambio_id=documento.id).all()
+    assert notifs_claudia == []
+
+
+def test_crear_documento_cambio_junte_calcula_factibilidad_no_verificado_por_defecto(db):
+    crear_usuario, manyana, tarde = _setup(db, "junte2")
+    claudia = crear_usuario("Claudia Junte2", "claudiajunte2@h.es")
+    juan = crear_usuario("Juan Junte2", "juanjunte2@h.es")
+
+    cedidos = [(date(2026, 7, 6), manyana.id)]
+    aceptados = [(date(2026, 7, 20), manyana.id)]
+
+    # Ninguna planilla publicada -> no se puede verificar todavía.
+    documento = crear_documento_cambio_junte(
+        creado_por=claudia, companero=juan, cedidos=cedidos, aceptados=aceptados,
+    )
+
+    assert documento.factibilidad_estado == "no_verificado"
