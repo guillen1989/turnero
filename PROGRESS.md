@@ -75,27 +75,23 @@ generar juntes de verdad, siguiendo los 7 pasos de `docs/PLAN_JUNTE.md`.
   `test_post_nuevo_junte_con_semana_pasada_da_error_sin_crear_nada`,
   `test_post_nuevo_junte_con_numero_de_noches_incorrecto_da_error`).
 
+- [x] Paso 7 — `app/templates/documento_cambio/nuevo.html`: selector de tipo
+  (`tipo-opcion` de `publicaciones/publicar.html`) con dos opciones ("Cambio
+  de turno" por defecto / "Junte de noches"). Sección `section-junte` (oculta
+  por defecto) con `junte_semana`, radios `junte_cadencia` (LMVD/MJS) y grid
+  de checkboxes `junte_noches` generado por JS (`generarNochesGrid`,
+  `actualizarHintNoches`, tabla `CADENCIA`/`DIAS_ES` reutilizados de
+  `publicar.html`). Las secciones de turno único (`section-cambio`) se
+  ocultan al seleccionar junte y viceversa (`actualizarSecciones()`). El
+  submit valida el número correcto de noches seleccionadas (JS, mismo patrón
+  que `publicar.html`).
+
 ## Siguiente paso
-**IMPORTANTE — estado a mitad de commit:** el Paso 6 está implementado y con
-la suite completa en verde (`pytest --testmon`, confirmado), pero **los
-cambios siguen sin commitear** en el árbol de trabajo (`git status` mostrará
-`app/routes/documento_cambio.py`, `tests/test_documento_cambio_creacion.py`
-y este `PROGRESS.md` como modificados). Antes de tocar nada más: revisar
-`git diff` de esos 3 archivos y hacer el commit del Paso 6 (mensaje sugerido:
-`feat(documento_cambio): añade rama de junte de noches a la ruta de creación`),
-y solo entonces continuar con el Paso 7.
-
-Paso 7 de `docs/PLAN_JUNTE.md`: `app/templates/documento_cambio/nuevo.html`
-— selector de tipo (radio, patrón `tipo-opcion` de
-`publicaciones/publicar.html`) + sección `section-junte` (oculta por
-defecto) reutilizando el JS de esa plantilla (`generarNochesGrid`,
-`actualizarHintNoches`, tabla `CADENCIA`) adaptado a este formulario;
-ocultar/mostrar las secciones de turno único existentes según el tipo
-elegido. Luego: verificación manual completa y PR draft contra `staging`.
-
-No se ha abierto todavía ningún Pull Request para este trabajo (Pasos 1-6
-viven solo en este worktree/rama `worktree-documentos-cambio-junte-noches`,
-sin push al remoto).
+Abrir PR contra `staging`. Los 7 pasos del plan están completos y
+commiteados. Suite no-PDF en verde (los tests de PDF fallan por un bug de
+entorno: `reportlab/xhtml2pdf` usa `md5(usedforsecurity=False)`, no
+soportado en Python 3.8 — mismo fallo en staging, no introducido por este
+trabajo).
 
 Nota: se detectó flakiness preexistente y no relacionada en
 `tests/test_documento_cambio_creacion.py` (falla de forma no determinista al
