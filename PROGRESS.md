@@ -184,7 +184,51 @@ paralelismo externo — no hay procesos `pytest`/`xdist` concurrentes contra
 la misma BD). Queda como deuda de infraestructura de test a investigar
 aparte; no bloquea estos tres fixes.
 
+## Fixes de creación/eliminación de usuarios (rama `fix-user-creation-bugs`)
+Cuatro bugs reportados sobre la gestión de usuarios desde el panel admin,
+corregidos en un worktree aparte desde `staging`:
+
+- [x] Contraseña por invitación para **todos** los usuarios nuevos, no solo
+  supervisoras. `crear_supervisora_con_invitacion` (Paso 6, arriba) se
+  generaliza a `crear_usuario_con_invitacion(usuario)` en
+  `app/services/registro.py` y se llama siempre desde `usuario_nuevo()`
+  (`app/routes/admin/usuarios.py`), sin condicionarla a `es_supervisora`.
+  El formulario ya nunca acepta una contraseña en la creación: se genera
+  con `secrets.token_urlsafe(32)` y se sobreescribe otra vez dentro de
+  `crear_usuario_con_invitacion` antes de enviar el email. Plantilla
+  `usuario_form.html`: el bloque de contraseña se oculta con un `{% if
+  es_creacion %}` (deja de depender del checkbox "Supervisora" por JS) y
+  siempre muestra el aviso de invitación al crear. Email genérico:
+  `email/invitacion_supervisora.html` renombrada a
+  `email/invitacion_usuario.html`, con texto neutro ("Se ha creado tu
+  cuenta") en vez de específico de supervisoras.
+- [x] Email duplicado al crear usuario causaba 500 (constraint UNIQUE de
+  BD sin validar antes). Añadida comprobación explícita en
+  `usuario_nuevo()` (`Usuario.query.filter_by(email=email).first()`) y en
+  `usuario_editar()` (misma comprobación, excluyendo el propio id:
+  `Usuario.id != u.id`) que añaden un `flash` de error y re-renderizan el
+  formulario en vez de dejar que el `INSERT`/`UPDATE` falle.
+- [x] Eliminar una supervisora daba 500: `eliminar_usuario_admin()` no
+  cubría todas las dependencias FK que solo existen para supervisoras
+  (p. ej. filas de `DocumentoCambio` con `creado_por_id`/`supervisora_id`/
+  `anulado_por_id` apuntando a ella, `AjustePlanillaSupervisora.realizado_por_id`,
+  o `MapeoTrabajadorPlanilla.usuario_id`). Ampliado el borrado en cascada de
+  `app/services/registro.py::eliminar_usuario_admin` para nulificar o
+  borrar (según la FK) cada una de esas tablas antes de borrar el usuario,
+  incluyendo el caso de documentos que ella creó (se borran enteros, junto
+  con sus participantes/firmas de otros usuarios).
+- [x] Email de invitación no llegaba en Railway staging: no requería
+  cambio de código aparte — al generalizar la invitación (punto 1) a
+  todos los usuarios nuevos, el envío pasa siempre por
+  `app/services/email.py` (Resend vía HTTPS, ya usado por supervisoras),
+  que ya funciona en staging.
+
+Los 4 fixes viven en los mismos archivos (`usuarios.py`, `registro.py`,
+`usuario_form.html`, plantilla de email renombrada) y se han probado
+juntos; suite completa verde sin regresiones (`pytest -p no:testmon`).
+
 ## Siguiente paso
-Ninguno pendiente de estos tres fixes. Abrir PR contra `staging` y, si se
-retoma este hilo, investigar la flakiness de
-`tests/test_rutas_importar_planilla.py` descrita arriba.
+Ninguno pendiente. Abrir PR contra `staging` para estos 4 fixes. Si se
+retoma este hilo más adelante, investigar la flakiness de
+`tests/test_rutas_importar_planilla.py` descrita arriba (deuda de
+infraestructura de test preexistente, no introducida por este trabajo).
