@@ -62,12 +62,40 @@ generar juntes de verdad, siguiendo los 7 pasos de `docs/PLAN_JUNTE.md`.
   de layout en `tests/test_pdf_junte_frames.py` (renderizado directo) se
   mantienen como regresión de coordenadas de los `@frame`.
 
+- [x] Paso 6 — `app/routes/documento_cambio.py::nueva()`: nuevo campo
+  `tipo` en el formulario (`"cambio"` por defecto). Si `tipo == "junte"`,
+  reutiliza directamente `_extraer_turnos_junte()` (importada de
+  `app/routes/publicaciones.py`, sin duplicar la validación de
+  `junte_semana`/`junte_cadencia`/`junte_noches`) y llama a
+  `crear_documento_cambio_junte`; si no, sigue el flujo existente
+  (`crear_documento_cambio`). El resto de validaciones (compañero válido,
+  firmas si `firmar_ambos`) y el flujo de `firmar_ambos` no cambian, ya que
+  no dependen del tipo. Tests nuevos en `tests/test_documento_cambio_creacion.py`
+  (`test_post_nuevo_junte_crea_documento_tipo_junte`,
+  `test_post_nuevo_junte_con_semana_pasada_da_error_sin_crear_nada`,
+  `test_post_nuevo_junte_con_numero_de_noches_incorrecto_da_error`).
+
 ## Siguiente paso
-Paso 6 de `docs/PLAN_JUNTE.md`: `app/routes/documento_cambio.py::nueva()` —
-campo `tipo` en el formulario; rama junte que lee
-`junte_semana`/`junte_cadencia`/`junte_noches` (reutilizando la lógica de
-`_extraer_turnos_junte` de `app/routes/publicaciones.py`) y llama a
-`crear_documento_cambio_junte`.
+**IMPORTANTE — estado a mitad de commit:** el Paso 6 está implementado y con
+la suite completa en verde (`pytest --testmon`, confirmado), pero **los
+cambios siguen sin commitear** en el árbol de trabajo (`git status` mostrará
+`app/routes/documento_cambio.py`, `tests/test_documento_cambio_creacion.py`
+y este `PROGRESS.md` como modificados). Antes de tocar nada más: revisar
+`git diff` de esos 3 archivos y hacer el commit del Paso 6 (mensaje sugerido:
+`feat(documento_cambio): añade rama de junte de noches a la ruta de creación`),
+y solo entonces continuar con el Paso 7.
+
+Paso 7 de `docs/PLAN_JUNTE.md`: `app/templates/documento_cambio/nuevo.html`
+— selector de tipo (radio, patrón `tipo-opcion` de
+`publicaciones/publicar.html`) + sección `section-junte` (oculta por
+defecto) reutilizando el JS de esa plantilla (`generarNochesGrid`,
+`actualizarHintNoches`, tabla `CADENCIA`) adaptado a este formulario;
+ocultar/mostrar las secciones de turno único existentes según el tipo
+elegido. Luego: verificación manual completa y PR draft contra `staging`.
+
+No se ha abierto todavía ningún Pull Request para este trabajo (Pasos 1-6
+viven solo en este worktree/rama `worktree-documentos-cambio-junte-noches`,
+sin push al remoto).
 
 Nota: se detectó flakiness preexistente y no relacionada en
 `tests/test_documento_cambio_creacion.py` (falla de forma no determinista al
