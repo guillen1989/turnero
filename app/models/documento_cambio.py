@@ -83,6 +83,11 @@ class DocumentoCambio(db.Model):
     depende_de_id = db.Column(
         db.Integer, db.ForeignKey("documento_cambio.id"), nullable=True
     )
+    # Qué generar en el PDF: "cambio" (un único turno cedido/recibido, el
+    # caso de siempre) o "junte" (dos compañeros reorganizan las noches de
+    # una semana, varias filas ParticipanteDocumentoCambio por persona).
+    # server_default porque documento_cambio ya tiene filas reales en staging.
+    tipo = db.Column(db.String(20), nullable=False, default="cambio", server_default="cambio")
 
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
     supervisora = db.relationship("Usuario", foreign_keys=[supervisora_id])
@@ -160,8 +165,12 @@ class ParticipanteDocumentoCambio(db.Model):
         return self.nombre_congelado or self.usuario.nombre
 
     __table_args__ = (
+        # Permite varias filas del mismo usuario en un documento (un junte
+        # cede/recibe varias noches, una fila por noche); sigue impidiendo
+        # duplicar la misma noche cedida dos veces.
         db.UniqueConstraint(
-            "documento_id", "usuario_id", name="uq_participante_documento_usuario"
+            "documento_id", "usuario_id", "turno_cede_fecha", "turno_cede_franja_id",
+            name="uq_participante_documento_usuario",
         ),
     )
 

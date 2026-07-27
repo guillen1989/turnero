@@ -1,5 +1,37 @@
 # Estado del desarrollo
 
+## Junte de noches en /documentos-cambio/nuevo (ejecución de `docs/PLAN_JUNTE.md`)
+Continuación del hilo anterior (frames de PDF ya mergeados en `staging`):
+ahora se conecta el modelo de datos y la ruta de creación manual para poder
+generar juntes de verdad, siguiendo los 7 pasos de `docs/PLAN_JUNTE.md`.
+
+- [x] Paso 1 — Modelo: columna `tipo` en `DocumentoCambio` (`"cambio"` por
+  defecto, `server_default` porque ya hay filas en staging) y constraint
+  `uq_participante_documento_usuario` ampliado a `(documento_id, usuario_id,
+  turno_cede_fecha, turno_cede_franja_id)` para permitir varias filas de la
+  misma persona (una por noche) en `ParticipanteDocumentoCambio`. Migración
+  `aec48c5be24e` (generada con `flask db migrate`, `flask db heads` → 1
+  head). Tests en `tests/test_models_documento_cambio.py`.
+- [x] Paso 2 — `app/services/junte_semanal.py`: extraída
+  `distribucion_desde_fechas(fechas_cedidas, fechas_aceptadas)` de
+  `calcular_distribucion`, que pasa a ser un wrapper de una línea. Permite
+  calcular la distribución semanal (lunes, trabaja/libra, cadencia) a partir
+  de fechas sueltas, sin depender de `PublicacionCambio` — lo que necesitará
+  el junte de `DocumentoCambio` en los pasos siguientes. Tests en
+  `tests/test_junte_semanal.py`.
+
+## Siguiente paso
+Paso 3 de `docs/PLAN_JUNTE.md`: `app/services/factibilidad_documento_cambio.py`
+— `_construir_overlay` debe añadir siempre (con o sin predecesor) los deltas
+de las propias filas de `documento.participantes`; quitar el `if
+documento.depende_de_id is not None:` de `comprobar_factibilidad`.
+
+Nota: se detectó flakiness preexistente y no relacionada en
+`tests/test_documento_cambio_creacion.py` (falla de forma no determinista al
+ejecutar el archivo completo, con `ObjectDeletedError`); confirmado que
+reproduce igual con estos cambios revertidos (`git stash`), así que es un
+problema de entorno, no de este trabajo. No bloquea seguir con el Paso 3.
+
 ## Junte de noches en la hoja de cambio digital (worktree `feature/junte-frames-pdf`)
 Primer paso de una iniciativa mayor: que `documento_cambio/pdf.html` también
 sirva para juntes de noches (hasta ahora esas dos rejillas L-M-X-J-V-S-D del

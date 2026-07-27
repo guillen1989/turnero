@@ -93,10 +93,9 @@ def test_documento_cambio_origen_papel_por_defecto_es_false(db):
     assert db.session.get(DocumentoCambio, documento.id).origen_papel is False
 
 
-def test_participante_unico_por_documento_y_usuario(db):
-    import pytest
-    from sqlalchemy.exc import IntegrityError
-
+def test_participante_permite_varias_filas_del_mismo_usuario_con_distinta_noche(db):
+    """Necesario para un junte: la misma persona cede/recibe varias noches
+    distintas en el mismo documento, una fila por noche."""
     crear_usuario, manyana, tarde = _setup(db, "c")
     ana = crear_usuario("anac@h.es")
     documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
@@ -114,9 +113,56 @@ def test_participante_unico_por_documento_y_usuario(db):
         turno_recibe_fecha=date(2026, 8, 2), turno_recibe_franja=tarde,
     )
     db.session.add_all([p1, p2])
+    db.session.commit()
+
+    recuperado = db.session.get(DocumentoCambio, documento.id)
+    assert len(recuperado.participantes) == 2
+
+
+def test_participante_rechaza_fila_exacta_duplicada(db):
+    import pytest
+    from sqlalchemy.exc import IntegrityError
+
+    crear_usuario, manyana, tarde = _setup(db, "c2")
+    ana = crear_usuario("anac2@h.es")
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
+    db.session.add(documento)
+    db.session.flush()
+
+    p1 = ParticipanteDocumentoCambio(
+        documento=documento, usuario=ana,
+        turno_cede_fecha=date(2026, 7, 25), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 7, 26), turno_recibe_franja=tarde,
+    )
+    p2 = ParticipanteDocumentoCambio(
+        documento=documento, usuario=ana,
+        turno_cede_fecha=date(2026, 7, 25), turno_cede_franja=manyana,
+        turno_recibe_fecha=date(2026, 8, 2), turno_recibe_franja=tarde,
+    )
+    db.session.add_all([p1, p2])
     with pytest.raises(IntegrityError):
         db.session.commit()
     db.session.rollback()
+
+
+def test_documento_cambio_tipo_por_defecto_es_cambio(db):
+    crear_usuario, manyana, tarde = _setup(db, "tipo")
+    ana = crear_usuario("anatipo@h.es")
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1)
+    db.session.add(documento)
+    db.session.commit()
+
+    assert db.session.get(DocumentoCambio, documento.id).tipo == "cambio"
+
+
+def test_documento_cambio_tipo_junte(db):
+    crear_usuario, manyana, tarde = _setup(db, "tipo2")
+    ana = crear_usuario("anatipo2@h.es")
+    documento = DocumentoCambio(creado_por=ana, unidad=ana.unidad, numero_unidad=1, tipo="junte")
+    db.session.add(documento)
+    db.session.commit()
+
+    assert db.session.get(DocumentoCambio, documento.id).tipo == "junte"
 
 
 def test_firma_documento_cambio(db):
