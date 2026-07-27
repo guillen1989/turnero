@@ -1,5 +1,104 @@
 # Estado del desarrollo
 
+## Junte de noches en /documentos-cambio/nuevo (ejecución de `docs/PLAN_JUNTE.md`)
+Continuación del hilo anterior (frames de PDF ya mergeados en `staging`):
+ahora se conecta el modelo de datos y la ruta de creación manual para poder
+generar juntes de verdad, siguiendo los 7 pasos de `docs/PLAN_JUNTE.md`.
+
+- [x] Paso 1 — Modelo: columna `tipo` en `DocumentoCambio` (`"cambio"` por
+  defecto, `server_default` porque ya hay filas en staging) y constraint
+  `uq_participante_documento_usuario` ampliado a `(documento_id, usuario_id,
+  turno_cede_fecha, turno_cede_franja_id)` para permitir varias filas de la
+  misma persona (una por noche) en `ParticipanteDocumentoCambio`. Migración
+  `aec48c5be24e` (generada con `flask db migrate`, `flask db heads` → 1
+  head). Tests en `tests/test_models_documento_cambio.py`.
+- [x] Paso 2 — `app/services/junte_semanal.py`: extraída
+  `distribucion_desde_fechas(fechas_cedidas, fechas_aceptadas)` de
+  `calcular_distribucion`, que pasa a ser un wrapper de una línea. Permite
+  calcular la distribución semanal (lunes, trabaja/libra, cadencia) a partir
+  de fechas sueltas, sin depender de `PublicacionCambio` — lo que necesitará
+  el junte de `DocumentoCambio` en los pasos siguientes. Tests en
+  `tests/test_junte_semanal.py`.
+
+- [x] Paso 3 — `app/services/factibilidad_documento_cambio.py`: overlay
+  siempre activo (ya no solo si `depende_de_id`), incluyendo también las
+  propias filas de `documento.participantes` -- necesario para que la racha
+  de días consecutivos y el descanso nocturno cuenten las "noches hermanas"
+  de un junte de varias filas. `_construir_overlay` acepta
+  `excluir_participante` para que, al comprobar si una fila concreta
+  cede/recibe lo que dice, no se compare esa fila contra su propio delta
+  (sería tautológico: siempre "quitaría" lo que cede y "añadiría" lo que
+  recibe). Las comprobaciones de racha/descanso sí usan el overlay completo
+  (incluida la fila propia), porque ya tienen su propia guarda de
+  autoexclusión por fecha exacta (`fecha_hipotetica`/`fecha_cedida`). Tests
+  nuevos en `tests/test_servicio_factibilidad_documento_cambio.py`
+  (`test_racha_cuenta_las_noches_hermanas_del_mismo_documento`).
+
+- [x] Paso 4 — `app/services/documento_cambio.py`: nueva
+  `crear_documento_cambio_junte(creado_por, companero, cedidos, aceptados,
+  depende_de_id=None)`. `cedidos`/`aceptados` son listas de `(fecha,
+  franja_id)` de `creado_por` (mismo formato que `_extraer_turnos_junte` en
+  `publicaciones.py`), misma longitud; por cada índice crea la fila de
+  `creado_por` y su espejo exacto para `companero` (mismo patrón que
+  `crear_documento_cambio`, pero N filas). Reutiliza
+  `comprobar_factibilidad`, `_notificar` y `_siguiente_numero_unidad` tal
+  cual. Tests en `tests/test_servicio_documento_cambio.py`.
+
+- [x] Paso 5 — `generar_pdf_documento`: nuevo helper `_contexto_pdf_junte`
+  que, si `documento.tipo == "junte"`, agrupa `documento.participantes` por
+  `usuario_id` (2 grupos) y usa `distribucion_desde_fechas` para calcular
+  `(lunes_semana, trabaja, libra, num_noches)` de cada uno; por
+  construcción de las cadencias LMVD(4)/MJS(3) siempre hay un num_noches==3
+  y otro ==4, de ahí `junte_corresponde_{3,4}_nombre`,
+  `junte_cambio_{3,4}_nombre` y `junte_cambio_{3,4}_dias` (lista de 7,
+  "N"/""). Si no es junte, solo `mostrar_junte=False`.
+  `app/templates/documento_cambio/pdf.html`: los 5 campos de turno único
+  (`cede_franja_c`, `cede_fecha_c`, `recibe_franja_c`, `recibe_fecha_c`,
+  `companero_c`) ahora están en `{% if not mostrar_junte %}` -- no
+  representan bien un junte de varias filas. Tests ampliados en
+  `tests/test_servicio_documento_cambio.py`
+  (`test_generar_pdf_documento_junte_muestra_las_dos_distribuciones`, con
+  un `DocumentoCambio` real vía `crear_documento_cambio_junte`); los tests
+  de layout en `tests/test_pdf_junte_frames.py` (renderizado directo) se
+  mantienen como regresión de coordenadas de los `@frame`.
+
+- [x] Paso 6 — `app/routes/documento_cambio.py::nueva()`: nuevo campo
+  `tipo` en el formulario (`"cambio"` por defecto). Si `tipo == "junte"`,
+  reutiliza directamente `_extraer_turnos_junte()` (importada de
+  `app/routes/publicaciones.py`, sin duplicar la validación de
+  `junte_semana`/`junte_cadencia`/`junte_noches`) y llama a
+  `crear_documento_cambio_junte`; si no, sigue el flujo existente
+  (`crear_documento_cambio`). El resto de validaciones (compañero válido,
+  firmas si `firmar_ambos`) y el flujo de `firmar_ambos` no cambian, ya que
+  no dependen del tipo. Tests nuevos en `tests/test_documento_cambio_creacion.py`
+  (`test_post_nuevo_junte_crea_documento_tipo_junte`,
+  `test_post_nuevo_junte_con_semana_pasada_da_error_sin_crear_nada`,
+  `test_post_nuevo_junte_con_numero_de_noches_incorrecto_da_error`).
+
+- [x] Paso 7 — `app/templates/documento_cambio/nuevo.html`: selector de tipo
+  (`tipo-opcion` de `publicaciones/publicar.html`) con dos opciones ("Cambio
+  de turno" por defecto / "Junte de noches"). Sección `section-junte` (oculta
+  por defecto) con `junte_semana`, radios `junte_cadencia` (LMVD/MJS) y grid
+  de checkboxes `junte_noches` generado por JS (`generarNochesGrid`,
+  `actualizarHintNoches`, tabla `CADENCIA`/`DIAS_ES` reutilizados de
+  `publicar.html`). Las secciones de turno único (`section-cambio`) se
+  ocultan al seleccionar junte y viceversa (`actualizarSecciones()`). El
+  submit valida el número correcto de noches seleccionadas (JS, mismo patrón
+  que `publicar.html`).
+
+## Siguiente paso
+Abrir PR contra `staging`. Los 7 pasos del plan están completos y
+commiteados. Suite no-PDF en verde (los tests de PDF fallan por un bug de
+entorno: `reportlab/xhtml2pdf` usa `md5(usedforsecurity=False)`, no
+soportado en Python 3.8 — mismo fallo en staging, no introducido por este
+trabajo).
+
+Nota: se detectó flakiness preexistente y no relacionada en
+`tests/test_documento_cambio_creacion.py` (falla de forma no determinista al
+ejecutar el archivo completo, con `ObjectDeletedError`); confirmado que
+reproduce igual con estos cambios revertidos (`git stash`), así que es un
+problema de entorno, no de este trabajo. No bloquea seguir.
+
 ## Junte de noches en la hoja de cambio digital (worktree `feature/junte-frames-pdf`)
 Primer paso de una iniciativa mayor: que `documento_cambio/pdf.html` también
 sirva para juntes de noches (hasta ahora esas dos rejillas L-M-X-J-V-S-D del

@@ -15,19 +15,23 @@ from app.services.planilla import tiene_mes_publicado
 from app.services.compatibilidad_planilla import turnos_solapan
 
 
-def _construir_overlay(documento):
+def _construir_overlay(documento, excluir_participante=None):
     """
-    Construye un overlay del estado hipotético de las planillas a partir de
-    la cadena de documentos predecesores aún pendientes de autorización.
+    Construye un overlay del estado hipotético de las planillas a partir de:
+    - la cadena de documentos predecesores aún pendientes de autorización, y
+    - las propias filas de `documento.participantes` (necesario en un junte
+      de varias noches, donde ceder/recibir una noche afecta a la racha de
+      días consecutivos y al descanso nocturno de las otras noches del mismo
+      documento -- las "noches hermanas").
 
-    Recorre `depende_de_id` hacia atrás. Para cada predecesor en estado
-    'completo' que no ha sido autorizado/denegado/anulado todavía, acumula
-    los turnos que cede y que recibe.
+    `excluir_participante`, si se indica, omite esa fila propia al construir
+    el overlay: se usa al comprobar si esa misma fila cede/recibe lo que
+    dice, para no comparar la fila contra su propia hipótesis (ver
+    `comprobar_factibilidad`).
 
     Devuelve (added, removed) donde:
     - added:   set de (usuario_id, fecha, franja_id) que se añadirían
     - removed: set de (usuario_id, fecha, franja_id) que se quitarían
-    Si no hay cadena (documento sin dependencia), ambos sets están vacíos.
     """
     added = set()
     removed = set()
@@ -55,6 +59,12 @@ def _construir_overlay(documento):
                 added.add((p.usuario_id, p.turno_recibe_fecha, p.turno_recibe_franja_id))
 
         cursor_id = predecesor.depende_de_id
+
+    for p in documento.participantes:
+        if p is excluir_participante:
+            continue
+        removed.add((p.usuario_id, p.turno_cede_fecha, p.turno_cede_franja_id))
+        added.add((p.usuario_id, p.turno_recibe_fecha, p.turno_recibe_franja_id))
 
     return added, removed
 
@@ -233,20 +243,23 @@ def comprobar_factibilidad(documento) -> tuple[str, list[str]]:
         if not tiene_mes_publicado(p.usuario, p.turno_recibe_fecha):
             return "no_verificado", []
 
-    # Construir overlay si el documento depende de otro (cadena de cambios).
-    overlay = None
-    if documento.depende_de_id is not None:
-        overlay = _construir_overlay(documento)
+    # Overlay del estado hipotético de las planillas: cadena de predecesores
+    # más las propias filas del documento (noches hermanas en un junte).
+    overlay = _construir_overlay(documento)
 
     for p in documento.participantes:
         nombre = p.usuario.nombre or f"#{p.usuario_id}"
         fecha_str = p.turno_cede_fecha.strftime("%d/%m/%Y")
-        if not _trabaja_turno(p.usuario, p.turno_cede_fecha, p.turno_cede_franja, overlay):
+        # Al comprobar si esta fila cede/recibe lo que dice, excluimos su
+        # propio delta del overlay: si no, siempre "quitaría" lo que cede y
+        # "añadiría" lo que recibe contra sí misma (tautológico).
+        overlay_sin_propia = _construir_overlay(documento, excluir_participante=p)
+        if not _trabaja_turno(p.usuario, p.turno_cede_fecha, p.turno_cede_franja, overlay_sin_propia):
             motivos.append(
                 f"{nombre}: no trabaja {p.turno_cede_franja.nombre} el {fecha_str}"
             )
         fecha_recibe_str = p.turno_recibe_fecha.strftime("%d/%m/%Y")
-        if not _libre_para_turno(p.usuario, p.turno_recibe_fecha, p.turno_recibe_franja, overlay):
+        if not _libre_para_turno(p.usuario, p.turno_recibe_fecha, p.turno_recibe_franja, overlay_sin_propia):
             motivos.append(
                 f"{nombre}: no esta libre para {p.turno_recibe_franja.nombre} el {fecha_recibe_str}"
             )

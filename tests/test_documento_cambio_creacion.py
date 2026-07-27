@@ -1,7 +1,7 @@
 from datetime import date, time, timedelta
 
 from app.extensions import db
-from app.models import Categoria, FranjaHoraria, GrupoIntercambio, Hospital, Unidad, Usuario
+from app.models import Categoria, DocumentoCambio, FranjaHoraria, GrupoIntercambio, Hospital, Unidad, Usuario
 from tests.helpers_documento_cambio import _setup, _login, _FIRMA_PNG
 
 
@@ -238,3 +238,75 @@ def test_post_nuevo_cambio_en_el_dia_misma_fecha_distinta_franja(db, client):
     documento = db.session.get(DocumentoCambio, documento_id)
     fechas = {p.turno_cede_fecha for p in documento.participantes}
     assert fechas == {date(2026, 7, 7)}
+
+
+def _crear_franja_noche(db, grupo):
+    noche = FranjaHoraria(
+        nombre="Noche", hora_inicio=time(22, 0), hora_fin=time(7, 0), grupo_intercambio=grupo,
+    )
+    db.session.add(noche)
+    db.session.commit()
+    return noche
+
+
+def test_post_nuevo_junte_crea_documento_tipo_junte(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "junte1")
+    claudia = crear_usuario("Claudia Pérez", "claudiajunte1@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanjunte1@h.es")
+    _crear_franja_noche(db, claudia.unidad.grupo_intercambio)
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "junte",
+        "companero_id": juan.id,
+        "junte_semana": "2026-08-03",
+        "junte_cadencia": "LMVD",
+        "junte_noches": ["1", "2", "4", "6"],
+    })
+
+    assert resp.status_code == 302
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.tipo == "junte"
+    assert len(documento.participantes) == 2
+    claudia_fila = next(p for p in documento.participantes if p.usuario_id == claudia.id)
+    assert claudia_fila.turno_cede_fecha == date(2026, 8, 3)  # lunes cedido
+    assert claudia_fila.turno_recibe_fecha == date(2026, 8, 4)  # martes recibido
+
+
+def test_post_nuevo_junte_con_semana_pasada_da_error_sin_crear_nada(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "junte2")
+    claudia = crear_usuario("Claudia Pérez", "claudiajunte2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanjunte2@h.es")
+    _crear_franja_noche(db, claudia.unidad.grupo_intercambio)
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "junte",
+        "companero_id": juan.id,
+        "junte_semana": "2020-01-06",
+        "junte_cadencia": "LMVD",
+        "junte_noches": ["1", "2", "4", "6"],
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0
+
+
+def test_post_nuevo_junte_con_numero_de_noches_incorrecto_da_error(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "junte3")
+    claudia = crear_usuario("Claudia Pérez", "claudiajunte3@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanjunte3@h.es")
+    _crear_franja_noche(db, claudia.unidad.grupo_intercambio)
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "junte",
+        "companero_id": juan.id,
+        "junte_semana": "2026-08-03",
+        "junte_cadencia": "LMVD",
+        "junte_noches": ["1", "2"],
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0

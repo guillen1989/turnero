@@ -9,8 +9,10 @@ from sqlalchemy import and_, or_
 
 from app.models import DocumentoCambio, FranjaHoraria, ParticipanteDocumentoCambio, Unidad, Usuario
 from app.extensions import db
+from app.routes.publicaciones import _extraer_turnos_junte
 from app.services.documento_cambio import (
-    crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
+    crear_documento_cambio, crear_documento_cambio_junte, firmar_documento,
+    generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, anular_documento, puede_anularse,
     registrar_documento_cambio_papel, CambioNoFactibleError,
 )
@@ -366,6 +368,7 @@ def nueva():
     hoy = date.today()
 
     if request.method == "POST":
+        tipo = request.form.get("tipo", "cambio")
         companero_id = request.form.get("companero_id", type=int)
         cede_fecha_str = request.form.get("turno_cede_fecha", "")
         cede_franja_id = request.form.get("turno_cede_franja_id", type=int)
@@ -380,17 +383,22 @@ def nueva():
         franja_ids_validas = {f.id for f in franjas}
 
         error = None
-        try:
-            cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
-            recibe_fecha = datetime.strptime(recibe_fecha_str, "%Y-%m-%d").date()
-        except (ValueError, TypeError):
-            error = _("Fechas incorrectas.")
-            cede_fecha = recibe_fecha = None
+        cedidos = aceptados = None
+        if tipo == "junte":
+            cedidos, aceptados, error = _extraer_turnos_junte()
+        else:
+            try:
+                cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
+                recibe_fecha = datetime.strptime(recibe_fecha_str, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                error = _("Fechas incorrectas.")
+                cede_fecha = recibe_fecha = None
+
+            if not error and (cede_franja_id not in franja_ids_validas or recibe_franja_id not in franja_ids_validas):
+                error = _("Selecciona un turno válido.")
 
         if not error and companero is None:
             error = _("Selecciona un compañero válido.")
-        if not error and (cede_franja_id not in franja_ids_validas or recibe_franja_id not in franja_ids_validas):
-            error = _("Selecciona un turno válido.")
         if not error and firmar_ambos and (
             not imagen_firma_propia.startswith("data:image/")
             or not imagen_firma_companero.startswith("data:image/")
@@ -405,12 +413,19 @@ def nueva():
                 hojas_pendientes=_hojas_pendientes_encadenables(current_user.grupo_intercambio.id),
             )
 
-        documento = crear_documento_cambio(
-            creado_por=current_user, companero=companero,
-            turno_cede_fecha=cede_fecha, turno_cede_franja_id=cede_franja_id,
-            turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=recibe_franja_id,
-            depende_de_id=depende_de_id,
-        )
+        if tipo == "junte":
+            documento = crear_documento_cambio_junte(
+                creado_por=current_user, companero=companero,
+                cedidos=cedidos, aceptados=aceptados,
+                depende_de_id=depende_de_id,
+            )
+        else:
+            documento = crear_documento_cambio(
+                creado_por=current_user, companero=companero,
+                turno_cede_fecha=cede_fecha, turno_cede_franja_id=cede_franja_id,
+                turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=recibe_franja_id,
+                depende_de_id=depende_de_id,
+            )
 
         if firmar_ambos:
             # Las dos partes están rellenando el cambio juntas, desde el

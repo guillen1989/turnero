@@ -529,3 +529,52 @@ def test_cadena_dos_niveles(db):
 
     estado, motivos = comprobar_factibilidad(doc_c)
     assert estado == "factible", f"Esperaba factible, obtuve {estado}: {motivos}"
+
+
+# ── Tests nuevos: overlay de filas hermanas (junte de varias noches) ─────────
+
+
+def test_racha_cuenta_las_noches_hermanas_del_mismo_documento(db):
+    """Documento de varias filas (junte) para Claudia y Juan: la racha de
+    días consecutivos al recibir un turno debe contar también los turnos
+    cedidos y recibidos en las otras filas del mismo documento (noches
+    hermanas), no solo la propia fila."""
+    from app.models import DocumentoCambio, ParticipanteDocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "r1")
+    claudia = crear_usuario("Claudiar1", "claudiar1@h.es")
+    juan = crear_usuario("Juanr1", "juanr1@h.es")
+    _publicar_mes(claudia, 2026, 7)
+    _publicar_mes(juan, 2026, 7)
+    claudia.unidad.grupo_intercambio.limite_dias_consecutivos = 3
+
+    # Claudia trabaja de verdad el 6,7,8,9/7; Juan trabaja de verdad el
+    # 20,21,22,23/7. Se intercambian los 4 días: Claudia cede 6-9 y recibe
+    # 20-23 (4 noches consecutivas, por encima del límite de 3).
+    for dia in (6, 7, 8, 9):
+        db.session.add(TurnoPlanilla(usuario=claudia, fecha=date(2026, 7, dia), franja_horaria=manyana))
+    for dia in (20, 21, 22, 23):
+        db.session.add(TurnoPlanilla(usuario=juan, fecha=date(2026, 7, dia), franja_horaria=manyana))
+    db.session.commit()
+
+    documento = DocumentoCambio(
+        creado_por=claudia, unidad_id=claudia.unidad_id, numero_unidad=1, tipo="junte",
+    )
+    db.session.add(documento)
+    db.session.flush()
+    for dia_cede, dia_recibe in zip((6, 7, 8, 9), (20, 21, 22, 23)):
+        documento.participantes.append(ParticipanteDocumentoCambio(
+            usuario=claudia,
+            turno_cede_fecha=date(2026, 7, dia_cede), turno_cede_franja=manyana,
+            turno_recibe_fecha=date(2026, 7, dia_recibe), turno_recibe_franja=manyana,
+        ))
+        documento.participantes.append(ParticipanteDocumentoCambio(
+            usuario=juan,
+            turno_cede_fecha=date(2026, 7, dia_recibe), turno_cede_franja=manyana,
+            turno_recibe_fecha=date(2026, 7, dia_cede), turno_recibe_franja=manyana,
+        ))
+    db.session.commit()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    assert estado == "no_factible", f"Esperaba no_factible, obtuve {estado}: {motivos}"
+    assert any("consecutivos" in m.lower() and "Claudiar1" in m for m in motivos)

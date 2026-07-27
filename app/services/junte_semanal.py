@@ -40,8 +40,19 @@ def calcular_distribucion(pub):
       un junte parcial (se cede/recibe menos noches que toda la cadencia)
       trabaja/libra pueden tener otro tamaño.
     """
-    cedidos_wd = frozenset(tc.fecha.weekday() for tc in pub.turnos_cedidos)
-    aceptados_wd = frozenset(ta.fecha.weekday() for ta in pub.turnos_aceptados)
+    return distribucion_desde_fechas(
+        [tc.fecha for tc in pub.turnos_cedidos],
+        [ta.fecha for ta in pub.turnos_aceptados],
+    )
+
+
+def distribucion_desde_fechas(fechas_cedidas, fechas_aceptadas):
+    """Misma lógica que calcular_distribucion, pero sobre listas de date en
+    vez de objetos TurnoCedido/TurnoAceptado -- reutilizable desde cualquier
+    sitio que ya tenga las fechas sueltas (p. ej. un junte de DocumentoCambio,
+    que no depende de PublicacionCambio)."""
+    cedidos_wd = frozenset(f.weekday() for f in fechas_cedidas)
+    aceptados_wd = frozenset(f.weekday() for f in fechas_aceptadas)
 
     cadencia = _LMVD if (cedidos_wd & _LMVD) else _MJS
     partner = frozenset(range(7)) - cadencia
@@ -49,7 +60,7 @@ def calcular_distribucion(pub):
     trabaja = (cadencia - cedidos_wd) | aceptados_wd
     libra = cedidos_wd | (partner - aceptados_wd)
 
-    fechas = [tc.fecha for tc in pub.turnos_cedidos] + [ta.fecha for ta in pub.turnos_aceptados]
+    fechas = list(fechas_cedidas) + list(fechas_aceptadas)
     if not fechas:
         return None, trabaja, libra, len(cadencia)
 

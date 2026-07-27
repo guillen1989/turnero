@@ -19,6 +19,7 @@ from app.models import (
 from app.push.sender import enviar_push
 from app.services.email import enviar_email, url_absoluta
 from app.services.factibilidad_documento_cambio import comprobar_factibilidad
+from app.services.junte_semanal import distribucion_desde_fechas
 
 _MESES = [
     None, "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -116,6 +117,54 @@ def crear_documento_cambio(
         turno_cede_fecha=turno_recibe_fecha, turno_cede_franja_id=turno_recibe_franja_id,
         turno_recibe_fecha=turno_cede_fecha, turno_recibe_franja_id=turno_cede_franja_id,
     ))
+    db.session.flush()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    documento.factibilidad_estado = estado
+    documento.factibilidad_motivos = "\n".join(motivos) if motivos else None
+
+    _notificar(
+        companero, documento, "documento_cambio_pendiente_firma",
+        _("Hoja de cambio pendiente de firma"),
+        _("%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas.", nombre=creado_por.nombre),
+    )
+
+    db.session.commit()
+    return documento
+
+
+def crear_documento_cambio_junte(
+    creado_por, companero, cedidos, aceptados, depende_de_id=None,
+):
+    """
+    Como crear_documento_cambio, pero para un junte de varias noches: crea
+    una fila espejo por cada noche en vez de una sola.
+
+    cedidos/aceptados son listas de (fecha, franja_id) de creado_por, del
+    mismo formato y misma longitud (una noche cedida se empareja con la
+    noche aceptada de su mismo índice).
+    """
+    documento = DocumentoCambio(
+        creado_por=creado_por,
+        unidad_id=creado_por.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        tipo="junte",
+        depende_de_id=depende_de_id,
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    for (cede_fecha, cede_franja_id), (recibe_fecha, recibe_franja_id) in zip(cedidos, aceptados):
+        documento.participantes.append(ParticipanteDocumentoCambio(
+            usuario=creado_por,
+            turno_cede_fecha=cede_fecha, turno_cede_franja_id=cede_franja_id,
+            turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=recibe_franja_id,
+        ))
+        documento.participantes.append(ParticipanteDocumentoCambio(
+            usuario=companero,
+            turno_cede_fecha=recibe_fecha, turno_cede_franja_id=recibe_franja_id,
+            turno_recibe_fecha=cede_fecha, turno_recibe_franja_id=cede_franja_id,
+        ))
     db.session.flush()
 
     estado, motivos = comprobar_factibilidad(documento)
@@ -382,6 +431,37 @@ def generar_notas_ilog(documento):
     return notas
 
 
+def _contexto_pdf_junte(documento):
+    """
+    Variables junte_* que espera documento_cambio/pdf.html cuando
+    documento.tipo == "junte": agrupa las filas por usuario (2 grupos) y
+    calcula, con distribucion_desde_fechas, qué noches de la semana
+    trabajaría/libraría cada uno tras el junte. Por construcción de las
+    cadencias LMVD (4 noches) y MJS (3 noches), siempre hay una persona con
+    num_noches == 3 y otra con num_noches == 4 -- de ahí las variables
+    *_3_*/*_4_*. Si el documento no es un junte, devuelve solo
+    mostrar_junte=False.
+    """
+    if documento.tipo != "junte":
+        return {"mostrar_junte": False}
+
+    por_usuario = {}
+    for p in documento.participantes:
+        por_usuario.setdefault(p.usuario_id, []).append(p)
+
+    contexto = {"mostrar_junte": True}
+    for filas in por_usuario.values():
+        _, trabaja, _libra, num_noches = distribucion_desde_fechas(
+            [p.turno_cede_fecha for p in filas],
+            [p.turno_recibe_fecha for p in filas],
+        )
+        dias = ["N" if d in trabaja else "" for d in range(7)]
+        contexto[f"junte_corresponde_{num_noches}_nombre"] = filas[0].nombre_mostrar
+        contexto[f"junte_cambio_{num_noches}_nombre"] = filas[0].nombre_mostrar
+        contexto[f"junte_cambio_{num_noches}_dias"] = dias
+    return contexto
+
+
 def generar_pdf_documento(documento):
     """
     Renderiza la hoja de cambio rellena y firmada como PDF. El impreso real
@@ -430,6 +510,7 @@ def generar_pdf_documento(documento):
             if documento.fecha_decision_supervisora else None
         ),
         firma_supervisora=documento.firma_supervisora,
+        **_contexto_pdf_junte(documento),
     )
 
     buffer = io.BytesIO()

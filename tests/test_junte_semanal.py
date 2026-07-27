@@ -7,6 +7,7 @@ from datetime import date, timedelta
 from app.services.junte_semanal import (
     DIAS_CORTOS,
     calcular_distribucion,
+    distribucion_desde_fechas,
     lista_es,
     resumen_textual,
 )
@@ -73,6 +74,51 @@ def test_lunes_semana_es_independiente_de_que_fecha_se_use_para_calcularlo():
 def test_sin_turnos_devuelve_lunes_none():
     pub = _PubFake(cedidos=[], aceptados=[])
     lunes_semana, trabaja, libra, num_noches = calcular_distribucion(pub)
+    assert lunes_semana is None
+
+
+# --- distribucion_desde_fechas (misma lógica que calcular_distribucion, sobre
+# listas de date en vez de objetos TurnoCedido/TurnoAceptado) ---
+
+def test_distribucion_desde_fechas_calcula_lunes_trabaja_y_libra_cadencia_lmvd():
+    lunes = date(2026, 8, 3)
+    lunes_semana, trabaja, libra, num_noches = distribucion_desde_fechas(
+        fechas_cedidas=[lunes + timedelta(days=4), lunes + timedelta(days=6)],
+        fechas_aceptadas=[lunes + timedelta(days=1), lunes + timedelta(days=3)],
+    )
+
+    assert lunes_semana == lunes
+    assert trabaja == frozenset([0, 1, 2, 3])
+    assert libra == frozenset([4, 5, 6])
+    assert num_noches == 4
+
+
+def test_distribucion_desde_fechas_calcula_distribucion_cadencia_mjs():
+    lunes = date(2026, 8, 3)
+    lunes_semana, trabaja, libra, num_noches = distribucion_desde_fechas(
+        fechas_cedidas=[lunes + timedelta(days=1), lunes + timedelta(days=5)],
+        fechas_aceptadas=[lunes + timedelta(days=0), lunes + timedelta(days=4)],
+    )
+
+    assert lunes_semana == lunes
+    assert trabaja == frozenset([0, 3, 4])
+    assert libra == frozenset([1, 2, 5, 6])
+    assert num_noches == 3
+
+
+def test_distribucion_desde_fechas_lunes_independiente_de_que_fecha_se_use():
+    lunes = date(2026, 8, 3)
+    lunes_semana, _, _, _ = distribucion_desde_fechas(
+        fechas_cedidas=[lunes + timedelta(days=6)],
+        fechas_aceptadas=[lunes + timedelta(days=1)],
+    )
+    assert lunes_semana == lunes
+
+
+def test_distribucion_desde_fechas_sin_fechas_devuelve_lunes_none():
+    lunes_semana, trabaja, libra, num_noches = distribucion_desde_fechas(
+        fechas_cedidas=[], fechas_aceptadas=[],
+    )
     assert lunes_semana is None
 
 
