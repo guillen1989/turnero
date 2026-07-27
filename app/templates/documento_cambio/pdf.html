@@ -46,6 +46,39 @@
     @frame decision_mes_frame { -pdf-frame-content: decision_mes_c; left: 140.39mm; top: 242.5mm; width: 17.40mm; height: 8mm; }
     @frame decision_anyo_frame { -pdf-frame-content: decision_anyo_c; left: 165.91mm; top: 242.5mm; width: 15.08mm; height: 8mm; }
     @frame firma_supervisora_frame { -pdf-frame-content: firma_supervisora_c; left: 22.5mm; top: 260.5mm; width: 120mm; height: 17mm; }
+
+    {#
+      Juntes de noches (ver especificacion-app-cambio-turnos.md): las dos
+      rejillas L-M-X-J-V-S-D del impreso, 2 filas x 8 columnas cada una
+      (coordenadas medidas sobre hoja-cambio-fondo.png, 905x1280px @ A4,
+      0.232mm/px). Fila superior = trabajador con 3 noches antes del junte,
+      fila inferior = trabajador con 4 noches -- mismo orden en ambas
+      tablas. Tabla "CORRESPONDE A" ya trae impresas las 3/4 noches de
+      fondo (solo faltan los nombres, 8ª columna); tabla "CAMBIO" está en
+      blanco de fondo (faltan nombres y las 7 columnas de días con el
+      resultado del junte).
+    #}
+    @frame junte_corresponde_3_nombre_frame { -pdf-frame-content: junte_corresponde_3_nombre_c; left: 99.78mm; top: 113.70mm; width: 82.14mm; height: 6.73mm; }
+    @frame junte_corresponde_4_nombre_frame { -pdf-frame-content: junte_corresponde_4_nombre_c; left: 99.78mm; top: 120.43mm; width: 82.14mm; height: 6.73mm; }
+
+    @frame junte_cambio_3_nombre_frame { -pdf-frame-content: junte_cambio_3_nombre_c; left: 99.78mm; top: 140.62mm; width: 82.14mm; height: 6.15mm; }
+    @frame junte_cambio_4_nombre_frame { -pdf-frame-content: junte_cambio_4_nombre_c; left: 99.78mm; top: 146.77mm; width: 82.14mm; height: 6.27mm; }
+
+    @frame junte_cambio_3_dia0_frame { -pdf-frame-content: junte_cambio_3_dia0_c; left: 17.17mm; top: 140.62mm; width: 12.30mm; height: 6.15mm; }
+    @frame junte_cambio_3_dia1_frame { -pdf-frame-content: junte_cambio_3_dia1_c; left: 29.47mm; top: 140.62mm; width: 12.07mm; height: 6.15mm; }
+    @frame junte_cambio_3_dia2_frame { -pdf-frame-content: junte_cambio_3_dia2_c; left: 41.54mm; top: 140.62mm; width: 12.06mm; height: 6.15mm; }
+    @frame junte_cambio_3_dia3_frame { -pdf-frame-content: junte_cambio_3_dia3_c; left: 53.60mm; top: 140.62mm; width: 11.60mm; height: 6.15mm; }
+    @frame junte_cambio_3_dia4_frame { -pdf-frame-content: junte_cambio_3_dia4_c; left: 65.20mm; top: 140.62mm; width: 11.61mm; height: 6.15mm; }
+    @frame junte_cambio_3_dia5_frame { -pdf-frame-content: junte_cambio_3_dia5_c; left: 76.81mm; top: 140.62mm; width: 11.60mm; height: 6.15mm; }
+    @frame junte_cambio_3_dia6_frame { -pdf-frame-content: junte_cambio_3_dia6_c; left: 88.41mm; top: 140.62mm; width: 11.37mm; height: 6.15mm; }
+
+    @frame junte_cambio_4_dia0_frame { -pdf-frame-content: junte_cambio_4_dia0_c; left: 17.17mm; top: 146.77mm; width: 12.30mm; height: 6.27mm; }
+    @frame junte_cambio_4_dia1_frame { -pdf-frame-content: junte_cambio_4_dia1_c; left: 29.47mm; top: 146.77mm; width: 12.07mm; height: 6.27mm; }
+    @frame junte_cambio_4_dia2_frame { -pdf-frame-content: junte_cambio_4_dia2_c; left: 41.54mm; top: 146.77mm; width: 12.06mm; height: 6.27mm; }
+    @frame junte_cambio_4_dia3_frame { -pdf-frame-content: junte_cambio_4_dia3_c; left: 53.60mm; top: 146.77mm; width: 11.60mm; height: 6.27mm; }
+    @frame junte_cambio_4_dia4_frame { -pdf-frame-content: junte_cambio_4_dia4_c; left: 65.20mm; top: 146.77mm; width: 11.61mm; height: 6.27mm; }
+    @frame junte_cambio_4_dia5_frame { -pdf-frame-content: junte_cambio_4_dia5_c; left: 76.81mm; top: 146.77mm; width: 11.60mm; height: 6.27mm; }
+    @frame junte_cambio_4_dia6_frame { -pdf-frame-content: junte_cambio_4_dia6_c; left: 88.41mm; top: 146.77mm; width: 11.37mm; height: 6.27mm; }
   }
 
   #hospital_c, #unidad_c, #categoria_c, #ddna_c, #cede_franja_c, #cede_fecha_c,
@@ -59,6 +92,12 @@
   #favorable_marca_c, #desfavorable_marca_c { font-family: Helvetica; font-size: 10pt; font-weight: bold; color: #1a1a6e; margin: 0; }
   #decision_dia_c, #decision_mes_c, #decision_anyo_c { font-family: Helvetica; font-size: 9.5pt; color: #1a1a6e; margin: 0; padding: 0 0 0 1mm; }
   .firma-img { height: 15mm; }
+
+  #junte_corresponde_3_nombre_c, #junte_corresponde_4_nombre_c,
+  #junte_cambio_3_nombre_c, #junte_cambio_4_nombre_c {
+    font-family: Helvetica; font-size: 9pt; color: #1a1a6e; margin: 0; padding: 0 0 0 1mm;
+  }
+  .junte-dia-c { font-family: Helvetica; font-size: 9pt; color: #1a1a6e; margin: 0; text-align: center; }
 </style>
 </head>
 <body>
@@ -89,6 +128,18 @@
   {% if firma_supervisora %}
   <div id="firma_supervisora_c"><img class="firma-img" src="{{ firma_supervisora }}" alt=""></div>
   {% endif %}
+  {% endif %}
+  {% if mostrar_junte %}
+  <div id="junte_corresponde_3_nombre_c">{{ junte_corresponde_3_nombre }}</div>
+  <div id="junte_corresponde_4_nombre_c">{{ junte_corresponde_4_nombre }}</div>
+  <div id="junte_cambio_3_nombre_c">{{ junte_cambio_3_nombre }}</div>
+  <div id="junte_cambio_4_nombre_c">{{ junte_cambio_4_nombre }}</div>
+  {% for dia in junte_cambio_3_dias %}
+  <div id="junte_cambio_3_dia{{ loop.index0 }}_c" class="junte-dia-c">{{ dia }}</div>
+  {% endfor %}
+  {% for dia in junte_cambio_4_dias %}
+  <div id="junte_cambio_4_dia{{ loop.index0 }}_c" class="junte-dia-c">{{ dia }}</div>
+  {% endfor %}
   {% endif %}
 </body>
 </html>
