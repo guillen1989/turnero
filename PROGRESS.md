@@ -20,17 +20,31 @@ generar juntes de verdad, siguiendo los 7 pasos de `docs/PLAN_JUNTE.md`.
   el junte de `DocumentoCambio` en los pasos siguientes. Tests en
   `tests/test_junte_semanal.py`.
 
+- [x] Paso 3 — `app/services/factibilidad_documento_cambio.py`: overlay
+  siempre activo (ya no solo si `depende_de_id`), incluyendo también las
+  propias filas de `documento.participantes` -- necesario para que la racha
+  de días consecutivos y el descanso nocturno cuenten las "noches hermanas"
+  de un junte de varias filas. `_construir_overlay` acepta
+  `excluir_participante` para que, al comprobar si una fila concreta
+  cede/recibe lo que dice, no se compare esa fila contra su propio delta
+  (sería tautológico: siempre "quitaría" lo que cede y "añadiría" lo que
+  recibe). Las comprobaciones de racha/descanso sí usan el overlay completo
+  (incluida la fila propia), porque ya tienen su propia guarda de
+  autoexclusión por fecha exacta (`fecha_hipotetica`/`fecha_cedida`). Tests
+  nuevos en `tests/test_servicio_factibilidad_documento_cambio.py`
+  (`test_racha_cuenta_las_noches_hermanas_del_mismo_documento`).
+
 ## Siguiente paso
-Paso 3 de `docs/PLAN_JUNTE.md`: `app/services/factibilidad_documento_cambio.py`
-— `_construir_overlay` debe añadir siempre (con o sin predecesor) los deltas
-de las propias filas de `documento.participantes`; quitar el `if
-documento.depende_de_id is not None:` de `comprobar_factibilidad`.
+Paso 4 de `docs/PLAN_JUNTE.md`: `app/services/documento_cambio.py` — nueva
+`crear_documento_cambio_junte(creado_por, companero, cedidos, aceptados,
+depende_de_id=None)` que crea un `DocumentoCambio(tipo="junte")` y N filas
+espejo por persona (una por noche).
 
 Nota: se detectó flakiness preexistente y no relacionada en
 `tests/test_documento_cambio_creacion.py` (falla de forma no determinista al
 ejecutar el archivo completo, con `ObjectDeletedError`); confirmado que
 reproduce igual con estos cambios revertidos (`git stash`), así que es un
-problema de entorno, no de este trabajo. No bloquea seguir con el Paso 3.
+problema de entorno, no de este trabajo. No bloquea seguir.
 
 ## Junte de noches en la hoja de cambio digital (worktree `feature/junte-frames-pdf`)
 Primer paso de una iniciativa mayor: que `documento_cambio/pdf.html` también
