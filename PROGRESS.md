@@ -44,12 +44,30 @@ generar juntes de verdad, siguiendo los 7 pasos de `docs/PLAN_JUNTE.md`.
   `comprobar_factibilidad`, `_notificar` y `_siguiente_numero_unidad` tal
   cual. Tests en `tests/test_servicio_documento_cambio.py`.
 
+- [x] Paso 5 — `generar_pdf_documento`: nuevo helper `_contexto_pdf_junte`
+  que, si `documento.tipo == "junte"`, agrupa `documento.participantes` por
+  `usuario_id` (2 grupos) y usa `distribucion_desde_fechas` para calcular
+  `(lunes_semana, trabaja, libra, num_noches)` de cada uno; por
+  construcción de las cadencias LMVD(4)/MJS(3) siempre hay un num_noches==3
+  y otro ==4, de ahí `junte_corresponde_{3,4}_nombre`,
+  `junte_cambio_{3,4}_nombre` y `junte_cambio_{3,4}_dias` (lista de 7,
+  "N"/""). Si no es junte, solo `mostrar_junte=False`.
+  `app/templates/documento_cambio/pdf.html`: los 5 campos de turno único
+  (`cede_franja_c`, `cede_fecha_c`, `recibe_franja_c`, `recibe_fecha_c`,
+  `companero_c`) ahora están en `{% if not mostrar_junte %}` -- no
+  representan bien un junte de varias filas. Tests ampliados en
+  `tests/test_servicio_documento_cambio.py`
+  (`test_generar_pdf_documento_junte_muestra_las_dos_distribuciones`, con
+  un `DocumentoCambio` real vía `crear_documento_cambio_junte`); los tests
+  de layout en `tests/test_pdf_junte_frames.py` (renderizado directo) se
+  mantienen como regresión de coordenadas de los `@frame`.
+
 ## Siguiente paso
-Paso 5 de `docs/PLAN_JUNTE.md`: `generar_pdf_documento` — rama
-`documento.tipo == "junte"`: agrupar `documento.participantes` por
-`usuario_id`, calcular `distribucion_desde_fechas` por persona y pasar
-`mostrar_junte`/`junte_*` al render; en `pdf.html`, envolver los frames de
-turno único en `{% if not mostrar_junte %}`.
+Paso 6 de `docs/PLAN_JUNTE.md`: `app/routes/documento_cambio.py::nueva()` —
+campo `tipo` en el formulario; rama junte que lee
+`junte_semana`/`junte_cadencia`/`junte_noches` (reutilizando la lógica de
+`_extraer_turnos_junte` de `app/routes/publicaciones.py`) y llama a
+`crear_documento_cambio_junte`.
 
 Nota: se detectó flakiness preexistente y no relacionada en
 `tests/test_documento_cambio_creacion.py` (falla de forma no determinista al

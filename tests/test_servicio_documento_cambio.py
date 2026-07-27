@@ -1037,3 +1037,50 @@ def test_crear_documento_cambio_junte_calcula_factibilidad_no_verificado_por_def
     )
 
     assert documento.factibilidad_estado == "no_verificado"
+
+
+def test_generar_pdf_documento_junte_muestra_las_dos_distribuciones(db):
+    """documento.tipo == 'junte': generar_pdf_documento agrupa las filas por
+    usuario, calcula su distribución semanal (Paso 2) y pasa mostrar_junte +
+    las variables junte_* que espera pdf.html (Paso 5 de docs/PLAN_JUNTE.md)."""
+    import pypdf
+    import io as _io
+
+    crear_usuario, manyana, tarde = _setup(db, "junte3")
+    claudia = crear_usuario("Claudia Junte3", "claudiajunte3@h.es")
+    juan = crear_usuario("Juan Junte3", "juanjunte3@h.es")
+
+    # Semana de referencia: lunes 6/7/2026. LMVD = lunes,miércoles,viernes,domingo
+    # (weekday 0,2,4,6); MJS = martes,jueves,sábado (weekday 1,3,5).
+    # Claudia (LMVD) cede lunes/miércoles/viernes (se queda el domingo) y
+    # acepta martes/jueves/sábado de Juan (MJS, los cede todos).
+    cedidos = [
+        (date(2026, 7, 6), manyana.id),   # lunes
+        (date(2026, 7, 8), manyana.id),   # miércoles
+        (date(2026, 7, 10), manyana.id),  # viernes
+    ]
+    aceptados = [
+        (date(2026, 7, 7), manyana.id),   # martes
+        (date(2026, 7, 9), manyana.id),   # jueves
+        (date(2026, 7, 11), manyana.id),  # sábado
+    ]
+
+    documento = crear_documento_cambio_junte(
+        creado_por=claudia, companero=juan, cedidos=cedidos, aceptados=aceptados,
+    )
+    firmar_documento(documento, claudia, _FIRMA_PNG)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    assert pdf_bytes[:5] == b"%PDF-"
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    # Claudia aparece en la cabecera común (solicitante) + en las dos tablas
+    # del junte (corresponde/cambio) de su propia distribución -- 3 veces.
+    assert texto.count("Claudia Junte3") == 3
+    # Juan solo aparece en las tablas del junte: el bloque de turno único
+    # (companero_c) está oculto en un junte.
+    assert texto.count("Juan Junte3") == 2
+    # No debe aparecer el bloque de turno único (cede_franja_c/etc.), que en
+    # un junte no representa bien la relación (varias filas por persona).
+    assert "Mañana" not in texto
