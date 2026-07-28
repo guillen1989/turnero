@@ -1181,7 +1181,7 @@ tbody .supervision-col-trabajador { cursor: pointer; }
 tbody .supervision-col-trabajador:hover { background: #eef2ff; }
 tr.supervision-fila-resaltada td,
 tr.supervision-fila-resaltada .supervision-col-trabajador {
-  background: #fef9c3;
+  background: #fde68a;
 }
 .supervision-col-dia { min-width: 44px; }
 .supervision-presencia-fila th { border-bottom: none; padding-top: 0.2rem; padding-bottom: 0.2rem; }
