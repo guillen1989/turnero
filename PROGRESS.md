@@ -1,5 +1,26 @@
 # Estado del desarrollo
 
+## Fase actual
+Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 1,
+auditoría y refuerzo de la PWA existente.
+
+## Paso actual / siguiente paso
+Fase 1, paso 2: verificar que `icon-192.png` e `icon-512.png` respetan la
+zona segura "maskable" (contenido dentro del 80% central).
+
+## Últimos pasos completados
+- [x] `docs/PLAN_PLAY_STORE.md` incorporado a esta rama (basada en `main`,
+  el archivo solo existía en `staging`).
+- [x] Fase 1, paso 1: auditoría Lighthouse categoría PWA contra
+  `https://staging.turnero.xyz/` — puntuación 1.0/1.0. Detalle e informe en
+  `docs/PLAN_PLAY_STORE.md` (sección "Notas de ejecución") y
+  `docs/audits/lighthouse-pwa-staging-2026-07-28.html`.
+
+## Notas / decisiones / asunciones pendientes
+- Lighthouse v13 (la que instala `npx lighthouse` por defecto) ya no trae la
+  categoría `pwa` — Google la retiró del core. Para repetir esta auditoría
+  en el futuro hay que fijar una versión antigua, p. ej. `npx lighthouse@10`.
+
 ## Mantenimiento reciente (independiente de la Fase 10 — supervisoras multiunidad)
 Implementación de `PLAN_SUPERVISORAS_MULTIUNIDAD.md`: las supervisoras podrán
 gestionar varias unidades (no solo la suya), vía tabla N:M `unidad_supervisada`
