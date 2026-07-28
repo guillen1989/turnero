@@ -61,7 +61,7 @@
 
 ## Fase 1 — Auditoría y refuerzo de la PWA existente
 
-- [ ] Ejecutar una auditoría Lighthouse (categoría PWA) contra staging o
+- [x] Ejecutar una auditoría Lighthouse (categoría PWA) contra staging o
   local y documentar el resultado (captura o resumen) en este archivo, sección
   "Notas de ejecución".
 - [ ] Verificar que `icon-192.png` e `icon-512.png` respetan la zona segura
@@ -210,3 +210,18 @@
 (Rellenar aquí, a medida que se ejecuten las fases: nombre de paquete
 elegido, dominio definitivo, huellas SHA-256, URLs de listing, fecha de
 inicio/fin de la pista de pruebas cerrada, etc.)
+
+### Fase 1 — Auditoría Lighthouse PWA (2026-07-28)
+
+- Ejecutada con `npx lighthouse@10` (la v13 instalada por defecto ya no
+  incluye la categoría `pwa`, Google la eliminó del core de Lighthouse en
+  versiones recientes — hay que fijar `lighthouse@10` o similar para repetir
+  esta auditoría en el futuro) contra `https://staging.turnero.xyz/`.
+- **Puntuación categoría PWA: 1.0 / 1.0 (100%)**. Todos los checks pasan:
+  manifest + service worker cumplen los requisitos de instalabilidad, SW
+  registrado y controla `start_url`, splash screen configurada, theme color
+  del address bar definido, viewport correcto, e icono maskable presente.
+  El resto de categorías (informativas, no puntúan la PWA): performance
+  0.98, accessibility 0.95, best-practices 0.96, seo 0.91.
+- Informe completo guardado en
+  `docs/audits/lighthouse-pwa-staging-2026-07-28.html`.
