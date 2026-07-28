@@ -71,10 +71,10 @@
 - [x] Añadir una página/fallback offline mínima en `app/static/sw.js` (p. ej.
   servir una página "sin conexión" cacheada cuando falla el `fetch` de
   navegación), con su test si aplica.
-- [ ] Confirmar que `theme_color`/`background_color` del manifest
+- [x] Confirmar que `theme_color`/`background_color` del manifest
   (`app/routes/pwa.py`) coinciden con el diseño real de la app (actualmente
   `#2563eb` / `#ffffff`).
-- [ ] Confirmar que todas las páginas relevantes cargan por HTTPS sin
+- [x] Confirmar que todas las páginas relevantes cargan por HTTPS sin
   contenido mixto (http://) — revisar `app/templates` en busca de `src="http://`
   o similar.
 
@@ -260,3 +260,18 @@ inicio/fin de la pista de pruebas cerrada, etc.)
   concreta, sirve la página offline precacheada como fallback.
 - Tests añadidos en `tests/test_pwa.py`: disponibilidad de `/offline` (200,
   `text/html`) y que `sw.js` referencia `/offline` para precache.
+
+### Fase 1 — Colores del manifest y contenido mixto (2026-07-28)
+
+- `theme_color` (`#2563eb`) coincide con el azul primario usado en toda la
+  interfaz: `meta[name=theme-color]` en `base.html` y decenas de reglas en
+  `app/static/css/main.css` (acentos, bordes, badges, focus) usan el mismo
+  valor. `background_color` (`#ffffff`) es el fondo estándar de splash screen
+  para TWAs; el `body` de la app usa `#f5f5f5` (gris muy claro) pero el
+  contenido (tarjetas, cabecera) es blanco, así que no hay discrepancia
+  perceptible en el arranque. No fue necesario ningún cambio.
+- Revisado `app/templates` y `app/static` en busca de `src="http://`,
+  `href="http://` o `url(http://` — sin resultados. Ninguna página carga
+  contenido mixto; no fue necesario ningún cambio.
+
+Con esto se completa la **Fase 1** del plan.

@@ -5,8 +5,9 @@ Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 1,
 auditoría y refuerzo de la PWA existente.
 
 ## Paso actual / siguiente paso
-Fase 1, paso 3: añadir una página/fallback offline mínima en
-`app/static/sw.js` para cuando falla el `fetch` de navegación.
+Fase 1 completa. Siguiente: Fase 2, paso 1 — decidir y confirmar el dominio
+definitivo de producción para la TWA (**[ACCIÓN HUMANA]**, ver
+`docs/PLAN_PLAY_STORE.md`).
 
 ## Últimos pasos completados
 - [x] `docs/PLAN_PLAY_STORE.md` incorporado a esta rama (basada en `main`,
@@ -21,6 +22,12 @@ Fase 1, paso 3: añadir una página/fallback offline mínima en
   borde — regenerados ambos PNG rellenando el anillo exterior con el mismo
   azul sólido (borde a borde, sin transparencia). Detalle en
   `docs/PLAN_PLAY_STORE.md`.
+- [x] Fase 1, paso 3: añadida página offline (`/offline`) y fallback en
+  `app/static/sw.js` para peticiones de navegación sin red.
+- [x] Fase 1, pasos 4 y 5 (cierran la Fase 1): verificado que
+  `theme_color`/`background_color` del manifest coinciden con el diseño y
+  que no hay contenido mixto `http://` en templates/estáticos — sin cambios
+  de código, solo verificación. Detalle en `docs/PLAN_PLAY_STORE.md`.
 
 ## Notas / decisiones / asunciones pendientes
 - Lighthouse v13 (la que instala `npx lighthouse` por defecto) ya no trae la
