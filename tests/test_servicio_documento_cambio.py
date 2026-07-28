@@ -6,7 +6,7 @@ from app.models import (
     NotaDia, DocumentoCambio, ParticipanteDocumentoCambio, PlanillaMes,
 )
 from app.services.documento_cambio import (
-    crear_documento_cambio, crear_documento_cambio_junte, firmar_documento,
+    crear_documento_cambio, crear_documento_cambio_junte, crear_documento_cambio_cadena_3, firmar_documento,
     generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, anular_documento,
     registrar_documento_cambio_papel, CambioNoFactibleError,
@@ -1340,3 +1340,70 @@ def test_generar_pdf_documento_cadena_3_muestra_los_tres_participantes(db):
     assert "01/07/2026" in texto
     assert "03/07/2026" in texto
     assert "lo trabaja" in texto
+
+
+def test_crear_documento_cambio_cadena_3_crea_documento_con_ciclo_abc(db):
+    from app.models import Notificacion
+
+    crear_usuario, manyana, tarde = _setup(db, "cadena3_1")
+    ana = crear_usuario("Ana Cadena3_1", "anacadena3_1@h.es")
+    berta = crear_usuario("Berta Cadena3_1", "bertacadena3_1@h.es")
+    carmen = crear_usuario("Carmen Cadena3_1", "carmencadena3_1@h.es")
+
+    turno_ana_cede = (date(2026, 7, 1), manyana.id)
+    turno_berta_cede = (date(2026, 7, 2), manyana.id)
+    turno_carmen_cede = (date(2026, 7, 3), manyana.id)
+
+    documento = crear_documento_cambio_cadena_3(
+        creado_por=ana, companero=berta, tercero=carmen,
+        turno_creado_por_cede=turno_ana_cede,
+        turno_companero_cede=turno_berta_cede,
+        turno_tercero_cede=turno_carmen_cede,
+    )
+
+    assert documento.tipo == "cadena_3"
+    assert documento.estado == "borrador"
+    assert len(documento.participantes) == 3
+
+    p_ana = next(p for p in documento.participantes if p.usuario_id == ana.id)
+    p_berta = next(p for p in documento.participantes if p.usuario_id == berta.id)
+    p_carmen = next(p for p in documento.participantes if p.usuario_id == carmen.id)
+
+    assert p_ana.turno_cede_fecha == turno_ana_cede[0]
+    assert p_ana.turno_cede_franja_id == turno_ana_cede[1]
+    assert p_ana.turno_recibe_fecha == turno_carmen_cede[0]
+    assert p_ana.turno_recibe_franja_id == turno_carmen_cede[1]
+
+    assert p_berta.turno_cede_fecha == turno_berta_cede[0]
+    assert p_berta.turno_recibe_fecha == turno_ana_cede[0]
+
+    assert p_carmen.turno_cede_fecha == turno_carmen_cede[0]
+    assert p_carmen.turno_recibe_fecha == turno_berta_cede[0]
+
+    assert _usuario_que_recibe(documento, p_ana) == berta
+    assert _usuario_que_recibe(documento, p_berta) == carmen
+    assert _usuario_que_recibe(documento, p_carmen) == ana
+
+    notifs_berta = Notificacion.query.filter_by(usuario_id=berta.id, documento_cambio_id=documento.id).all()
+    assert len(notifs_berta) == 1
+    assert notifs_berta[0].tipo == "documento_cambio_pendiente_firma"
+    notifs_carmen = Notificacion.query.filter_by(usuario_id=carmen.id, documento_cambio_id=documento.id).all()
+    assert len(notifs_carmen) == 1
+    notifs_ana = Notificacion.query.filter_by(usuario_id=ana.id, documento_cambio_id=documento.id).all()
+    assert notifs_ana == []
+
+
+def test_crear_documento_cambio_cadena_3_calcula_factibilidad_no_verificado_por_defecto(db):
+    crear_usuario, manyana, tarde = _setup(db, "cadena3_2")
+    ana = crear_usuario("Ana Cadena3_2", "anacadena3_2@h.es")
+    berta = crear_usuario("Berta Cadena3_2", "bertacadena3_2@h.es")
+    carmen = crear_usuario("Carmen Cadena3_2", "carmencadena3_2@h.es")
+
+    documento = crear_documento_cambio_cadena_3(
+        creado_por=ana, companero=berta, tercero=carmen,
+        turno_creado_por_cede=(date(2026, 7, 1), manyana.id),
+        turno_companero_cede=(date(2026, 7, 2), manyana.id),
+        turno_tercero_cede=(date(2026, 7, 3), manyana.id),
+    )
+
+    assert documento.factibilidad_estado == "no_verificado"

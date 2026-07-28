@@ -5,11 +5,22 @@ Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3), plan completo en
 `docs/PLAN_3.md`.
 
 ## Paso actual / siguiente paso
-Paso 4 completado (`generar_notas_ilog`, email de `firmar_documento`).
-Siguiente: Paso 5 de `docs/PLAN_3.md` — `crear_documento_cambio_cadena_3`
-(creación manual).
+Paso 5 completado (`crear_documento_cambio_cadena_3`, creación manual).
+Siguiente: Paso 6 de `docs/PLAN_3.md` — extender
+`match_admite_documento_cambio()` y `crear_documento_cambio_desde_match()`
+para admitir matches de tipo `cadena_3`.
 
 ## Últimos pasos completados
+- [x] Paso 5 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  nueva función `crear_documento_cambio_cadena_3(creado_por, companero,
+  tercero, turno_creado_por_cede, turno_companero_cede, turno_tercero_cede,
+  depende_de_id=None)` que crea un `DocumentoCambio(tipo="cadena_3")` con 3
+  `ParticipanteDocumentoCambio` coherentes con el ciclo
+  creado_por→companero→tercero→creado_por, calcula factibilidad y notifica
+  a `companero` y `tercero` (no a `creado_por`). Sigue el estilo de
+  `crear_documento_cambio_junte`. Testeado con `pytest -k cadena_3` (8
+  passed); pendiente ejecutar la suite completa al cierre de la fase
+  (Paso 8).
 - [x] Paso 4 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
   `generar_notas_ilog` y el email de `firmar_documento` usan
   `_usuario_que_recibe` en vez del patrón «otro por exclusión», que con 3

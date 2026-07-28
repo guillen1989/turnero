@@ -205,6 +205,67 @@ def crear_documento_cambio_junte(
     return documento
 
 
+def crear_documento_cambio_cadena_3(
+    creado_por, companero, tercero,
+    turno_creado_por_cede, turno_companero_cede, turno_tercero_cede,
+    depende_de_id=None,
+):
+    """
+    Crea un documento de una cadena de 3 bandas: ciclo creado_por→companero→
+    tercero→creado_por, donde cada `turno_X_cede` es una tupla
+    (fecha, franja_id) con el turno que esa persona cede a la siguiente del
+    ciclo (y por tanto recibe de la anterior).
+
+    A diferencia de crear_documento_cambio/_junte (intercambio simétrico
+    entre 2 personas), aquí cada participante cede y recibe turnos
+    distintos, así que no hay filas espejo: una fila por participante.
+    """
+    documento = DocumentoCambio(
+        creado_por=creado_por,
+        unidad_id=creado_por.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        tipo="cadena_3",
+        depende_de_id=depende_de_id,
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    cede_a_companero_fecha, cede_a_companero_franja_id = turno_creado_por_cede
+    cede_a_tercero_fecha, cede_a_tercero_franja_id = turno_companero_cede
+    cede_a_creado_por_fecha, cede_a_creado_por_franja_id = turno_tercero_cede
+
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=creado_por,
+        turno_cede_fecha=cede_a_companero_fecha, turno_cede_franja_id=cede_a_companero_franja_id,
+        turno_recibe_fecha=cede_a_creado_por_fecha, turno_recibe_franja_id=cede_a_creado_por_franja_id,
+    ))
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=companero,
+        turno_cede_fecha=cede_a_tercero_fecha, turno_cede_franja_id=cede_a_tercero_franja_id,
+        turno_recibe_fecha=cede_a_companero_fecha, turno_recibe_franja_id=cede_a_companero_franja_id,
+    ))
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=tercero,
+        turno_cede_fecha=cede_a_creado_por_fecha, turno_cede_franja_id=cede_a_creado_por_franja_id,
+        turno_recibe_fecha=cede_a_tercero_fecha, turno_recibe_franja_id=cede_a_tercero_franja_id,
+    ))
+    db.session.flush()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    documento.factibilidad_estado = estado
+    documento.factibilidad_motivos = "\n".join(motivos) if motivos else None
+
+    for participante in (companero, tercero):
+        _notificar(
+            participante, documento, "documento_cambio_pendiente_firma",
+            _("Hoja de cambio pendiente de firma"),
+            _("%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas.", nombre=creado_por.nombre),
+        )
+
+    db.session.commit()
+    return documento
+
+
 class CambioNoFactibleError(Exception):
     """Se lanza cuando el cambio que se intenta registrar desde papel no es
     factible según las planillas ya publicadas (alguna de las partes no
