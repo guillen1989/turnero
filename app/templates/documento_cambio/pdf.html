@@ -29,7 +29,6 @@
     @frame recibe_franja_frame { -pdf-frame-content: recibe_franja_c; left: 35.97mm; top: 84.96mm; width: 49.89mm; height: 8mm; }
     @frame recibe_fecha_frame { -pdf-frame-content: recibe_fecha_c; left: 98.62mm; top: 84.96mm; width: 84.70mm; height: 8mm; }
     @frame companero_frame { -pdf-frame-content: companero_c; left: 58.01mm; top: 92.16mm; width: 125.30mm; height: 8mm; }
-    @frame tercer_companero_frame { -pdf-frame-content: tercer_companero_c; left: 58.01mm; top: 99.36mm; width: 125.30mm; height: 8mm; }
     @frame madrid_dia_frame { -pdf-frame-content: madrid_dia_c; left: 122.52mm; top: 156.66mm; width: 10.91mm; height: 8mm; }
     @frame madrid_mes_frame { -pdf-frame-content: madrid_mes_c; left: 140.39mm; top: 156.66mm; width: 17.40mm; height: 8mm; }
     @frame madrid_anyo_frame { -pdf-frame-content: madrid_anyo_c; left: 165.91mm; top: 156.66mm; width: 15.08mm; height: 8mm; }
@@ -87,7 +86,7 @@
 
   #hospital_c, #unidad_c, #categoria_c, #ddna_c, #cede_franja_c, #cede_fecha_c,
   #recibe_franja_c, #recibe_fecha_c, #companero_c,
-  #cede_tercer_franja_c, #cede_tercer_fecha_c, #tercer_companero_c,
+  #cede_tercer_franja_c, #cede_tercer_fecha_c,
   #madrid_dia_c, #madrid_mes_c, #madrid_anyo_c {
     font-family: Helvetica; font-size: 9.5pt; color: #1a1a6e;
     margin: 0; padding: 0 0 0 1mm;
@@ -115,12 +114,11 @@
   <div id="cede_fecha_c">{{ participante_solicitante.turno_cede_fecha.strftime('%d/%m/%Y') }}{% if cede_fecha_receptor_nombre %} ({{ _('lo trabaja') }} {{ cede_fecha_receptor_nombre }}){% endif %}</div>
   <div id="recibe_franja_c">{{ participante_solicitante.turno_recibe_franja.nombre }}</div>
   <div id="recibe_fecha_c">{{ participante_solicitante.turno_recibe_fecha.strftime('%d/%m/%Y') }}{% if recibe_fecha_receptor_nombre %} ({{ _('lo trabaja') }} {{ recibe_fecha_receptor_nombre }}){% endif %}</div>
-  <div id="companero_c">{{ companero_nombre }}</div>
+  <div id="companero_c">{{ companero_nombre }}{% if mostrar_cadena_3 %} {{ _('y') }} {{ tercer_companero_c }}{% endif %}</div>
   {% endif %}
   {% if mostrar_cadena_3 %}
   <div id="cede_tercer_franja_c">{{ cede_tercer_franja_c }}</div>
   <div id="cede_tercer_fecha_c">{{ cede_tercer_fecha_c }}</div>
-  <div id="tercer_companero_c">{{ tercer_companero_c }}</div>
   {% endif %}
   <div id="madrid_dia_c">{{ fecha_documento.day }}</div>
   <div id="madrid_mes_c">{{ meses[fecha_documento.month] }}</div>
