@@ -406,6 +406,7 @@ def nueva():
         firmar_ambos = request.form.get("firmar_ambos") == "on"
         imagen_firma_propia = request.form.get("imagen_firma_propia", "")
         imagen_firma_companero = request.form.get("imagen_firma_companero", "")
+        imagen_firma_tercero = request.form.get("imagen_firma_tercero", "")
 
         companero = next((c for c in companeros if c.id == companero_id), None)
         franja_ids_validas = {f.id for f in franjas}
@@ -451,6 +452,12 @@ def nueva():
 
         if not error and companero is None:
             error = _("Selecciona un compañero válido.")
+        if not error and firmar_ambos and tipo == "cadena_3" and (
+            not imagen_firma_propia.startswith("data:image/")
+            or not imagen_firma_companero.startswith("data:image/")
+            or not imagen_firma_tercero.startswith("data:image/")
+        ):
+            error = _("Faltan una o varias firmas. Dibujad las tres antes de guardar.")
         if not error and firmar_ambos and tipo != "cadena_3" and (
             not imagen_firma_propia.startswith("data:image/")
             or not imagen_firma_companero.startswith("data:image/")
@@ -487,7 +494,18 @@ def nueva():
                 depende_de_id=depende_de_id,
             )
 
-        if firmar_ambos and tipo != "cadena_3":
+        if firmar_ambos and tipo == "cadena_3":
+            # Las tres partes están rellenando el cambio juntas, desde el
+            # mismo dispositivo -- excepción explícita a la firma cruzada
+            # habitual (cada uno firma solo lo suyo desde su cuenta).
+            firmar_documento(documento, current_user, imagen_firma_propia)
+            firmar_documento(documento, companero, imagen_firma_companero)
+            firmar_documento(documento, tercero, imagen_firma_tercero)
+            if request.form.get("guardar_firma") and not current_user.firma_guardada:
+                current_user.firma_guardada = imagen_firma_propia
+                db.session.commit()
+            flash(_("Hoja de cambio creada y firmada por los tres. Ya está completa."), "success")
+        elif firmar_ambos:
             # Las dos partes están rellenando el cambio juntas, desde el
             # mismo dispositivo -- excepción explícita a la firma cruzada
             # habitual (cada uno firma solo lo suyo desde su cuenta).
@@ -498,7 +516,7 @@ def nueva():
                 db.session.commit()
             flash(_("Hoja de cambio creada y firmada por los dos. Ya está completa."), "success")
         else:
-            flash(_("Hoja de cambio creada. Ahora recoge las dos firmas."), "success")
+            flash(_("Hoja de cambio creada. Ahora recoge las firmas restantes."), "success")
 
         return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
 
