@@ -194,21 +194,21 @@ trabajando cada turno_cedido tras el cambio (es el usuario cuyo
 
 ---
 
-## Paso 6 — `crear_documento_cambio_desde_match` para matches de cadena_3
+## Paso 6 — `crear_documento_cambio_desde_match` para matches de cadena_3 ✅
 
-- [ ] Test (rojo): test que, dado un `MatchCambio(tipo="cadena_3")` con sus 3
+- [x] Test (rojo): test que, dado un `MatchCambio(tipo="cadena_3")` con sus 3
   `MatchParticipacion` (como los crea
   `app/matching/service.py::crear_match_cadena_3`), verifique que se puede
   generar un `DocumentoCambio` de 3 participantes a partir del match.
-- [ ] Verde: extender `match_admite_documento_cambio()` para admitir también
+- [x] Verde: extender `match_admite_documento_cambio()` para admitir también
   `match.tipo == "cadena_3"` con `len(match.participaciones) == 3` (con las
   mismas validaciones de franja/aceptado que ya tiene para `directo_2`,
   adaptadas a 3), y extender `crear_documento_cambio_desde_match()` (o crear
   una función hermana) para construir el `DocumentoCambio` de 3 participantes
   a partir de las 3 `MatchParticipacion`, usando el mapeo
   `turno_cedido`/`turno_aceptado` que ya expone `crear_match_cadena_3`.
-- [ ] Ejecutar `pytest --testmon`.
-- [ ] Commit: `feat(documento_cambio): admite creación de hoja de cambio desde matches de cadena_3`
+- [x] Ejecutar `pytest --testmon`.
+- [x] Commit: `feat(documento_cambio): admite creación de hoja de cambio desde matches de cadena_3`
 
 ---
 

@@ -117,6 +117,41 @@ def _match_cadena_3(db, sufijo="c"):
     return match
 
 
+def _match_cadena_3_completo(db, sufijo="e"):
+    """Match cadena_3 tal y como lo genera crear_match_cadena_3: cada
+    participación tiene turno_cedido Y turno_aceptado, ciclo ana→pedro→luis→ana."""
+    ana, pedro = _usuarios(db, sufijo)
+    cat = ana.categoria
+    luis = registrar_usuario(f"Luis{sufijo}", f"luis{sufijo}@test.es", "password123", "Hospital La Paz", "Urgencias", cat.id)
+    franja = _franja(ana.unidad.grupo_intercambio_id)
+
+    fecha_ana, fecha_pedro, fecha_luis = date(2026, 9, 1), date(2026, 9, 2), date(2026, 9, 3)
+
+    def _pub_con_turnos(usuario, fecha_cede, fecha_recibe):
+        pub = PublicacionCambio(usuario_id=usuario.id)
+        db.session.add(pub)
+        db.session.flush()
+        tc = TurnoCedido(publicacion_id=pub.id, fecha=fecha_cede, franja_horaria_id=franja.id)
+        ta = TurnoAceptado(publicacion_id=pub.id, fecha=fecha_recibe, franja_horaria_id=franja.id)
+        db.session.add_all([tc, ta])
+        db.session.flush()
+        return pub, tc, ta
+
+    pub_ana, tc_ana, ta_ana = _pub_con_turnos(ana, fecha_ana, fecha_luis)
+    pub_pedro, tc_pedro, ta_pedro = _pub_con_turnos(pedro, fecha_pedro, fecha_ana)
+    pub_luis, tc_luis, ta_luis = _pub_con_turnos(luis, fecha_luis, fecha_pedro)
+
+    match = MatchCambio(tipo="cadena_3", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_ana.id, turno_cedido_id=tc_ana.id, turno_aceptado_id=ta_ana.id))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_pedro.id, turno_cedido_id=tc_pedro.id, turno_aceptado_id=ta_pedro.id))
+    db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_luis.id, turno_cedido_id=tc_luis.id, turno_aceptado_id=ta_luis.id))
+    db.session.commit()
+
+    return match, ana, pedro, luis
+
+
 def test_match_admite_documento_cambio_con_swap_simetrico(db):
     match, ana, pedro = _match_cambio_simetrico(db)
     assert match_admite_documento_cambio(match) is True
@@ -199,3 +234,35 @@ def test_crear_documento_cambio_desde_match_no_duplica_notificacion_de_pendiente
     assert Notificacion.query.filter_by(
         usuario_id=pedro.id, tipo="documento_cambio_pendiente_firma"
     ).count() == 0
+
+
+def test_match_admite_documento_cambio_si_cadena_3_completa(db):
+    match, ana, pedro, luis = _match_cadena_3_completo(db)
+    assert match_admite_documento_cambio(match) is True
+
+
+def test_crear_documento_cambio_desde_match_cadena_3_enlaza_el_match(db):
+    match, ana, pedro, luis = _match_cadena_3_completo(db)
+    documento = crear_documento_cambio_desde_match(match)
+    assert documento.match_id == match.id
+    assert documento.tipo == "cadena_3"
+
+
+def test_crear_documento_cambio_desde_match_cadena_3_genera_3_participantes(db):
+    match, ana, pedro, luis = _match_cadena_3_completo(db)
+    documento = crear_documento_cambio_desde_match(match)
+
+    assert len(documento.participantes) == 3
+
+    p_ana = next(p for p in documento.participantes if p.usuario_id == ana.id)
+    p_pedro = next(p for p in documento.participantes if p.usuario_id == pedro.id)
+    p_luis = next(p for p in documento.participantes if p.usuario_id == luis.id)
+
+    assert p_ana.turno_cede_fecha == date(2026, 9, 1)
+    assert p_ana.turno_recibe_fecha == date(2026, 9, 3)
+
+    assert p_pedro.turno_cede_fecha == date(2026, 9, 2)
+    assert p_pedro.turno_recibe_fecha == date(2026, 9, 1)
+
+    assert p_luis.turno_cede_fecha == date(2026, 9, 3)
+    assert p_luis.turno_recibe_fecha == date(2026, 9, 2)

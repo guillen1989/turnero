@@ -5,12 +5,26 @@ Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3), plan completo en
 `docs/PLAN_3.md`.
 
 ## Paso actual / siguiente paso
-Paso 5 completado (`crear_documento_cambio_cadena_3`, creación manual).
-Siguiente: Paso 6 de `docs/PLAN_3.md` — extender
-`match_admite_documento_cambio()` y `crear_documento_cambio_desde_match()`
-para admitir matches de tipo `cadena_3`.
+Paso 6 completado (`match_admite_documento_cambio` y
+`crear_documento_cambio_desde_match` admiten matches de tipo `cadena_3`).
+Siguiente: Paso 7 de `docs/PLAN_3.md` — wiring en
+`app/routes/documento_cambio.py` (opción `cadena_3` en el `<select>` de
+`nuevo.html`, rama en `nueva()` que recoja los datos del tercer
+participante y llame a `crear_documento_cambio_cadena_3`).
 
 ## Últimos pasos completados
+- [x] Paso 6 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  `match_admite_documento_cambio()` ahora admite también
+  `match.tipo == "cadena_3"` con exactamente 3 `MatchParticipacion` (misma
+  validación de franja/aceptado concreto que ya tenía para `directo_2`).
+  `crear_documento_cambio_desde_match()` generalizado para iterar sobre
+  todas las participaciones del match (2 o 3) en vez de desempaquetar
+  `p1, p2` a mano, construyendo el `DocumentoCambio` con `tipo="cadena_3"`
+  cuando corresponde (y `tipo="cambio"` sin cambios para `directo_2`).
+  Testeado con un match cadena_3 completo (ciclo ana→pedro→luis→ana, cada
+  participación con `turno_cedido` y `turno_aceptado`); el test previo que
+  verificaba que una cadena_3 incompleta (sin `turno_aceptado`) seguía sin
+  admitirse se mantiene sin cambios. `pytest --testmon` en verde.
 - [x] Paso 5 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
   nueva función `crear_documento_cambio_cadena_3(creado_por, companero,
   tercero, turno_creado_por_cede, turno_companero_cede, turno_tercero_cede,

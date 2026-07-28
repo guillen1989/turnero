@@ -339,15 +339,22 @@ def registrar_documento_cambio_papel(
 def match_admite_documento_cambio(match) -> bool:
     """
     Un match solo puede generar su propio DocumentoCambio si es un
-    intercambio simétrico entre 2 personas: cada participación cede Y
-    recibe un turno con franja concreta (no 'cualquier turno'). Las
-    coincidencias asimétricas (regalo/petición: una parte solo cede o solo
-    recibe) y las cadenas de 3/4 bandas no encajan en el modelo de
-    ParticipanteDocumentoCambio (cede/recibe obligatorios) y quedan fuera;
-    para esos casos se sigue usando 'Mis hojas de cambio > Nueva hoja de
-    cambio'.
+    intercambio simétrico entre 2 personas (directo_2) o una cadena de 3
+    bandas ya resuelta por completo (cadena_3): en ambos casos cada
+    participación cede Y recibe un turno con franja concreta (no
+    'cualquier turno'). Las coincidencias asimétricas (regalo/petición:
+    una parte solo cede o solo recibe) y las cadenas de 4+ bandas no
+    encajan en el modelo de ParticipanteDocumentoCambio (cede/recibe
+    obligatorios) y quedan fuera; para esos casos se sigue usando 'Mis
+    hojas de cambio > Nueva hoja de cambio'.
     """
-    if match.tipo != "directo_2" or len(match.participaciones) != 2:
+    if match.tipo == "directo_2":
+        if len(match.participaciones) != 2:
+            return False
+    elif match.tipo == "cadena_3":
+        if len(match.participaciones) != 3:
+            return False
+    else:
         return False
     for p in match.participaciones:
         if p.turno_cedido is None or p.turno_aceptado is None:
@@ -359,37 +366,37 @@ def match_admite_documento_cambio(match) -> bool:
 
 def crear_documento_cambio_desde_match(match):
     """
-    Crea el DocumentoCambio equivalente a un MatchCambio directo_2 ya
-    detectado por el motor de matching (publicación automática o 'Me
-    interesa'), reutilizando los turnos que ya tiene el match en vez de
-    que el usuario los vuelva a escribir a mano. Solo válido si
-    match_admite_documento_cambio(match) es True.
+    Crea el DocumentoCambio equivalente a un MatchCambio directo_2 o
+    cadena_3 ya detectado por el motor de matching (publicación
+    automática o 'Me interesa'), reutilizando los turnos que ya tiene el
+    match en vez de que el usuario los vuelva a escribir a mano. Solo
+    válido si match_admite_documento_cambio(match) es True. Genera una
+    fila de ParticipanteDocumentoCambio por cada participación del match
+    (2 para directo_2, 3 para cadena_3), cada una con el turno que cede y
+    el que recibe según el propio match.
 
     No manda la notificación "pendiente de firma" de crear_documento_cambio:
     confirmar_participacion ya notifica al resto de partes que hay un
     cambio pendiente de confirmar.
     """
-    p1, p2 = match.participaciones
-    u1, u2 = p1.publicacion.usuario, p2.publicacion.usuario
+    primera = match.participaciones[0]
+    creado_por = primera.publicacion.usuario
 
     documento = DocumentoCambio(
-        creado_por=u1, match=match,
-        unidad_id=u1.unidad_id,
-        numero_unidad=_siguiente_numero_unidad(u1.unidad_id),
+        creado_por=creado_por, match=match,
+        unidad_id=creado_por.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        tipo=match.tipo if match.tipo == "cadena_3" else "cambio",
     )
     db.session.add(documento)
     db.session.flush()
 
-    documento.participantes.append(ParticipanteDocumentoCambio(
-        usuario=u1,
-        turno_cede_fecha=p1.turno_cedido.fecha, turno_cede_franja_id=p1.turno_cedido.franja_horaria_id,
-        turno_recibe_fecha=p1.turno_aceptado.fecha, turno_recibe_franja_id=p1.turno_aceptado.franja_horaria_id,
-    ))
-    documento.participantes.append(ParticipanteDocumentoCambio(
-        usuario=u2,
-        turno_cede_fecha=p2.turno_cedido.fecha, turno_cede_franja_id=p2.turno_cedido.franja_horaria_id,
-        turno_recibe_fecha=p2.turno_aceptado.fecha, turno_recibe_franja_id=p2.turno_aceptado.franja_horaria_id,
-    ))
+    for p in match.participaciones:
+        documento.participantes.append(ParticipanteDocumentoCambio(
+            usuario=p.publicacion.usuario,
+            turno_cede_fecha=p.turno_cedido.fecha, turno_cede_franja_id=p.turno_cedido.franja_horaria_id,
+            turno_recibe_fecha=p.turno_aceptado.fecha, turno_recibe_franja_id=p.turno_aceptado.franja_horaria_id,
+        ))
     db.session.flush()
 
     estado, motivos = comprobar_factibilidad(documento)
