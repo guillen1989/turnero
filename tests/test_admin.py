@@ -293,6 +293,34 @@ def test_admin_crea_usuario_normal_no_exige_password_y_envia_invitacion(client, 
     assert "/auth/restablecer-contrasena/" in cuerpo_html
 
 
+def test_admin_crea_usuario_avisa_si_falla_el_envio_de_invitacion(client, db):
+    """Regression: si Resend falla (p. ej. RESEND_API_KEY sin configurar en el
+    entorno), el admin veía "Usuario creado" sin ninguna pista de que el email
+    de invitación no había llegado."""
+    from unittest.mock import patch
+    _login_admin(client, db)
+
+    with patch("app.services.registro.enviar_email", return_value=False):
+        resp = client.post(
+            "/admin/usuarios/nuevo",
+            data={
+                "nombre": "Usuario Sin Email",
+                "email": "sin_email@test.es",
+                "hospital_id": "0",
+                "hospital_nuevo": "Hospital Admin Test",
+                "unidad_id": "0",
+                "unidad_nuevo": "Urgencias Sin Email",
+                "categoria_id": _cat_id(db),
+                "categoria_nueva": "",
+                "es_admin": False,
+            },
+            follow_redirects=True,
+        )
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(email="sin_email@test.es").count() == 1
+    assert "no se ha podido enviar" in resp.get_data(as_text=True).lower()
+
+
 def test_admin_crea_usuario_con_email_duplicado_muestra_error(client, db):
     _login_admin(client, db)
     u_existente = _crear_usuario(client, db, email="duplicado@test.es")

@@ -411,7 +411,11 @@ def registrar_usuario(
 def crear_usuario_con_invitacion(usuario):
     """Da de alta la contraseña de `usuario` con un valor aleatorio desconocido
     y le envía un email para que establezca la suya propia (mismo flujo que
-    "recuperar contraseña", con texto adaptado a una invitación)."""
+    "recuperar contraseña", con texto adaptado a una invitación).
+
+    Devuelve si el email se ha enviado correctamente, para que quien llame
+    pueda avisar al admin si el envío falla en vez de dejarlo pasar en
+    silencio (solo queda un warning en los logs)."""
     usuario.set_password(secrets.token_urlsafe(32))
     db.session.commit()
 
@@ -421,4 +425,4 @@ def crear_usuario_con_invitacion(usuario):
         "email/invitacion_usuario.html",
         usuario=usuario, enlace=enlace, ttl_minutos=TOKEN_TTL_MINUTOS,
     )
-    enviar_email(usuario.email, _("Se ha creado tu cuenta en Turnero"), cuerpo_html)
+    return enviar_email(usuario.email, _("Se ha creado tu cuenta en Turnero"), cuerpo_html)
