@@ -310,3 +310,84 @@ def test_post_nuevo_junte_con_numero_de_noches_incorrecto_da_error(db, client):
 
     assert resp.status_code == 200
     assert DocumentoCambio.query.count() == 0
+
+
+def test_post_nuevo_cadena_3_crea_documento_tipo_cadena_3(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3a")
+    ana = crear_usuario("Ana Pérez", "anac3a@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3a@h.es")
+    luis = crear_usuario("Luis Ruiz", "luisc3a@h.es")
+    _login(client, ana.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "cadena_3",
+        "companero_id": pedro.id,
+        "tercero_id": luis.id,
+        "turno_cede_fecha": "2026-08-03",
+        "turno_cede_franja_id": manyana.id,
+        "turno_companero_cede_fecha": "2026-08-04",
+        "turno_companero_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-08-05",
+        "turno_recibe_franja_id": manyana.id,
+    })
+
+    assert resp.status_code == 302
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.tipo == "cadena_3"
+    assert len(documento.participantes) == 3
+
+    ana_fila = next(p for p in documento.participantes if p.usuario_id == ana.id)
+    pedro_fila = next(p for p in documento.participantes if p.usuario_id == pedro.id)
+    luis_fila = next(p for p in documento.participantes if p.usuario_id == luis.id)
+
+    assert ana_fila.turno_cede_fecha == date(2026, 8, 3)
+    assert ana_fila.turno_recibe_fecha == date(2026, 8, 5)
+    assert pedro_fila.turno_cede_fecha == date(2026, 8, 4)
+    assert pedro_fila.turno_recibe_fecha == date(2026, 8, 3)
+    assert luis_fila.turno_cede_fecha == date(2026, 8, 5)
+    assert luis_fila.turno_recibe_fecha == date(2026, 8, 4)
+
+
+def test_post_nuevo_cadena_3_sin_tercero_da_error_sin_crear_nada(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3b")
+    ana = crear_usuario("Ana Pérez", "anac3b@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3b@h.es")
+    _login(client, ana.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "cadena_3",
+        "companero_id": pedro.id,
+        "tercero_id": "",
+        "turno_cede_fecha": "2026-08-03",
+        "turno_cede_franja_id": manyana.id,
+        "turno_companero_cede_fecha": "2026-08-04",
+        "turno_companero_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-08-05",
+        "turno_recibe_franja_id": manyana.id,
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0
+
+
+def test_post_nuevo_cadena_3_con_tercero_igual_al_companero_da_error(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3c")
+    ana = crear_usuario("Ana Pérez", "anac3c@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3c@h.es")
+    _login(client, ana.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "cadena_3",
+        "companero_id": pedro.id,
+        "tercero_id": pedro.id,
+        "turno_cede_fecha": "2026-08-03",
+        "turno_cede_franja_id": manyana.id,
+        "turno_companero_cede_fecha": "2026-08-04",
+        "turno_companero_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-08-05",
+        "turno_recibe_franja_id": manyana.id,
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0

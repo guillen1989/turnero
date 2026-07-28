@@ -86,6 +86,30 @@ def _enviar_email_completo(documento, usuario, companero):
     enviar_email(usuario.email, _("Hoja de cambio completa"), cuerpo_html)
 
 
+def _usuario_que_recibe(documento, participante):
+    """
+    Dado un participante p, devuelve el usuario del participante o que
+    recibe el turno que p cede (ciclo A→B→C→A). Funciona igual de bien
+    para 2 o para 3 participantes y reemplaza el patrón «otro por
+    exclusión» que solo vale para 2.
+
+    Para un documento de 3 participantes en ciclo A→B→C→A:
+    - _usuario_que_recibe(doc, p_a) → usuario_b (B recibe lo que A cede)
+    - _usuario_que_recibe(doc, p_b) → usuario_c (C recibe lo que B cede)
+    - _usuario_que_recibe(doc, p_c) → usuario_a (A recibe lo que C cede)
+
+    Si ningún participante recibe exactamente el turno cedido (documento
+    mal construido o inconsistente), devuelve None.
+    """
+    for o in documento.participantes:
+        if o.id == participante.id:
+            continue
+        if (o.turno_recibe_fecha == participante.turno_cede_fecha
+                and o.turno_recibe_franja_id == participante.turno_cede_franja_id):
+            return o.usuario
+    return None
+
+
 def crear_documento_cambio(
     creado_por, companero,
     turno_cede_fecha, turno_cede_franja_id,
@@ -181,6 +205,67 @@ def crear_documento_cambio_junte(
     return documento
 
 
+def crear_documento_cambio_cadena_3(
+    creado_por, companero, tercero,
+    turno_creado_por_cede, turno_companero_cede, turno_tercero_cede,
+    depende_de_id=None,
+):
+    """
+    Crea un documento de una cadena de 3 bandas: ciclo creado_por→companero→
+    tercero→creado_por, donde cada `turno_X_cede` es una tupla
+    (fecha, franja_id) con el turno que esa persona cede a la siguiente del
+    ciclo (y por tanto recibe de la anterior).
+
+    A diferencia de crear_documento_cambio/_junte (intercambio simétrico
+    entre 2 personas), aquí cada participante cede y recibe turnos
+    distintos, así que no hay filas espejo: una fila por participante.
+    """
+    documento = DocumentoCambio(
+        creado_por=creado_por,
+        unidad_id=creado_por.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        tipo="cadena_3",
+        depende_de_id=depende_de_id,
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    cede_a_companero_fecha, cede_a_companero_franja_id = turno_creado_por_cede
+    cede_a_tercero_fecha, cede_a_tercero_franja_id = turno_companero_cede
+    cede_a_creado_por_fecha, cede_a_creado_por_franja_id = turno_tercero_cede
+
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=creado_por,
+        turno_cede_fecha=cede_a_companero_fecha, turno_cede_franja_id=cede_a_companero_franja_id,
+        turno_recibe_fecha=cede_a_creado_por_fecha, turno_recibe_franja_id=cede_a_creado_por_franja_id,
+    ))
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=companero,
+        turno_cede_fecha=cede_a_tercero_fecha, turno_cede_franja_id=cede_a_tercero_franja_id,
+        turno_recibe_fecha=cede_a_companero_fecha, turno_recibe_franja_id=cede_a_companero_franja_id,
+    ))
+    documento.participantes.append(ParticipanteDocumentoCambio(
+        usuario=tercero,
+        turno_cede_fecha=cede_a_creado_por_fecha, turno_cede_franja_id=cede_a_creado_por_franja_id,
+        turno_recibe_fecha=cede_a_tercero_fecha, turno_recibe_franja_id=cede_a_tercero_franja_id,
+    ))
+    db.session.flush()
+
+    estado, motivos = comprobar_factibilidad(documento)
+    documento.factibilidad_estado = estado
+    documento.factibilidad_motivos = "\n".join(motivos) if motivos else None
+
+    for participante in (companero, tercero):
+        _notificar(
+            participante, documento, "documento_cambio_pendiente_firma",
+            _("Hoja de cambio pendiente de firma"),
+            _("%(nombre)s ha creado una hoja de cambio contigo. Fírmala cuando puedas.", nombre=creado_por.nombre),
+        )
+
+    db.session.commit()
+    return documento
+
+
 class CambioNoFactibleError(Exception):
     """Se lanza cuando el cambio que se intenta registrar desde papel no es
     factible según las planillas ya publicadas (alguna de las partes no
@@ -254,15 +339,22 @@ def registrar_documento_cambio_papel(
 def match_admite_documento_cambio(match) -> bool:
     """
     Un match solo puede generar su propio DocumentoCambio si es un
-    intercambio simétrico entre 2 personas: cada participación cede Y
-    recibe un turno con franja concreta (no 'cualquier turno'). Las
-    coincidencias asimétricas (regalo/petición: una parte solo cede o solo
-    recibe) y las cadenas de 3/4 bandas no encajan en el modelo de
-    ParticipanteDocumentoCambio (cede/recibe obligatorios) y quedan fuera;
-    para esos casos se sigue usando 'Mis hojas de cambio > Nueva hoja de
-    cambio'.
+    intercambio simétrico entre 2 personas (directo_2) o una cadena de 3
+    bandas ya resuelta por completo (cadena_3): en ambos casos cada
+    participación cede Y recibe un turno con franja concreta (no
+    'cualquier turno'). Las coincidencias asimétricas (regalo/petición:
+    una parte solo cede o solo recibe) y las cadenas de 4+ bandas no
+    encajan en el modelo de ParticipanteDocumentoCambio (cede/recibe
+    obligatorios) y quedan fuera; para esos casos se sigue usando 'Mis
+    hojas de cambio > Nueva hoja de cambio'.
     """
-    if match.tipo != "directo_2" or len(match.participaciones) != 2:
+    if match.tipo == "directo_2":
+        if len(match.participaciones) != 2:
+            return False
+    elif match.tipo == "cadena_3":
+        if len(match.participaciones) != 3:
+            return False
+    else:
         return False
     for p in match.participaciones:
         if p.turno_cedido is None or p.turno_aceptado is None:
@@ -274,37 +366,37 @@ def match_admite_documento_cambio(match) -> bool:
 
 def crear_documento_cambio_desde_match(match):
     """
-    Crea el DocumentoCambio equivalente a un MatchCambio directo_2 ya
-    detectado por el motor de matching (publicación automática o 'Me
-    interesa'), reutilizando los turnos que ya tiene el match en vez de
-    que el usuario los vuelva a escribir a mano. Solo válido si
-    match_admite_documento_cambio(match) es True.
+    Crea el DocumentoCambio equivalente a un MatchCambio directo_2 o
+    cadena_3 ya detectado por el motor de matching (publicación
+    automática o 'Me interesa'), reutilizando los turnos que ya tiene el
+    match en vez de que el usuario los vuelva a escribir a mano. Solo
+    válido si match_admite_documento_cambio(match) es True. Genera una
+    fila de ParticipanteDocumentoCambio por cada participación del match
+    (2 para directo_2, 3 para cadena_3), cada una con el turno que cede y
+    el que recibe según el propio match.
 
     No manda la notificación "pendiente de firma" de crear_documento_cambio:
     confirmar_participacion ya notifica al resto de partes que hay un
     cambio pendiente de confirmar.
     """
-    p1, p2 = match.participaciones
-    u1, u2 = p1.publicacion.usuario, p2.publicacion.usuario
+    primera = match.participaciones[0]
+    creado_por = primera.publicacion.usuario
 
     documento = DocumentoCambio(
-        creado_por=u1, match=match,
-        unidad_id=u1.unidad_id,
-        numero_unidad=_siguiente_numero_unidad(u1.unidad_id),
+        creado_por=creado_por, match=match,
+        unidad_id=creado_por.unidad_id,
+        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        tipo=match.tipo if match.tipo == "cadena_3" else "cambio",
     )
     db.session.add(documento)
     db.session.flush()
 
-    documento.participantes.append(ParticipanteDocumentoCambio(
-        usuario=u1,
-        turno_cede_fecha=p1.turno_cedido.fecha, turno_cede_franja_id=p1.turno_cedido.franja_horaria_id,
-        turno_recibe_fecha=p1.turno_aceptado.fecha, turno_recibe_franja_id=p1.turno_aceptado.franja_horaria_id,
-    ))
-    documento.participantes.append(ParticipanteDocumentoCambio(
-        usuario=u2,
-        turno_cede_fecha=p2.turno_cedido.fecha, turno_cede_franja_id=p2.turno_cedido.franja_horaria_id,
-        turno_recibe_fecha=p2.turno_aceptado.fecha, turno_recibe_franja_id=p2.turno_aceptado.franja_horaria_id,
-    ))
+    for p in match.participaciones:
+        documento.participantes.append(ParticipanteDocumentoCambio(
+            usuario=p.publicacion.usuario,
+            turno_cede_fecha=p.turno_cedido.fecha, turno_cede_franja_id=p.turno_cedido.franja_horaria_id,
+            turno_recibe_fecha=p.turno_aceptado.fecha, turno_recibe_franja_id=p.turno_aceptado.franja_horaria_id,
+        ))
     db.session.flush()
 
     estado, motivos = comprobar_factibilidad(documento)
@@ -377,9 +469,9 @@ def firmar_documento(documento, usuario, imagen_firma):
                 _("Hoja de cambio completa"),
                 _("Las dos firmas están recogidas. La hoja de cambio ya está completa."),
             )
-            otro = next(o for o in documento.participantes if o.usuario_id != p.usuario_id)
-            if p.usuario.notif_email_documento_cambio:
-                _enviar_email_completo(documento, p.usuario, otro.usuario)
+            otro_usuario = _usuario_que_recibe(documento, p)
+            if p.usuario.notif_email_documento_cambio and otro_usuario:
+                _enviar_email_completo(documento, p.usuario, otro_usuario)
     else:
         documento.estado = "pendiente_firmas"
         ids_firmantes = {f.usuario_id for f in documento.firmas}
@@ -405,7 +497,8 @@ def generar_notas_ilog(documento):
     """
     notas = []
     for p in documento.participantes:
-        otro = next(o for o in documento.participantes if o.usuario_id != p.usuario_id)
+        otro_usuario = _usuario_que_recibe(documento, p)
+        otro_nombre = otro_usuario.nombre if otro_usuario else "?"
 
         notas.append({
             "usuario": p.usuario,
@@ -413,7 +506,7 @@ def generar_notas_ilog(documento):
             "fecha": p.turno_cede_fecha,
             "texto": (
                 f"Libra el turno de {p.turno_cede_franja.nombre.lower()} a cambio de "
-                f"trabajarle a {otro.nombre_mostrar} el turno de "
+                f"trabajarle a {otro_nombre} el turno de "
                 f"{p.turno_recibe_franja.nombre.lower()} del {_formatear_fecha(p.turno_recibe_fecha)}."
             ),
         })
@@ -423,12 +516,49 @@ def generar_notas_ilog(documento):
             "fecha": p.turno_recibe_fecha,
             "texto": (
                 f"Trabaja el turno de {p.turno_recibe_franja.nombre.lower()} a "
-                f"{otro.nombre_mostrar} a cambio de que {otro.nombre_mostrar} le "
+                f"{otro_nombre} a cambio de que {otro_nombre} le "
                 f"trabaje el turno de {p.turno_cede_franja.nombre.lower()} del "
                 f"{_formatear_fecha(p.turno_cede_fecha)}."
             ),
         })
     return notas
+
+
+def _contexto_pdf_cadena_3(documento):
+    """
+    Variables mostrar_cadena_3 / cede_tercer_* / tercer_companero_* /
+    firma_tercero que espera documento_cambio/pdf.html cuando
+    documento.tipo == "cadena_3". Si el documento no es una cadena_3,
+    devuelve solo mostrar_cadena_3=False.
+    """
+    if documento.tipo != "cadena_3":
+        return {"mostrar_cadena_3": False}
+
+    solicitante_id = documento.creado_por_id
+    p_solicitante = next(
+        p for p in documento.participantes if p.usuario_id == solicitante_id
+    )
+    companero = _usuario_que_recibe(documento, p_solicitante)
+
+    p_tercero = next(
+        p for p in documento.participantes
+        if p.usuario_id != solicitante_id and p.usuario_id != companero.id
+    )
+    tercero = p_tercero.usuario
+    receptor_tercero = _usuario_que_recibe(documento, p_tercero)
+
+    return {
+        "mostrar_cadena_3": True,
+        "cede_tercer_franja_c": p_tercero.turno_cede_franja.nombre,
+        "cede_tercer_fecha_c": (
+            f"{p_tercero.turno_cede_fecha.strftime('%d/%m/%Y')} "
+            f"({_('lo trabaja')} {receptor_tercero.nombre})"
+        ),
+        "tercer_companero_c": tercero.nombre,
+        "firma_tercero": next(
+            (f for f in documento.firmas if f.usuario_id == tercero.id), None
+        ),
+    }
 
 
 def _contexto_pdf_junte(documento):
@@ -479,27 +609,52 @@ def generar_pdf_documento(documento):
     """
     from xhtml2pdf import pisa
     solicitante = documento.creado_por
-    participante_solicitante = next(
-        p for p in documento.participantes if p.usuario_id == solicitante.id
-    )
-    participante_companero = next(
-        p for p in documento.participantes if p.usuario_id != solicitante.id
-    )
-    companero = participante_companero.usuario
+    if documento.tipo == "cadena_3":
+        p_solicitante = next(
+            p for p in documento.participantes if p.usuario_id == solicitante.id
+        )
+        companero = _usuario_que_recibe(documento, p_solicitante)
+        p_companero = next(
+            p for p in documento.participantes if p.usuario_id == companero.id
+        )
+        cede_fecha_receptor_nombre = companero.nombre if companero else None
+        p_tercero = next(
+            p for p in documento.participantes
+            if p.usuario_id != solicitante.id and p.usuario_id != companero.id
+        )
+        receptor_recibe = _usuario_que_recibe(documento, p_tercero)
+        recibe_fecha_receptor_nombre = receptor_recibe.nombre if receptor_recibe else None
+        solicitante_nombre = p_solicitante.nombre_mostrar
+        companero_nombre = p_companero.nombre_mostrar
+    else:
+        p_solicitante = next(
+            p for p in documento.participantes if p.usuario_id == solicitante.id
+        )
+        p_companero = next(
+            p for p in documento.participantes if p.usuario_id != solicitante.id
+        )
+        companero = p_companero.usuario
+        cede_fecha_receptor_nombre = None
+        recibe_fecha_receptor_nombre = None
+        solicitante_nombre = p_solicitante.nombre_mostrar
+        companero_nombre = p_companero.nombre_mostrar
+
     firmas_por_usuario = {f.usuario_id: f for f in documento.firmas}
 
     html = render_template(
         "documento_cambio/pdf.html",
         hospital_nombre=solicitante.unidad.hospital.nombre,
         unidad_nombre=solicitante.unidad.nombre,
-        solicitante_nombre=participante_solicitante.nombre_mostrar,
-        companero_nombre=participante_companero.nombre_mostrar,
+        solicitante_nombre=solicitante_nombre,
+        companero_nombre=companero_nombre,
         solicitante=solicitante,
-        participante_solicitante=participante_solicitante,
+        participante_solicitante=p_solicitante,
         companero=companero,
         fecha_documento=documento.fecha_creacion.date(),
         numero_documento=documento.numero_unidad,
         meses=_MESES,
+        cede_fecha_receptor_nombre=cede_fecha_receptor_nombre,
+        recibe_fecha_receptor_nombre=recibe_fecha_receptor_nombre,
         firma_solicitante=firmas_por_usuario.get(solicitante.id),
         firma_companero=firmas_por_usuario.get(companero.id),
         fondo_path=f"{current_app.static_folder}/img/hoja-cambio-fondo.png",
@@ -511,6 +666,7 @@ def generar_pdf_documento(documento):
         ),
         firma_supervisora=documento.firma_supervisora,
         **_contexto_pdf_junte(documento),
+        **_contexto_pdf_cadena_3(documento),
     )
 
     buffer = io.BytesIO()

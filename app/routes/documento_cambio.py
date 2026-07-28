@@ -11,7 +11,8 @@ from app.models import DocumentoCambio, FranjaHoraria, ParticipanteDocumentoCamb
 from app.extensions import db
 from app.routes.publicaciones import _extraer_turnos_junte
 from app.services.documento_cambio import (
-    crear_documento_cambio, crear_documento_cambio_junte, firmar_documento,
+    crear_documento_cambio, crear_documento_cambio_junte,
+    crear_documento_cambio_cadena_3, firmar_documento,
     generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, anular_documento, puede_anularse,
     registrar_documento_cambio_papel, CambioNoFactibleError,
@@ -382,10 +383,34 @@ def nueva():
         companero = next((c for c in companeros if c.id == companero_id), None)
         franja_ids_validas = {f.id for f in franjas}
 
+        tercero_id = request.form.get("tercero_id", type=int)
+        tercero = next((c for c in companeros if c.id == tercero_id), None)
+        companero_cede_fecha_str = request.form.get("turno_companero_cede_fecha", "")
+        companero_cede_franja_id = request.form.get("turno_companero_cede_franja_id", type=int)
+
         error = None
         cedidos = aceptados = None
         if tipo == "junte":
             cedidos, aceptados, error = _extraer_turnos_junte()
+        elif tipo == "cadena_3":
+            try:
+                cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
+                recibe_fecha = datetime.strptime(recibe_fecha_str, "%Y-%m-%d").date()
+                companero_cede_fecha = datetime.strptime(companero_cede_fecha_str, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                error = _("Fechas incorrectas.")
+                cede_fecha = recibe_fecha = companero_cede_fecha = None
+
+            if not error and (
+                cede_franja_id not in franja_ids_validas
+                or recibe_franja_id not in franja_ids_validas
+                or companero_cede_franja_id not in franja_ids_validas
+            ):
+                error = _("Selecciona un turno válido.")
+            if not error and tercero is None:
+                error = _("Selecciona un tercer compañero válido.")
+            if not error and tercero_id == companero_id:
+                error = _("El tercer compañero debe ser distinto del compañero.")
         else:
             try:
                 cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
@@ -399,7 +424,7 @@ def nueva():
 
         if not error and companero is None:
             error = _("Selecciona un compañero válido.")
-        if not error and firmar_ambos and (
+        if not error and firmar_ambos and tipo != "cadena_3" and (
             not imagen_firma_propia.startswith("data:image/")
             or not imagen_firma_companero.startswith("data:image/")
         ):
@@ -419,6 +444,14 @@ def nueva():
                 cedidos=cedidos, aceptados=aceptados,
                 depende_de_id=depende_de_id,
             )
+        elif tipo == "cadena_3":
+            documento = crear_documento_cambio_cadena_3(
+                creado_por=current_user, companero=companero, tercero=tercero,
+                turno_creado_por_cede=(cede_fecha, cede_franja_id),
+                turno_companero_cede=(companero_cede_fecha, companero_cede_franja_id),
+                turno_tercero_cede=(recibe_fecha, recibe_franja_id),
+                depende_de_id=depende_de_id,
+            )
         else:
             documento = crear_documento_cambio(
                 creado_por=current_user, companero=companero,
@@ -427,7 +460,7 @@ def nueva():
                 depende_de_id=depende_de_id,
             )
 
-        if firmar_ambos:
+        if firmar_ambos and tipo != "cadena_3":
             # Las dos partes están rellenando el cambio juntas, desde el
             # mismo dispositivo -- excepción explícita a la firma cruzada
             # habitual (cada uno firma solo lo suyo desde su cuenta).
