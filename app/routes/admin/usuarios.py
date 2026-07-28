@@ -90,8 +90,15 @@ def usuario_nuevo():
                     u, set(form.unidades_supervisadas.data) | {unidad.id}
                 )
             db.session.commit()
-            crear_usuario_con_invitacion(u)
+            email_enviado = crear_usuario_con_invitacion(u)
             flash(_("Usuario creado."), "success")
+            if not email_enviado:
+                flash(
+                    _("No se ha podido enviar el email de invitación. "
+                      "El usuario puede usar \"He olvidado mi contraseña\" en la "
+                      "pantalla de acceso para recibir un enlace."),
+                    "danger",
+                )
             return redirect(url_for("admin.usuarios"))
 
     paises = Pais.query.order_by(Pais.nombre).all()
