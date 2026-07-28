@@ -4747,3 +4747,15 @@ msgstr ""
 #: app/routes/planilla_supervision.py:122
 msgid "Reglas de comprobación actualizadas."
 msgstr ""
+
+#: app/templates/main/offline.html:7
+msgid "Sin conexión"
+msgstr ""
+
+#: app/templates/main/offline.html:29
+msgid "No se ha podido conectar con Turnero. Comprueba tu conexión a internet e inténtalo de nuevo."
+msgstr ""
+
+#: app/templates/main/offline.html:30
+msgid "Reintentar"
+msgstr ""

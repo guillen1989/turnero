@@ -68,7 +68,7 @@
   "maskable" (contenido dentro del 80% central, sin texto ni bordes pegados
   al borde). Si no la respetan, regenerar los iconos con margen y actualizar
   `app/static/icons/`.
-- [ ] Añadir una página/fallback offline mínima en `app/static/sw.js` (p. ej.
+- [x] Añadir una página/fallback offline mínima en `app/static/sw.js` (p. ej.
   servir una página "sin conexión" cacheada cuando falla el `fetch` de
   navegación), con su test si aplica.
 - [ ] Confirmar que `theme_color`/`background_color` del manifest
@@ -247,3 +247,16 @@ inicio/fin de la pista de pruebas cerrada, etc.)
   fondo azul de borde a borde sin transparencia ni halo, ilustración dentro
   del 80% central. Sin cambios en `badge-72.png` (no está declarado
   `maskable` en el manifest).
+
+### Fase 1 — Página offline (2026-07-28)
+
+- Añadida la ruta pública `/offline` (`app/routes/pwa.py`) con plantilla
+  autocontenida `app/templates/main/offline.html` (estilos inline, sin
+  depender de `main.css`) para que se muestre igual aunque la caché de
+  estáticos no esté disponible.
+- `app/static/sw.js` ahora precachea `/offline` junto a `/` y, en el
+  `fetch` handler, si una petición de navegación (`event.request.mode ===
+  'navigate'`) falla sin red y no hay una versión cacheada de esa URL
+  concreta, sirve la página offline precacheada como fallback.
+- Tests añadidos en `tests/test_pwa.py`: disponibilidad de `/offline` (200,
+  `text/html`) y que `sw.js` referencia `/offline` para precache.

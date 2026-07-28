@@ -5233,6 +5233,18 @@ msgstr "Introduce un número de días válido (mayor que 0)."
 msgid "Reglas de comprobación actualizadas."
 msgstr "Reglas de comprobación actualizadas."
 
+#: app/templates/main/offline.html:7
+msgid "Sin conexión"
+msgstr "Sin conexión"
+
+#: app/templates/main/offline.html:29
+msgid "No se ha podido conectar con Turnero. Comprueba tu conexión a internet e inténtalo de nuevo."
+msgstr "No se ha podido conectar con Turnero. Comprueba tu conexión a internet e inténtalo de nuevo."
+
+#: app/templates/main/offline.html:30
+msgid "Reintentar"
+msgstr "Reintentar"
+
 #~ msgid ""
 #~ "Hola %(nombre)s,\n"
 #~ "\n"

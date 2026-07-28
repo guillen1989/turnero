@@ -1,5 +1,6 @@
 const CACHE_NAME = 'turnero-v1';
-const URLS_PRECACHE = ['/'];
+const OFFLINE_URL = '/offline';
+const URLS_PRECACHE = ['/', OFFLINE_URL];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -19,8 +20,15 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   // Red-first: sirve siempre la versión fresca si hay red.
+  // Para navegaciones sin red y sin caché propia, cae a la página offline precacheada.
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(() =>
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        if (event.request.mode === 'navigate') return caches.match(OFFLINE_URL);
+        return undefined;
+      })
+    )
   );
 });
 
