@@ -38,6 +38,16 @@ def offline():
     return render_template("main/offline.html")
 
 
+@bp.get("/.well-known/assetlinks.json")
+def assetlinks():
+    response = current_app.make_response(
+        current_app.send_static_file(".well-known/assetlinks.json")
+    )
+    response.headers["Content-Type"] = "application/json"
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
 @bp.get("/sw.js")
 def service_worker():
     response = current_app.make_response(

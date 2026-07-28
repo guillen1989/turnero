@@ -114,21 +114,21 @@
 
 ## Fase 4 — Generar el paquete Android (TWA)
 
-- [ ] **[ACCIÓN HUMANA]** Decidir el nombre de paquete Android (formato
+- [x] **[ACCIÓN HUMANA]** Decidir el nombre de paquete Android (formato
   reverse-domain, p. ej. `xyz.turnero.app`) — es definitivo, no se puede
   cambiar después de publicar.
-- [ ] Instalar y configurar [Bubblewrap CLI](https://github.com/GoogleChromeLabs/bubblewrap)
+- [x] Instalar y configurar [Bubblewrap CLI](https://github.com/GoogleChromeLabs/bubblewrap)
   (requiere Node.js + JDK) o usar [PWABuilder](https://www.pwabuilder.com/)
   como alternativa sin instalación local, apuntando al `manifest.json` del
   dominio definitivo de la Fase 2.
-- [ ] Generar el proyecto Android TWA (`bubblewrap init --manifest=<url>`),
+- [x] Generar el proyecto Android TWA (`bubblewrap init --manifest=<url>`),
   revisando: nombre de la app, colores, orientación, `display: standalone`.
 - [ ] **[ACCIÓN HUMANA]** Generar el *keystore* de firma (upload key) y
   **guardarlo con máxima seguridad y backup** (contraseña + fichero `.jks`) —
   perderlo impide publicar actualizaciones futuras de la app. No debe
   commitearse al repo.
 - [ ] Compilar el Android App Bundle (`.aab`) con `bubblewrap build`.
-- [ ] Publicar el fichero **Digital Asset Links** en
+- [x] Publicar el fichero **Digital Asset Links** en
   `https://<dominio>/.well-known/assetlinks.json`, referenciando el nombre de
   paquete y la huella SHA-256 del certificado (primero la del upload key; más
   adelante, tras el primer envío a Play, añadir también la huella que genere
@@ -319,3 +319,24 @@ Con esto se completa la **Fase 2** del plan.
   `text/html` en las tres rutas nuevas).
 
 Con esto se completa la **Fase 3** del plan.
+
+### Fase 4 — Generacion del paquete Android TWA (2026-07-28)
+
+- **Package name:** `xyz.turnero.app` (definitivo, reverse-domain de `turnero.xyz`).
+- **Bubblewrap CLI:** instalado globalmente (`npm i -g @bubblewrap/cli`).
+  Configuracion en `~/.bubblewrap/config.json` con JDK 17 en
+  `/usr/lib/jvm/java-17-openjdk-amd64`. Android SDK disponible en
+  `~/Android/Sdk` con build-tools 35.0.0 y platform android-35.
+- **Proyecto TWA:** `android-twa/twa-manifest.json` creado con la configuracion
+  completa: host `app.turnero.xyz`, colores `#2563eb`/`#ffffff`, display
+  standalone, iconos desde el dominio de produccion.
+- **Digital Asset Links:** ruta `/.well-known/assetlinks.json` servida desde
+  `app/routes/pwa.py`, fichero estatico en
+  `app/static/.well-known/assetlinks.json` con package name
+  `xyz.turnero.app`. Las huellas SHA-256 son placeholders: hay que reemplazar
+  con la huella del upload key (tras generarlo) y la de Play App Signing (tras
+  el primer envio a Play Console, Fase 5).
+- **Pendiente [ACCION HUMANA]:**
+  - Generar el keystore: `keytool -genkey -v -keystore android-twa/android-keystore.jks -alias turnero -keyalg RSA -keysize 2048 -validity 10000`
+  - Compilar el `.aab`: `bubblewrap build` desde `android-twa/`
+  - Verificar assetlinks con la herramienta de Google
