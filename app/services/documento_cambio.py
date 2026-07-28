@@ -530,6 +530,11 @@ def _contexto_pdf_cadena_3(documento):
     firma_tercero que espera documento_cambio/pdf.html cuando
     documento.tipo == "cadena_3". Si el documento no es una cadena_3,
     devuelve solo mostrar_cadena_3=False.
+
+    cede_tercer_franja_c/cede_tercer_fecha_c muestran el turno y el día
+    que el tercer compañero pasa a trabajar (lo que recibe en el ciclo),
+    no el que cede -- eso ya lo representan cede_franja_c/cede_fecha_c
+    para el solicitante.
     """
     if documento.tipo != "cadena_3":
         return {"mostrar_cadena_3": False}
@@ -545,15 +550,11 @@ def _contexto_pdf_cadena_3(documento):
         if p.usuario_id != solicitante_id and p.usuario_id != companero.id
     )
     tercero = p_tercero.usuario
-    receptor_tercero = _usuario_que_recibe(documento, p_tercero)
 
     return {
         "mostrar_cadena_3": True,
-        "cede_tercer_franja_c": p_tercero.turno_cede_franja.nombre,
-        "cede_tercer_fecha_c": (
-            f"{p_tercero.turno_cede_fecha.strftime('%d/%m/%Y')} "
-            f"({_('lo trabaja')} {receptor_tercero.nombre})"
-        ),
+        "cede_tercer_franja_c": p_tercero.turno_recibe_franja.nombre,
+        "cede_tercer_fecha_c": p_tercero.turno_recibe_fecha.strftime('%d/%m/%Y'),
         "tercer_companero_c": tercero.nombre,
         "firma_tercero": next(
             (f for f in documento.firmas if f.usuario_id == tercero.id), None
