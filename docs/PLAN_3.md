@@ -98,7 +98,7 @@ de `companero_frame`):
 
 ---
 
-## Paso 2 — Helper para resolver "quién trabaja cada turno tras el cambio" en una cadena_3
+## Paso 2 — Helper para resolver "quién trabaja cada turno tras el cambio" en una cadena_3 ✅
 
 Para renderizar los paréntesis `(lo trabaja + <nombre>)` en
 `cede_fecha_frame`, `recibe_fecha_frame` y `cede_tercer_fecha_frame`, y para
@@ -107,12 +107,12 @@ mapear, para un documento de 3 participantes, qué usuario terminará
 trabajando cada turno_cedido tras el cambio (es el usuario cuyo
 `turno_aceptado` coincide en fecha+franja con ese `turno_cedido`).
 
-- [ ] Test (rojo): en `tests/services/test_documento_cambio.py` (o el fichero
+- [x] Test (rojo): en `tests/services/test_documento_cambio.py` (o el fichero
   de tests que corresponda), crear un test que construya un
   `DocumentoCambio` con 3 `ParticipanteDocumentoCambio` simulando un ciclo
   A→B→C→A y verifique que la función nueva devuelve, para el
   `turno_cedido` de A, el usuario B (quien lo recibe).
-- [ ] Verde: implementar en `app/services/documento_cambio.py` una función
+- [x] Verde: implementar en `app/services/documento_cambio.py` una función
   `_usuario_que_recibe(documento, participante)` que, dado un participante
   `p`, devuelva el `usuario` del participante `o` tal que
   `o.turno_aceptado.fecha == p.turno_cedido.fecha and
@@ -120,14 +120,14 @@ trabajando cada turno_cedido tras el cambio (es el usuario cuyo
   Esta función reemplaza el patrón "otro por exclusión" y funciona igual de
   bien para 2 o para 3 participantes (para 2 participantes da el mismo
   resultado que el código actual).
-- [ ] Ejecutar `pytest --testmon`.
-- [ ] Commit: `feat(documento_cambio): añade _usuario_que_recibe para resolver el destinatario real de un turno cedido`
+- [x] Ejecutar `pytest --testmon`.
+- [x] Commit: `feat(documento_cambio): añade _usuario_que_recibe para resolver el destinatario real de un turno cedido`
 
 ---
 
-## Paso 3 — `_contexto_pdf_cadena_3` y contexto base de `generar_pdf_documento`
+## Paso 3 — `_contexto_pdf_cadena_3` y contexto base de `generar_pdf_documento` ✅
 
-- [ ] Test (rojo): test para una nueva función
+- [x] Test (rojo): test para una nueva función
   `_contexto_pdf_cadena_3(documento)` (paralela a `_contexto_pdf_junte`) que,
   para un documento con `tipo == "cadena_3"`, devuelva un dict con al menos:
   `mostrar_cadena_3=True`, `cede_tercer_franja_c`, `cede_tercer_fecha_c`
@@ -135,9 +135,9 @@ trabajando cada turno_cedido tras el cambio (es el usuario cuyo
   `tercer_companero_c` (nombre del tercer usuario), `firma_tercero_c`. Para
   cualquier otro `tipo`, debe devolver `{"mostrar_cadena_3": False}` (mismo
   patrón que `_contexto_pdf_junte`).
-- [ ] Verde: implementar `_contexto_pdf_cadena_3` en
+- [x] Verde: implementar `_contexto_pdf_cadena_3` en
   `app/services/documento_cambio.py`, cerca de `_contexto_pdf_junte`.
-- [ ] Modificar `generar_pdf_documento(documento)` para:
+- [x] Modificar `generar_pdf_documento(documento)` para:
   - Seguir soportando el caso de 2 participantes sin cambios.
   - Cuando `documento.tipo == "cadena_3"`, en vez de
     `participante_companero = next(p for p in documento.participantes if p.usuario_id != solicitante.id)`
@@ -154,43 +154,43 @@ trabajando cada turno_cedido tras el cambio (es el usuario cuyo
     `_usuario_que_recibe` también cuando `tipo == "cadena_3"` (para `tipo ==
     "junte"` o `"cambio"` normal, dejar el comportamiento actual si no lo
     tenían ya).
-- [ ] Ejecutar `pytest --testmon`.
-- [ ] Commit: `feat(documento_cambio): _contexto_pdf_cadena_3 y soporte de 3 participantes en generar_pdf_documento`
+- [x] Ejecutar `pytest --testmon`.
+- [x] Commit: `feat(documento_cambio): _contexto_pdf_cadena_3 y soporte de 3 participantes en generar_pdf_documento`
 
 ---
 
-## Paso 4 — Arreglar `generar_notas_ilog` y el email de `firmar_documento` para 3 participantes
+## Paso 4 — Arreglar `generar_notas_ilog` y el email de `firmar_documento` para 3 participantes ✅
 
-- [ ] Test (rojo): test de `generar_notas_ilog` con un documento cadena_3 de 3
+- [x] Test (rojo): test de `generar_notas_ilog` con un documento cadena_3 de 3
   participantes que verifique que cada nota "cede"/"recibe" referencia al
   usuario correcto (el que realmente cede/recibe ese turno concreto, según
   `_usuario_que_recibe`), no un "otro" arbitrario.
-- [ ] Verde: sustituir el `otro = next(o for o in documento.participantes if
+- [x] Verde: sustituir el `otro = next(o for o in documento.participantes if
   o.usuario_id != p.usuario_id)` de `generar_notas_ilog` por
   `_usuario_que_recibe(documento, p)` (del Paso 2). Confirmar que el
   comportamiento con 2 participantes no cambia (debe dar el mismo resultado).
-- [ ] Test (rojo): test de `firmar_documento` con cadena_3 que verifique que,
+- [x] Test (rojo): test de `firmar_documento` con cadena_3 que verifique que,
   al completarse la firma de los 3, cada participante recibe el email de
   notificación referenciando al usuario correcto (no ambiguo).
-- [ ] Verde: mismo fix (`_usuario_que_recibe`) en el bloque de email dentro de
+- [x] Verde: mismo fix (`_usuario_que_recibe`) en el bloque de email dentro de
   `firmar_documento`.
-- [ ] Ejecutar `pytest --testmon`.
-- [ ] Commit: `fix(documento_cambio): corrige la resolución de "otro participante" para cadenas de 3`
+- [x] Ejecutar `pytest --testmon`.
+- [x] Commit: `fix(documento_cambio): corrige la resolución de "otro participante" para cadenas de 3`
 
 ---
 
-## Paso 5 — `crear_documento_cambio_cadena_3` (creación manual)
+## Paso 5 — `crear_documento_cambio_cadena_3` (creación manual) ✅
 
-- [ ] Test (rojo): test para una nueva función
+- [x] Test (rojo): test para una nueva función
   `crear_documento_cambio_cadena_3(creado_por, companero, tercero, turno_cede_a_companero, turno_cede_companero_a_tercero, turno_cede_tercero_a_creado_por, depende_de_id=None)`
   (firma exacta a decidir por quien implemente, siguiendo el estilo de
   `crear_documento_cambio_junte`) que cree un `DocumentoCambio(tipo="cadena_3")`
   con 3 `ParticipanteDocumentoCambio`, cada uno con su `turno_cedido` y
   `turno_aceptado` coherentes con el ciclo A→B→C→A.
-- [ ] Verde: implementar en `app/services/documento_cambio.py`, junto a
+- [x] Verde: implementar en `app/services/documento_cambio.py`, junto a
   `crear_documento_cambio_junte`.
-- [ ] Ejecutar `pytest --testmon`.
-- [ ] Commit: `feat(documento_cambio): añade crear_documento_cambio_cadena_3`
+- [x] Ejecutar `pytest --testmon`.
+- [x] Commit: `feat(documento_cambio): añade crear_documento_cambio_cadena_3`
 
 ---
 
@@ -238,18 +238,31 @@ trabajando cada turno_cedido tras el cambio (es el usuario cuyo
 
 ---
 
-## Paso 8 — Revisión final y UAT
+## Paso 8 — Revisión final y UAT ✅
 
-- [ ] Repasar `especificacion-app-cambio-turnos.md`, sección "Cadenas a 3
+- [x] Repasar `especificacion-app-cambio-turnos.md`, sección "Cadenas a 3
   bandas" (UAT-7.1 a UAT-7.4), y verificar que cada UAT queda cubierto por
-  tests existentes; añadir los que falten.
-- [ ] Ejecutar la suite completa una sola vez al cerrar la fase (excepción al
+  tests existentes; añadir los que falten. UAT-7.1 a 7.4 tratan de la
+  *detección* de la cadena por el motor de matching (no de la hoja de
+  cambio), y ya están cubiertos por `tests/test_motor_matching.py`,
+  `tests/test_integracion_matching.py`, `tests/test_pub_sintetica.py` y
+  `tests/test_sintetica_4.py`. La generación de la hoja de cambio para
+  cadena_3 (alcance de este plan) está cubierta por
+  `tests/test_servicio_documento_cambio.py`,
+  `tests/test_documento_cambio_desde_match.py`,
+  `tests/test_documento_cambio_creacion.py`, `tests/test_cadena_3.py` y
+  `tests/test_confirmar_con_documento.py`. No se detectaron huecos.
+- [x] Ejecutar la suite completa una sola vez al cerrar la fase (excepción al
   uso habitual de `--testmon`, para detectar regresiones cruzadas):
-  `anaconda3/bin/python3 -m pytest`.
-- [ ] Generar un PDF real de una hoja de cadena_3 desde la UI y confirmar
+  `anaconda3/bin/python3 -m pytest`. Verde, sin fallos.
+- [x] Generar un PDF real de una hoja de cadena_3 desde la UI y confirmar
   visualmente que el resultado es aceptable (con el solape ya asumido).
-- [ ] Actualizar `PROGRESS.md` cerrando esta fase.
-- [ ] Commit final y apertura de la Pull Request contra `staging`.
+  Generado con datos ficticios (Ana/Berta/Carmen) vía
+  `generar_pdf_documento`: los 3 participantes aparecen, los paréntesis
+  `(lo trabaja <nombre>)` resuelven al usuario correcto, y el frame del
+  tercer compañero se solapa con el del compañero como estaba previsto.
+- [x] Actualizar `PROGRESS.md` cerrando esta fase.
+- [x] Commit final y apertura de la Pull Request contra `staging`.
 
 ---
 

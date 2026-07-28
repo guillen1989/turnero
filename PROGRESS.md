@@ -2,17 +2,27 @@
 
 ## Fase actual
 Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3), plan completo en
-`docs/PLAN_3.md`.
+`docs/PLAN_3.md`. **Fase cerrada.**
 
 ## Paso actual / siguiente paso
-Paso 7 completado (wiring en `app/routes/documento_cambio.py` y
-`nuevo.html` para crear hojas `cadena_3` desde el formulario).
-Siguiente: Paso 8 de `docs/PLAN_3.md` — revisión final y UAT (repasar
-`especificacion-app-cambio-turnos.md` UAT-7.1 a UAT-7.4, ejecutar la suite
-completa una sola vez, generar un PDF real desde la UI, cerrar la fase en
-`PROGRESS.md` y abrir la PR contra `staging`).
+Los 8 pasos de `docs/PLAN_3.md` están completos. Siguiente: abrir/mantener
+la Pull Request de la fase 12 contra `staging`; no queda trabajo pendiente
+en este plan. Próxima fase a definir por el usuario.
 
 ## Últimos pasos completados
+- [x] Paso 8 (`docs/PLAN_3.md`) — revisión final y UAT: UAT-7.1 a 7.4
+  (detección de la cadena por el motor de matching) ya cubiertos por
+  `tests/test_motor_matching.py`, `tests/test_integracion_matching.py`,
+  `tests/test_pub_sintetica.py` y `tests/test_sintetica_4.py`; la
+  generación de la hoja de cambio cadena_3 (alcance de este plan) cubierta
+  por `tests/test_servicio_documento_cambio.py`,
+  `tests/test_documento_cambio_desde_match.py`,
+  `tests/test_documento_cambio_creacion.py`, `tests/test_cadena_3.py` y
+  `tests/test_confirmar_con_documento.py`. Suite completa
+  (`anaconda3/bin/python3 -m pytest`) en verde. PDF real de una cadena_3
+  generado con datos ficticios y revisado visualmente: los 3 participantes
+  aparecen, los paréntesis `(lo trabaja <nombre>)` resuelven al usuario
+  correcto y el solape del tercer compañero es el esperado.
 - [x] Paso 7 (`docs/PLAN_3.md`) — `app/routes/documento_cambio.py` +
   `app/templates/documento_cambio/nuevo.html`: nueva opción `cadena_3` en
   el selector de tipo; rama `elif tipo == "cadena_3":` en `nueva()` que
