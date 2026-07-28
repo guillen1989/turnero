@@ -2614,3 +2614,43 @@ mitigación preventiva independiente de la causa.
 - [x] test(e2e): el golden path sintético (`test_golden_path_staging`) dejaba cuentas de prueba (Ana/Pedro/Carlos) huérfanas en staging en cada ejecución; se envuelve en try/finally con un nuevo helper `_eliminar_cuenta()` que borra las tres cuentas vía UI al terminar (best-effort: si el test falla a medio registro, el cleanup no oculta el fallo real).
 - [x] fix(i18n): auditoría detectó que `app/routes/planilla.py` tenía ~20 `flash()` con mensaje literal (str/f-string) sin pasar por `_()`, y que `ETIQUETAS_ESTADO` estaba duplicado (con textos distintos: "No disponible" vs "No disponible para cambios") entre `planilla.py` y `planilla_supervision.py` · todos los `flash()` envueltos en `_()`, los f-strings convertidos a placeholders con nombre (`%(n)s`) siguiendo el patrón ya usado en `documento_cambio.py` · `ETIQUETAS_ESTADO` unificado en `app/models/planilla.py` con `lazy_gettext` (necesario porque es un diccionario a nivel de módulo: `_()` normal se evaluaría en el momento de importar, no por request) e importado desde ambas rutas · de paso, se encontró y corrigió un bug de shadowing: `_, num_dias = calendar.monthrange(...)` en 3 archivos que también importan `_` de `flask_babel` convertía `_` en variable local para el resto de esa función, rompiendo cualquier `_()` posterior (renombrado a `_primer_dia_semana`) · **medida preventiva** en `tests/test_i18n.py`: `test_flash_no_usa_literales_sin_traducir` escanea (vía `ast`) todos los `app/routes/*.py` y falla si algún `flash()` recibe un literal sin `_()`/`gettext()`; `test_no_se_reasigna_guion_bajo_en_archivos_con_gettext` falla si una función reasigna `_` en un archivo que lo importa de `flask_babel` — ambos tests fallaban (rojo) contra el código original antes del fix · catálogo de traducción regenerado (`translations/messages.pot`, `translations/es/LC_MESSAGES/messages.po` y `.mo`; se dejó fuera el `messages.pot` de la raíz, que es un artefacto obsoleto sin uso, no referenciado desde ningún script).
 
+
+## Fase 11 — Junte de noches en la hoja de cambio digital + supervisoras multiunidad + fixes de usuarios (movido desde PROGRESS.md)
+
+### Junte de noches en /documentos-cambio/nuevo (`docs/PLAN_JUNTE.md`)
+- [x] Paso 1 — Modelo: columna `tipo` en `DocumentoCambio` (`"cambio"` por defecto, `server_default`) y constraint `uq_participante_documento_usuario` ampliado a `(documento_id, usuario_id, turno_cede_fecha, turno_cede_franja_id)`. Migración `aec48c5be24e`.
+- [x] Paso 2 — `app/services/junte_semanal.py`: `distribucion_desde_fechas(fechas_cedidas, fechas_aceptadas)`, extraída de `calcular_distribucion`.
+- [x] Paso 3 — `app/services/factibilidad_documento_cambio.py`: overlay siempre activo, incluyendo las propias filas de `documento.participantes`; `_construir_overlay` acepta `excluir_participante`.
+- [x] Paso 4 — `crear_documento_cambio_junte(creado_por, companero, cedidos, aceptados, depende_de_id=None)` en `app/services/documento_cambio.py`.
+- [x] Paso 5 — `_contexto_pdf_junte` en `generar_pdf_documento`; los 5 campos de turno único de `pdf.html` pasan a `{% if not mostrar_junte %}`.
+- [x] Paso 6 — `app/routes/documento_cambio.py::nueva()`: campo `tipo`, rama a `crear_documento_cambio_junte` si `tipo == "junte"`.
+- [x] Paso 7 — `nuevo.html`: selector de tipo, sección `section-junte` con grid de noches (JS reutilizado de `publicar.html`).
+
+Notas: tests de PDF fallaban por bug de entorno (`md5(usedforsecurity=False)` no soportado en Python 3.8 en ese momento, no introducido por este trabajo). Flakiness preexistente detectada en `tests/test_documento_cambio_creacion.py` (no relacionada, no bloqueante).
+
+### Junte de noches — layout inicial en pdf.html (worktree `feature/junte-frames-pdf`)
+- 18 `@frame` nuevos para las 2 rejillas L-M-X-J-V-S-D (nombres + 14 celdas de día), condicionados a `mostrar_junte`. Tests en `tests/test_pdf_junte_frames.py` (renderizado directo de plantilla, sin `generar_pdf_documento` porque `DocumentoCambio` aún no admitía juntes).
+
+### Supervisoras multiunidad (`PLAN_SUPERVISORAS_MULTIUNIDAD.md`)
+- [x] Paso 1 — Modelo `UnidadSupervisada` (N:M `Usuario`↔`Unidad`), migración `666dde3fff3c` con backfill desde `es_supervisora`.
+- [x] Paso 2 — `app/services/supervision.py`: `unidades_supervisadas_de`, `puede_supervisar`.
+- [x] Paso 3 — Rutas `planilla_supervision.py`: `_unidad_supervisada_o_403`, `unidad_id` propagado por querystring/campo oculto.
+- [x] Paso 4 — Selector de unidad en `index.html`/`reglas.html` (oculto si solo hay una unidad supervisada). Test E2E de cambio de unidad.
+- [x] Paso 5 — Formulario admin: `sincronizar_unidades_supervisadas`, `AdminUsuarioForm.unidades_supervisadas` (multi-select).
+- [x] Paso 6 — Contraseña por invitación para supervisoras creadas por admin: `crear_supervisora_con_invitacion` (luego generalizada, ver más abajo).
+- [x] Paso 7 — Extensión a `planilla_import.py`: helper compartido `unidad_supervisada_o_403` movido a `app/services/supervision.py`.
+- [x] Paso 8 — Fix de integración: feature flags no activados en conftest causaban 404 en tests de supervisión.
+- [x] Paso 9 — Test E2E de flujo completo (`e2e/test_supervisora_multiunidad_e2e.py`).
+
+### Fixes puntuales sobre supervisoras multiunidad / importación de planilla (rama `fix-supervisor-unidad-planilla`)
+- [x] Label visible junto al selector de unidad (antes solo `aria-label`).
+- [x] `/auth/perfil` de supervisoras: solo lectura de hospital/unidad/categoría (no pueden cambiar su unidad base, solo alternar entre supervisadas).
+- [x] `/planilla/importar`: columna `descartado` en `MapeoTrabajadorPlanilla`, ruta `descartar_trabajadores`, checkboxes + "seleccionar todos" en la UI.
+
+Nota de flakiness pre-existente: `tests/test_rutas_importar_planilla.py` falla de forma no determinista en ejecución completa (`ObjectDeletedError`/`IntegrityError`), reproducible también en el código original sin modificar; deuda de infraestructura de test, no bloqueante.
+
+### Fixes de creación/eliminación de usuarios (rama `fix-user-creation-bugs`)
+- [x] Contraseña por invitación generalizada a todos los usuarios nuevos (`crear_usuario_con_invitacion`, antes solo supervisoras).
+- [x] Email duplicado al crear usuario causaba 500: comprobación explícita antes del INSERT/UPDATE.
+- [x] Eliminar una supervisora daba 500: ampliado el borrado en cascada de `eliminar_usuario_admin` para cubrir FKs de `DocumentoCambio`/`AjustePlanillaSupervisora`/`MapeoTrabajadorPlanilla`.
+- [x] Email de invitación no llegaba en Railway staging: sin cambio de código, ya usaba Resend vía HTTPS al generalizar el punto 1.

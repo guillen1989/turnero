@@ -47,9 +47,9 @@
 
 ---
 
-## Paso 1 — Frames de `pdf.html` para el tercer participante
+## Paso 1 — Frames de `pdf.html` para el tercer participante ✅
 
-- [ ] Editar `app/templates/documento_cambio/pdf.html`.
+- [x] Editar `app/templates/documento_cambio/pdf.html`.
 
 Coordenadas exactas a usar (todas mirando los frames existentes, delta
 vertical = `companero_frame.top - recibe_franja_frame.top` = `92.16 - 84.96` =
@@ -85,16 +85,16 @@ de `companero_frame`):
    `left: 64.625mm; top: 174.5mm; width: 77.27mm; height: 17mm;`
    Contenido: `-pdf-frame-content: firma_tercero_c;`
 
-- [ ] En el body del template, envolver los bloques de los 2 participantes
+- [x] En el body del template, envolver los bloques de los 2 participantes
   base igual que ya se hace con `{% if not mostrar_junte %}`, usando un nuevo
   flag `mostrar_cadena_3` (ver Paso 3) para los 5 divs nuevos
   (`cede_tercer_franja_c`, `cede_tercer_fecha_c`, `tercer_companero_c`,
   `firma_tercero_c`), condicionados a `{% if mostrar_cadena_3 %}`.
-- [ ] Test: no hay tests unitarios de layout PDF en este proyecto (se valida
+- [x] Test: no hay tests unitarios de layout PDF en este proyecto (se valida
   visualmente). Generar un PDF de prueba manual con datos ficticios de cadena_3
   y confirmar visualmente que los 5 frames nuevos aparecen (aunque solapados)
   en las posiciones esperadas.
-- [ ] Commit: `feat(documento_cambio): añade frames de pdf.html para el tercer participante de una cadena_3`
+- [x] Commit: `feat(documento_cambio): añade frames de pdf.html para el tercer participante de una cadena_3`
 
 ---
 
