@@ -5,14 +5,26 @@ Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3), plan completo en
 `docs/PLAN_3.md`.
 
 ## Paso actual / siguiente paso
-Paso 6 completado (`match_admite_documento_cambio` y
-`crear_documento_cambio_desde_match` admiten matches de tipo `cadena_3`).
-Siguiente: Paso 7 de `docs/PLAN_3.md` — wiring en
-`app/routes/documento_cambio.py` (opción `cadena_3` en el `<select>` de
-`nuevo.html`, rama en `nueva()` que recoja los datos del tercer
-participante y llame a `crear_documento_cambio_cadena_3`).
+Paso 7 completado (wiring en `app/routes/documento_cambio.py` y
+`nuevo.html` para crear hojas `cadena_3` desde el formulario).
+Siguiente: Paso 8 de `docs/PLAN_3.md` — revisión final y UAT (repasar
+`especificacion-app-cambio-turnos.md` UAT-7.1 a UAT-7.4, ejecutar la suite
+completa una sola vez, generar un PDF real desde la UI, cerrar la fase en
+`PROGRESS.md` y abrir la PR contra `staging`).
 
 ## Últimos pasos completados
+- [x] Paso 7 (`docs/PLAN_3.md`) — `app/routes/documento_cambio.py` +
+  `app/templates/documento_cambio/nuevo.html`: nueva opción `cadena_3` en
+  el selector de tipo; rama `elif tipo == "cadena_3":` en `nueva()` que
+  recoge `tercero_id`, `turno_companero_cede_fecha/franja_id` (reutilizando
+  `turno_cede_*`/`turno_recibe_*` para lo que cede/recibe el creador) y
+  llama a `crear_documento_cambio_cadena_3`. Validaciones: tercero
+  seleccionado y distinto del compañero, franjas y fechas válidas.
+  `firmar_ambos` se ignora para `cadena_3` (solo soporta 2 firmantes, fuera
+  de alcance de este paso). JS del formulario muestra/oculta el select de
+  tercero y el bloque de turno intermedio según el tipo elegido. Testeado
+  con `pytest --testmon` (creación correcta con 3 participantes y ciclo
+  A→B→C→A, y los 2 casos de error).
 - [x] Paso 6 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
   `match_admite_documento_cambio()` ahora admite también
   `match.tipo == "cadena_3"` con exactamente 3 `MatchParticipacion` (misma

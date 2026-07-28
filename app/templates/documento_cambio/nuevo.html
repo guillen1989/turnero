@@ -27,12 +27,29 @@
             <span class="tipo-desc">{{ _('Reorganizas con un compañero las noches de una semana para trabajarlas seguidas') }}</span>
           </div>
         </label>
+        <label class="tipo-opcion">
+          <input type="radio" name="tipo" value="cadena_3" id="tipo-cadena-3">
+          <div class="tipo-texto">
+            <span class="tipo-label">{{ _('Cadena de 3') }}</span>
+            <span class="tipo-desc">{{ _('Tú, tu compañero/a y un tercer compañero/a rotáis un turno cada uno') }}</span>
+          </div>
+        </label>
       </div>
     </section>
 
     <div class="form-group">
       <label for="companero_id">{{ _('Compañero/a con quien cambias') }}</label>
       <select id="companero_id" name="companero_id" required>
+        <option value="">{{ _('— Selecciona —') }}</option>
+        {% for c in companeros %}
+        <option value="{{ c.id }}">{{ c.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group" id="tercero-group" style="display:none">
+      <label for="tercero_id">{{ _('Tercer compañero/a de la cadena') }}</label>
+      <select id="tercero_id" name="tercero_id">
         <option value="">{{ _('— Selecciona —') }}</option>
         {% for c in companeros %}
         <option value="{{ c.id }}">{{ c.nombre }}</option>
@@ -103,6 +120,25 @@
         <div class="turno-row-campo">
           <label for="turno_cede_franja_id">{{ _('Turno') }}</label>
           <select id="turno_cede_franja_id" name="turno_cede_franja_id" required>
+            <option value="">{{ _('— Selecciona —') }}</option>
+            {% for f in franjas %}
+            <option value="{{ f.id }}">{{ f.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="turnos-section" id="section-cadena-3-turno" style="display:none">
+      <h2>{{ _('Turno que cede tu compañero/a al tercero') }}</h2>
+      <div class="turno-row">
+        <div class="turno-row-campo">
+          <label for="turno_companero_cede_fecha">{{ _('Día') }}</label>
+          <input type="date" id="turno_companero_cede_fecha" name="turno_companero_cede_fecha">
+        </div>
+        <div class="turno-row-campo">
+          <label for="turno_companero_cede_franja_id">{{ _('Turno') }}</label>
+          <select id="turno_companero_cede_franja_id" name="turno_companero_cede_franja_id">
             <option value="">{{ _('— Selecciona —') }}</option>
             {% for f in franjas %}
             <option value="{{ f.id }}">{{ f.nombre }}</option>
@@ -190,17 +226,26 @@
   function actualizarSecciones() {
     var tipo = document.querySelector('input[name="tipo"]:checked').value;
     var esJunte = (tipo === 'junte');
+    var esCadena3 = (tipo === 'cadena_3');
     document.getElementById('section-cambio').style.display = esJunte ? 'none' : '';
     document.getElementById('section-junte').style.display = esJunte ? '' : 'none';
+    document.getElementById('tercero-group').style.display = esCadena3 ? '' : 'none';
+    document.getElementById('section-cadena-3-turno').style.display = esCadena3 ? '' : 'none';
 
     var turnoCedeFecha = document.getElementById('turno_cede_fecha');
     var turnoCedeFranja = document.getElementById('turno_cede_franja_id');
     var turnoRecibeFecha = document.getElementById('turno_recibe_fecha');
     var turnoRecibeFranja = document.getElementById('turno_recibe_franja_id');
+    var terceroId = document.getElementById('tercero_id');
+    var companeroCedeFecha = document.getElementById('turno_companero_cede_fecha');
+    var companeroCedeFranja = document.getElementById('turno_companero_cede_franja_id');
     turnoCedeFecha.required = !esJunte;
     turnoCedeFranja.required = !esJunte;
     turnoRecibeFecha.required = !esJunte;
     turnoRecibeFranja.required = !esJunte;
+    terceroId.required = esCadena3;
+    companeroCedeFecha.required = esCadena3;
+    companeroCedeFranja.required = esCadena3;
   }
   document.querySelectorAll('input[name="tipo"]').forEach(function (radio) {
     radio.addEventListener('change', actualizarSecciones);

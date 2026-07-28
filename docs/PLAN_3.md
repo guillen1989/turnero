@@ -212,23 +212,29 @@ trabajando cada turno_cedido tras el cambio (es el usuario cuyo
 
 ---
 
-## Paso 7 — Wiring en `app/routes/documento_cambio.py`
+## Paso 7 — Wiring en `app/routes/documento_cambio.py` ✅
 
-- [ ] Añadir la opción `cadena_3` al `<select>` de tipo en
+- [x] Añadir la opción `cadena_3` al `<select>` de tipo en
   `app/templates/documento_cambio/nuevo.html` (junto a `cambio` y `junte`).
-- [ ] En `nueva()` (línea ~358), añadir la rama `if tipo == "cadena_3":` que
-  recoja del formulario los datos del tercer participante y turno (nuevos
-  campos: tercer compañero, turno que se le cede, etc. — diseñar el
-  formulario en paralelo a como `_extraer_turnos_junte()` resuelve el caso
-  junte) y llame a `crear_documento_cambio_cadena_3` (Paso 5).
-- [ ] Añadir validaciones de formulario equivalentes a las de `directo_2`/`junte`
-  (compañero válido, tercero válido y distinto del compañero y del propio
-  usuario, franjas válidas, fechas válidas).
-- [ ] Test (rojo→verde): test de integración de la ruta `POST
+- [x] En `nueva()` (línea ~358), añadir la rama `elif tipo == "cadena_3":` que
+  recoja del formulario los datos del tercer participante y turno (campos
+  nuevos: `tercero_id`, `turno_companero_cede_fecha`,
+  `turno_companero_cede_franja_id`; se reutilizan `turno_cede_*` para lo que
+  cede el creador y `turno_recibe_*` para lo que recibe de vuelta el
+  creador, cerrando el ciclo) y llame a `crear_documento_cambio_cadena_3`
+  (Paso 5).
+- [x] Añadir validaciones de formulario equivalentes a las de `directo_2`/`junte`
+  (compañero válido, tercero válido y distinto del compañero — distinto del
+  propio usuario ya lo garantiza `_companeros_disponibles()` al excluirlo
+  de la lista —, franjas válidas, fechas válidas). `firmar_ambos` queda
+  fuera de alcance para `cadena_3` (solo soporta 2 firmantes) y se ignora
+  explícitamente para ese tipo.
+- [x] Test (rojo→verde): test de integración de la ruta `POST
   /documentos-cambio/nuevo` con `tipo=cadena_3` que verifique la creación
-  correcta del documento y la redirección a `ver`.
-- [ ] Ejecutar `pytest --testmon`.
-- [ ] Commit: `feat(documento_cambio): permite crear hojas de cambio de cadena_3 desde el formulario`
+  correcta del documento (3 participantes, ciclo A→B→C→A) y la redirección
+  a `ver`; tests de error para tercero vacío y tercero == compañero.
+- [x] Ejecutar `pytest --testmon`.
+- [x] Commit: `feat(documento_cambio): permite crear hojas de cambio de cadena_3 desde el formulario`
 
 ---
 
