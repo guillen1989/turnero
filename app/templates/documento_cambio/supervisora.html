@@ -4,9 +4,19 @@
 {% block main_class %}container container--full{% endblock %}
 
 {% block content %}
-<div class="admin-section-header">
+<div class="planilla-header-titulo">
   <h1>{{ _('Supervisión de cambios') }}</h1>
   <a href="{{ url_for('documento_cambio.registrar_papel') }}" class="btn btn-registrar-papel btn-sm">📄 {{ _('Registrar cambio desde papel') }}</a>
+  {% if unidades_supervisadas|length > 1 %}
+    <label for="planilla-select-unidad" class="planilla-select-label">{{ _('Unidad') }}:</label>
+    <select id="planilla-select-unidad" class="planilla-select" aria-label="{{ _('Unidad') }}"
+            onchange="window.location.href=this.value">
+      {% for u in unidades_supervisadas %}
+        <option value="{{ url_for('documento_cambio.supervisora', unidad_id=u.id) }}"
+                {% if u.id == unidad.id %}selected{% endif %}>{{ u.nombre }}</option>
+      {% endfor %}
+    </select>
+  {% endif %}
 </div>
 <p>{{ _('Hojas de cambio ya firmadas por las dos partes, de tu grupo de intercambio.') }}</p>
 
@@ -91,13 +101,13 @@
   </div>
 
   <button type="submit" class="btn btn-primary btn-sm">{{ _('Filtrar') }}</button>
-  <a href="{{ url_for('documento_cambio.supervisora') }}" class="btn btn-secondary btn-sm">{{ _('Limpiar filtros') }}</a>
+  <a href="{{ url_for('documento_cambio.supervisora', unidad_id=unidad.id if unidad else none) }}" class="btn btn-secondary btn-sm">{{ _('Limpiar filtros') }}</a>
 </form>
 
 {% if documentos %}
 <form method="post" id="bloque-form">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  {% for campo in ('anyo', 'mes', 'fecha', 'trabajador1_id', 'trabajador2_id', 'franja_id', 'estado_decision', 'factibilidad', 'numero') %}
+  {% for campo in ('anyo', 'mes', 'fecha', 'trabajador1_id', 'trabajador2_id', 'franja_id', 'estado_decision', 'factibilidad', 'numero', 'unidad_id') %}
   <input type="hidden" name="{{ campo }}" value="{{ filtros[campo] or '' }}">
   {% endfor %}
 
