@@ -80,11 +80,11 @@
 
 ## Fase 2 — Dominio estable de producción
 
-- [ ] **[ACCIÓN HUMANA]** Decidir y confirmar el dominio definitivo de
+- [x] **[ACCIÓN HUMANA]** Decidir y confirmar el dominio definitivo de
   producción (candidato: `turnero.xyz` o un subdominio como `app.turnero.xyz`,
   ya reservado para email). Debe ser el mismo dominio para siempre: la TWA y
   el fichero `assetlinks.json` (Fase 4) quedan atados a él.
-- [ ] **[ACCIÓN HUMANA]** Configurar el dominio elegido en Railway (dominio
+- [x] **[ACCIÓN HUMANA]** Configurar el dominio elegido en Railway (dominio
   personalizado + certificado TLS automático) y verificar que resuelve y
   sirve la app por HTTPS.
 - [ ] Actualizar `APP_BASE_URL` (ver `config.py`) y cualquier referencia a la
@@ -94,22 +94,22 @@
 
 ## Fase 3 — Aspectos legales obligatorios
 
-- [ ] Escribir y publicar una página de **Política de Privacidad** (ruta
+- [x] Escribir y publicar una página de **Política de Privacidad** (ruta
   pública, sin login, p. ej. `/privacidad`) que cubra: qué datos personales se
   recogen (nombre, email, categoría profesional, turnos, firma), con qué
   finalidad, cuánto tiempo se conservan, si se comparten con terceros
   (Resend para email, Railway para hosting), y los derechos RGPD del usuario
   (acceso, rectificación, supresión) dado el contexto español/UE.
-- [ ] Escribir y publicar unos **Términos de Uso** básicos (ruta pública, p.
+- [x] Escribir y publicar unos **Términos de Uso** básicos (ruta pública, p.
   ej. `/terminos`).
-- [ ] Añadir una **página o mecanismo público de eliminación de cuenta**
+- [x] Añadir una **página o mecanismo público de eliminación de cuenta**
   (accesible sin instalar la app, p. ej. `/eliminar-cuenta` con instrucciones
   o un formulario), tal y como exige la política de Google Play para apps con
   cuentas de usuario — puede ser tan simple como una dirección de contacto
   con un compromiso de plazo de borrado, pero tiene que ser una URL pública.
-- [ ] Enlazar estas páginas desde el pie de página de la app (`base.html`) y
+- [x] Enlazar estas páginas desde el pie de página de la app (`base.html`) y
   desde el formulario de registro si existe.
-- [ ] Marcar todos los textos nuevos con `_()`/`gettext` según la convención
+- [x] Marcar todos los textos nuevos con `_()`/`gettext` según la convención
   de i18n de `CLAUDE.md`.
 
 ## Fase 4 — Generar el paquete Android (TWA)
@@ -275,3 +275,49 @@ inicio/fin de la pista de pruebas cerrada, etc.)
   contenido mixto; no fue necesario ningún cambio.
 
 Con esto se completa la **Fase 1** del plan.
+
+### Fase 2 — Decisión de dominio (2026-07-28)
+
+- Dominio definitivo de producción decidido: **`app.turnero.xyz`**. Ya está
+  configurado como dominio personalizado en Railway y funcionando en
+  producción desde hace dos semanas sin incidencias (decisión y
+  configuración: acción humana ya ejecutada por el usuario, no requiere
+  cambios de código en este paso).
+- Pendiente de esta fase: actualizar `APP_BASE_URL`/referencias a la URL de
+  producción en el repo para usar `app.turnero.xyz` de forma explícita, y
+  verificar que `/manifest.json` y `/sw.js` se sirven correctamente desde ese
+  dominio (siguiente paso).
+
+### Fase 3 — Páginas legales (2026-07-28)
+
+- Añadidas tres rutas públicas (sin login) en `app/routes/main.py`:
+  `/privacidad`, `/terminos` y `/eliminar-cuenta`, con sus plantillas en
+  `app/templates/main/` (`privacidad.html`, `terminos.html`,
+  `eliminar_cuenta.html`). Todo el texto marcado con `_()`.
+- Política de Privacidad: detalla los datos recogidos (nombre, email,
+  categoría profesional, unidad/grupo, turnos, firma digital), la finalidad,
+  el tiempo de conservación (anonimización inmediata al eliminar la cuenta,
+  conservación mínima de intercambios ya confirmados) y los terceros
+  implicados (Railway para hosting, Resend para email — sin cesión ni venta
+  comercial de datos). Recoge los derechos RGPD (acceso, rectificación,
+  supresión) enlazando al formulario de contacto (`feedback.nuevo`) y a la
+  página de eliminación de cuenta.
+- Términos de Uso: uso adecuado del servicio (identidad real, ofertas de
+  turno reales, ningún cierre automático sin confirmación de todas las
+  partes) y aviso de que la validez final de un cambio queda sujeta a las
+  normas internas del centro/aprobación de la supervisora.
+- Eliminación de cuenta: mecanismo dual — usuarias con acceso a su cuenta se
+  autogestionan la baja desde el perfil (`auth.eliminar_cuenta_route`, ya
+  existente); usuarias sin acceso usan el formulario público de contacto
+  (`feedback.nuevo`), con compromiso de eliminación/anonimización en un
+  plazo máximo de 30 días.
+- Enlazadas las tres páginas desde el pie de página (`base.html`) y desde el
+  formulario de registro (`auth/registro.html`, aviso legal antes del botón
+  de enviar).
+- Catálogo de traducción (`translations/es/LC_MESSAGES/messages.po`)
+  regenerado con `pybabel extract`/`update`/`compile` para incluir las
+  cadenas nuevas.
+- Tests: `tests/test_paginas_legales.py` (3 tests, verifican 200 +
+  `text/html` en las tres rutas nuevas).
+
+Con esto se completa la **Fase 3** del plan.

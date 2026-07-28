@@ -1,13 +1,16 @@
 # Estado del desarrollo
 
 ## Fase actual
-Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 1,
-auditoría y refuerzo de la PWA existente.
+Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 3
+(aspectos legales) completa; Fase 2 (dominio) parcialmente completa.
 
 ## Paso actual / siguiente paso
-Fase 1 completa. Siguiente: Fase 2, paso 1 — decidir y confirmar el dominio
-definitivo de producción para la TWA (**[ACCIÓN HUMANA]**, ver
-`docs/PLAN_PLAY_STORE.md`).
+Dominio definitivo decidido y ya en producción: `app.turnero.xyz` (Railway,
+sin incidencias desde hace dos semanas). Siguiente paso: Fase 2, pasos
+restantes — actualizar `APP_BASE_URL`/referencias de URL de producción en el
+repo para usar `app.turnero.xyz`, y verificar que `/manifest.json` y
+`/sw.js` se sirven correctamente desde ese dominio. Después, Fase 4
+(generar el paquete Android TWA).
 
 ## Últimos pasos completados
 - [x] `docs/PLAN_PLAY_STORE.md` incorporado a esta rama (basada en `main`,
@@ -28,6 +31,15 @@ definitivo de producción para la TWA (**[ACCIÓN HUMANA]**, ver
   `theme_color`/`background_color` del manifest coinciden con el diseño y
   que no hay contenido mixto `http://` en templates/estáticos — sin cambios
   de código, solo verificación. Detalle en `docs/PLAN_PLAY_STORE.md`.
+- [x] Fase 2, decisión de dominio: `app.turnero.xyz`, ya configurado en
+  Railway y en producción desde hace dos semanas (**[ACCIÓN HUMANA]**
+  resuelta por el usuario). Quedan pendientes los pasos de código de la
+  Fase 2 (actualizar `APP_BASE_URL` y verificar manifest/SW en ese dominio).
+- [x] Fase 3 completa: páginas públicas `/privacidad`, `/terminos` y
+  `/eliminar-cuenta` (`app/routes/main.py` + `app/templates/main/`),
+  enlazadas desde `base.html` y `auth/registro.html`, catálogo de
+  traducción actualizado y tests en `tests/test_paginas_legales.py`. Detalle
+  en `docs/PLAN_PLAY_STORE.md`.
 
 ## Notas / decisiones / asunciones pendientes
 - Lighthouse v13 (la que instala `npx lighthouse` por defecto) ya no trae la

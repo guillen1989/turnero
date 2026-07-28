@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Términos de uso') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('Términos de uso') }}</h1>
+  <p style="color:#374151;margin-top:-0.5rem">
+    {{ _('Última actualización: %(fecha)s', fecha='28/07/2026') }}
+  </p>
+
+  <h2>{{ _('Qué es Turnero') }}</h2>
+  <p>
+    {{ _('Turnero es una aplicación para que el personal sanitario de un mismo centro pueda intercambiar turnos con compañeros de su misma categoría profesional y grupo de intercambio.') }}
+  </p>
+
+  <h2>{{ _('Uso adecuado del servicio') }}</h2>
+  <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.8">
+    <li>{{ _('Debes usar tu identidad real y mantener la confidencialidad de tu contraseña.') }}</li>
+    <li>{{ _('Los cambios de turno publicados deben ser reales y estar dispuestos a confirmarse.') }}</li>
+    <li>{{ _('Ningún intercambio queda cerrado hasta que todas las partes implicadas lo confirman expresamente.') }}</li>
+  </ul>
+
+  <h2>{{ _('Responsabilidad') }}</h2>
+  <p>
+    {{ _('Turnero facilita el contacto y el acuerdo entre compañeros, pero la validez final de cualquier cambio de turno queda sujeta a las normas internas de tu centro de trabajo y, en su caso, a la aprobación de tu supervisora.') }}
+  </p>
+
+  <h2>{{ _('Cambios en estos términos') }}</h2>
+  <p>
+    {{ _('Podemos actualizar estos términos de uso para reflejar cambios en el servicio. Te avisaremos de cualquier cambio relevante.') }}
+  </p>
+</div>
+{% endblock %}

@@ -102,6 +102,12 @@
 
   <footer class="site-footer">
     <a href="{{ url_for('feedback.nuevo') }}">{{ _('¿Tienes algún problema o sugerencia?') }}</a>
+    <span aria-hidden="true"> · </span>
+    <a href="{{ url_for('main.privacidad') }}">{{ _('Privacidad') }}</a>
+    <span aria-hidden="true"> · </span>
+    <a href="{{ url_for('main.terminos') }}">{{ _('Términos de uso') }}</a>
+    <span aria-hidden="true"> · </span>
+    <a href="{{ url_for('main.eliminar_cuenta_info') }}">{{ _('Eliminar cuenta') }}</a>
   </footer>
 
   <script>
