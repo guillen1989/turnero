@@ -5,8 +5,8 @@ Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 1,
 auditoría y refuerzo de la PWA existente.
 
 ## Paso actual / siguiente paso
-Fase 1, paso 2: verificar que `icon-192.png` e `icon-512.png` respetan la
-zona segura "maskable" (contenido dentro del 80% central).
+Fase 1, paso 3: añadir una página/fallback offline mínima en
+`app/static/sw.js` para cuando falla el `fetch` de navegación.
 
 ## Últimos pasos completados
 - [x] `docs/PLAN_PLAY_STORE.md` incorporado a esta rama (basada en `main`,
@@ -15,6 +15,12 @@ zona segura "maskable" (contenido dentro del 80% central).
   `https://staging.turnero.xyz/` — puntuación 1.0/1.0. Detalle e informe en
   `docs/PLAN_PLAY_STORE.md` (sección "Notas de ejecución") y
   `docs/audits/lighthouse-pwa-staging-2026-07-28.html`.
+- [x] Fase 1, paso 2: verificada la zona segura "maskable" de
+  `icon-192.png`/`icon-512.png`. La ilustración ya respetaba el margen del
+  10%, pero el fondo azul tenía un halo blanco de ~2.5% que no llegaba al
+  borde — regenerados ambos PNG rellenando el anillo exterior con el mismo
+  azul sólido (borde a borde, sin transparencia). Detalle en
+  `docs/PLAN_PLAY_STORE.md`.
 
 ## Notas / decisiones / asunciones pendientes
 - Lighthouse v13 (la que instala `npx lighthouse` por defecto) ya no trae la

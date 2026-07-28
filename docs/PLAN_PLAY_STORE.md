@@ -64,7 +64,7 @@
 - [x] Ejecutar una auditoría Lighthouse (categoría PWA) contra staging o
   local y documentar el resultado (captura o resumen) en este archivo, sección
   "Notas de ejecución".
-- [ ] Verificar que `icon-192.png` e `icon-512.png` respetan la zona segura
+- [x] Verificar que `icon-192.png` e `icon-512.png` respetan la zona segura
   "maskable" (contenido dentro del 80% central, sin texto ni bordes pegados
   al borde). Si no la respetan, regenerar los iconos con margen y actualizar
   `app/static/icons/`.
@@ -225,3 +225,25 @@ inicio/fin de la pista de pruebas cerrada, etc.)
   0.98, accessibility 0.95, best-practices 0.96, seo 0.91.
 - Informe completo guardado en
   `docs/audits/lighthouse-pwa-staging-2026-07-28.html`.
+
+### Fase 1 — Verificación de zona segura maskable (2026-07-28)
+
+- Analizados `icon-192.png` e `icon-512.png` con un script Python/Pillow que
+  compara el bounding box del contenido "importante" (la ilustración blanca:
+  personas + tarjetas de turno) frente al margen del 10% que exige la zona
+  segura maskable. La ilustración en sí **sí** respetaba ese margen (bbox
+  dentro del rango 10%-90% del lienzo en ambos tamaños).
+- Sin embargo, el fondo azul (el cuadrado redondeado que debe cubrir el
+  icono de borde a borde en un icono maskable) **no llegaba hasta el borde**:
+  tenía un halo/sombra blanco de ~2.5% de margen alrededor en los dos
+  tamaños. Esto es un defecto real para maskable — cuando Android recorta el
+  icono con una máscara (círculo, squircle, etc.) que sí toca los bordes del
+  lienzo, ese halo blanco se ve en los puntos cardinales, dando un resultado
+  inconsistente.
+- Corregido regenerando ambos PNG: se rellenó el anillo exterior (margen de
+  32 px en el de 512 y 12 px en el de 192, calibrado para quedar justo por
+  fuera del redondeo de esquina original) con el mismo azul sólido del
+  cuadrado, dejando intacta la ilustración interior píxel a píxel. Resultado:
+  fondo azul de borde a borde sin transparencia ni halo, ilustración dentro
+  del 80% central. Sin cambios en `badge-72.png` (no está declarado
+  `maskable` en el manifest).
