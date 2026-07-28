@@ -1267,11 +1267,15 @@ def test_contexto_pdf_cadena_3_para_documento_tipo_cadena_3_devuelve_variables(d
     resultado = _contexto_pdf_cadena_3(documento)
 
     assert resultado["mostrar_cadena_3"] is True
-    assert resultado["cede_tercer_franja_c"] == "Mañana"
     assert "Carmen" in resultado["tercer_companero_c"]
-    # Carmen (tercero) pasa a trabajar lo que cede Berta (02/07), no lo que
-    # ella misma cede (03/07) -- eso ya está en cede_franja_c/cede_fecha_c.
-    assert resultado["cede_tercer_fecha_c"] == "02/07/2026"
+    # cede_tercer_fecha_c describe la fila propia de Carmen (tercero): lo
+    # que trabaja (recibe, 02/07, cedido por Berta) y lo que libra (cede,
+    # 03/07) -- en ese orden, al contrario que cede_fecha_c/recibe_fecha_c.
+    assert "Carmen" in resultado["cede_tercer_fecha_c"]
+    assert "trabaja" in resultado["cede_tercer_fecha_c"]
+    assert "02/07/2026" in resultado["cede_tercer_fecha_c"]
+    assert "libra" in resultado["cede_tercer_fecha_c"]
+    assert "03/07/2026" in resultado["cede_tercer_fecha_c"]
     assert resultado["firma_tercero"] is not None
 
 
@@ -1338,8 +1342,10 @@ def test_generar_pdf_documento_cadena_3_muestra_los_tres_participantes(db):
     assert "Berta" in texto
     assert "Carmen" in texto
     assert "01/07/2026" in texto
+    assert "02/07/2026" in texto
     assert "03/07/2026" in texto
-    assert "lo trabaja" in texto
+    assert "libra" in texto
+    assert "trabaja" in texto
 
 
 def test_crear_documento_cambio_cadena_3_crea_documento_con_ciclo_abc(db):
