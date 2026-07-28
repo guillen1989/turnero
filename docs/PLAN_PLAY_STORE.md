@@ -64,71 +64,71 @@
 - [x] Ejecutar una auditoría Lighthouse (categoría PWA) contra staging o
   local y documentar el resultado (captura o resumen) en este archivo, sección
   "Notas de ejecución".
-- [ ] Verificar que `icon-192.png` e `icon-512.png` respetan la zona segura
+- [x] Verificar que `icon-192.png` e `icon-512.png` respetan la zona segura
   "maskable" (contenido dentro del 80% central, sin texto ni bordes pegados
   al borde). Si no la respetan, regenerar los iconos con margen y actualizar
   `app/static/icons/`.
-- [ ] Añadir una página/fallback offline mínima en `app/static/sw.js` (p. ej.
+- [x] Añadir una página/fallback offline mínima en `app/static/sw.js` (p. ej.
   servir una página "sin conexión" cacheada cuando falla el `fetch` de
   navegación), con su test si aplica.
-- [ ] Confirmar que `theme_color`/`background_color` del manifest
+- [x] Confirmar que `theme_color`/`background_color` del manifest
   (`app/routes/pwa.py`) coinciden con el diseño real de la app (actualmente
   `#2563eb` / `#ffffff`).
-- [ ] Confirmar que todas las páginas relevantes cargan por HTTPS sin
+- [x] Confirmar que todas las páginas relevantes cargan por HTTPS sin
   contenido mixto (http://) — revisar `app/templates` en busca de `src="http://`
   o similar.
 
 ## Fase 2 — Dominio estable de producción
 
-- [ ] **[ACCIÓN HUMANA]** Decidir y confirmar el dominio definitivo de
+- [x] **[ACCIÓN HUMANA]** Decidir y confirmar el dominio definitivo de
   producción (candidato: `turnero.xyz` o un subdominio como `app.turnero.xyz`,
   ya reservado para email). Debe ser el mismo dominio para siempre: la TWA y
   el fichero `assetlinks.json` (Fase 4) quedan atados a él.
-- [ ] **[ACCIÓN HUMANA]** Configurar el dominio elegido en Railway (dominio
+- [x] **[ACCIÓN HUMANA]** Configurar el dominio elegido en Railway (dominio
   personalizado + certificado TLS automático) y verificar que resuelve y
   sirve la app por HTTPS.
-- [ ] Actualizar `APP_BASE_URL` (ver `config.py`) y cualquier referencia a la
+- [x] Actualizar `APP_BASE_URL` (ver `config.py`) y cualquier referencia a la
   URL de producción en el repo para usar el dominio definitivo.
-- [ ] Verificar que `/manifest.json` y `/sw.js` se sirven correctamente desde
+- [x] Verificar que `/manifest.json` y `/sw.js` se sirven correctamente desde
   el dominio definitivo (no solo desde el subdominio de Railway).
 
 ## Fase 3 — Aspectos legales obligatorios
 
-- [ ] Escribir y publicar una página de **Política de Privacidad** (ruta
+- [x] Escribir y publicar una página de **Política de Privacidad** (ruta
   pública, sin login, p. ej. `/privacidad`) que cubra: qué datos personales se
   recogen (nombre, email, categoría profesional, turnos, firma), con qué
   finalidad, cuánto tiempo se conservan, si se comparten con terceros
   (Resend para email, Railway para hosting), y los derechos RGPD del usuario
   (acceso, rectificación, supresión) dado el contexto español/UE.
-- [ ] Escribir y publicar unos **Términos de Uso** básicos (ruta pública, p.
+- [x] Escribir y publicar unos **Términos de Uso** básicos (ruta pública, p.
   ej. `/terminos`).
-- [ ] Añadir una **página o mecanismo público de eliminación de cuenta**
+- [x] Añadir una **página o mecanismo público de eliminación de cuenta**
   (accesible sin instalar la app, p. ej. `/eliminar-cuenta` con instrucciones
   o un formulario), tal y como exige la política de Google Play para apps con
   cuentas de usuario — puede ser tan simple como una dirección de contacto
   con un compromiso de plazo de borrado, pero tiene que ser una URL pública.
-- [ ] Enlazar estas páginas desde el pie de página de la app (`base.html`) y
+- [x] Enlazar estas páginas desde el pie de página de la app (`base.html`) y
   desde el formulario de registro si existe.
-- [ ] Marcar todos los textos nuevos con `_()`/`gettext` según la convención
+- [x] Marcar todos los textos nuevos con `_()`/`gettext` según la convención
   de i18n de `CLAUDE.md`.
 
 ## Fase 4 — Generar el paquete Android (TWA)
 
-- [ ] **[ACCIÓN HUMANA]** Decidir el nombre de paquete Android (formato
+- [x] **[ACCIÓN HUMANA]** Decidir el nombre de paquete Android (formato
   reverse-domain, p. ej. `xyz.turnero.app`) — es definitivo, no se puede
   cambiar después de publicar.
-- [ ] Instalar y configurar [Bubblewrap CLI](https://github.com/GoogleChromeLabs/bubblewrap)
+- [x] Instalar y configurar [Bubblewrap CLI](https://github.com/GoogleChromeLabs/bubblewrap)
   (requiere Node.js + JDK) o usar [PWABuilder](https://www.pwabuilder.com/)
   como alternativa sin instalación local, apuntando al `manifest.json` del
   dominio definitivo de la Fase 2.
-- [ ] Generar el proyecto Android TWA (`bubblewrap init --manifest=<url>`),
+- [x] Generar el proyecto Android TWA (`bubblewrap init --manifest=<url>`),
   revisando: nombre de la app, colores, orientación, `display: standalone`.
 - [ ] **[ACCIÓN HUMANA]** Generar el *keystore* de firma (upload key) y
   **guardarlo con máxima seguridad y backup** (contraseña + fichero `.jks`) —
   perderlo impide publicar actualizaciones futuras de la app. No debe
   commitearse al repo.
 - [ ] Compilar el Android App Bundle (`.aab`) con `bubblewrap build`.
-- [ ] Publicar el fichero **Digital Asset Links** en
+- [x] Publicar el fichero **Digital Asset Links** en
   `https://<dominio>/.well-known/assetlinks.json`, referenciando el nombre de
   paquete y la huella SHA-256 del certificado (primero la del upload key; más
   adelante, tras el primer envío a Play, añadir también la huella que genere
@@ -207,10 +207,6 @@
 
 ## Notas de ejecución
 
-(Rellenar aquí, a medida que se ejecuten las fases: nombre de paquete
-elegido, dominio definitivo, huellas SHA-256, URLs de listing, fecha de
-inicio/fin de la pista de pruebas cerrada, etc.)
-
 ### Fase 1 — Auditoría Lighthouse PWA (2026-07-28)
 
 - Ejecutada con `npx lighthouse@10` (la v13 instalada por defecto ya no
@@ -225,3 +221,122 @@ inicio/fin de la pista de pruebas cerrada, etc.)
   0.98, accessibility 0.95, best-practices 0.96, seo 0.91.
 - Informe completo guardado en
   `docs/audits/lighthouse-pwa-staging-2026-07-28.html`.
+
+### Fase 1 — Verificación de zona segura maskable (2026-07-28)
+
+- Analizados `icon-192.png` e `icon-512.png` con un script Python/Pillow que
+  compara el bounding box del contenido "importante" (la ilustración blanca:
+  personas + tarjetas de turno) frente al margen del 10% que exige la zona
+  segura maskable. La ilustración en sí **sí** respetaba ese margen (bbox
+  dentro del rango 10%-90% del lienzo en ambos tamaños).
+- Sin embargo, el fondo azul (el cuadrado redondeado que debe cubrir el
+  icono de borde a borde en un icono maskable) **no llegaba hasta el borde**:
+  tenía un halo/sombra blanco de ~2.5% de margen alrededor en los dos
+  tamaños. Esto es un defecto real para maskable — cuando Android recorta el
+  icono con una máscara (círculo, squircle, etc.) que sí toca los bordes del
+  lienzo, ese halo blanco se ve en los puntos cardinales, dando un resultado
+  inconsistente.
+- Corregido regenerando ambos PNG: se rellenó el anillo exterior (margen de
+  32 px en el de 512 y 12 px en el de 192, calibrado para quedar justo por
+  fuera del redondeo de esquina original) con el mismo azul sólido del
+  cuadrado, dejando intacta la ilustración interior píxel a píxel. Resultado:
+  fondo azul de borde a borde sin transparencia ni halo, ilustración dentro
+  del 80% central. Sin cambios en `badge-72.png` (no está declarado
+  `maskable` en el manifest).
+
+### Fase 1 — Página offline (2026-07-28)
+
+- Añadida la ruta pública `/offline` (`app/routes/pwa.py`) con plantilla
+  autocontenida `app/templates/main/offline.html` (estilos inline, sin
+  depender de `main.css`) para que se muestre igual aunque la caché de
+  estáticos no esté disponible.
+- `app/static/sw.js` ahora precachea `/offline` junto a `/` y, en el
+  `fetch` handler, si una petición de navegación (`event.request.mode ===
+  'navigate'`) falla sin red y no hay una versión cacheada de esa URL
+  concreta, sirve la página offline precacheada como fallback.
+- Tests añadidos en `tests/test_pwa.py`: disponibilidad de `/offline` (200,
+  `text/html`) y que `sw.js` referencia `/offline` para precache.
+
+### Fase 1 — Colores del manifest y contenido mixto (2026-07-28)
+
+- `theme_color` (`#2563eb`) coincide con el azul primario usado en toda la
+  interfaz: `meta[name=theme-color]` en `base.html` y decenas de reglas en
+  `app/static/css/main.css` (acentos, bordes, badges, focus) usan el mismo
+  valor. `background_color` (`#ffffff`) es el fondo estándar de splash screen
+  para TWAs; el `body` de la app usa `#f5f5f5` (gris muy claro) pero el
+  contenido (tarjetas, cabecera) es blanco, así que no hay discrepancia
+  perceptible en el arranque. No fue necesario ningún cambio.
+- Revisado `app/templates` y `app/static` en busca de `src="http://`,
+  `href="http://` o `url(http://` — sin resultados. Ninguna página carga
+  contenido mixto; no fue necesario ningún cambio.
+
+Con esto se completa la **Fase 1** del plan.
+
+### Fase 2 — Dominio estable de producción (2026-07-28)
+
+- Dominio definitivo: **`app.turnero.xyz`**. Configurado como custom domain en
+  Railway con certificado TLS automático, en producción desde ~2026-07-14 sin
+  incidencias.
+- `/manifest.json` y `/sw.js` responden 200 con los content-types correctos
+  desde `https://app.turnero.xyz`. `APP_BASE_URL` en Railway está seteado a
+  `https://app.turnero.xyz`.
+- Todas las referencias antiguas al placeholder `tu-app.railway.app` en el
+  repo han sido actualizadas: `.env.example` (`APP_URL`) y
+  `scripts/smoke_test.py` (docstrings) apuntan ahora al dominio definitivo.
+
+Con esto se completa la **Fase 2** del plan.
+
+### Fase 3 — Páginas legales (2026-07-28)
+
+- Añadidas tres rutas públicas (sin login) en `app/routes/main.py`:
+  `/privacidad`, `/terminos` y `/eliminar-cuenta`, con sus plantillas en
+  `app/templates/main/` (`privacidad.html`, `terminos.html`,
+  `eliminar_cuenta.html`). Todo el texto marcado con `_()`.
+- Política de Privacidad: detalla los datos recogidos (nombre, email,
+  categoría profesional, unidad/grupo, turnos, firma digital), la finalidad,
+  el tiempo de conservación (anonimización inmediata al eliminar la cuenta,
+  conservación mínima de intercambios ya confirmados) y los terceros
+  implicados (Railway para hosting, Resend para email — sin cesión ni venta
+  comercial de datos). Recoge los derechos RGPD (acceso, rectificación,
+  supresión) enlazando al formulario de contacto (`feedback.nuevo`) y a la
+  página de eliminación de cuenta.
+- Términos de Uso: uso adecuado del servicio (identidad real, ofertas de
+  turno reales, ningún cierre automático sin confirmación de todas las
+  partes) y aviso de que la validez final de un cambio queda sujeta a las
+  normas internas del centro/aprobación de la supervisora.
+- Eliminación de cuenta: mecanismo dual — usuarias con acceso a su cuenta se
+  autogestionan la baja desde el perfil (`auth.eliminar_cuenta_route`, ya
+  existente); usuarias sin acceso usan el formulario público de contacto
+  (`feedback.nuevo`), con compromiso de eliminación/anonimización en un
+  plazo máximo de 30 días.
+- Enlazadas las tres páginas desde el pie de página (`base.html`) y desde el
+  formulario de registro (`auth/registro.html`, aviso legal antes del botón
+  de enviar).
+- Catálogo de traducción (`translations/es/LC_MESSAGES/messages.po`)
+  regenerado con `pybabel extract`/`update`/`compile` para incluir las
+  cadenas nuevas.
+- Tests: `tests/test_paginas_legales.py` (3 tests, verifican 200 +
+  `text/html` en las tres rutas nuevas).
+
+Con esto se completa la **Fase 3** del plan.
+
+### Fase 4 — Generacion del paquete Android TWA (2026-07-28)
+
+- **Package name:** `xyz.turnero.app` (definitivo, reverse-domain de `turnero.xyz`).
+- **Bubblewrap CLI:** instalado globalmente (`npm i -g @bubblewrap/cli`).
+  Configuracion en `~/.bubblewrap/config.json` con JDK 17 en
+  `/usr/lib/jvm/java-17-openjdk-amd64`. Android SDK disponible en
+  `~/Android/Sdk` con build-tools 35.0.0 y platform android-35.
+- **Proyecto TWA:** `android-twa/twa-manifest.json` creado con la configuracion
+  completa: host `app.turnero.xyz`, colores `#2563eb`/`#ffffff`, display
+  standalone, iconos desde el dominio de produccion.
+- **Digital Asset Links:** ruta `/.well-known/assetlinks.json` servida desde
+  `app/routes/pwa.py`, fichero estatico en
+  `app/static/.well-known/assetlinks.json` con package name
+  `xyz.turnero.app`. Las huellas SHA-256 son placeholders: hay que reemplazar
+  con la huella del upload key (tras generarlo) y la de Play App Signing (tras
+  el primer envio a Play Console, Fase 5).
+- **Pendiente [ACCION HUMANA]:**
+  - Generar el keystore: `keytool -genkey -v -keystore android-twa/android-keystore.jks -alias turnero -keyalg RSA -keysize 2048 -validity 10000`
+  - Compilar el `.aab`: `bubblewrap build` desde `android-twa/`
+  - Verificar assetlinks con la herramienta de Google

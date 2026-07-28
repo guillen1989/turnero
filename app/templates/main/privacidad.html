@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Política de privacidad') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('Política de privacidad') }}</h1>
+  <p style="color:#374151;margin-top:-0.5rem">
+    {{ _('Última actualización: %(fecha)s', fecha='28/07/2026') }}
+  </p>
+
+  <h2>{{ _('Qué datos personales recogemos') }}</h2>
+  <p>{{ _('Para poder ofrecerte el servicio, Turnero almacena los siguientes datos personales:') }}</p>
+  <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.8">
+    <li>{{ _('Tu nombre y dirección de correo electrónico.') }}</li>
+    <li>{{ _('Tu categoría profesional y la unidad o grupo de intercambio al que perteneces.') }}</li>
+    <li>{{ _('Los turnos que publicas, ofreces o solicitas, y el historial de tus cambios de turno.') }}</li>
+    <li>{{ _('Tu firma digital, cuando la utilizas para confirmar un documento de cambio de turno.') }}</li>
+  </ul>
+
+  <h2>{{ _('Con qué finalidad tratamos tus datos') }}</h2>
+  <p>
+    {{ _('Usamos estos datos exclusivamente para permitirte publicar, buscar y confirmar intercambios de turno con compañeros de tu misma categoría y grupo, y para enviarte notificaciones relacionadas (por ejemplo, cuando hay una coincidencia con tu publicación).') }}
+  </p>
+
+  <h2>{{ _('Cuánto tiempo conservamos tus datos') }}</h2>
+  <p>
+    {{ _('Conservamos tus datos mientras tu cuenta esté activa. Si eliminas tu cuenta, tus datos personales se anonimizan de forma inmediata, conservando únicamente la información imprescindible para no afectar a los cambios de turno ya confirmados con otros usuarios.') }}
+  </p>
+
+  <h2>{{ _('Con quién compartimos tus datos') }}</h2>
+  <p>{{ _('No vendemos ni cedemos tus datos a terceros con fines comerciales. Utilizamos los siguientes proveedores para prestar el servicio:') }}</p>
+  <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.8">
+    <li>{{ _('Railway, como proveedor de alojamiento (hosting) de la aplicación y la base de datos.') }}</li>
+    <li>{{ _('Resend, como proveedor para el envío de correos electrónicos (por ejemplo, notificaciones).') }}</li>
+  </ul>
+
+  <h2>{{ _('Tus derechos') }}</h2>
+  <p>
+    {{ _('De acuerdo con el Reglamento General de Protección de Datos (RGPD), tienes derecho a acceder a tus datos, rectificarlos si son incorrectos, y solicitar su supresión.') }}
+    {{ _('Puedes ejercer estos derechos desde tu perfil de usuario o, si no puedes acceder a tu cuenta, contactando a través de nuestra') }}
+    <a href="{{ url_for('feedback.nuevo') }}">{{ _('página de contacto') }}</a>.
+  </p>
+  <p>
+    {{ _('Para más información sobre cómo eliminar tu cuenta, consulta la') }}
+    <a href="{{ url_for('main.eliminar_cuenta_info') }}">{{ _('página de eliminación de cuenta') }}</a>.
+  </p>
+</div>
+{% endblock %}

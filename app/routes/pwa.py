@@ -1,7 +1,7 @@
 import json
 import os
 
-from flask import Blueprint, Response, current_app
+from flask import Blueprint, Response, current_app, render_template
 
 bp = Blueprint("pwa", __name__)
 
@@ -31,6 +31,21 @@ def manifest():
     resp = Response(json.dumps(data), content_type="application/manifest+json")
     resp.headers["Cache-Control"] = "no-cache"
     return resp
+
+
+@bp.get("/offline")
+def offline():
+    return render_template("main/offline.html")
+
+
+@bp.get("/.well-known/assetlinks.json")
+def assetlinks():
+    response = current_app.make_response(
+        current_app.send_static_file(".well-known/assetlinks.json")
+    )
+    response.headers["Content-Type"] = "application/json"
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 @bp.get("/sw.js")

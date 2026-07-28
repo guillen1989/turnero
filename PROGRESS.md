@@ -1,12 +1,16 @@
 # Estado del desarrollo
 
 ## Fase actual
-Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 1,
-auditoría y refuerzo de la PWA existente.
+Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 3
+(aspectos legales) completa; Fase 2 (dominio) parcialmente completa.
 
 ## Paso actual / siguiente paso
-Fase 1, paso 2: verificar que `icon-192.png` e `icon-512.png` respetan la
-zona segura "maskable" (contenido dentro del 80% central).
+Dominio definitivo decidido y ya en producción: `app.turnero.xyz` (Railway,
+sin incidencias desde hace dos semanas). Siguiente paso: Fase 2, pasos
+restantes — actualizar `APP_BASE_URL`/referencias de URL de producción en el
+repo para usar `app.turnero.xyz`, y verificar que `/manifest.json` y
+`/sw.js` se sirven correctamente desde ese dominio. Después, Fase 4
+(generar el paquete Android TWA).
 
 ## Últimos pasos completados
 - [x] `docs/PLAN_PLAY_STORE.md` incorporado a esta rama (basada en `main`,
@@ -15,6 +19,27 @@ zona segura "maskable" (contenido dentro del 80% central).
   `https://staging.turnero.xyz/` — puntuación 1.0/1.0. Detalle e informe en
   `docs/PLAN_PLAY_STORE.md` (sección "Notas de ejecución") y
   `docs/audits/lighthouse-pwa-staging-2026-07-28.html`.
+- [x] Fase 1, paso 2: verificada la zona segura "maskable" de
+  `icon-192.png`/`icon-512.png`. La ilustración ya respetaba el margen del
+  10%, pero el fondo azul tenía un halo blanco de ~2.5% que no llegaba al
+  borde — regenerados ambos PNG rellenando el anillo exterior con el mismo
+  azul sólido (borde a borde, sin transparencia). Detalle en
+  `docs/PLAN_PLAY_STORE.md`.
+- [x] Fase 1, paso 3: añadida página offline (`/offline`) y fallback en
+  `app/static/sw.js` para peticiones de navegación sin red.
+- [x] Fase 1, pasos 4 y 5 (cierran la Fase 1): verificado que
+  `theme_color`/`background_color` del manifest coinciden con el diseño y
+  que no hay contenido mixto `http://` en templates/estáticos — sin cambios
+  de código, solo verificación. Detalle en `docs/PLAN_PLAY_STORE.md`.
+- [x] Fase 2, decisión de dominio: `app.turnero.xyz`, ya configurado en
+  Railway y en producción desde hace dos semanas (**[ACCIÓN HUMANA]**
+  resuelta por el usuario). Quedan pendientes los pasos de código de la
+  Fase 2 (actualizar `APP_BASE_URL` y verificar manifest/SW en ese dominio).
+- [x] Fase 3 completa: páginas públicas `/privacidad`, `/terminos` y
+  `/eliminar-cuenta` (`app/routes/main.py` + `app/templates/main/`),
+  enlazadas desde `base.html` y `auth/registro.html`, catálogo de
+  traducción actualizado y tests en `tests/test_paginas_legales.py`. Detalle
+  en `docs/PLAN_PLAY_STORE.md`.
 
 ## Notas / decisiones / asunciones pendientes
 - Lighthouse v13 (la que instala `npx lighthouse` por defecto) ya no trae la

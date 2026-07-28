@@ -52,6 +52,25 @@ def funcionalidades():
     return render_template("main/funcionalidades.html")
 
 
+@bp.get("/privacidad")
+def privacidad():
+    """Política de privacidad, pública y sin login, exigida por Google Play."""
+    return render_template("main/privacidad.html")
+
+
+@bp.get("/terminos")
+def terminos():
+    """Términos de uso, públicos y sin login."""
+    return render_template("main/terminos.html")
+
+
+@bp.get("/eliminar-cuenta")
+def eliminar_cuenta_info():
+    """Página pública (sin login) con instrucciones para eliminar la cuenta,
+    exigida por la política de Google Play para apps con cuentas de usuario."""
+    return render_template("main/eliminar_cuenta.html")
+
+
 def _mi_participacion(match, usuario_id):
     return next((p for p in match.participaciones if p.publicacion.usuario_id == usuario_id), None)
 

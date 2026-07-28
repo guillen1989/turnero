@@ -75,3 +75,15 @@ def test_vapid_public_key_endpoint(client, app, db):
         assert resp.get_json()["publicKey"] == "clave-publica-vapid-test"
     finally:
         app.config["VAPID_PUBLIC_KEY"] = old
+
+
+def test_offline_page_disponible(client, db):
+    """Página de fallback offline, precacheada por el service worker (Fase 1 plan Play Store)."""
+    resp = client.get("/offline")
+    assert resp.status_code == 200
+    assert "text/html" in resp.content_type
+
+
+def test_service_worker_precachea_pagina_offline(client, db):
+    resp = client.get("/sw.js")
+    assert b"/offline" in resp.data

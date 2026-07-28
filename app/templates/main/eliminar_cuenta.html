@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Eliminar tu cuenta') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('Eliminar tu cuenta') }}</h1>
+  <p style="color:#374151;margin-top:-0.5rem">
+    {{ _('Puedes eliminar tu cuenta de Turnero en cualquier momento, tanto si tienes acceso a la app como si no.') }}
+  </p>
+
+  <h2>{{ _('Si puedes acceder a tu cuenta') }}</h2>
+  <p>
+    {{ _('Entra en tu perfil, ve al apartado "Zona de peligro" y sigue las instrucciones para eliminar tu cuenta. Se te pedirá tu contraseña para confirmar la operación.') }}
+  </p>
+  {% if current_user.is_authenticated %}
+    <p><a href="{{ url_for('auth.perfil_cuenta') }}">{{ _('Ir a mi perfil') }}</a></p>
+  {% endif %}
+
+  <h2>{{ _('Si no puedes acceder a tu cuenta') }}</h2>
+  <p>
+    {{ _('Escríbenos desde nuestra') }}
+    <a href="{{ url_for('feedback.nuevo') }}">{{ _('página de contacto') }}</a>
+    {{ _('indicando el correo electrónico asociado a tu cuenta. Eliminaremos tu cuenta y anonimizaremos tus datos personales en un plazo máximo de 30 días.') }}
+  </p>
+
+  <h2>{{ _('Qué ocurre al eliminar tu cuenta') }}</h2>
+  <ul style="margin:0.5rem 0 0.75rem 1.25rem;line-height:1.8">
+    <li>{{ _('Tu nombre, email y firma digital se anonimizan de forma permanente.') }}</li>
+    <li>{{ _('Tus publicaciones de cambio de turno activas se cancelan.') }}</li>
+    <li>{{ _('Los cambios de turno ya confirmados con otros compañeros se mantienen, para no afectar a su planificación.') }}</li>
+  </ul>
+</div>
+{% endblock %}
