@@ -87,9 +87,9 @@
 - [x] **[ACCIÓN HUMANA]** Configurar el dominio elegido en Railway (dominio
   personalizado + certificado TLS automático) y verificar que resuelve y
   sirve la app por HTTPS.
-- [ ] Actualizar `APP_BASE_URL` (ver `config.py`) y cualquier referencia a la
+- [x] Actualizar `APP_BASE_URL` (ver `config.py`) y cualquier referencia a la
   URL de producción en el repo para usar el dominio definitivo.
-- [ ] Verificar que `/manifest.json` y `/sw.js` se sirven correctamente desde
+- [x] Verificar que `/manifest.json` y `/sw.js` se sirven correctamente desde
   el dominio definitivo (no solo desde el subdominio de Railway).
 
 ## Fase 3 — Aspectos legales obligatorios
@@ -207,10 +207,6 @@
 
 ## Notas de ejecución
 
-(Rellenar aquí, a medida que se ejecuten las fases: nombre de paquete
-elegido, dominio definitivo, huellas SHA-256, URLs de listing, fecha de
-inicio/fin de la pista de pruebas cerrada, etc.)
-
 ### Fase 1 — Auditoría Lighthouse PWA (2026-07-28)
 
 - Ejecutada con `npx lighthouse@10` (la v13 instalada por defecto ya no
@@ -276,17 +272,19 @@ inicio/fin de la pista de pruebas cerrada, etc.)
 
 Con esto se completa la **Fase 1** del plan.
 
-### Fase 2 — Decisión de dominio (2026-07-28)
+### Fase 2 — Dominio estable de producción (2026-07-28)
 
-- Dominio definitivo de producción decidido: **`app.turnero.xyz`**. Ya está
-  configurado como dominio personalizado en Railway y funcionando en
-  producción desde hace dos semanas sin incidencias (decisión y
-  configuración: acción humana ya ejecutada por el usuario, no requiere
-  cambios de código en este paso).
-- Pendiente de esta fase: actualizar `APP_BASE_URL`/referencias a la URL de
-  producción en el repo para usar `app.turnero.xyz` de forma explícita, y
-  verificar que `/manifest.json` y `/sw.js` se sirven correctamente desde ese
-  dominio (siguiente paso).
+- Dominio definitivo: **`app.turnero.xyz`**. Configurado como custom domain en
+  Railway con certificado TLS automático, en producción desde ~2026-07-14 sin
+  incidencias.
+- `/manifest.json` y `/sw.js` responden 200 con los content-types correctos
+  desde `https://app.turnero.xyz`. `APP_BASE_URL` en Railway está seteado a
+  `https://app.turnero.xyz`.
+- Todas las referencias antiguas al placeholder `tu-app.railway.app` en el
+  repo han sido actualizadas: `.env.example` (`APP_URL`) y
+  `scripts/smoke_test.py` (docstrings) apuntan ahora al dominio definitivo.
+
+Con esto se completa la **Fase 2** del plan.
 
 ### Fase 3 — Páginas legales (2026-07-28)
 

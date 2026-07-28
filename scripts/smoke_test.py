@@ -3,8 +3,8 @@
 Smoke tests post-deploy.
 
 Uso:
-    python scripts/smoke_test.py https://tu-app.railway.app
-    APP_URL=https://tu-app.railway.app python scripts/smoke_test.py
+    python scripts/smoke_test.py https://app.turnero.xyz
+    APP_URL=https://app.turnero.xyz python scripts/smoke_test.py
 """
 import os
 import sys
