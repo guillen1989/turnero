@@ -86,6 +86,30 @@ def _enviar_email_completo(documento, usuario, companero):
     enviar_email(usuario.email, _("Hoja de cambio completa"), cuerpo_html)
 
 
+def _usuario_que_recibe(documento, participante):
+    """
+    Dado un participante p, devuelve el usuario del participante o que
+    recibe el turno que p cede (ciclo A→B→C→A). Funciona igual de bien
+    para 2 o para 3 participantes y reemplaza el patrón «otro por
+    exclusión» que solo vale para 2.
+
+    Para un documento de 3 participantes en ciclo A→B→C→A:
+    - _usuario_que_recibe(doc, p_a) → usuario_b (B recibe lo que A cede)
+    - _usuario_que_recibe(doc, p_b) → usuario_c (C recibe lo que B cede)
+    - _usuario_que_recibe(doc, p_c) → usuario_a (A recibe lo que C cede)
+
+    Si ningún participante recibe exactamente el turno cedido (documento
+    mal construido o inconsistente), devuelve None.
+    """
+    for o in documento.participantes:
+        if o.id == participante.id:
+            continue
+        if (o.turno_recibe_fecha == participante.turno_cede_fecha
+                and o.turno_recibe_franja_id == participante.turno_cede_franja_id):
+            return o.usuario
+    return None
+
+
 def crear_documento_cambio(
     creado_por, companero,
     turno_cede_fecha, turno_cede_franja_id,

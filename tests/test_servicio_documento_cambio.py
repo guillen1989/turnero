@@ -10,6 +10,7 @@ from app.services.documento_cambio import (
     generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, anular_documento,
     registrar_documento_cambio_papel, CambioNoFactibleError,
+    _usuario_que_recibe,
 )
 
 _FIRMA_PNG = (
@@ -969,6 +970,62 @@ def test_al_anular_documento_autorizado_dependientes_pasan_a_no_factible(db):
     anular_documento(doc_a, supervisora, motivo="Error")
     db.session.refresh(doc_b)
     assert doc_b.factibilidad_estado == "no_factible"
+
+
+def test_usuario_que_recibe_cadena_3_identifica_recibidor_en_ciclo_A_B_C_A(db):
+    crear_usuario, manyana, tarde = _setup(db, "uqrc3")
+    a = crear_usuario("Ana", "anauqrc3@h.es")
+    b = crear_usuario("Berta", "bertauqrc3@h.es")
+    c = crear_usuario("Carmen", "carmenuqrc3@h.es")
+
+    documento = DocumentoCambio(
+        creado_por=a,
+        unidad_id=a.unidad_id,
+        numero_unidad=1,
+        tipo="cadena_3",
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    pa = ParticipanteDocumentoCambio(
+        usuario=a, documento=documento,
+        turno_cede_fecha=date(2026, 7, 1), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 3), turno_recibe_franja_id=manyana.id,
+    )
+    pb = ParticipanteDocumentoCambio(
+        usuario=b, documento=documento,
+        turno_cede_fecha=date(2026, 7, 2), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 1), turno_recibe_franja_id=manyana.id,
+    )
+    pc = ParticipanteDocumentoCambio(
+        usuario=c, documento=documento,
+        turno_cede_fecha=date(2026, 7, 3), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 2), turno_recibe_franja_id=manyana.id,
+    )
+    db.session.add_all([pa, pb, pc])
+    db.session.commit()
+
+    assert _usuario_que_recibe(documento, pa) == b
+    assert _usuario_que_recibe(documento, pb) == c
+    assert _usuario_que_recibe(documento, pc) == a
+
+
+def test_usuario_que_recibe_funciona_con_2_participantes_igual_que_exclusion(db):
+    crear_usuario, manyana, tarde = _setup(db, "uqr2")
+    claudia = crear_usuario("Claudia UQR2", "claudiauqr2@h.es")
+    juan = crear_usuario("Juan UQR2", "juanuqr2@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+
+    p_claudia = next(p for p in documento.participantes if p.usuario_id == claudia.id)
+    p_juan = next(p for p in documento.participantes if p.usuario_id == juan.id)
+
+    assert _usuario_que_recibe(documento, p_claudia) == juan
+    assert _usuario_que_recibe(documento, p_juan) == claudia
 
 
 def test_crear_documento_cambio_junte_genera_filas_espejo_por_noche(db):

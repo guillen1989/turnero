@@ -5,13 +5,17 @@ Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3), plan completo en
 `docs/PLAN_3.md`.
 
 ## Paso actual / siguiente paso
-Paso 1 completado (frames de `pdf.html`). Siguiente: Paso 2 de
-`docs/PLAN_3.md` — helper `_usuario_que_recibe(documento, participante)` en
-`app/services/documento_cambio.py`, con TDD, para resolver quién recibe
-cada `turno_cedido` en un ciclo A→B→C→A (reemplaza el patrón "otro por
-exclusión" que solo vale para 2 participantes).
+Paso 2 completado (`_usuario_que_recibe`). Siguiente: Paso 3 de
+`docs/PLAN_3.md` — `_contexto_pdf_cadena_3` y contexto base de
+`generar_pdf_documento`, con TDD.
 
 ## Últimos pasos completados
+- [x] Paso 2 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  función `_usuario_que_recibe(documento, participante)` que, dado un
+  participante, devuelve el `Usuario` del participante que recibe el
+  turno que cede. Funciona para 2 o 3 participantes y reemplaza el
+  patrón «otro por exclusión». Testeado con ciclo A→B→C→A y con
+  intercambio 1-a-1 clásico.
 - [x] Paso 1 (`docs/PLAN_3.md`) — `app/templates/documento_cambio/pdf.html`:
   5 `@frame` nuevos para el tercer participante de una cadena_3
   (`cede_tercer_franja_frame`, `cede_tercer_fecha_frame`,
