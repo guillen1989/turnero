@@ -1269,9 +1269,9 @@ def test_contexto_pdf_cadena_3_para_documento_tipo_cadena_3_devuelve_variables(d
     assert resultado["mostrar_cadena_3"] is True
     assert resultado["cede_tercer_franja_c"] == "Mañana"
     assert "Carmen" in resultado["tercer_companero_c"]
-    assert "01/07/2026" not in resultado["cede_tercer_fecha_c"]
-    assert "03/07/2026" in resultado["cede_tercer_fecha_c"]
-    assert "lo trabaja" in resultado["cede_tercer_fecha_c"]
+    # Carmen (tercero) pasa a trabajar lo que cede Berta (02/07), no lo que
+    # ella misma cede (03/07) -- eso ya está en cede_franja_c/cede_fecha_c.
+    assert resultado["cede_tercer_fecha_c"] == "02/07/2026"
     assert resultado["firma_tercero"] is not None
 
 
