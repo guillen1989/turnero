@@ -20,6 +20,7 @@ from app.services.documento_cambio import (
 from app.services.feature_flags import requiere_feature
 from app.services.planilla import franjas_trabajadas_en_fecha
 from app.services.registro import crear_franjas_default
+from app.services.supervision import unidad_supervisada_o_403, unidades_supervisadas_de
 
 bp = Blueprint("documento_cambio", __name__, url_prefix="/documentos-cambio")
 
@@ -120,6 +121,15 @@ def _usuarios_del_grupo(grupo_id):
     )
 
 
+def _usuarios_de_la_unidad(unidad_id):
+    return (
+        Usuario.query
+        .filter(Usuario.unidad_id == unidad_id)
+        .order_by(Usuario.nombre)
+        .all()
+    )
+
+
 def _subquery_ids_por_usuario_del_grupo(grupo_id):
     return (
         db.session.query(ParticipanteDocumentoCambio.documento_id)
@@ -181,18 +191,22 @@ def _filtros_supervisora_desde_request():
         "estado_decision": request.args.get("estado_decision", "").strip(),
         "factibilidad": request.args.get("factibilidad", "").strip(),
         "numero": request.args.get("numero", type=int),
+        "unidad_id": request.args.get("unidad_id", type=int),
     }
 
 
-def _documentos_del_grupo_supervisora(filtros):
+def _documentos_del_grupo_supervisora(filtros, unidad_id=None):
     """Hojas de cambio completas (dos firmas) del grupo de intercambio de la
     supervisora, aplicando los filtros dados. Los cambios `pendiente_firmas`
-    quedan siempre fuera: todavía no le han llegado a la supervisora."""
-    grupo_id = current_user.grupo_intercambio.id
-    query = DocumentoCambio.query.filter(
-        DocumentoCambio.estado == "completo",
-        DocumentoCambio.id.in_(_subquery_ids_por_usuario_del_grupo(grupo_id)),
-    )
+    quedan siempre fuera: todavía no le han llegado a la supervisora.
+    
+    Si se indica `unidad_id`, solo se muestran documentos de esa unidad."""
+    query = DocumentoCambio.query.filter(DocumentoCambio.estado == "completo")
+    if unidad_id is not None:
+        query = query.filter(DocumentoCambio.unidad_id == unidad_id)
+    else:
+        grupo_id = current_user.grupo_intercambio.id
+        query = query.filter(DocumentoCambio.id.in_(_subquery_ids_por_usuario_del_grupo(grupo_id)))
 
     fecha = None
     if filtros["fecha"]:
@@ -237,14 +251,27 @@ def _documentos_del_grupo_supervisora(filtros):
 def supervisora():
     if not current_user.es_supervisora:
         abort(403)
-    grupo_id = current_user.grupo_intercambio.id
     filtros = _filtros_supervisora_desde_request()
-    documentos = _documentos_del_grupo_supervisora(filtros)
+    unidades = unidades_supervisadas_de(current_user)
+
+    if unidades:
+        unidad = unidad_supervisada_o_403(current_user, filtros["unidad_id"])
+        filtros["unidad_id"] = unidad.id
+        trabajadores = _usuarios_de_la_unidad(unidad.id)
+        documentos = _documentos_del_grupo_supervisora(filtros, unidad_id=unidad.id)
+    else:
+        grupo_id = current_user.grupo_intercambio.id
+        unidad = None
+        trabajadores = _usuarios_del_grupo(grupo_id)
+        documentos = _documentos_del_grupo_supervisora(filtros)
+
     return render_template(
         "documento_cambio/supervisora.html",
         documentos=documentos, filtros=filtros,
-        trabajadores=_usuarios_del_grupo(grupo_id),
+        trabajadores=trabajadores,
         franjas=_franjas_disponibles(),
+        unidad=unidad,
+        unidades_supervisadas=unidades,
     )
 
 
@@ -649,7 +676,7 @@ def anular(documento_id):
 
 _CAMPOS_FILTRO_BLOQUE = (
     "anyo", "mes", "fecha", "trabajador1_id", "trabajador2_id",
-    "franja_id", "estado_decision", "factibilidad", "numero",
+    "franja_id", "estado_decision", "factibilidad", "numero", "unidad_id",
 )
 
 

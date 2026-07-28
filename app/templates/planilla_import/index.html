@@ -37,6 +37,8 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="unidad_id" value="{{ unidad.id }}">
     </form>
+    <button type="submit" form="descartar-form" class="btn btn-secondary btn-sm">{{ _('Dejar sin asignar') }}</button>
+    <p class="form-hint">{{ _('Los trabajadores que dejes sin asignar dejarán de aparecer aquí. Volverán a mostrarse si vuelven a aparecer en una futura importación de planilla.') }}</p>
     <table class="tabla-datos">
       <thead>
         <tr>
@@ -70,8 +72,6 @@
         {% endfor %}
       </tbody>
     </table>
-    <button type="submit" form="descartar-form" class="btn btn-secondary btn-sm">{{ _('Dejar sin asignar') }}</button>
-    <p class="form-hint">{{ _('Los trabajadores que dejes sin asignar dejarán de aparecer aquí. Volverán a mostrarse si vuelven a aparecer en una futura importación de planilla.') }}</p>
     <script>
       document.getElementById('seleccionar-todos-pendientes').addEventListener('change', function () {
         document.querySelectorAll('.pendiente-checkbox').forEach(function (checkbox) {
