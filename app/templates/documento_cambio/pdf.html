@@ -22,12 +22,11 @@
     @frame unidad_frame { -pdf-frame-content: unidad_c; left: 135.28mm; top: 42.73mm; width: 48.03mm; height: 8mm; }
     @frame categoria_frame { -pdf-frame-content: categoria_c; left: 44.09mm; top: 53.64mm; width: 40.61mm; height: 8mm; }
     @frame ddna_frame { -pdf-frame-content: ddna_c; left: 100.48mm; top: 53.64mm; width: 82.84mm; height: 8mm; }
-    @frame cede_tercer_franja_frame { -pdf-frame-content: cede_tercer_franja_c; left: 53.60mm; top: 67.09mm; width: 35.73mm; height: 8mm; }
-    @frame cede_tercer_fecha_frame { -pdf-frame-content: cede_tercer_fecha_c; left: 99.78mm; top: 67.09mm; width: 83.54mm; height: 8mm; }
+    @frame cede_tercer_fecha_frame { -pdf-frame-content: cede_tercer_fecha_c; left: 99.78mm; top: 67.09mm; width: 83.54mm; height: 7mm; }
     @frame cede_franja_frame { -pdf-frame-content: cede_franja_c; left: 53.60mm; top: 74.29mm; width: 35.73mm; height: 8mm; }
-    @frame cede_fecha_frame { -pdf-frame-content: cede_fecha_c; left: 99.78mm; top: 74.29mm; width: 83.54mm; height: 8mm; }
+    @frame cede_fecha_frame { -pdf-frame-content: cede_fecha_c; left: 99.78mm; top: 74.29mm; width: 83.54mm; height: 7mm; }
     @frame recibe_franja_frame { -pdf-frame-content: recibe_franja_c; left: 35.97mm; top: 84.96mm; width: 49.89mm; height: 8mm; }
-    @frame recibe_fecha_frame { -pdf-frame-content: recibe_fecha_c; left: 98.62mm; top: 84.96mm; width: 84.70mm; height: 8mm; }
+    @frame recibe_fecha_frame { -pdf-frame-content: recibe_fecha_c; left: 98.62mm; top: 84.96mm; width: 84.70mm; height: 7mm; }
     @frame companero_frame { -pdf-frame-content: companero_c; left: 58.01mm; top: 92.16mm; width: 125.30mm; height: 8mm; }
     @frame madrid_dia_frame { -pdf-frame-content: madrid_dia_c; left: 122.52mm; top: 156.66mm; width: 10.91mm; height: 8mm; }
     @frame madrid_mes_frame { -pdf-frame-content: madrid_mes_c; left: 140.39mm; top: 156.66mm; width: 17.40mm; height: 8mm; }
@@ -84,12 +83,14 @@
     @frame junte_cambio_4_dia6_frame { -pdf-frame-content: junte_cambio_4_dia6_c; left: 88.41mm; top: 149.77mm; width: 11.37mm; height: 6.27mm; }
   }
 
-  #hospital_c, #unidad_c, #categoria_c, #ddna_c, #cede_franja_c, #cede_fecha_c,
-  #recibe_franja_c, #recibe_fecha_c, #companero_c,
-  #cede_tercer_franja_c, #cede_tercer_fecha_c,
+  #hospital_c, #unidad_c, #categoria_c, #ddna_c, #cede_franja_c,
+  #cede_fecha_c, #recibe_franja_c, #recibe_fecha_c, #companero_c,
   #madrid_dia_c, #madrid_mes_c, #madrid_anyo_c {
     font-family: Helvetica; font-size: 9.5pt; color: #1a1a6e;
     margin: 0; padding: 0 0 0 1mm;
+  }
+  #cede_tercer_fecha_c, #cede_fecha_c.cadena3-sentencia, #recibe_fecha_c.cadena3-sentencia {
+    font-size: 8pt; line-height: 1.1;
   }
   #numero_c { font-family: Helvetica; font-size: 8pt; color: #555; text-align: right; margin: 0; }
   #informe_supervisora_c { font-family: Helvetica; font-size: 8.5pt; color: #1a1a6e; margin: 0; }
@@ -110,14 +111,18 @@
   <div id="categoria_c">{{ solicitante.categoria.nombre }}</div>
   <div id="ddna_c">{{ solicitante_nombre }}</div>
   {% if not mostrar_junte %}
+  {% if mostrar_cadena_3 %}
+  <div id="cede_fecha_c" class="cadena3-sentencia">{{ cede_fecha_c }}</div>
+  <div id="recibe_fecha_c" class="cadena3-sentencia">{{ recibe_fecha_c }}</div>
+  {% else %}
   <div id="cede_franja_c">{{ participante_solicitante.turno_cede_franja.nombre }}</div>
-  <div id="cede_fecha_c">{{ participante_solicitante.turno_cede_fecha.strftime('%d/%m/%Y') }}{% if cede_fecha_receptor_nombre %} ({{ _('lo trabaja') }} {{ cede_fecha_receptor_nombre }}){% endif %}</div>
+  <div id="cede_fecha_c">{{ participante_solicitante.turno_cede_fecha.strftime('%d/%m/%Y') }}</div>
   <div id="recibe_franja_c">{{ participante_solicitante.turno_recibe_franja.nombre }}</div>
-  <div id="recibe_fecha_c">{{ participante_solicitante.turno_recibe_fecha.strftime('%d/%m/%Y') }}{% if recibe_fecha_receptor_nombre %} ({{ _('lo trabaja') }} {{ recibe_fecha_receptor_nombre }}){% endif %}</div>
-  <div id="companero_c">{{ companero_nombre }}{% if mostrar_cadena_3 %} {{ _('y') }} {{ tercer_companero_c }}{% endif %}</div>
+  <div id="recibe_fecha_c">{{ participante_solicitante.turno_recibe_fecha.strftime('%d/%m/%Y') }}</div>
+  {% endif %}
+  <div id="companero_c">{{ companero_nombre }}{% if mostrar_cadena_3 %} {{ _('y') }} {{ tercer_companero_c }} - {{ _('CAMBIO A 3') }}{% endif %}</div>
   {% endif %}
   {% if mostrar_cadena_3 %}
-  <div id="cede_tercer_franja_c">{{ cede_tercer_franja_c }}</div>
   <div id="cede_tercer_fecha_c">{{ cede_tercer_fecha_c }}</div>
   {% endif %}
   <div id="madrid_dia_c">{{ fecha_documento.day }}</div>

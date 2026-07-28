@@ -524,17 +524,47 @@ def generar_notas_ilog(documento):
     return notas
 
 
+def _texto_cede_y_recibe(participante, orden="cede_recibe"):
+    """
+    Frase legible para pdf.html: "<nombre> libra <franja> del <fecha> y
+    trabaja <franja> del <fecha>" (o el orden inverso, "trabaja ... y
+    libra ...", con orden="recibe_cede") a partir de un único
+    ParticipanteDocumentoCambio. Solo se usa para cadena_3 (3
+    participantes): un cambio directo de 2 sigue mostrando franja y
+    fecha por separado, sin esta frase combinada.
+    """
+    cede = _(
+        "la %(franja)s del %(fecha)s",
+        franja=participante.turno_cede_franja.nombre,
+        fecha=participante.turno_cede_fecha.strftime('%d/%m/%Y'),
+    )
+    recibe = _(
+        "la %(franja)s del %(fecha)s",
+        franja=participante.turno_recibe_franja.nombre,
+        fecha=participante.turno_recibe_fecha.strftime('%d/%m/%Y'),
+    )
+    if orden == "recibe_cede":
+        return _(
+            "%(nombre)s trabaja %(recibe)s y libra %(cede)s",
+            nombre=participante.nombre_mostrar, recibe=recibe, cede=cede,
+        )
+    return _(
+        "%(nombre)s libra %(cede)s y trabaja %(recibe)s",
+        nombre=participante.nombre_mostrar, cede=cede, recibe=recibe,
+    )
+
+
 def _contexto_pdf_cadena_3(documento):
     """
-    Variables mostrar_cadena_3 / cede_tercer_* / tercer_companero_* /
+    Variables mostrar_cadena_3 / cede_tercer_fecha_c / tercer_companero_c /
     firma_tercero que espera documento_cambio/pdf.html cuando
     documento.tipo == "cadena_3". Si el documento no es una cadena_3,
     devuelve solo mostrar_cadena_3=False.
 
-    cede_tercer_franja_c/cede_tercer_fecha_c muestran el turno y el día
-    que el tercer compañero pasa a trabajar (lo que recibe en el ciclo),
-    no el que cede -- eso ya lo representan cede_franja_c/cede_fecha_c
-    para el solicitante.
+    cede_tercer_fecha_c describe el turno completo (cede + recibe) del
+    tercer participante, en orden "trabaja ... y libra ..." -- al
+    contrario que cede_fecha_c/recibe_fecha_c (solicitante/compañero),
+    que van en orden "libra ... y trabaja ...".
     """
     if documento.tipo != "cadena_3":
         return {"mostrar_cadena_3": False}
@@ -553,8 +583,7 @@ def _contexto_pdf_cadena_3(documento):
 
     return {
         "mostrar_cadena_3": True,
-        "cede_tercer_franja_c": p_tercero.turno_recibe_franja.nombre,
-        "cede_tercer_fecha_c": p_tercero.turno_recibe_fecha.strftime('%d/%m/%Y'),
+        "cede_tercer_fecha_c": _texto_cede_y_recibe(p_tercero, orden="recibe_cede"),
         "tercer_companero_c": tercero.nombre,
         "firma_tercero": next(
             (f for f in documento.firmas if f.usuario_id == tercero.id), None
@@ -610,35 +639,32 @@ def generar_pdf_documento(documento):
     """
     from xhtml2pdf import pisa
     solicitante = documento.creado_por
+    p_solicitante = next(
+        p for p in documento.participantes if p.usuario_id == solicitante.id
+    )
     if documento.tipo == "cadena_3":
-        p_solicitante = next(
-            p for p in documento.participantes if p.usuario_id == solicitante.id
-        )
         companero = _usuario_que_recibe(documento, p_solicitante)
         p_companero = next(
             p for p in documento.participantes if p.usuario_id == companero.id
         )
-        cede_fecha_receptor_nombre = companero.nombre if companero else None
-        p_tercero = next(
-            p for p in documento.participantes
-            if p.usuario_id != solicitante.id and p.usuario_id != companero.id
-        )
-        receptor_recibe = _usuario_que_recibe(documento, p_tercero)
-        recibe_fecha_receptor_nombre = receptor_recibe.nombre if receptor_recibe else None
-        solicitante_nombre = p_solicitante.nombre_mostrar
-        companero_nombre = p_companero.nombre_mostrar
     else:
-        p_solicitante = next(
-            p for p in documento.participantes if p.usuario_id == solicitante.id
-        )
         p_companero = next(
             p for p in documento.participantes if p.usuario_id != solicitante.id
         )
         companero = p_companero.usuario
-        cede_fecha_receptor_nombre = None
-        recibe_fecha_receptor_nombre = None
-        solicitante_nombre = p_solicitante.nombre_mostrar
-        companero_nombre = p_companero.nombre_mostrar
+
+    solicitante_nombre = p_solicitante.nombre_mostrar
+    companero_nombre = p_companero.nombre_mostrar
+    # El formato de frase combinada (libra + trabaja en un mismo campo) solo
+    # aplica a cadena_3: un cambio directo de 2 sigue mostrando franja y
+    # fecha por separado (participante_solicitante en el contexto de abajo),
+    # tal y como lo hacía antes de introducir cadena_3.
+    if documento.tipo == "cadena_3":
+        cede_fecha_c = _texto_cede_y_recibe(p_solicitante)
+        recibe_fecha_c = _texto_cede_y_recibe(p_companero)
+    else:
+        cede_fecha_c = None
+        recibe_fecha_c = None
 
     firmas_por_usuario = {f.usuario_id: f for f in documento.firmas}
 
@@ -654,8 +680,8 @@ def generar_pdf_documento(documento):
         fecha_documento=documento.fecha_creacion.date(),
         numero_documento=documento.numero_unidad,
         meses=_MESES,
-        cede_fecha_receptor_nombre=cede_fecha_receptor_nombre,
-        recibe_fecha_receptor_nombre=recibe_fecha_receptor_nombre,
+        cede_fecha_c=cede_fecha_c,
+        recibe_fecha_c=recibe_fecha_c,
         firma_solicitante=firmas_por_usuario.get(solicitante.id),
         firma_companero=firmas_por_usuario.get(companero.id),
         fondo_path=f"{current_app.static_folder}/img/hoja-cambio-fondo.png",
