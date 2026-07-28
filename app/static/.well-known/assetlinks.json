@@ -4,8 +4,7 @@
     "namespace": "android_app",
     "package_name": "xyz.turnero.app",
     "sha256_cert_fingerprints": [
-      "PLACEHOLDER:REEMPLAZAR_CON_HUELLA_SHA256_DEL_UPLOAD_KEY",
-      "PLACEHOLDER:REEMPLAZAR_CON_HUELLA_SHA256_DE_PLAY_APP_SIGNING"
+      "CA:CC:BE:4C:16:D5:A1:88:45:74:71:BC:04:5A:10:E2:7C:6C:AF:2F:A6:F8:4F:78:1B:58:47:E3:8B:3B:24:87"
     ]
   }
 }]

@@ -123,11 +123,11 @@
   dominio definitivo de la Fase 2.
 - [x] Generar el proyecto Android TWA (`bubblewrap init --manifest=<url>`),
   revisando: nombre de la app, colores, orientación, `display: standalone`.
-- [ ] **[ACCIÓN HUMANA]** Generar el *keystore* de firma (upload key) y
+- [x] **[ACCIÓN HUMANA]** Generar el *keystore* de firma (upload key) y
   **guardarlo con máxima seguridad y backup** (contraseña + fichero `.jks`) —
   perderlo impide publicar actualizaciones futuras de la app. No debe
   commitearse al repo.
-- [ ] Compilar el Android App Bundle (`.aab`) con `bubblewrap build`.
+- [x] Compilar el Android App Bundle (`.aab`) con `bubblewrap build`.
 - [x] Publicar el fichero **Digital Asset Links** en
   `https://<dominio>/.well-known/assetlinks.json`, referenciando el nombre de
   paquete y la huella SHA-256 del certificado (primero la del upload key; más
@@ -336,7 +336,16 @@ Con esto se completa la **Fase 3** del plan.
   `xyz.turnero.app`. Las huellas SHA-256 son placeholders: hay que reemplazar
   con la huella del upload key (tras generarlo) y la de Play App Signing (tras
   el primer envio a Play Console, Fase 5).
-- **Pendiente [ACCION HUMANA]:**
-  - Generar el keystore: `keytool -genkey -v -keystore android-twa/android-keystore.jks -alias turnero -keyalg RSA -keysize 2048 -validity 10000`
-  - Compilar el `.aab`: `bubblewrap build` desde `android-twa/`
-  - Verificar assetlinks con la herramienta de Google
+- **Keystore:** generado en `~/upload-keystore.jks` con alias `turnero`.
+  Copiado a `android-twa/android-keystore.jks` (no commiteado al repo).
+- **App Bundle compilado:** `android-twa/app-release-bundle.aab` (2.1 MB).
+  Generado con `bubblewrap build` usando las password envars
+  `BUBBLEWRAP_KEYSTORE_PASSWORD` / `BUBBLEWRAP_KEY_PASSWORD`.
+- **Huella SHA-256 del upload key:** `CA:CC:BE:4C:16:D5:A1:88:45:74:71:BC:04:5A:10:E2:7C:6C:AF:2F:A6:F8:4F:78:1B:58:47:E3:8B:3B:24:87`
+  - Añadida a `app/static/.well-known/assetlinks.json`.
+  - Falta añadir la huella de Play App Signing (tras primer subida a Play Console, Fase 5).
+- **Nota:** fue necesario añadir `"enableNotifications": false` al
+  `twa-manifest.json` para que el build no fallase por un valor vacio en el
+  `build.gradle` generado.
+- **Pendiente:**
+  - Verificar assetlinks con la herramienta de Google antes de subir el `.aab`.

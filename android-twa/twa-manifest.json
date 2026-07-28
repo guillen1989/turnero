@@ -26,6 +26,7 @@
       "enabled": false
     }
   },
+  "enableNotifications": false,
   "enableSiteSettingsShortcut": true,
   "orientation": "default",
   "fullScopeUrl": "https://app.turnero.xyz/"
