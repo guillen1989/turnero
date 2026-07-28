@@ -1141,3 +1141,116 @@ def test_generar_pdf_documento_junte_muestra_las_dos_distribuciones(db):
     # No debe aparecer el bloque de turno único (cede_franja_c/etc.), que en
     # un junte no representa bien la relación (varias filas por persona).
     assert "Mañana" not in texto
+
+
+def test_contexto_pdf_cadena_3_para_documento_tipo_cadena_3_devuelve_variables(db):
+    from app.services.documento_cambio import _contexto_pdf_cadena_3
+
+    crear_usuario, manyana, tarde = _setup(db, "ctxc3")
+    a = crear_usuario("Ana", "anactxc3@h.es")
+    b = crear_usuario("Berta", "bertactxc3@h.es")
+    c = crear_usuario("Carmen", "carmenctxc3@h.es")
+
+    documento = DocumentoCambio(
+        creado_por=a, unidad_id=a.unidad_id, numero_unidad=1, tipo="cadena_3",
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    pa = ParticipanteDocumentoCambio(
+        usuario=a, documento=documento,
+        turno_cede_fecha=date(2026, 7, 1), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 3), turno_recibe_franja_id=manyana.id,
+    )
+    pb = ParticipanteDocumentoCambio(
+        usuario=b, documento=documento,
+        turno_cede_fecha=date(2026, 7, 2), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 1), turno_recibe_franja_id=manyana.id,
+    )
+    pc = ParticipanteDocumentoCambio(
+        usuario=c, documento=documento,
+        turno_cede_fecha=date(2026, 7, 3), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 2), turno_recibe_franja_id=manyana.id,
+    )
+    db.session.add_all([pa, pb, pc])
+
+    firmar_documento(documento, a, _FIRMA_PNG)
+    firmar_documento(documento, b, _FIRMA_PNG)
+    firmar_documento(documento, c, _FIRMA_PNG)
+
+    resultado = _contexto_pdf_cadena_3(documento)
+
+    assert resultado["mostrar_cadena_3"] is True
+    assert resultado["cede_tercer_franja_c"] == "Mañana"
+    assert "Carmen" in resultado["tercer_companero_c"]
+    assert "01/07/2026" not in resultado["cede_tercer_fecha_c"]
+    assert "03/07/2026" in resultado["cede_tercer_fecha_c"]
+    assert "lo trabaja" in resultado["cede_tercer_fecha_c"]
+    assert resultado["firma_tercero"] is not None
+
+
+def test_contexto_pdf_cadena_3_para_documento_no_cadena_3_devuelve_mostrar_false(db):
+    from app.services.documento_cambio import _contexto_pdf_cadena_3
+
+    crear_usuario, manyana, tarde = _setup(db, "ctxnc3")
+    claudia = crear_usuario("Claudia", "claudiagtxnc3@h.es")
+    juan = crear_usuario("Juan", "juangtxnc3@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+
+    resultado = _contexto_pdf_cadena_3(documento)
+
+    assert resultado == {"mostrar_cadena_3": False}
+
+
+def test_generar_pdf_documento_cadena_3_muestra_los_tres_participantes(db):
+    import pypdf
+    import io as _io
+
+    crear_usuario, manyana, tarde = _setup(db, "pdfc3")
+    a = crear_usuario("Ana", "anapdfc3@h.es")
+    b = crear_usuario("Berta", "bertapdfc3@h.es")
+    c = crear_usuario("Carmen", "carmenpdfc3@h.es")
+
+    documento = DocumentoCambio(
+        creado_por=a, unidad_id=a.unidad_id, numero_unidad=1, tipo="cadena_3",
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    pa = ParticipanteDocumentoCambio(
+        usuario=a, documento=documento,
+        turno_cede_fecha=date(2026, 7, 1), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 3), turno_recibe_franja_id=manyana.id,
+    )
+    pb = ParticipanteDocumentoCambio(
+        usuario=b, documento=documento,
+        turno_cede_fecha=date(2026, 7, 2), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 1), turno_recibe_franja_id=manyana.id,
+    )
+    pc = ParticipanteDocumentoCambio(
+        usuario=c, documento=documento,
+        turno_cede_fecha=date(2026, 7, 3), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 2), turno_recibe_franja_id=manyana.id,
+    )
+    db.session.add_all([pa, pb, pc])
+    db.session.commit()
+
+    firmar_documento(documento, a, _FIRMA_PNG)
+    firmar_documento(documento, b, _FIRMA_PNG)
+    firmar_documento(documento, c, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    assert pdf_bytes[:5] == b"%PDF-"
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    assert "Ana" in texto
+    assert "Berta" in texto
+    assert "Carmen" in texto
+    assert "01/07/2026" in texto
+    assert "03/07/2026" in texto
+    assert "lo trabaja" in texto

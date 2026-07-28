@@ -455,6 +455,43 @@ def generar_notas_ilog(documento):
     return notas
 
 
+def _contexto_pdf_cadena_3(documento):
+    """
+    Variables mostrar_cadena_3 / cede_tercer_* / tercer_companero_* /
+    firma_tercero que espera documento_cambio/pdf.html cuando
+    documento.tipo == "cadena_3". Si el documento no es una cadena_3,
+    devuelve solo mostrar_cadena_3=False.
+    """
+    if documento.tipo != "cadena_3":
+        return {"mostrar_cadena_3": False}
+
+    solicitante_id = documento.creado_por_id
+    p_solicitante = next(
+        p for p in documento.participantes if p.usuario_id == solicitante_id
+    )
+    companero = _usuario_que_recibe(documento, p_solicitante)
+
+    p_tercero = next(
+        p for p in documento.participantes
+        if p.usuario_id != solicitante_id and p.usuario_id != companero.id
+    )
+    tercero = p_tercero.usuario
+    receptor_tercero = _usuario_que_recibe(documento, p_tercero)
+
+    return {
+        "mostrar_cadena_3": True,
+        "cede_tercer_franja_c": p_tercero.turno_cede_franja.nombre,
+        "cede_tercer_fecha_c": (
+            f"{p_tercero.turno_cede_fecha.strftime('%d/%m/%Y')} "
+            f"({_('lo trabaja')} {receptor_tercero.nombre})"
+        ),
+        "tercer_companero_c": tercero.nombre,
+        "firma_tercero": next(
+            (f for f in documento.firmas if f.usuario_id == tercero.id), None
+        ),
+    }
+
+
 def _contexto_pdf_junte(documento):
     """
     Variables junte_* que espera documento_cambio/pdf.html cuando
@@ -503,27 +540,52 @@ def generar_pdf_documento(documento):
     """
     from xhtml2pdf import pisa
     solicitante = documento.creado_por
-    participante_solicitante = next(
-        p for p in documento.participantes if p.usuario_id == solicitante.id
-    )
-    participante_companero = next(
-        p for p in documento.participantes if p.usuario_id != solicitante.id
-    )
-    companero = participante_companero.usuario
+    if documento.tipo == "cadena_3":
+        p_solicitante = next(
+            p for p in documento.participantes if p.usuario_id == solicitante.id
+        )
+        companero = _usuario_que_recibe(documento, p_solicitante)
+        p_companero = next(
+            p for p in documento.participantes if p.usuario_id == companero.id
+        )
+        cede_fecha_receptor_nombre = companero.nombre if companero else None
+        p_tercero = next(
+            p for p in documento.participantes
+            if p.usuario_id != solicitante.id and p.usuario_id != companero.id
+        )
+        receptor_recibe = _usuario_que_recibe(documento, p_tercero)
+        recibe_fecha_receptor_nombre = receptor_recibe.nombre if receptor_recibe else None
+        solicitante_nombre = p_solicitante.nombre_mostrar
+        companero_nombre = p_companero.nombre_mostrar
+    else:
+        p_solicitante = next(
+            p for p in documento.participantes if p.usuario_id == solicitante.id
+        )
+        p_companero = next(
+            p for p in documento.participantes if p.usuario_id != solicitante.id
+        )
+        companero = p_companero.usuario
+        cede_fecha_receptor_nombre = None
+        recibe_fecha_receptor_nombre = None
+        solicitante_nombre = p_solicitante.nombre_mostrar
+        companero_nombre = p_companero.nombre_mostrar
+
     firmas_por_usuario = {f.usuario_id: f for f in documento.firmas}
 
     html = render_template(
         "documento_cambio/pdf.html",
         hospital_nombre=solicitante.unidad.hospital.nombre,
         unidad_nombre=solicitante.unidad.nombre,
-        solicitante_nombre=participante_solicitante.nombre_mostrar,
-        companero_nombre=participante_companero.nombre_mostrar,
+        solicitante_nombre=solicitante_nombre,
+        companero_nombre=companero_nombre,
         solicitante=solicitante,
-        participante_solicitante=participante_solicitante,
+        participante_solicitante=p_solicitante,
         companero=companero,
         fecha_documento=documento.fecha_creacion.date(),
         numero_documento=documento.numero_unidad,
         meses=_MESES,
+        cede_fecha_receptor_nombre=cede_fecha_receptor_nombre,
+        recibe_fecha_receptor_nombre=recibe_fecha_receptor_nombre,
         firma_solicitante=firmas_por_usuario.get(solicitante.id),
         firma_companero=firmas_por_usuario.get(companero.id),
         fondo_path=f"{current_app.static_folder}/img/hoja-cambio-fondo.png",
@@ -535,6 +597,7 @@ def generar_pdf_documento(documento):
         ),
         firma_supervisora=documento.firma_supervisora,
         **_contexto_pdf_junte(documento),
+        **_contexto_pdf_cadena_3(documento),
     )
 
     buffer = io.BytesIO()

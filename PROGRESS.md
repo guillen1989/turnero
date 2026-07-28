@@ -5,11 +5,21 @@ Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3), plan completo en
 `docs/PLAN_3.md`.
 
 ## Paso actual / siguiente paso
-Paso 2 completado (`_usuario_que_recibe`). Siguiente: Paso 3 de
-`docs/PLAN_3.md` — `_contexto_pdf_cadena_3` y contexto base de
-`generar_pdf_documento`, con TDD.
+Paso 3 completado (`_contexto_pdf_cadena_3`, `generar_pdf_documento`).
+Siguiente: Paso 4 de `docs/PLAN_3.md` — arreglar `generar_notas_ilog` y el
+email de `firmar_documento` para 3 participantes.
 
 ## Últimos pasos completados
+- [x] Paso 3 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  función `_contexto_pdf_cadena_3(documento)` (paralela a `_contexto_pdf_junte`)
+  que devuelve `mostrar_cadena_3=True` + variables para el tercer participante
+  (`cede_tercer_franja_c`, `cede_tercer_fecha_c`, `tercer_companero_c`,
+  `firma_tercero`). `generar_pdf_documento` modificado para identificar
+  correctamente los 3 roles (solicitante, compañero=quien recibe del
+  solicitante, tercero=quien cede al solicitante) y pasar
+  `cede_fecha_receptor_nombre`/`recibe_fecha_receptor_nombre` via
+  `_usuario_que_recibe`. Testeado con documento cadena_3 de 3 participantes
+  firmado y generación de PDF.
 - [x] Paso 2 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
   función `_usuario_que_recibe(documento, participante)` que, dado un
   participante, devuelve el `Usuario` del participante que recibe el
