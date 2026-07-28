@@ -5,11 +5,18 @@ Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3), plan completo en
 `docs/PLAN_3.md`.
 
 ## Paso actual / siguiente paso
-Paso 3 completado (`_contexto_pdf_cadena_3`, `generar_pdf_documento`).
-Siguiente: Paso 4 de `docs/PLAN_3.md` — arreglar `generar_notas_ilog` y el
-email de `firmar_documento` para 3 participantes.
+Paso 4 completado (`generar_notas_ilog`, email de `firmar_documento`).
+Siguiente: Paso 5 de `docs/PLAN_3.md` — `crear_documento_cambio_cadena_3`
+(creación manual).
 
 ## Últimos pasos completados
+- [x] Paso 4 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  `generar_notas_ilog` y el email de `firmar_documento` usan
+  `_usuario_que_recibe` en vez del patrón «otro por exclusión», que con 3
+  participantes era ambiguo. Para documentos cadena_3 de 3 participantes
+  cada nota/email referencia al usuario correcto (el que recibe el turno
+  cedido). El comportamiento con 2 participantes no cambia. Testeado con
+  casos de 2 y 3 participantes.
 - [x] Paso 3 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
   función `_contexto_pdf_cadena_3(documento)` (paralela a `_contexto_pdf_junte`)
   que devuelve `mostrar_cadena_3=True` + variables para el tercer participante

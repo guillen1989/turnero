@@ -401,9 +401,9 @@ def firmar_documento(documento, usuario, imagen_firma):
                 _("Hoja de cambio completa"),
                 _("Las dos firmas están recogidas. La hoja de cambio ya está completa."),
             )
-            otro = next(o for o in documento.participantes if o.usuario_id != p.usuario_id)
-            if p.usuario.notif_email_documento_cambio:
-                _enviar_email_completo(documento, p.usuario, otro.usuario)
+            otro_usuario = _usuario_que_recibe(documento, p)
+            if p.usuario.notif_email_documento_cambio and otro_usuario:
+                _enviar_email_completo(documento, p.usuario, otro_usuario)
     else:
         documento.estado = "pendiente_firmas"
         ids_firmantes = {f.usuario_id for f in documento.firmas}
@@ -429,7 +429,8 @@ def generar_notas_ilog(documento):
     """
     notas = []
     for p in documento.participantes:
-        otro = next(o for o in documento.participantes if o.usuario_id != p.usuario_id)
+        otro_usuario = _usuario_que_recibe(documento, p)
+        otro_nombre = otro_usuario.nombre if otro_usuario else "?"
 
         notas.append({
             "usuario": p.usuario,
@@ -437,7 +438,7 @@ def generar_notas_ilog(documento):
             "fecha": p.turno_cede_fecha,
             "texto": (
                 f"Libra el turno de {p.turno_cede_franja.nombre.lower()} a cambio de "
-                f"trabajarle a {otro.nombre_mostrar} el turno de "
+                f"trabajarle a {otro_nombre} el turno de "
                 f"{p.turno_recibe_franja.nombre.lower()} del {_formatear_fecha(p.turno_recibe_fecha)}."
             ),
         })
@@ -447,7 +448,7 @@ def generar_notas_ilog(documento):
             "fecha": p.turno_recibe_fecha,
             "texto": (
                 f"Trabaja el turno de {p.turno_recibe_franja.nombre.lower()} a "
-                f"{otro.nombre_mostrar} a cambio de que {otro.nombre_mostrar} le "
+                f"{otro_nombre} a cambio de que {otro_nombre} le "
                 f"trabaje el turno de {p.turno_cede_franja.nombre.lower()} del "
                 f"{_formatear_fecha(p.turno_cede_fecha)}."
             ),

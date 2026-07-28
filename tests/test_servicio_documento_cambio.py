@@ -182,6 +182,66 @@ def test_firmar_documento_guarda_mismo_hash_para_contenido_identico(db):
     assert f1.hash_documento == f2.hash_documento
 
 
+def _crear_documento_cadena_3(db, crear_usuario, manyana, a_nombre, b_nombre, c_nombre):
+    a = crear_usuario(a_nombre, f"{a_nombre.lower().replace(' ', '')}@h.es")
+    b = crear_usuario(b_nombre, f"{b_nombre.lower().replace(' ', '')}@h.es")
+    c = crear_usuario(c_nombre, f"{c_nombre.lower().replace(' ', '')}@h.es")
+
+    doc = DocumentoCambio(
+        creado_por=a, unidad_id=a.unidad_id, numero_unidad=1, tipo="cadena_3",
+    )
+    db.session.add(doc)
+    db.session.flush()
+
+    pa = ParticipanteDocumentoCambio(
+        usuario=a, documento=doc,
+        turno_cede_fecha=date(2026, 7, 1), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 3), turno_recibe_franja_id=manyana.id,
+    )
+    pb = ParticipanteDocumentoCambio(
+        usuario=b, documento=doc,
+        turno_cede_fecha=date(2026, 7, 2), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 1), turno_recibe_franja_id=manyana.id,
+    )
+    pc = ParticipanteDocumentoCambio(
+        usuario=c, documento=doc,
+        turno_cede_fecha=date(2026, 7, 3), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 2), turno_recibe_franja_id=manyana.id,
+    )
+    db.session.add_all([pa, pb, pc])
+    db.session.commit()
+    return doc, a, b, c, pa, pb, pc
+
+
+def test_generar_notas_ilog_cadena_3_referencia_a_usuarios_correctos(db):
+    crear_usuario, manyana, tarde = _setup(db, "gilc3")
+    doc, a, b, c, pa, pb, pc = _crear_documento_cadena_3(
+        db, crear_usuario, manyana, "Ana gilc3", "Berta gilc3", "Carmen gilc3",
+    )
+
+    notas = generar_notas_ilog(doc)
+
+    assert len(notas) == 6
+
+    nota_a_cede = next(
+        n for n in notas if n["usuario"].id == a.id and n["fecha"] == date(2026, 7, 1)
+    )
+    assert b.nombre in nota_a_cede["texto"]
+    assert a.nombre not in nota_a_cede["texto"]
+
+    nota_b_cede = next(
+        n for n in notas if n["usuario"].id == b.id and n["fecha"] == date(2026, 7, 2)
+    )
+    assert c.nombre in nota_b_cede["texto"]
+    assert a.nombre not in nota_b_cede["texto"]
+
+    nota_c_cede = next(
+        n for n in notas if n["usuario"].id == c.id and n["fecha"] == date(2026, 7, 3)
+    )
+    assert a.nombre in nota_c_cede["texto"]
+    assert b.nombre not in nota_c_cede["texto"]
+
+
 def test_generar_notas_ilog_contenido_para_ejemplo_del_usuario(db):
     crear_usuario, manyana, tarde = _setup(db, "e")
     claudia = crear_usuario("Claudia Pérez", "claudiae@h.es")
@@ -567,6 +627,32 @@ def test_firmar_documento_no_envia_email_si_usuario_lo_desactivo(db, monkeypatch
 
     destinatarios = {d for d, _ in enviados}
     assert destinatarios == {"claudiap@h.es"}  # Claudia sí, Juan lo desactivó
+
+
+def test_firmar_documento_cadena_3_envia_email_con_usuario_correcto(db, monkeypatch):
+    enviados = []
+
+    def _fake_enviar_email(destinatario, asunto, cuerpo_html):
+        enviados.append((destinatario, asunto))
+        return True
+
+    monkeypatch.setattr("app.services.documento_cambio.enviar_email", _fake_enviar_email)
+
+    crear_usuario, manyana, tarde = _setup(db, "fdc3e")
+    doc, a, b, c, pa, pb, pc = _crear_documento_cadena_3(
+        db, crear_usuario, manyana, "Ana fdc3e", "Berta fdc3e", "Carmen fdc3e",
+    )
+
+    firmar_documento(doc, a, _FIRMA_PNG)
+    assert enviados == []
+
+    firmar_documento(doc, b, _FIRMA_PNG)
+    assert enviados == []
+
+    firmar_documento(doc, c, _FIRMA_PNG)
+
+    destinatarios = {d for d, _ in enviados}
+    assert destinatarios == {a.email, b.email, c.email}
 
 
 def _crear_documento_completo(db, sufijo):
