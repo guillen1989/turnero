@@ -30,12 +30,30 @@ def live_server(e2e_app):
     server.shutdown()
 
 
+def _activar_feature_flags_de_test():
+    from app.services.feature_flags import crear_flag, activar_global
+    for clave in (
+        "planilla_supervision_multiunidad",
+        "importacion_planilla",
+        "hoja_cambio_digital",
+    ):
+        try:
+            crear_flag(clave)
+        except Exception:
+            _db.session.rollback()
+        try:
+            activar_global(clave)
+        except Exception:
+            _db.session.rollback()
+
+
 @pytest.fixture(autouse=True)
 def clean_e2e_db(e2e_app):
     with e2e_app.app_context():
         tablas = ", ".join(f'"{t.name}"' for t in _db.metadata.sorted_tables)
         _db.session.execute(text(f"TRUNCATE {tablas} RESTART IDENTITY CASCADE"))
         _db.session.commit()
+        _activar_feature_flags_de_test()
     yield
 
 

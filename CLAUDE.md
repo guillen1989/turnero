@@ -1,9 +1,9 @@
 # CLAUDE.md — Convenciones y método de trabajo
 
-> Este archivo define **cómo** se desarrolla este proyecto. El **qué** (requisitos, modelo de dominio, reglas de negocio, casos de uso y UAT) está en `ESPECIFICACION.md`. Consulta siempre `ESPECIFICACION.md` antes de implementar cualquier funcionalidad.
+> Este archivo define **cómo** se desarrolla este proyecto. El **qué** (requisitos, modelo de dominio, reglas de negocio, casos de uso y UAT) está en `especificacion-app-cambio-turnos.md`. Consulta siempre `especificacion-app-cambio-turnos.md` antes de implementar cualquier funcionalidad.
 
 ## El proyecto en una frase
-PWA (web app instalable) para que personal sanitario intercambie turnos entre compañeros de su misma categoría y unidad. Detalle completo en `ESPECIFICACION.md`.
+PWA (web app instalable) para que personal sanitario intercambie turnos entre compañeros de su misma categoría y unidad. Detalle completo en `especificacion-app-cambio-turnos.md`.
 
 ## Stack
 - Backend: Python + Flask
@@ -13,7 +13,7 @@ PWA (web app instalable) para que personal sanitario intercambie turnos entre co
 - PWA: manifest + service worker + Web Push
 
 ## Internacionalización (i18n) — OBLIGATORIO desde el primer commit
-El MVP se construye solo en español, pero la app debe diseñarse desde el principio para soportar varios idiomas sin refactor posterior, ya que está planeada su escalabilidad a otros países (ver `ESPECIFICACION.md`).
+El MVP se construye solo en español, pero la app debe diseñarse desde el principio para soportar varios idiomas sin refactor posterior, ya que está planeada su escalabilidad a otros países (ver `especificacion-app-cambio-turnos.md`).
 
 **Mecanismo:** [Flask-Babel](https://python-babel.github.io/flask-babel/), el estándar de facto para i18n en Flask, basado en el sistema `gettext`.
 - Los textos se marcan en el código con `gettext()` (o su alias `_()`) y en las plantillas Jinja con `{{ _('texto') }}`.
@@ -39,7 +39,8 @@ Reglas:
 - No se escribe código de producción sin un test que lo justifique.
 - Framework de tests: pytest.
 - Prioriza los tests sobre la lógica de negocio crítica: el motor de matching y las reglas de negocio (condiciones de coincidencia, resolución parcial, visibilidad por categoría/grupo, confirmación, caducidad).
-- Los UAT de `ESPECIFICACION.md` son el criterio de aceptación de cada funcionalidad.
+- Los UAT de `especificacion-app-cambio-turnos.md` son el criterio de aceptación de cada funcionalidad.
+- **Ejecuta los tests SIEMPRE con `pytest --testmon` (selecciona solo los tests afectados por los cambios) en vez de la suite completa.**
 
 ### 2. Clean Code
 - Nombres descriptivos y honestos para variables, funciones y clases.
@@ -64,8 +65,8 @@ El desarrollo se estructura en **pasos pequeños**, cada uno terminado en un com
 Un "paso" es una unidad de trabajo pequeña y coherente (idealmente: un test + su implementación + refactor). Cada paso sigue SIEMPRE este ciclo:
 1. Trabaja el paso con TDD (rojo → verde → refactor).
 2. Asegúrate de que **todos** los tests pasan.
-3. Actualiza `PROGRESS.md`: marca el paso como completado y registra cuál es el siguiente paso.
-4. Haz **un único commit** que incluya el código, los tests y el `PROGRESS.md` actualizado.
+3. Actualiza `PROGRESS.md`: marca el paso como completado y registra cuál es el siguiente paso. Si el archivo ha crecido demasiado (ver sección siguiente), aprovecha para mover las entradas más antiguas a `PROGRESS_ARCHIVE.md`.
+4. Haz **un único commit** que incluya el código, los tests y el `PROGRESS.md` (y, si aplica, `PROGRESS_ARCHIVE.md`) actualizados.
 
 El **primer paso** del proyecto debe incluir inicializar el repositorio git y crear el `PROGRESS.md` inicial.
 
@@ -73,14 +74,16 @@ Mantén los pasos suficientemente pequeños como para que cada uno quepa con hol
 
 ---
 
-## Seguimiento del progreso: `PROGRESS.md`
-Mantén en la raíz un archivo `PROGRESS.md` que sea la **fuente de verdad** del estado del desarrollo. Debe contener, como mínimo:
+## Seguimiento del progreso: `PROGRESS.md` + `PROGRESS_ARCHIVE.md`
+Mantén en la raíz un archivo `PROGRESS.md` que sea la **fuente de verdad** del estado *actual* del desarrollo. Se lee entero al empezar cada sesión, así que debe contener solo lo necesario para reanudar el trabajo — no el historial completo del proyecto. Debe contener, como mínimo:
 - La fase y el paso actuales.
-- La lista de pasos ya completados (checklist).
 - El siguiente paso concreto a abordar.
+- Un resumen breve de los últimos pasos completados (no el checklist histórico completo).
 - Notas pendientes: decisiones tomadas, asunciones hechas, dudas a consultar.
 
 Como el `PROGRESS.md` se actualiza dentro del commit de cada paso, el último commit siempre refleja el estado real del proyecto.
+
+**Mantén `PROGRESS.md` corto (por debajo de 300 líneas, sin excepciones).** Cuando el archivo supere ese tamaño, o al cerrar una fase, mueve las entradas de pasos/fases anteriores que ya no aporten contexto inmediato a `PROGRESS_ARCHIVE.md` `PROGRESS_ARCHIVE.md` **no se lee automáticamente al reanudar sesión** — solo se consulta bajo demanda, cuando hace falta el contexto de una decisión antigua. No tiene límite de tamaño: es un archivo de solo-anexar. Para el historial commit a commit, `git log` sigue siendo la fuente autoritativa.
 
 Estructura orientativa de `PROGRESS.md`:
 ```
@@ -92,10 +95,13 @@ Fase X — <nombre>
 ## Paso actual / siguiente paso
 <descripción del próximo paso concreto>
 
-## Pasos completados
-- [x] Fase 0, paso 1: ...
-- [x] Fase 0, paso 2: ...
-- [ ] Fase 1, paso 1: ...
+## Últimos pasos completados
+- [x] ...
+- [x] ...
+(solo los más recientes/relevantes para retomar el trabajo; el resto vive en PROGRESS_ARCHIVE.md)
+
+## Historial completo
+El registro detallado de fases y pasos anteriores está en `PROGRESS_ARCHIVE.md`.
 
 ## Notas / decisiones / asunciones pendientes
 - ...
@@ -105,7 +111,7 @@ Fase X — <nombre>
 
 ## Cómo reanudar el trabajo (al empezar cada sesión)
 1. Lee este `CLAUDE.md`.
-2. Lee `PROGRESS.md` para saber en qué paso se quedó el desarrollo y cuál es el siguiente.
+2. Lee `PROGRESS.md` para saber en qué paso se quedó el desarrollo y cuál es el siguiente (no hace falta leer `PROGRESS_ARCHIVE.md`; solo consúltalo si necesitas el contexto de una decisión antigua).
 3. Revisa `git log` para ver los últimos commits y `git status` para ver si hay cambios sin confirmar.
    - Si el árbol de trabajo está limpio: continúa con el siguiente paso indicado en `PROGRESS.md`.
    - Si hay cambios sin confirmar (interrupción a mitad de un paso): ejecuta los tests para entender el estado, decide si completar o descartar esos cambios, y deja el repositorio en un estado consistente antes de seguir.
@@ -155,9 +161,51 @@ Si por cualquier razón creas el archivo manualmente, ejecuta `flask db heads` a
 ---
 
 ## Principios de diseño irrenunciables
-(Detalle completo en `ESPECIFICACION.md`; aquí, como recordatorio permanente:)
+(Detalle completo en `especificacion-app-cambio-turnos.md`; aquí, como recordatorio permanente:)
 - **Extensibilidad del matching:** el MVP resuelve solo coincidencias 1 a 1, pero el modelo de datos y la interfaz del motor de matching deben permitir cadenas de 3, 4 o más bandas en el futuro sin rediseño.
 - **Resolución parcial:** una publicación puede ceder varios turnos; cada uno se resuelve por separado y la publicación solo se cierra cuando todos están resueltos.
 - **Visibilidad restringida:** un usuario solo ve y casa con publicaciones de su misma categoría profesional y su mismo grupo de intercambio.
 - **Confirmación obligatoria:** ningún match se cierra automáticamente; todas las partes deben confirmar.
 - **Simplicidad de MVP:** prioriza velocidad y validación sobre robustez a gran escala. No sobre-ingenierices.
+
+# RTK (Rust Token Killer) - Token-Optimized Commands
+
+When running shell commands, **always prefix with `rtk`**. This reduces context
+usage by 60-90% with zero behavior change. If rtk has no filter for a command,
+it passes through unchanged — so it is always safe to use.
+
+## Key Commands
+```bash
+# Git (59-80% savings)
+rtk git status          rtk git diff            rtk git log
+
+# Files & Search (60-75% savings)
+rtk ls <path>           rtk read <file>         rtk grep <pattern>
+rtk find <pattern>      rtk diff <file>
+
+# Test (90-99% savings) — shows failures only
+rtk pytest tests/       rtk cargo test          rtk test <cmd>
+
+# Build & Lint (80-90% savings) — shows errors only
+rtk tsc                 rtk lint                rtk cargo build
+rtk prettier --check    rtk mypy                rtk ruff check
+
+# Analysis (70-90% savings)
+rtk err <cmd>           rtk log <file>          rtk json <file>
+rtk summary <cmd>       rtk deps                rtk env
+
+# GitHub (26-87% savings)
+rtk gh pr view <n>      rtk gh run list         rtk gh issue list
+
+# Infrastructure (85% savings)
+rtk docker ps           rtk kubectl get         rtk docker logs <c>
+
+# Package managers (70-90% savings)
+rtk pip list            rtk pnpm install        rtk npm run <script>
+```
+
+## Rules
+- In command chains, prefix each segment: `rtk git add . && rtk git commit -m "msg"`
+- For debugging, use raw command without rtk prefix
+- `rtk proxy <cmd>` runs command without filtering but tracks usage
+

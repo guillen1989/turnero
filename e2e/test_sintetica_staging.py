@@ -115,6 +115,17 @@ def _registrar(page, nombre, email, password="TestPass2026!"):
         page.wait_for_load_state("networkidle")
 
 
+
+def _eliminar_cuenta(page, email, password="TestPass2026!"):
+    """Elimina la cuenta via UI (auto-limpieza para no dejar duplicados en staging)."""
+    _login(page, email, password)
+    page.goto(f"{_BASE}/perfil/cuenta")
+    page.once("dialog", lambda dialog: dialog.accept())
+    page.locator('input[name="password"]').fill(password)
+    page.locator('form[action*="eliminar"] button[type="submit"]').click()
+    page.wait_for_load_state("networkidle")
+
+
 # ---------------------------------------------------------------------------
 # Golden path
 # ---------------------------------------------------------------------------
@@ -132,70 +143,80 @@ def test_golden_path_staging(page):
     8. Carlos · «Me interesa» → modal (2 s) → acepta → cadena_3.
     9. Dashboard Carlos (5 s): «¡Cambio a 3 bandas!».
     """
-    ts = str(int(time.time()))
-    ana_email    = f"ana.gp.{ts}@test.es"
-    pedro_email  = f"pedro.gp.{ts}@test.es"
-    carlos_email = f"carlos.gp.{ts}@test.es"
+    try:
+        ts = str(int(time.time()))
+        ana_email    = f"ana.gp.{ts}@test.es"
+        pedro_email  = f"pedro.gp.{ts}@test.es"
+        carlos_email = f"carlos.gp.{ts}@test.es"
 
-    # ── Registrar los tres usuarios ────────────────────────────────────────
-    _registrar(page, "Ana Golden", ana_email)
-    page.goto(f"{_BASE}/auth/logout")
+        # ── Registrar los tres usuarios ────────────────────────────────────────
+        _registrar(page, "Ana Golden", ana_email)
+        page.goto(f"{_BASE}/auth/logout")
 
-    _registrar(page, "Pedro Golden", pedro_email)
-    page.goto(f"{_BASE}/auth/logout")
+        _registrar(page, "Pedro Golden", pedro_email)
+        page.goto(f"{_BASE}/auth/logout")
 
-    _registrar(page, "Carlos Golden", carlos_email)
-    page.goto(f"{_BASE}/auth/logout")
+        _registrar(page, "Carlos Golden", carlos_email)
+        page.goto(f"{_BASE}/auth/logout")
 
-    # ── 1. Ana publica ─────────────────────────────────────────────────────
-    _login(page, ana_email)
-    _publicar(page, "2026-07-10", "Mañana", "2026-08-03", "Tarde")
-    page.goto(f"{_BASE}/auth/logout")
+        # ── 1. Ana publica ─────────────────────────────────────────────────────
+        _login(page, ana_email)
+        _publicar(page, "2026-07-10", "Mañana", "2026-08-03", "Tarde")
+        page.goto(f"{_BASE}/auth/logout")
 
-    # ── 2. Pedro publica (solapamiento unilateral) ─────────────────────────
-    _login(page, pedro_email)
-    _publicar(page, "2026-07-21", "Mañana", "2026-07-10", "Mañana")
+        # ── 2. Pedro publica (solapamiento unilateral) ─────────────────────────
+        _login(page, pedro_email)
+        _publicar(page, "2026-07-21", "Mañana", "2026-07-10", "Mañana")
 
-    # ── 3. Pedro · /avisos (5 s) ───────────────────────────────────────────
-    page.goto(f"{_BASE}/avisos")
-    assert "Oportunidad a 3" in page.content(), "Falta aviso_oportunidad_3 en /avisos de Pedro"
-    page.wait_for_timeout(5000)
+        # ── 3. Pedro · /avisos (5 s) ───────────────────────────────────────────
+        page.goto(f"{_BASE}/avisos")
+        assert "Oportunidad a 3" in page.content(), "Falta aviso_oportunidad_3 en /avisos de Pedro"
+        page.wait_for_timeout(5000)
 
-    # ── 4. Pedro · dashboard Activos (5 s) ────────────────────────────────
-    page.goto(f"{_BASE}/")
-    assert "Oportunidad a 3 bandas" in page.content(), "Falta tarjeta oportunidad_3 en dashboard de Pedro"
-    assert "Oportunidad a 3"        in page.content(), "Falta aviso oportunidad_3 en dashboard de Pedro"
-    assert "Compartir"              in page.content(), "Falta botón de compartir por WhatsApp"
-    page.wait_for_timeout(5000)
+        # ── 4. Pedro · dashboard Activos (5 s) ────────────────────────────────
+        page.goto(f"{_BASE}/")
+        assert "Oportunidad a 3 bandas" in page.content(), "Falta tarjeta oportunidad_3 en dashboard de Pedro"
+        assert "Oportunidad a 3"        in page.content(), "Falta aviso oportunidad_3 en dashboard de Pedro"
+        assert "Compartir"              in page.content(), "Falta botón de compartir por WhatsApp"
+        page.wait_for_timeout(5000)
 
-    # ── 5. Pedro logout ────────────────────────────────────────────────────
-    page.goto(f"{_BASE}/auth/logout")
+        # ── 5. Pedro logout ────────────────────────────────────────────────────
+        page.goto(f"{_BASE}/auth/logout")
 
-    # ── 6. Carlos · Buscar cambios (3 s) ──────────────────────────────────
-    _login(page, carlos_email)
-    page.goto(f"{_BASE}/cambios")
-    assert "Oportunidad a 3" in page.content(), "Carlos no ve la Oportunidad a 3 en /cambios"
-    page.wait_for_timeout(3000)
+        # ── 6. Carlos · Buscar cambios (3 s) ──────────────────────────────────
+        _login(page, carlos_email)
+        page.goto(f"{_BASE}/cambios")
+        assert "Oportunidad a 3" in page.content(), "Carlos no ve la Oportunidad a 3 en /cambios"
+        page.wait_for_timeout(3000)
 
-    # ── 7. Carlos · «Me interesa» → modal (2 s) → acepta ──────────────────
-    # En staging hay otras pubs del seed en el mismo grupo. Usamos el selector
-    # específico de la tarjeta sintética para no confundirnos con otra pub.
-    page.locator('.publicacion-card:has(.tipo-badge--sintetica) button:has-text("Me interesa")').first.click()
-    page.wait_for_selector('#modal-me-interesa:not(.modal-hidden)')
-    page.wait_for_timeout(2000)
-    # El form post redirige a / en caso de éxito o a /cambios si falla.
-    # Usamos expect_navigation para asegurar que Playwright espera la redirección completa.
-    with page.expect_navigation(timeout=20000):
-        page.locator('#mmi-form button[type="submit"]').click()
+        # ── 7. Carlos · «Me interesa» → modal (2 s) → acepta ──────────────────
+        # En staging hay otras pubs del seed en el mismo grupo. Usamos el selector
+        # específico de la tarjeta sintética para no confundirnos con otra pub.
+        page.locator('.publicacion-card:has(.tipo-badge--sintetica) button:has-text("Me interesa")').first.click()
+        page.wait_for_selector('#modal-me-interesa:not(.modal-hidden)')
+        page.wait_for_timeout(2000)
+        # El form post redirige a / en caso de éxito o a /cambios si falla.
+        # Usamos expect_navigation para asegurar que Playwright espera la redirección completa.
+        with page.expect_navigation(timeout=20000):
+            page.locator('#mmi-form button[type="submit"]').click()
 
-    # ── 8. Dashboard Carlos: cadena_3 (5 s) ───────────────────────────────
-    content = page.content()
-    assert "3 bandas" in content, (
-        f"No aparece el match cadena_3 en el dashboard de Carlos. "
-        f"URL actual: {page.url}. "
-        f"¿Flash de éxito?: {'Cambio a 3 bandas iniciado' in content}. "
-        f"¿Sección matches?: {'matches-section' in content}. "
-        f"¿Flash de error?: {'No fue posible' in content or 'ya no está' in content}. "
-        f"Fragmento (2000-3000): {content[2000:3000]!r}"
-    )
-    page.wait_for_timeout(5000)
+        # ── 8. Dashboard Carlos: cadena_3 (5 s) ───────────────────────────────
+        content = page.content()
+        assert "3 bandas" in content, (
+            f"No aparece el match cadena_3 en el dashboard de Carlos. "
+            f"URL actual: {page.url}. "
+            f"¿Flash de éxito?: {'Cambio a 3 bandas iniciado' in content}. "
+            f"¿Sección matches?: {'matches-section' in content}. "
+            f"¿Flash de error?: {'No fue posible' in content or 'ya no está' in content}. "
+            f"Fragmento (2000-3000): {content[2000:3000]!r}"
+        )
+        page.wait_for_timeout(5000)
+    finally:
+        # Evita duplicados en staging en sucesivas ejecuciones del e2e.
+        # Best-effort: si el test falló a medio registro, alguna cuenta puede
+        # no existir todavía; no dejamos que el cleanup oculte el fallo real.
+        for email in (ana_email, pedro_email, carlos_email):
+            try:
+                _eliminar_cuenta(page, email)
+            except Exception:
+                pass

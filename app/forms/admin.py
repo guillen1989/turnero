@@ -1,5 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, PasswordField, SelectField, StringField, SubmitField, TimeField
+from wtforms import (
+    BooleanField, PasswordField, SelectField, SelectMultipleField, StringField, SubmitField,
+    TimeField,
+)
 from wtforms.validators import DataRequired, Email, Length, Optional
 from flask_babel import lazy_gettext as _l
 
@@ -16,6 +19,10 @@ class AdminUsuarioForm(FlaskForm):
     categoria_id = SelectField(_l("Categoría"), coerce=int, choices=[], validators=[Optional()])
     categoria_nueva = StringField(_l("Nueva categoría"), validators=[Optional(), Length(max=100)])
     es_admin = BooleanField(_l("Administrador"))
+    es_supervisora = BooleanField(_l("Supervisora (ve todos los cambios de su unidad)"))
+    unidades_supervisadas = SelectMultipleField(
+        _l("Unidades adicionales que supervisa"), coerce=int, choices=[], validators=[Optional()]
+    )
     submit = SubmitField(_l("Guardar"))
 
 

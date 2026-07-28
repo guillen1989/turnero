@@ -13,7 +13,7 @@ instance/
 .coverage
 htmlcov/
 .backlog
-.backlog.swo
+.backlog.*
 .notes
 .notes.*
 .testmondata
@@ -23,3 +23,4 @@ htmlcov/
 *.dump
 turnero_prod_*
 backups/
+planilla_ilog.xls
