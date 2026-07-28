@@ -202,6 +202,15 @@
           <canvas id="firma-canvas-companero" class="firma-canvas" width="500" height="180"></canvas>
         </div>
         <button type="button" class="btn btn-secondary btn-sm" id="firma-companero-limpiar">{{ _('Borrar') }}</button>
+
+        <div id="firma-tercero-box" style="display:none;">
+          <h2>{{ _('Firma del tercer compañero/a') }}</h2>
+          <input type="hidden" name="imagen_firma_tercero" value="">
+          <div class="firma-box">
+            <canvas id="firma-canvas-tercero" class="firma-canvas" width="500" height="180"></canvas>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="firma-tercero-limpiar">{{ _('Borrar') }}</button>
+        </div>
       </div>
     </section>
 
@@ -217,10 +226,13 @@
   var box = document.getElementById('firmas-ambos-box');
   var canvasPropia = document.getElementById('firma-canvas-propia');
   var canvasCompanero = document.getElementById('firma-canvas-companero');
+  var canvasTercero = document.getElementById('firma-canvas-tercero');
+  var terceroBox = document.getElementById('firma-tercero-box');
   var form = document.getElementById('nueva-hoja-form');
 
   setupFirmaCanvas(canvasPropia);
   setupFirmaCanvas(canvasCompanero);
+  setupFirmaCanvas(canvasTercero);
 
   // --- Selector de tipo (cambio / junte) ---
   function actualizarSecciones() {
@@ -231,6 +243,7 @@
     document.getElementById('section-junte').style.display = esJunte ? '' : 'none';
     document.getElementById('tercero-group').style.display = esCadena3 ? '' : 'none';
     document.getElementById('section-cadena-3-turno').style.display = esCadena3 ? '' : 'none';
+    terceroBox.style.display = esCadena3 ? 'block' : 'none';
 
     var turnoCedeFecha = document.getElementById('turno_cede_fecha');
     var turnoCedeFranja = document.getElementById('turno_cede_franja_id');
@@ -350,6 +363,10 @@
     canvasCompanero._limpiar();
     form.querySelector('input[name="imagen_firma_companero"]').value = '';
   });
+  document.getElementById('firma-tercero-limpiar').addEventListener('click', function () {
+    canvasTercero._limpiar();
+    form.querySelector('input[name="imagen_firma_tercero"]').value = '';
+  });
 
   var btnGuardada = document.getElementById('firma-propia-usar-guardada');
   if (btnGuardada) {
@@ -376,15 +393,25 @@
     }
 
     if (!checkbox.checked) return;
+    var esCadena3 = tipo && tipo.value === 'cadena_3';
     var inputPropia = form.querySelector('input[name="imagen_firma_propia"]');
     var inputCompanero = form.querySelector('input[name="imagen_firma_companero"]');
+    var inputTercero = form.querySelector('input[name="imagen_firma_tercero"]');
     if (canvasPropia._haFirmado()) {
       inputPropia.value = canvasPropia.toDataURL('image/png');
     }
     if (canvasCompanero._haFirmado()) {
       inputCompanero.value = canvasCompanero.toDataURL('image/png');
     }
-    if (!inputPropia.value || !inputCompanero.value) {
+    if (esCadena3 && canvasTercero._haFirmado()) {
+      inputTercero.value = canvasTercero.toDataURL('image/png');
+    }
+    if (esCadena3) {
+      if (!inputPropia.value || !inputCompanero.value || !inputTercero.value) {
+        e.preventDefault();
+        alert('{{ _("Dibujad las tres firmas antes de guardar.") }}');
+      }
+    } else if (!inputPropia.value || !inputCompanero.value) {
       e.preventDefault();
       alert('{{ _("Dibujad las dos firmas antes de guardar.") }}');
     }

@@ -5,6 +5,23 @@ from app.models import Categoria, DocumentoCambio, FranjaHoraria, GrupoIntercamb
 from tests.helpers_documento_cambio import _setup, _login, _FIRMA_PNG
 
 
+def _post_cadena_3(client, pedro_id, luis_id, manyana_id, firmar_ambos_data=None):
+    data = {
+        "tipo": "cadena_3",
+        "companero_id": pedro_id,
+        "tercero_id": luis_id,
+        "turno_cede_fecha": "2026-08-03",
+        "turno_cede_franja_id": manyana_id,
+        "turno_companero_cede_fecha": "2026-08-04",
+        "turno_companero_cede_franja_id": manyana_id,
+        "turno_recibe_fecha": "2026-08-05",
+        "turno_recibe_franja_id": manyana_id,
+    }
+    if firmar_ambos_data:
+        data.update(firmar_ambos_data)
+    return client.post("/documentos-cambio/nuevo", data=data)
+
+
 def test_nuevo_requiere_login(client):
     resp = client.get("/documentos-cambio/nuevo")
     assert resp.status_code == 302
@@ -365,6 +382,44 @@ def test_post_nuevo_cadena_3_sin_tercero_da_error_sin_crear_nada(db, client):
         "turno_companero_cede_franja_id": manyana.id,
         "turno_recibe_fecha": "2026-08-05",
         "turno_recibe_franja_id": manyana.id,
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0
+
+
+def test_post_nuevo_cadena_3_firmando_los_tres_completa_el_documento(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3d")
+    ana = crear_usuario("Ana Pérez", "anac3d@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3d@h.es")
+    luis = crear_usuario("Luis Ruiz", "luisc3d@h.es")
+    _login(client, ana.email)
+
+    resp = _post_cadena_3(client, pedro.id, luis.id, manyana.id, {
+        "firmar_ambos": "on",
+        "imagen_firma_propia": _FIRMA_PNG,
+        "imagen_firma_companero": _FIRMA_PNG,
+        "imagen_firma_tercero": _FIRMA_PNG,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+
+    assert documento.estado == "completo"
+    assert {f.usuario_id for f in documento.firmas} == {ana.id, pedro.id, luis.id}
+
+
+def test_post_nuevo_cadena_3_firmando_ambos_sin_firma_del_tercero_da_error(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3e")
+    ana = crear_usuario("Ana Pérez", "anac3e@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3e@h.es")
+    luis = crear_usuario("Luis Ruiz", "luisc3e@h.es")
+    _login(client, ana.email)
+
+    resp = _post_cadena_3(client, pedro.id, luis.id, manyana.id, {
+        "firmar_ambos": "on",
+        "imagen_firma_propia": _FIRMA_PNG,
+        "imagen_firma_companero": _FIRMA_PNG,
+        "imagen_firma_tercero": "",
     })
 
     assert resp.status_code == 200
