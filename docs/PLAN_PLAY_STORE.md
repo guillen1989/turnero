@@ -144,33 +144,41 @@
   (individual o de organización) y pagar la cuota única de registro (25 $).
 - [ ] **[ACCIÓN HUMANA]** Crear la app dentro de Play Console: nombre,
   idioma por defecto (español), tipo (app, gratuita).
-- [ ] Subir el `.aab` generado en la Fase 4 a una pista interna o cerrada
+- [x] Subir el `.aab` generado en la Fase 4 a una pista interna o cerrada
   inicial.
 - [ ] **[ACCIÓN HUMANA]** Activar **Play App Signing** y, una vez Google
   genere su propia clave de firma, descargar la huella SHA-256 del
   certificado de Play desde *App integrity* y añadirla al
   `assetlinks.json` (Fase 4) junto a la del upload key.
-- [ ] Preparar los recursos gráficos de la ficha de Play: icono de alta
+- [x] Preparar los recursos gráficos de la ficha de Play: icono de alta
   resolución (512×512 PNG), gráfico de funciones/feature graphic (1024×500),
   al menos 2 capturas de pantalla de teléfono (se pueden generar con
-  Playwright, ya usado en `e2e/`, contra staging).
-- [ ] Redactar título, descripción corta (80 car.) y descripción completa de
-  la ficha de la app, en español.
-- [ ] Rellenar el **cuestionario de clasificación de contenido** (IARC).
-- [ ] Rellenar la sección **Data safety** (seguridad de los datos):
-  declarar qué datos se recogen (identificación, datos laborales/turnos),
-  si se cifran en tránsito (sí, HTTPS), si se pueden eliminar (enlazar la
-  página de la Fase 3), y que no se comparten con terceros con fines
-  publicitarios.
-- [ ] Declarar **público objetivo y contenido para familias**: marcar que la
-  app no está dirigida a niños (uso profesional/sanitario) y ajustar el
-  target audience en consecuencia.
-- [ ] Enlazar la **Política de Privacidad** (Fase 3) en el campo
-  correspondiente de Play Console.
-- [ ] Declarar que la app **no contiene anuncios** (si es el caso).
-- [ ] Añadir en el campo de notas para el revisor las **credenciales de la
-  cuenta de demo** de producción (Fase, ver Contexto técnico) para que el
-  equipo de revisión de Google pueda acceder a las partes con login.
+  Playwright, ya usado en `e2e/`, contra staging). Ver
+  `docs/store-assets/ficha_play_store.md`.
+- [x] Redactar título, descripción corta (80 car.) y descripción completa de
+  la ficha de la app, en español. Ver `docs/store-assets/ficha_play_store.md`.
+- [ ] **[ACCIÓN HUMANA]** Rellenar el **cuestionario de clasificación de
+  contenido** (IARC) en Play Console. Respuestas orientativas preparadas en
+  `docs/store-assets/ficha_play_store.md`.
+- [ ] **[ACCIÓN HUMANA]** Rellenar la sección **Data safety** (seguridad de
+  los datos) en Play Console. Contenido ya redactado en
+  `docs/store-assets/ficha_play_store.md`.
+- [ ] **[ACCIÓN HUMANA]** Declarar **público objetivo y contenido para
+  familias** en Play Console: marcar que la app no está dirigida a niños
+  (uso profesional/sanitario). Texto orientativo en
+  `docs/store-assets/ficha_play_store.md`.
+- [ ] **[ACCIÓN HUMANA]** Enlazar la **Política de Privacidad** (Fase 3) en
+  el campo correspondiente de Play Console:
+  `https://app.turnero.xyz/privacidad`.
+- [ ] **[ACCIÓN HUMANA]** Declarar en Play Console que la app **no
+  contiene anuncios** (confirmado, no hay anuncios en la app).
+- [ ] **[BLOQUEADO — pendiente decisión]** Añadir en el campo de notas para
+  el revisor las **credenciales de la cuenta de demo** de producción para
+  que el equipo de revisión de Google pueda acceder a las partes con login.
+  `config.py` ya soporta `DEMO_LOGIN_EMAIL`/`DEMO_LOGIN_PASSWORD` vía
+  variables de entorno, pero no están configuradas en Railway producción.
+  Falta decidir con el usuario cómo crear esa cuenta antes de tocar datos
+  de producción (ver nota en `docs/store-assets/ficha_play_store.md`).
 
 ## Fase 6 — Pruebas cerradas (closed testing)
 
@@ -349,3 +357,30 @@ Con esto se completa la **Fase 3** del plan.
   `build.gradle` generado.
 - **Pendiente:**
   - Verificar assetlinks con la herramienta de Google antes de subir el `.aab`.
+
+### Fase 5 — Ficha de Play Console (2026-07-29)
+
+- **Subida a pista interna:** completada por el usuario (el `.aab` de la
+  Fase 4 ya está en una pista interna en Play Console).
+- **Capturas de pantalla:** generadas con Playwright contra un servidor local
+  con datos sintéticos (no staging/producción), reutilizando el golden path
+  de `e2e/test_sintetica_golden_path.py`. Script nuevo:
+  `e2e/test_screenshots_play_store.py`. 7 capturas 1080×2160 (ratio 2:1,
+  dentro de los límites de Google) en `docs/store-assets/screenshots/`.
+- **Feature graphic:** generado con Pillow a partir de `store_icon.png` +
+  color de marca, en `docs/store-assets/feature_graphic.png` (1024×500).
+- **Copy de la ficha:** título, descripción corta y completa, borrador de
+  respuestas para IARC, Data safety y target audience, todo en
+  `docs/store-assets/ficha_play_store.md`. Estos campos son formularios web
+  de Play Console — no automatizables desde aquí — así que el documento
+  sirve para copiar/pegar.
+- **Pendiente / bloqueado:** falta decidir cómo crear la cuenta de demo de
+  producción para las notas del revisor (`DEMO_LOGIN_EMAIL`/
+  `DEMO_LOGIN_PASSWORD` no configuradas en Railway producción). Es una
+  acción sobre datos de producción, así que se deja pendiente de decisión
+  del usuario en vez de crearla unilateralmente.
+- **Aún requiere acción humana en Play Console:** activar Play App Signing
+  (en curso por el usuario) y luego añadir su huella SHA-256 a
+  `assetlinks.json`; rellenar los formularios de IARC, Data safety, target
+  audience, enlace de privacidad y "sin anuncios" (contenido ya redactado,
+  solo falta transcribirlo en la consola).
