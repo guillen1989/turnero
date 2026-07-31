@@ -13,7 +13,10 @@ def _init_sentry():
     sentry_sdk.init(
         dsn=dsn,
         integrations=[FlaskIntegration()],
-        traces_sample_rate=0.1,
+        # Subido temporalmente al 100% (era 0.1) para diagnosticar qué
+        # endpoints/queries van lentos. Bajarlo de nuevo tras el diagnóstico:
+        # con este volumen de tráfico no compensa mantenerlo al 100%.
+        traces_sample_rate=1.0,
         environment=os.environ.get("FLASK_ENV", "production"),
     )
 
