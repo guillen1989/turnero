@@ -1,3 +1,5 @@
+import threading
+
 import requests
 from flask import current_app, url_for
 
@@ -59,3 +61,24 @@ def enviar_email(destinatario, asunto, cuerpo_html):
         return False
 
     return True
+
+
+def enviar_email_async(destinatario, asunto, cuerpo_html):
+    """Igual que enviar_email, pero en un hilo daemon para no bloquear el
+    worker de gunicorn mientras dura la petición HTTP a Resend.
+
+    Usar en rutas que envían varios emails seguidos (p. ej. al completar una
+    hoja de cambio con varios participantes), donde el envío síncrono podría
+    sumar varios timeouts de red uno detrás de otro dentro de la misma request.
+    """
+    app = current_app._get_current_object()
+
+    if app.config.get("TESTING"):
+        enviar_email(destinatario, asunto, cuerpo_html)
+        return
+
+    def _enviar():
+        with app.app_context():
+            enviar_email(destinatario, asunto, cuerpo_html)
+
+    threading.Thread(target=_enviar, daemon=True).start()

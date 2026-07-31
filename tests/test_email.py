@@ -64,3 +64,47 @@ def test_enviar_email_excepcion_de_red_devuelve_false_sin_lanzar(app):
             resultado = enviar_email("destino@test.es", "Asunto", "<p>Cuerpo</p>")
 
         assert resultado is False
+
+
+def test_enviar_email_async_llama_a_enviar_email_de_forma_sincrona_en_tests(app):
+    """En TESTING, enviar_email_async debe comportarse igual que enviar_email
+    (síncrono) para que los tests que dependen de sus efectos sigan siendo fiables."""
+    with app.app_context():
+        app.config["RESEND_API_KEY"] = "re_test_key"
+        app.config["RESEND_FROM_EMAIL"] = "noreply@turnero.app"
+
+        with patch("app.services.email.requests.post", return_value=_mock_response(200)) as mock_post:
+            from app.services.email import enviar_email_async
+            enviar_email_async("destino@test.es", "Asunto de prueba", "<p>Cuerpo</p>")
+
+        mock_post.assert_called_once()
+
+
+def test_enviar_email_async_no_bloquea_fuera_de_tests(app):
+    """Fuera de TESTING, el envío se delega a un hilo daemon: la llamada
+    vuelve antes de que requests.post haya terminado de ejecutarse."""
+    import threading
+    import time
+
+    with app.app_context():
+        app.config["TESTING"] = False
+        app.config["RESEND_API_KEY"] = "re_test_key"
+        app.config["RESEND_FROM_EMAIL"] = "noreply@turnero.app"
+
+        liberar = threading.Event()
+
+        def _post_lento(*args, **kwargs):
+            liberar.wait(timeout=2)
+            return _mock_response(200)
+
+        with patch("app.services.email.requests.post", side_effect=_post_lento) as mock_post:
+            from app.services.email import enviar_email_async
+            inicio = time.monotonic()
+            enviar_email_async("destino@test.es", "Asunto", "<p>Cuerpo</p>")
+            duracion = time.monotonic() - inicio
+
+        liberar.set()
+        time.sleep(0.1)
+
+        assert duracion < 1
+        mock_post.assert_called_once()

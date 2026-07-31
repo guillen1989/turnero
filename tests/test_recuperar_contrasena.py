@@ -25,7 +25,7 @@ def test_get_recuperar_contrasena_devuelve_200(client, db):
 def test_post_recuperar_contrasena_email_existente_envia_email(client, db):
     _usuario()
 
-    with patch("app.routes.auth.enviar_email", return_value=True) as mock_enviar:
+    with patch("app.routes.auth.enviar_email_async", return_value=True) as mock_enviar:
         resp = client.post("/auth/recuperar-contrasena", data={"email": "victima@test.es"},
                             follow_redirects=False)
 
@@ -39,7 +39,7 @@ def test_post_recuperar_contrasena_email_existente_envia_email(client, db):
 def test_post_recuperar_contrasena_email_incluye_enlace_con_token(client, db):
     _usuario()
 
-    with patch("app.routes.auth.enviar_email", return_value=True) as mock_enviar:
+    with patch("app.routes.auth.enviar_email_async", return_value=True) as mock_enviar:
         client.post("/auth/recuperar-contrasena", data={"email": "victima@test.es"})
 
     cuerpo_html = mock_enviar.call_args[0][2]
@@ -54,7 +54,7 @@ def test_post_recuperar_contrasena_email_usa_app_base_url_si_esta_configurada(ap
 
     app.config["APP_BASE_URL"] = "https://app.turnero.xyz"
     try:
-        with patch("app.routes.auth.enviar_email", return_value=True) as mock_enviar:
+        with patch("app.routes.auth.enviar_email_async", return_value=True) as mock_enviar:
             client.post("/auth/recuperar-contrasena", data={"email": "victima@test.es"})
     finally:
         app.config["APP_BASE_URL"] = ""
@@ -64,7 +64,7 @@ def test_post_recuperar_contrasena_email_usa_app_base_url_si_esta_configurada(ap
 
 
 def test_post_recuperar_contrasena_email_inexistente_no_envia_ni_filtra(client, db):
-    with patch("app.routes.auth.enviar_email") as mock_enviar:
+    with patch("app.routes.auth.enviar_email_async") as mock_enviar:
         resp = client.post("/auth/recuperar-contrasena", data={"email": "noexiste@test.es"},
                             follow_redirects=True)
 
@@ -75,7 +75,7 @@ def test_post_recuperar_contrasena_email_inexistente_no_envia_ni_filtra(client, 
 
 def test_post_recuperar_contrasena_redirige_al_login(client, db):
     _usuario()
-    with patch("app.routes.auth.enviar_email", return_value=True):
+    with patch("app.routes.auth.enviar_email_async", return_value=True):
         resp = client.post("/auth/recuperar-contrasena", data={"email": "victima@test.es"},
                             follow_redirects=False)
     assert resp.status_code == 302

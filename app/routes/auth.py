@@ -14,7 +14,7 @@ from app.forms.auth import (
 )
 from app.models.usuario import Usuario
 from app.models.planilla_import import MapeoTrabajadorPlanilla
-from app.services.email import enviar_email, url_absoluta
+from app.services.email import enviar_email_async, url_absoluta
 from app.services.password_reset import (
     TOKEN_TTL_MINUTOS, consumir_token, generar_token_reset, obtener_usuario_por_token,
 )
@@ -252,7 +252,7 @@ def recuperar_contrasena():
                 "email/recuperar_password.html",
                 usuario=usuario, enlace=enlace, ttl_minutos=TOKEN_TTL_MINUTOS,
             )
-            enviar_email(usuario.email, _("Recupera tu contraseña de Turnero"), cuerpo_html)
+            enviar_email_async(usuario.email, _("Recupera tu contraseña de Turnero"), cuerpo_html)
         # Mismo mensaje exista o no el email: evita revelar qué correos están registrados.
         flash(
             _("Si ese email está registrado, te hemos enviado un enlace para restablecer la contraseña."),
