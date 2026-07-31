@@ -117,26 +117,26 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
 
 ## Paso 1 — Modelo de datos: tabla `usuario_unidad` con categoría por unidad
 
-- [ ] Escribir tests de modelo: crear un `Usuario`, asociarlo a una segunda
+- [x] Escribir tests de modelo: crear un `Usuario`, asociarlo a una segunda
   `Unidad` con una `Categoria` propia distinta de `usuario.categoria_id`, y
   comprobar que `usuario.unidades` (nueva relación) devuelve ambas unidades
   y que se puede leer la categoría específica de cada membresía.
-- [ ] Modelo `UsuarioUnidad` (`app/models/usuario_unidad.py`), mirror de
+- [x] Modelo `UsuarioUnidad` (`app/models/usuario_unidad.py`), mirror de
   `unidad_supervisada.py` pero con columna propia:
   - `usuario_id` (FK, parte de la PK compuesta)
   - `unidad_id` (FK, parte de la PK compuesta)
   - `categoria_id` (FK a `categoria.id`, `NOT NULL` — la categoría del
     usuario *en esa unidad*)
-- [ ] Añadir a `Usuario` (`app/models/usuario.py`):
+- [x] Añadir a `Usuario` (`app/models/usuario.py`):
   - `unidades = db.relationship("Unidad", secondary="usuario_unidad", back_populates="miembros")`
   - considerar un helper/property para acceder a la membresía completa
     (con su categoría), no solo a la `Unidad`, ya que el `secondary=`
     simple no expone las columnas extra de la tabla de asociación — puede
     hacer falta acceder también a `usuario.membresias_unidad` (relationship
     directa al modelo `UsuarioUnidad`) cuando se necesite la categoría.
-- [ ] Añadir a `Unidad` (`app/models/unidad.py`) la relación inversa
+- [x] Añadir a `Unidad` (`app/models/unidad.py`) la relación inversa
   `miembros`.
-- [ ] Servicio `app/services/unidad_usuario.py` (mirror de
+- [x] Servicio `app/services/unidad_usuario.py` (mirror de
   `supervision.py`):
   - `unidades_de(usuario)` → lista ordenada por nombre, incluyendo siempre
     la unidad principal.

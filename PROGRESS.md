@@ -1,15 +1,31 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3), plan completo en
-`docs/PLAN_3.md`. **Fase cerrada.**
+Fase 13 — Usuarios normales en varios servicios (unidades). Plan completo en
+`docs/USUARIOS_MULTI.md`. **En curso.**
 
 ## Paso actual / siguiente paso
-Los 8 pasos de `docs/PLAN_3.md` están completos. Siguiente: abrir/mantener
-la Pull Request de la fase 12 contra `staging`; no queda trabajo pendiente
-en este plan. Próxima fase a definir por el usuario.
+Siguiente: **Paso 2 — Migración Alembic** (`docs/USUARIOS_MULTI.md`):
+`flask db migrate -m "añade tabla usuario_unidad"`, revisar el `upgrade()`
+para que mirror-ee `666dde3fff3c` (PK compuesta, `categoria_id NOT NULL`),
+backfill `INSERT ... SELECT id, unidad_id, categoria_id FROM usuario` y
+`downgrade()` simétrico; `flask db heads` con exactamente 1 head; aplicar la
+migración y correr los tests del paso 1 contra la BD migrada.
 
 ## Últimos pasos completados
+- [x] Paso 1 (`docs/USUARIOS_MULTI.md`) — modelo de datos `usuario_unidad`:
+  `app/models/usuario_unidad.py` (PK compuesta `(usuario_id, unidad_id)` +
+  `categoria_id NOT NULL`), relaciones `Usuario.unidades` /
+  `Usuario.membresias_unidad` / `Unidad.miembros` / `Unidad.membresias_unidad`
+  (con `overlaps` declarados para silenciar los avisos de SQLAlchemy), y
+  servicio `app/services/unidad_usuario.py` con `unidades_de` (siempre
+  incluye la principal, ordenada por nombre), `categoria_en_unidad` (global
+  en la principal, de la membresía en el resto), `pertenece_a`,
+  `unidad_activa_o_403` (query param > sesión > principal) y
+  `sincronizar_unidades` (dict `{unidad_id: categoria_id}`, actualiza la
+  categoría de `usuario.categoria_id` con la de la principal, no permite
+  eliminar la principal). Tests: `tests/test_models_usuario_unidad.py` y
+  `tests/test_servicio_unidad_usuario.py` (20 tests en verde).
 - [x] Paso 8 (`docs/PLAN_3.md`) — revisión final y UAT: UAT-7.1 a 7.4
   (detección de la cadena por el motor de matching) ya cubiertos por
   `tests/test_motor_matching.py`, `tests/test_integracion_matching.py`,
@@ -98,10 +114,15 @@ El registro detallado de fases y pasos anteriores está en
 `PROGRESS_ARCHIVE.md`.
 
 ## Notas / decisiones / asunciones pendientes
-- El solape visual de `firma_tercero_frame` con los frames de firma vecinos
-  es una decisión explícita e irrevocable del usuario (ver cabecera de
-  `docs/PLAN_3.md`) — no proponer alternativas que reubiquen campos.
-- `_usuario_que_recibe` (Paso 2 de `docs/PLAN_3.md`) es la pieza central que
-  desbloquea los Pasos 3 y 4; implementarla y probarla bien antes de seguir.
-- `tipo == "cadena_3"` no requiere migración: `DocumentoCambio.tipo` es un
-  `String(20)` libre.
+- Fase 12 (`docs/PLAN_3.md`) cerrada — historial detallado en
+  `PROGRESS_ARCHIVE.md`.
+- Fase 13: `usuario_unidad` no existe todavía en BD; la migración es el
+  Paso 2. Mientras no haya migración, el código nuevo depende de
+  `db.create_all()` (test) o de la migración al aplicarla.
+- La unidad principal del usuario siempre aparece en `usuario_unidad`
+  (invariante que el Paso 2 sembrará con el backfill; `sincronizar_unidades`
+  la mantiene y no permite eliminarla).
+- `unidad_activa_o_403` sigue la precedencia query param > sesión
+  (`session["unidad_activa_id"]`) > unidad principal.
+- Preguntas abiertas del plan (registro libre de unidades, abandono de
+  unidad) siguen pendientes de confirmar antes de los Pasos 3/4.
