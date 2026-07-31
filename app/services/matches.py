@@ -72,6 +72,7 @@ def confirmar_participacion(match, usuario_id):
         for p in match.participaciones:
             db.session.add(Notificacion(
                 usuario_id=p.publicacion.usuario_id,
+                unidad_id=p.publicacion.usuario.unidad_id,
                 match_id=match.id,
                 tipo="confirmado_total",
             ))
@@ -84,6 +85,7 @@ def confirmar_participacion(match, usuario_id):
             if p.publicacion.usuario_id != usuario_id:
                 db.session.add(Notificacion(
                     usuario_id=p.publicacion.usuario_id,
+                    unidad_id=p.publicacion.usuario.unidad_id,
                     match_id=match.id,
                     tipo="confirmacion_parcial",
                 ))
@@ -113,6 +115,7 @@ def desconfirmar_participacion(match, usuario_id):
         if p.publicacion.usuario_id != usuario_id:
             db.session.add(Notificacion(
                 usuario_id=p.publicacion.usuario_id,
+                unidad_id=p.publicacion.usuario.unidad_id,
                 match_id=match.id,
                 tipo="desconfirmacion",
             ))
@@ -132,6 +135,7 @@ def rechazar_match(match, usuario_id):
         if p.publicacion.usuario_id != usuario_id:
             db.session.add(Notificacion(
                 usuario_id=p.publicacion.usuario_id,
+                unidad_id=p.publicacion.usuario.unidad_id,
                 match_id=match.id,
                 tipo="rechazo",
             ))

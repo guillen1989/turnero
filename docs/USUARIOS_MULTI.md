@@ -252,26 +252,26 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
 
 ## Paso 6 — Notificaciones: unidad de origen + bandeja única
 
-- [ ] Tests: crear notificaciones para un usuario con 2 unidades desde
+- [x] Tests: crear notificaciones para un usuario con 2 unidades desde
   distintos orígenes (match, publicación, documento de cambio) y comprobar
   que cada una queda etiquetada con la unidad correcta; comprobar que
   `/notificaciones` sigue mostrando todas juntas (una sola bandeja, sin
   filtrar por unidad activa).
-- [ ] Migración de 3 pasos (`CLAUDE.md`) para añadir `unidad_id` (nullable
+- [x] Migración de 3 pasos (`CLAUDE.md`) para añadir `unidad_id` (nullable
   primero) a `Notificacion`, backfill desde `usuario.unidad_id` de cada
   notificación existente, luego `NOT NULL`.
-- [ ] Añadir el argumento `unidad_id`/`unidad` a la creación de
+- [x] Añadir el argumento `unidad_id`/`unidad` a la creación de
   `Notificacion` en los 6 sitios listados en el contexto técnico
   (`busquedas_guardadas.py:126`, `documento_cambio.py:61`, `matches.py:73,85,114,133`,
   `publicaciones.py:62`, `routes/publicaciones.py:645`), pasando en cada
   caso la unidad relevante al evento (normalmente la unidad de la
   publicación/documento que originó la notificación, no necesariamente
   `usuario.unidad` si el destinatario tiene varias).
-- [ ] Plantilla de `/notificaciones` (`app/routes/notificaciones.py` +
+- [x] Plantilla de `/notificaciones` (`app/routes/notificaciones.py` +
   su template): mostrar el nombre de la unidad de origen junto a cada
   aviso, **solo si `current_user` pertenece a más de una unidad** (si solo
   tiene una, no añadir ruido visual).
-- [ ] Revisar `_colegas_del_usuario` (`app/routes/notificaciones.py:178-188`)
+- [x] Revisar `_colegas_del_usuario` (`app/routes/notificaciones.py:178-188`)
   para que considere las unidades relevantes al calcular "colegas" cuando
   el usuario pertenece a varias.
 - [ ] Verificar en navegador con un usuario demo de 2 unidades que recibe

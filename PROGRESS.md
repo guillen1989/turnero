@@ -5,13 +5,21 @@ Fase 13 — Usuarios normales en varios servicios (unidades). Plan completo en
 `docs/USUARIOS_MULTI.md`. **En curso.**
 
 ## Paso actual / siguiente paso
-Siguiente: **Paso 6 — Notificaciones: unidad de origen + bandeja única** 
-(`docs/USUARIOS_MULTI.md`). Nota: antes del Paso 6 conviene abordar los 21
-casos MUST change de la auditoría del Paso 5 (publicaciones.py, 
-busquedas.py, unidad.py, documento_cambio.py), que extienden el selector de
-unidad activa al resto de rutas del flujo de matching/cambios.
+Siguiente: **Paso 7 — Web Push: incluir la unidad en el payload**
+(`docs/USUARIOS_MULTI.md`). También quedan pendientes los 21 casos MUST change
+de la auditoría del Paso 5 (publicaciones.py, busquedas.py, unidad.py,
+documento_cambio.py) y la verificación manual en navegador del Paso 6.
 
 ## Últimos pasos completados
+- [x] Paso 6 (`docs/USUARIOS_MULTI.md`) — notificaciones con unidad de
+  origen + bandeja única. Añadido `unidad_id` (FK NOT NULL) al modelo
+  `Notificacion`, migración en 3 pasos, 15 sitios de creación actualizados
+  para registrar la unidad de origen. Plantilla `avisos.html` muestra el
+  nombre de la unidad junto a cada aviso solo si el usuario pertenece a más
+  de una. `_colegas_del_usuario()` considera todos los pares
+  (grupo_intercambio_id, categoria_id) de todas las unidades del usuario.
+  8 tests nuevos en `test_notificacion_unidad.py`; 27 tests existentes
+  adaptados al nuevo campo obligatorio.
 - [x] Paso 5 (`docs/USUARIOS_MULTI.md`) — selector de unidad activa en
   `/calendario`, `/cambios`, `/planilla`. `unidad_activa_o_403` ahora
   persiste en sesión (`session["unidad_activa_id"]`) cuando se elige una
@@ -165,6 +173,6 @@ El registro detallado de fases y pasos anteriores está en
 - Quedan 21 referencias MUST change en `publicaciones.py`, `busquedas.py`,
   `unidad.py` y `documento_cambio.py` que deberían usar la unidad activa pero
   aún usan `current_user.unidad`/`categoria_id`/`grupo_intercambio`. Se
-  abordarán en un paso intermedio antes del Paso 6 (notificaciones).
+  abordarán a continuación.
 - Preguntas abiertas del plan (registro libre de unidades, abandono de
   unidad) siguen pendientes de confirmar.

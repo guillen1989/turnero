@@ -236,7 +236,7 @@ def test_push_condicional_mensaje_refleja_conteo(app, db):
 
     # Crea 2 notificaciones nuevo_match no leídas para u1
     for _ in range(2):
-        db.session.add(Notificacion(usuario_id=u1.id, tipo="nuevo_match", leida=False))
+        db.session.add(Notificacion(usuario_id=u1.id, unidad_id=u1.unidad_id, tipo="nuevo_match", leida=False))
     db.session.commit()
 
     old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
@@ -269,7 +269,7 @@ def test_limite_diario_avisos_oportunidad_corta_el_push(app, db):
     # Ya se han enviado justo el límite de avisos de oportunidad hoy.
     for i in range(LIMITE_DIARIO_AVISOS_OPORTUNIDAD):
         tipo = "aviso_oportunidad_3" if i % 2 == 0 else "aviso_oportunidad_4"
-        db.session.add(Notificacion(usuario_id=u1.id, tipo=tipo))
+        db.session.add(Notificacion(usuario_id=u1.id, unidad_id=u1.unidad_id, tipo=tipo))
     db.session.commit()
 
     old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")

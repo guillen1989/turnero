@@ -61,6 +61,7 @@ def _notificar_suscriptores(publicador, pub):
         if suscriptor:
             db.session.add(Notificacion(
                 usuario_id=suscriptor.id,
+                unidad_id=pub.usuario.unidad_id,
                 publicacion_id=pub.id,
                 tipo="nueva_publicacion_seguido",
             ))

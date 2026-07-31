@@ -9,6 +9,7 @@ class Notificacion(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
+    unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), nullable=False)
     match_id = db.Column(db.Integer, db.ForeignKey("match_cambio.id"), nullable=True)
     publicacion_id = db.Column(db.Integer, db.ForeignKey("publicacion_cambio.id"), nullable=True)
     busqueda_guardada_id = db.Column(
@@ -27,6 +28,7 @@ class Notificacion(db.Model):
     leida = db.Column(db.Boolean, nullable=False, default=False)
 
     usuario = db.relationship("Usuario", back_populates="notificaciones")
+    unidad = db.relationship("Unidad")
     match = db.relationship("MatchCambio", back_populates="notificaciones")
     publicacion = db.relationship("PublicacionCambio")
     busqueda_guardada = db.relationship("BusquedaGuardada")

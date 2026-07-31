@@ -644,6 +644,7 @@ def contraoferta(pub_id):
 
         notif = Notificacion(
             usuario_id=pub_original.usuario_id,
+            unidad_id=pub_nueva.usuario.unidad_id,
             publicacion_id=pub_nueva.id,
             tipo="contraoferta",
         )
