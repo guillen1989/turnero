@@ -191,10 +191,10 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
 
 ## Paso 4 — Autoservicio: añadir/abandonar unidades desde el perfil
 
-- [ ] Tests de la nueva vista de gestión de unidades del perfil de usuario
+- [x] Tests de la nueva vista de gestión de unidades del perfil de usuario
   normal (no supervisora): añadir una unidad nueva con su categoría, listar
   las unidades actuales, abandonar una unidad no-principal.
-- [ ] Nueva sección en `app/templates/auth/perfil.html` (o pestaña nueva,
+- [x] Nueva sección en `app/templates/auth/perfil.html` (o pestaña nueva,
   a decidir por consistencia visual con `perfil_supervisora.html`) que
   liste las unidades actuales del usuario (con su categoría en cada una) y
   permita:
@@ -202,7 +202,7 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
     unidad), reutilizando `sincronizar_unidades`.
   - abandonar una unidad no-principal (confirmar respuesta a la pregunta
     abierta sobre restricciones antes de implementar el botón "abandonar").
-- [ ] Ruta nueva o ampliación de `app/routes/auth.py::perfil` para manejar
+- [x] Ruta nueva o ampliación de `app/routes/auth.py::perfil` para manejar
   el POST de alta/baja de unidad.
 - [ ] Verificar en navegador el flujo de añadir una segunda unidad desde un
   usuario ya registrado con una sola.

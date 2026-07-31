@@ -262,4 +262,7 @@
   if (document.getElementById('extra-pais-select') || document.getElementById('extra-hospital-select')) {
     inicializarCascada('extra-');
   }
+  if (document.getElementById('svc-pais-select') || document.getElementById('svc-hospital-select')) {
+    inicializarCascada('svc-');
+  }
 })();

@@ -9,8 +9,8 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models import Pais, Provincia, Ciudad, Hospital, Unidad, Categoria
 from app.forms.auth import (
-    CuentaForm, EliminarCuentaForm, LoginForm, PerfilForm, RegistroForm,
-    SolicitarResetForm, RestablecerPasswordForm,
+    AgregarUnidadForm, CuentaForm, EliminarCuentaForm, LoginForm, PerfilForm,
+    RegistroForm, SolicitarResetForm, RestablecerPasswordForm,
 )
 from app.models.usuario import Usuario
 from app.models.planilla_import import MapeoTrabajadorPlanilla
@@ -20,10 +20,13 @@ from app.services.password_reset import (
 )
 from app.services.registro import (
     actualizar_perfil, eliminar_cuenta, registrar_usuario,
+    encontrar_o_crear_categoria, encontrar_o_crear_hospital, encontrar_o_crear_unidad,
     encontrar_o_crear_pais, encontrar_o_crear_provincia, encontrar_o_crear_ciudad,
     resolver_hospital, resolver_unidad,
+    _resolver_geografia,
 )
 from app.services.planilla_matching import sugerir_trabajador_planilla, vincular_usuario
+from app.services.unidad_usuario import categoria_en_unidad, pertenece_a, sincronizar_unidades, unidades_de
 
 bp = Blueprint("auth", __name__)
 
@@ -650,3 +653,93 @@ def eliminar_cuenta_route():
     logout_user()
     flash(_("Tu cuenta ha sido eliminada. Hasta pronto."), "info")
     return redirect(url_for("auth.login"))
+
+
+# ---------------------------------------------------------------------------
+# Perfil — Gestión de unidades (multi-unidad)
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/perfil/servicios")
+@login_required
+def perfil_servicios():
+    unidades_usuario = unidades_de(current_user)
+    datos_unidades = [
+        {
+            "unidad": u,
+            "categoria": categoria_en_unidad(current_user, u),
+            "es_principal": u.id == current_user.unidad_id,
+        }
+        for u in unidades_usuario
+    ]
+    paises = Pais.query.order_by(Pais.nombre).all()
+    agregar_form = AgregarUnidadForm()
+    agregar_form.categoria_id.choices = _choices_categorias()
+    return render_template(
+        "auth/perfil_servicios.html",
+        datos_unidades=datos_unidades,
+        paises=paises,
+        agregar_form=agregar_form,
+    )
+
+
+@bp.route("/perfil/unidades/agregar", methods=["POST"])
+@login_required
+def agregar_unidad():
+    hospital_id = request.form.get("svc_hospital_id", type=int)
+    unidad_id = request.form.get("svc_unidad_id", type=int)
+    categoria_id = request.form.get("svc_categoria_id", type=int) or None
+    categoria_nueva = (request.form.get("svc_categoria_nueva", "") or "").strip() or None
+    hospital_nuevo = (request.form.get("svc_hospital_nuevo", "") or "").strip() or None
+    unidad_nuevo = (request.form.get("svc_unidad_nuevo", "") or "").strip() or None
+
+    hospital_nombre = resolver_hospital(hospital_id, hospital_nuevo)
+    unidad_nombre = resolver_unidad(unidad_id, unidad_nuevo)
+
+    if not hospital_nombre:
+        flash(_("Selecciona un hospital o escribe el nombre de uno nuevo."), "danger")
+        return redirect(url_for("auth.perfil_servicios"))
+    if not unidad_nombre:
+        flash(_("Selecciona una unidad o escribe el nombre de una nueva."), "danger")
+        return redirect(url_for("auth.perfil_servicios"))
+    if not categoria_id and not categoria_nueva:
+        flash(_("Indica una categoría o escribe una nueva."), "danger")
+        return redirect(url_for("auth.perfil_servicios"))
+
+    pais_nombre, provincia_nombre, ciudad_nombre = _nombres_geo_registro("svc_")
+    ciudad = _resolver_geografia(pais_nombre, provincia_nombre, ciudad_nombre)
+    hospital = encontrar_o_crear_hospital(hospital_nombre, ciudad)
+    categoria = encontrar_o_crear_categoria(categoria_id, categoria_nueva)
+    unidad, _is_new = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
+
+    membresias = {m.unidad_id: m.categoria_id for m in current_user.membresias_unidad}
+    if current_user.unidad_id not in membresias:
+        membresias[current_user.unidad_id] = current_user.categoria_id
+    membresias[unidad.id] = categoria.id
+    sincronizar_unidades(current_user, membresias)
+    db.session.commit()
+
+    flash(_("Servicio añadido correctamente."), "success")
+    return redirect(url_for("auth.perfil_servicios"))
+
+
+@bp.route("/perfil/unidades/<int:unidad_id>/abandonar", methods=["POST"])
+@login_required
+def abandonar_unidad(unidad_id):
+    if unidad_id == current_user.unidad_id:
+        flash(_("No puedes abandonar tu unidad principal."), "danger")
+        return redirect(url_for("auth.perfil_servicios"))
+
+    unidad = db.session.get(Unidad, unidad_id)
+    if unidad is None or not pertenece_a(current_user, unidad):
+        abort(403)
+
+    membresias = {m.unidad_id: m.categoria_id for m in current_user.membresias_unidad}
+    if current_user.unidad_id not in membresias:
+        membresias[current_user.unidad_id] = current_user.categoria_id
+    del membresias[unidad_id]
+    sincronizar_unidades(current_user, membresias)
+    db.session.commit()
+
+    flash(_("Has abandonado el servicio «%(nombre)s».", nombre=unidad.nombre), "success")
+    return redirect(url_for("auth.perfil_servicios"))

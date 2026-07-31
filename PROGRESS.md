@@ -5,10 +5,21 @@ Fase 13 — Usuarios normales en varios servicios (unidades). Plan completo en
 `docs/USUARIOS_MULTI.md`. **En curso.**
 
 ## Paso actual / siguiente paso
-Siguiente: **Paso 4 — Autoservicio: añadir/abandonar unidades desde el perfil**
+Siguiente: **Paso 5 — Selector de unidad activa en `/calendario`, `/cambios`, `/planilla`**
 (`docs/USUARIOS_MULTI.md`).
 
 ## Últimos pasos completados
+- [x] Paso 4 (`docs/USUARIOS_MULTI.md`) — autoservicio: añadir/abandonar unidades desde el
+  perfil. Nueva pestaña "Servicios" en `app/templates/auth/perfil.html` (para
+  usuarios normales y supervisoras) accesible vía `GET /auth/perfil/servicios`.
+  Lista las unidades del usuario con su categoría en cada una y etiqueta
+  "Principal" en la unidad primaria. Permite añadir un servicio adicional
+  (`POST /auth/perfil/unidades/agregar`) con cascada geográfica completa
+  (prefijo `svc-`, soportado por `cascade-hospital.js`) y abandonar una
+  unidad no-principal (`POST /auth/perfil/unidades/<id>/abandonar`) con
+  confirmación Javascript. Ambas acciones delegan en `sincronizar_unidades`.
+  No se puede abandonar la unidad principal (flash danger) ni una ajena (403).
+  13 tests nuevos en `tests/test_auth_routes.py`, todos en verde.
 - [x] Paso 3 (`docs/USUARIOS_MULTI.md`) — alta de cuenta con segundo servicio
   opcional: `registrar_usuario` acepta `unidades_extra` (lista de dicts con
   hospital, unidad, categoría) y construye `{unidad_id: categoria_id}` para

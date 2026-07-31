@@ -99,6 +99,25 @@ class CuentaForm(FlaskForm):
     submit = SubmitField(_l("Guardar cambios"))
 
 
+class AgregarUnidadForm(FlaskForm):
+    pais_nuevo = StringField(_l("Nuevo país"), validators=[Optional(), Length(max=100)])
+    provincia_nueva = StringField(_l("Nueva provincia"), validators=[Optional(), Length(max=100)])
+    ciudad_nueva = StringField(_l("Nueva ciudad"), validators=[Optional(), Length(max=100)])
+    hospital_nuevo = StringField(_l("Nombre del nuevo hospital"), validators=[Optional(), Length(max=200)])
+    unidad_nuevo = StringField(_l("Nombre de la nueva unidad"), validators=[Optional(), Length(max=200)])
+    categoria_id = SelectField(
+        _l("Categoría profesional"),
+        coerce=int,
+        choices=[],
+        validators=[Optional()],
+    )
+    categoria_nueva = StringField(
+        _l("Nombre de la nueva categoría"),
+        validators=[Optional(), Length(max=100)],
+    )
+    submit = SubmitField(_l("Añadir servicio"))
+
+
 class EliminarCuentaForm(FlaskForm):
     password = PasswordField(
         _l("Contraseña"),
