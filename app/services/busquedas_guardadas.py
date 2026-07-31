@@ -130,6 +130,6 @@ def notificar_busquedas_guardadas(pub):
                 busqueda_guardada_id=busqueda.id,
                 tipo="alerta_busqueda_guardada",
             ))
-            enviar_push_condicional(busqueda.usuario, "busqueda_guardada")
+            enviar_push_condicional(busqueda.usuario, "busqueda_guardada", unidad_nombre=pub.usuario.unidad.nombre)
 
     db.session.commit()

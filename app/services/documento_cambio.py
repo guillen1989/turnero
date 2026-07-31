@@ -60,7 +60,7 @@ def _resumen_cambio(documento):
 def _notificar(usuario, documento, tipo, titulo, cuerpo):
     db.session.add(Notificacion(usuario=usuario, unidad_id=documento.unidad_id, documento_cambio=documento, tipo=tipo, mensaje=cuerpo))
     if usuario.push_activo:
-        enviar_push(usuario, titulo, cuerpo, url=_url_documento(documento))
+        enviar_push(usuario, titulo, cuerpo, url=_url_documento(documento), unidad_nombre=documento.unidad.nombre)
 
 
 def _siguiente_numero_unidad(unidad_id):

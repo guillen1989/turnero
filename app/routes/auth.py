@@ -21,7 +21,6 @@ from app.services.password_reset import (
 from app.services.registro import (
     actualizar_perfil, eliminar_cuenta, registrar_usuario,
     encontrar_o_crear_categoria, encontrar_o_crear_hospital, encontrar_o_crear_unidad,
-    encontrar_o_crear_pais, encontrar_o_crear_provincia, encontrar_o_crear_ciudad,
     resolver_hospital, resolver_unidad,
     _resolver_geografia,
 )

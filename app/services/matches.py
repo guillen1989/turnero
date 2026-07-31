@@ -77,7 +77,7 @@ def confirmar_participacion(match, usuario_id):
                 tipo="confirmado_total",
             ))
             if p.publicacion.usuario_id != usuario_id:
-                enviar_push_condicional(p.publicacion.usuario, "confirmado_total")
+                enviar_push_condicional(p.publicacion.usuario, "confirmado_total", unidad_nombre=p.publicacion.usuario.unidad.nombre)
             registrar_evento(p.publicacion.usuario_id, "match_confirmed", match.id)
     else:
         match.estado = "confirmado_parcial"
@@ -89,7 +89,7 @@ def confirmar_participacion(match, usuario_id):
                     match_id=match.id,
                     tipo="confirmacion_parcial",
                 ))
-                enviar_push_condicional(p.publicacion.usuario, "confirmacion_parcial")
+                enviar_push_condicional(p.publicacion.usuario, "confirmacion_parcial", unidad_nombre=p.publicacion.usuario.unidad.nombre)
 
     db.session.commit()
 
@@ -119,7 +119,7 @@ def desconfirmar_participacion(match, usuario_id):
                 match_id=match.id,
                 tipo="desconfirmacion",
             ))
-            enviar_push_condicional(p.publicacion.usuario, "desconfirmacion")
+            enviar_push_condicional(p.publicacion.usuario, "desconfirmacion", unidad_nombre=p.publicacion.usuario.unidad.nombre)
         registrar_evento(p.publicacion.usuario_id, "match_unconfirmed", match.id)
 
     db.session.commit()
@@ -139,6 +139,6 @@ def rechazar_match(match, usuario_id):
                 match_id=match.id,
                 tipo="rechazo",
             ))
-            enviar_push_condicional(p.publicacion.usuario, "confirmacion_parcial")
+            enviar_push_condicional(p.publicacion.usuario, "confirmacion_parcial", unidad_nombre=p.publicacion.usuario.unidad.nombre)
         registrar_evento(p.publicacion.usuario_id, "match_cancelled", match.id)
     db.session.commit()

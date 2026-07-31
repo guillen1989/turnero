@@ -2,15 +2,30 @@
 
 ## Fase actual
 Fase 13 — Usuarios normales en varios servicios (unidades). Plan completo en
-`docs/USUARIOS_MULTI.md`. **En curso.**
+`docs/USUARIOS_MULTI.md`. **Cerrada.**
 
 ## Paso actual / siguiente paso
-Siguiente: **Paso 7 — Web Push: incluir la unidad en el payload**
-(`docs/USUARIOS_MULTI.md`). También quedan pendientes los 21 casos MUST change
+Fase 13 cerrada. Pendiente para una fase futura: los 21 casos MUST change
 de la auditoría del Paso 5 (publicaciones.py, busquedas.py, unidad.py,
-documento_cambio.py) y la verificación manual en navegador del Paso 6.
+documento_cambio.py) y la verificación manual en navegador de los Pasos 4, 5
+y 6.
 
 ## Últimos pasos completados
+- [x] Paso 8 (`docs/USUARIOS_MULTI.md`) — Documentación y cierre. Eliminadas
+  importaciones muertas en `app/routes/auth.py` (`encontrar_o_crear_pais`,
+  `encontrar_o_crear_provincia`, `encontrar_o_crear_ciudad`, no usadas en ese
+  módulo). Suite completa de tests en verde (excepto fallos preexistentes por
+  compatibilidad Python 3.8/OpenSSL en generación de PDFs). PROGRESS.md y
+  USUARIOS_MULTI.md actualizados reflejando el cierre de la fase.
+- [x] Paso 7 (`docs/USUARIOS_MULTI.md`) — Web Push: incluir unidad en el
+  payload. `enviar_push()` y `enviar_push_condicional()` aceptan
+  `unidad_nombre=None`. Si se proporciona y el usuario pertenece a más de una
+  unidad, se añade `[Unidad]` al cuerpo de la notificación push. Actualizados
+  los 7 callers: `matches.py` (4), `publicaciones.py` (1),
+  `busquedas_guardadas.py` (1) y `documento_cambio.py` (1). 4 tests nuevos en
+  `test_push.py`, todos en verde; suite completa de los servicios afectados
+  (push, matches, publicaciones, busquedas, documento_cambio, flujos) pasa sin
+  regresiones.
 - [x] Paso 6 (`docs/USUARIOS_MULTI.md`) — notificaciones con unidad de
   origen + bandeja única. Añadido `unidad_id` (FK NOT NULL) al modelo
   `Notificacion`, migración en 3 pasos, 15 sitios de creación actualizados

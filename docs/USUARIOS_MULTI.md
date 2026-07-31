@@ -279,19 +279,19 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
 
 ## Paso 7 — Web Push: incluir la unidad en el payload
 
-- [ ] Revisar el código que construye el payload de Web Push (buscar desde
+- [x] Revisar el código que construye el payload de Web Push (buscar desde
   `push_subscription`/`push_activo` en `app/models/usuario.py` hacia el
   servicio que envía las notificaciones push) y comprobar si ya incluye
   algún texto identificable de la unidad.
-- [ ] Si no lo incluye, añadir el nombre de la unidad de origen al título o
+- [x] Si no lo incluye, añadir el nombre de la unidad de origen al título o
   cuerpo del push, solo cuando el usuario destinatario pertenece a más de
   una unidad, siguiendo el mismo test-first que en el resto de pasos.
 
 ## Paso 8 — Documentación y cierre
 
-- [ ] Actualizar `PROGRESS.md` con el cierre de esta fase.
-- [ ] Revisar que no queda código muerto de rutas/plantillas antiguas
+- [x] Actualizar `PROGRESS.md` con el cierre de esta fase.
+- [x] Revisar que no queda código muerto de rutas/plantillas antiguas
   (p. ej. si el formulario de registro cambió de forma, limpiar el HTML
   anterior).
-- [ ] Pasar la suite completa una única vez al cerrar la fase (el resto de
+- [x] Pasar la suite completa una única vez al cerrar la fase (el resto de
   pasos usa `pytest --testmon`).
