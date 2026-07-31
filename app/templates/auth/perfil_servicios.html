@@ -94,13 +94,17 @@
       </div>
 
       <div class="form-group">
-        {{ agregar_form.categoria_id.label }}
-        {{ agregar_form.categoria_id(id="svc-categoria-select") }}
+        <label for="svc-categoria-select">{{ _('Categoría profesional') }}</label>
+        <select id="svc-categoria-select" name="svc_categoria_id">
+          {% for value, label in agregar_form.categoria_id.choices %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
       </div>
 
       <div class="form-group" id="svc-categoria-nueva-group" style="display:none">
-        {{ agregar_form.categoria_nueva.label }}
-        {{ agregar_form.categoria_nueva() }}
+        <label for="svc_categoria_nueva">{{ _('Nombre de la nueva categoría') }}</label>
+        <input type="text" id="svc_categoria_nueva" name="svc_categoria_nueva" placeholder="{{ _('Nombre de la nueva categoría') }}" maxlength="100">
       </div>
 
       <div class="form-group">
