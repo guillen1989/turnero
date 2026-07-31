@@ -192,6 +192,12 @@
 - [ ] Recoger feedback de los testers durante ese periodo y corregir bugs
   bloqueantes que aparezcan (issues normales de desarrollo, seguir el flujo
   TDD habitual de `CLAUDE.md`).
+- [x] **Incidencia de nivel de API de destino (2026-07-31):** Google marcó la
+  app con un mensaje crítico porque `targetSdkVersion` (35) no cumplía el
+  requisito de Android 16 (API 36) antes del 31 ago 2026. Corregido: subido
+  `targetSdkVersion` a 36 y `versionCode`/`versionName` a 2/"1.0.1", nuevo
+  `.aab` firmado y subido a la pista cerrada. Detalle en "Notas de
+  ejecución".
 
 ## Fase 7 — Publicación en producción y mantenimiento
 
@@ -384,3 +390,39 @@ Con esto se completa la **Fase 3** del plan.
   `assetlinks.json`; rellenar los formularios de IARC, Data safety, target
   audience, enlace de privacidad y "sin anuncios" (contenido ya redactado,
   solo falta transcribirlo en la consola).
+
+### Incidencia: nivel de API de destino (2026-07-31)
+
+- **Aviso de Google:** mensaje crítico en Play Console — la app está
+  orientada a Android 15 (API 35) y Google exige Android 16 (API 36) o
+  posterior antes del 31 ago 2026 para poder seguir actualizándola.
+- **Causa:** `android-twa/app/build.gradle` (proyecto generado por
+  Bubblewrap) tenía `targetSdkVersion 35`, aunque `compileSdkVersion` ya
+  estaba en 36.
+- **Bug conocido de Bubblewrap CLI:** la plantilla interna de
+  `@bubblewrap/cli` 1.24.1
+  (`node_modules/@bubblewrap/core/template_project/app/build.gradle`) trae
+  `targetSdkVersion 35` hardcodeado — no es configurable desde
+  `twa-manifest.json`. **Si en el futuro se ejecuta `bubblewrap update` o se
+  regenera el proyecto, hay que volver a subir `targetSdkVersion` a 36 a
+  mano en `android-twa/app/build.gradle`.**
+- **Corrección aplicada:**
+  - `android-twa/app/build.gradle`: `targetSdkVersion` 35 → 36,
+    `versionCode` 1 → 2, `versionName` "" → "1.0.1".
+  - `android-twa/twa-manifest.json`: `appVersionCode`/`appVersionName`
+    actualizados en paralelo (2 / "1.0.1") para no quedar desincronizados.
+  - `android-twa/manifest-checksum.txt` recalculado (sha1 del nuevo
+    `twa-manifest.json`) para que `bubblewrap build` no detecte el manifest
+    como "cambiado" e intente regenerar el proyecto desde la plantilla —
+    eso habría revertido `targetSdkVersion` a 35 otra vez.
+  - Verificado con `bubblewrap build --skipSigning` que compila
+    correctamente contra API 36 antes de hacer el build firmado real.
+  - Build firmado generado por el usuario con `bubblewrap build` (passwords
+    del keystore vía `BUBBLEWRAP_KEYSTORE_PASSWORD`/`BUBBLEWRAP_KEY_PASSWORD`)
+    y `.aab` subido a la pista cerrada en Play Console.
+- **Nota:** ni `android-twa/app/build.gradle` ni el resto del proyecto
+  generado por Bubblewrap (`app/`, `gradlew`, `.gradle/`, keystore, `.aab`,
+  `.apk`) están commiteados al repo — solo `twa-manifest.json`. Este fix de
+  `targetSdkVersion` vive únicamente en el filesystem local; si se clona el
+  repo en otra máquina hay que regenerar el proyecto con `bubblewrap
+  init`/`update` y volver a aplicar el fix a mano.

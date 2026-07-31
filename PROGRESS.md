@@ -1,18 +1,30 @@
 # Estado del desarrollo
 
 ## Fase actual
-Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 3
-(aspectos legales) completa; Fase 2 (dominio) parcialmente completa.
+Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 6
+(pruebas cerradas) en curso; Fase 3 (aspectos legales) completa; Fase 2
+(dominio) parcialmente completa.
 
 ## Paso actual / siguiente paso
-Dominio definitivo decidido y ya en producción: `app.turnero.xyz` (Railway,
-sin incidencias desde hace dos semanas). Siguiente paso: Fase 2, pasos
-restantes — actualizar `APP_BASE_URL`/referencias de URL de producción en el
-repo para usar `app.turnero.xyz`, y verificar que `/manifest.json` y
-`/sw.js` se sirven correctamente desde ese dominio. Después, Fase 4
-(generar el paquete Android TWA).
+Resuelta la incidencia crítica de nivel de API de destino de Google Play
+(ver "Últimos pasos completados"): nuevo `.aab` con `targetSdkVersion 36`
+subido a la pista cerrada. Siguiente paso: esperar la confirmación de
+Google de que la app ya no está afectada, y seguir con lo pendiente de la
+Fase 6 (mantener la pista cerrada activa 14 días con ≥12 testers). En
+paralelo sigue pendiente Fase 2 (actualizar `APP_BASE_URL`/referencias de
+URL de producción en el repo para usar `app.turnero.xyz`, y verificar que
+`/manifest.json` y `/sw.js` se sirven correctamente desde ese dominio).
 
 ## Últimos pasos completados
+- [x] Incidencia de nivel de API de destino (2026-07-31): Google avisó de que
+  `targetSdkVersion 35` incumplía el requisito de Android 16 (API 36) antes
+  del 31 ago 2026. Corregido `android-twa/app/build.gradle`
+  (`targetSdkVersion` → 36, `versionCode`/`versionName` → 2/"1.0.1") y
+  `android-twa/twa-manifest.json` en paralelo; nuevo `.aab` firmado por el
+  usuario y subido a la pista cerrada. Detalle completo, incluido un bug
+  conocido de la plantilla de Bubblewrap CLI que hay que recordar si se
+  regenera el proyecto, en `docs/PLAN_PLAY_STORE.md` ("Incidencia: nivel de
+  API de destino").
 - [x] `docs/PLAN_PLAY_STORE.md` incorporado a esta rama (basada en `main`,
   el archivo solo existía en `staging`).
 - [x] Fase 1, paso 1: auditoría Lighthouse categoría PWA contra
