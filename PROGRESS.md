@@ -5,14 +5,21 @@ Fase 13 — Usuarios normales en varios servicios (unidades). Plan completo en
 `docs/USUARIOS_MULTI.md`. **En curso.**
 
 ## Paso actual / siguiente paso
-Siguiente: **Paso 2 — Migración Alembic** (`docs/USUARIOS_MULTI.md`):
-`flask db migrate -m "añade tabla usuario_unidad"`, revisar el `upgrade()`
-para que mirror-ee `666dde3fff3c` (PK compuesta, `categoria_id NOT NULL`),
-backfill `INSERT ... SELECT id, unidad_id, categoria_id FROM usuario` y
-`downgrade()` simétrico; `flask db heads` con exactamente 1 head; aplicar la
-migración y correr los tests del paso 1 contra la BD migrada.
+Siguiente: **Paso 3 — Alta de cuenta: añadir un segundo servicio opcional**
+(`docs/USUARIOS_MULTI.md`).
 
 ## Últimos pasos completados
+- [x] Paso 2 (`docs/USUARIOS_MULTI.md`) — migración Alembic
+  `migrations/versions/def6b117664c_añade_tabla_usuario_unidad.py`:
+  `op.create_table('usuario_unidad')` con PK compuesta `(usuario_id,
+  unidad_id)`, FKs a `usuario.id`, `unidad.id` y `categoria.id`,
+  `categoria_id NOT NULL`; backfill `INSERT INTO usuario_unidad ...
+  SELECT id, unidad_id, categoria_id FROM usuario` que siembra la membresía
+  de la unidad principal de cada usuario existente; `downgrade()` simétrico
+  (`op.drop_table`). `flask db heads` → 1 head (`def6b117664c`). Migración
+  aplicada en local y verificada con ciclo downgrade→upgrade (el backfill
+  siembra correctamente). `flask db check` confirma sin drift.
+  Suite de modelos del paso 1: 20 tests en verde.
 - [x] Paso 1 (`docs/USUARIOS_MULTI.md`) — modelo de datos `usuario_unidad`:
   `app/models/usuario_unidad.py` (PK compuesta `(usuario_id, unidad_id)` +
   `categoria_id NOT NULL`), relaciones `Usuario.unidades` /
@@ -116,12 +123,9 @@ El registro detallado de fases y pasos anteriores está en
 ## Notas / decisiones / asunciones pendientes
 - Fase 12 (`docs/PLAN_3.md`) cerrada — historial detallado en
   `PROGRESS_ARCHIVE.md`.
-- Fase 13: `usuario_unidad` no existe todavía en BD; la migración es el
-  Paso 2. Mientras no haya migración, el código nuevo depende de
-  `db.create_all()` (test) o de la migración al aplicarla.
 - La unidad principal del usuario siempre aparece en `usuario_unidad`
-  (invariante que el Paso 2 sembrará con el backfill; `sincronizar_unidades`
-  la mantiene y no permite eliminarla).
+  (invariante sembrado por el backfill de la migración; `sincronizar_unidades`
+  lo mantiene y no permite eliminarla).
 - `unidad_activa_o_403` sigue la precedencia query param > sesión
   (`session["unidad_activa_id"]`) > unidad principal.
 - Preguntas abiertas del plan (registro libre de unidades, abandono de

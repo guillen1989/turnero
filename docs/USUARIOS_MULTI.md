@@ -152,23 +152,23 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
     `sincronizar_unidades_supervisadas` pero conservando/actualizando la
     categoría de cada membresía, y **sin poder eliminar la unidad
     principal** de la lista (asegurar con un `assert`/validación explícita).
-- [ ] Todos los tests en verde (`pytest --testmon`).
+- [x] Todos los tests en verde (`pytest --testmon`).
 
 ## Paso 2 — Migración Alembic
 
-- [ ] Modificar los modelos (paso 1) y ejecutar
+- [x] Modificar los modelos (paso 1) y ejecutar
   `flask db migrate -m "añade tabla usuario_unidad"`.
-- [ ] Revisar el `upgrade()` generado y editarlo para que mirror-ee
+- [x] Revisar el `upgrade()` generado y editarlo para que mirror-ee
   `666dde3fff3c`: crear tabla con PK compuesta `(usuario_id, unidad_id)`,
   FKs a `usuario.id` y `unidad.id`, columna `categoria_id NOT NULL` con FK a
   `categoria.id`.
-- [ ] Backfill: `INSERT INTO usuario_unidad (usuario_id, unidad_id,
+- [x] Backfill: `INSERT INTO usuario_unidad (usuario_id, unidad_id,
   categoria_id) SELECT id, unidad_id, categoria_id FROM usuario` — siembra
   la membresía de la unidad principal de cada usuario existente, usando su
   categoría global actual.
-- [ ] `downgrade()` simétrico (`drop_table`).
-- [ ] `flask db heads` debe mostrar exactamente `1 (head)`.
-- [ ] Aplicar la migración en local y correr la suite de modelos del paso 1
+- [x] `downgrade()` simétrico (`drop_table`).
+- [x] `flask db heads` debe mostrar exactamente `1 (head)`.
+- [x] Aplicar la migración en local y correr la suite de modelos del paso 1
   contra la BD migrada.
 
 ## Paso 3 — Alta de cuenta: añadir un segundo servicio opcional
