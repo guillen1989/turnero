@@ -56,11 +56,13 @@ def sincronizar_unidades(usuario, membresias):
     actuales = {m.unidad_id: m for m in usuario.membresias_unidad}
 
     if actuales.get(usuario.unidad_id) is None:
-        db.session.add(UsuarioUnidad(
+        membresia_principal = UsuarioUnidad(
             usuario_id=usuario.id,
             unidad_id=usuario.unidad_id,
             categoria_id=usuario.categoria_id,
-        ))
+        )
+        db.session.add(membresia_principal)
+        actuales[usuario.unidad_id] = membresia_principal
 
     usuario.categoria_id = membresias[usuario.unidad_id]
 

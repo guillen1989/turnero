@@ -13,10 +13,11 @@ from app.models import (
     PasswordResetToken, EstadoDiaPlanilla, CompatibilidadPlanilla, TurnoPlanilla,
     PlanillaMes, SalienteDia, NotaDia, AjustePlanillaSupervisora,
     MapeoTrabajadorPlanilla, DocumentoCambio, ParticipanteDocumentoCambio,
-    FirmaDocumentoCambio,
+    FirmaDocumentoCambio, UsuarioUnidad,
 )
 from app.services.email import enviar_email, url_absoluta
 from app.services.password_reset import TOKEN_TTL_MINUTOS, generar_token_reset
+from app.services.unidad_usuario import sincronizar_unidades
 
 _OPCION_NUEVA = 0
 
@@ -294,6 +295,8 @@ def eliminar_usuario_admin(usuario):
     DocumentoCambio.query.filter_by(supervisora_id=usuario.id).update({"supervisora_id": None})
     DocumentoCambio.query.filter_by(anulado_por_id=usuario.id).update({"anulado_por_id": None})
 
+    UsuarioUnidad.query.filter_by(usuario_id=usuario.id).delete()
+
     BusquedaGuardada.query.filter_by(usuario_id=usuario.id).delete()
     SuscripcionPublicaciones.query.filter(
         db.or_(
@@ -389,7 +392,13 @@ def registrar_usuario(
     nombre, email, password, hospital_nombre, unidad_nombre, categoria_id,
     categoria_nueva_nombre=None,
     pais_nombre=None, provincia_nombre=None, ciudad_nombre=None,
+    unidades_extra=None,
 ):
+    """Crea el usuario con su unidad principal de siempre y, opcionalmente,
+    se une a unidades adicionales en el mismo alta (`unidades_extra`: lista
+    de dicts con `hospital_nombre`, `unidad_nombre`, `categoria_id`,
+    `categoria_nueva_nombre`, `pais_nombre`, `provincia_nombre`,
+    `ciudad_nombre`). Cada membresía conserva su propia categoría."""
     ciudad = _resolver_geografia(pais_nombre, provincia_nombre, ciudad_nombre)
     hospital = encontrar_o_crear_hospital(hospital_nombre, ciudad)
     categoria = encontrar_o_crear_categoria(categoria_id, categoria_nueva_nombre)
@@ -403,6 +412,23 @@ def registrar_usuario(
     )
     usuario.set_password(password)
     db.session.add(usuario)
+    db.session.flush()
+
+    membresias = {unidad.id: categoria.id}
+    for extra in unidades_extra or []:
+        extra_ciudad = _resolver_geografia(
+            extra.get("pais_nombre"), extra.get("provincia_nombre"), extra.get("ciudad_nombre")
+        )
+        extra_hospital = encontrar_o_crear_hospital(extra["hospital_nombre"], extra_ciudad)
+        extra_categoria = encontrar_o_crear_categoria(
+            extra.get("categoria_id"), extra.get("categoria_nueva_nombre")
+        )
+        extra_unidad, _ = encontrar_o_crear_unidad(
+            extra["unidad_nombre"], extra_hospital, extra_categoria
+        )
+        membresias[extra_unidad.id] = extra_categoria.id
+
+    sincronizar_unidades(usuario, membresias)
     db.session.commit()
     usuario._es_nueva_unidad = is_new
     return usuario

@@ -4,12 +4,14 @@ Cubre UAT-1.1 a UAT-1.4.
 """
 import pytest
 from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, Usuario, FranjaHoraria
+from app.models.usuario_unidad import UsuarioUnidad
 from app.services.registro import (
     encontrar_o_crear_hospital,
     encontrar_o_crear_unidad,
     encontrar_o_crear_categoria,
     registrar_usuario,
 )
+from app.services.unidad_usuario import unidades_de, categoria_en_unidad
 
 
 # --- Hospital ---
@@ -174,3 +176,71 @@ def test_registrar_usuario_email_duplicado_lanza_error(db):
 
     with pytest.raises(Exception):
         registrar_usuario("Ana Otra", "ana@dup.es", "pass5678", "H1", "U1", cat.id)
+
+
+# --- Multi-unidad (Paso 3: alta con segundo servicio opcional) ---
+
+def _semillas(db):
+    from app.models import insertar_categorias_semilla
+    insertar_categorias_semilla()
+    return (
+        Categoria.query.filter_by(nombre="Enfermería").first(),
+        Categoria.query.filter_by(nombre="Auxiliar de enfermería (TCAE)").first(),
+    )
+
+
+def test_registrar_usuario_sin_unidades_extra_siembra_membresia_principal(db):
+    """Invariante del paso 1: la unidad principal siempre tiene su fila en
+    usuario_unidad, también para usuarios nuevos tras la migración."""
+    enfermeria, _ = _semillas(db)
+    usuario = registrar_usuario(
+        nombre="Ana García", email="ana@invariante.es", password="contraseña123",
+        hospital_nombre="Hospital La Paz", unidad_nombre="Urgencias",
+        categoria_id=enfermeria.id,
+    )
+    assert UsuarioUnidad.query.filter_by(
+        usuario_id=usuario.id, unidad_id=usuario.unidad_id,
+        categoria_id=enfermeria.id,
+    ).count() == 1
+    assert [u.nombre for u in unidades_de(usuario)] == ["Urgencias"]
+
+
+def test_registrar_usuario_con_segunda_unidad_crea_membresia_con_categoria(db):
+    """UAT: alta con un segundo servicio opcional; cada membresía conserva
+    su propia categoría profesional."""
+    enfermeria, tcea = _semillas(db)
+    usuario = registrar_usuario(
+        nombre="Ana García", email="ana@multi.es", password="contraseña123",
+        hospital_nombre="Hospital La Paz", unidad_nombre="Urgencias",
+        categoria_id=enfermeria.id,
+        unidades_extra=[{
+            "hospital_nombre": "Hospital La Paz",
+            "unidad_nombre": "Cirugía",
+            "categoria_id": tcea.id,
+        }],
+    )
+    nombres = sorted(u.nombre for u in unidades_de(usuario))
+    assert nombres == ["Cirugía", "Urgencias"]
+    assert usuario.categoria_id == enfermeria.id
+    urgencias = Unidad.query.filter_by(nombre="Urgencias").one()
+    cirugia = Unidad.query.filter_by(nombre="Cirugía").one()
+    assert categoria_en_unidad(usuario, urgencias).nombre == "Enfermería"
+    assert categoria_en_unidad(usuario, cirugia).nombre == "Auxiliar de enfermería (TCAE)"
+
+
+def test_registrar_usuario_segunda_unidad_con_categoria_nueva(db):
+    """La segunda unidad admite también una categoría nueva escrita a mano."""
+    enfermeria, _ = _semillas(db)
+    usuario = registrar_usuario(
+        nombre="Ana García", email="ana@categoria-nueva.es", password="contraseña123",
+        hospital_nombre="Hospital La Paz", unidad_nombre="Urgencias",
+        categoria_id=enfermeria.id,
+        unidades_extra=[{
+            "hospital_nombre": "Hospital La Paz",
+            "unidad_nombre": "Quirófano",
+            "categoria_id": None,
+            "categoria_nueva_nombre": "Instrumentista",
+        }],
+    )
+    categoria = categoria_en_unidad(usuario, Unidad.query.filter_by(nombre="Quirófano").one())
+    assert categoria.nombre == "Instrumentista"

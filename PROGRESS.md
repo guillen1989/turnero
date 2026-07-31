@@ -5,10 +5,23 @@ Fase 13 — Usuarios normales en varios servicios (unidades). Plan completo en
 `docs/USUARIOS_MULTI.md`. **En curso.**
 
 ## Paso actual / siguiente paso
-Siguiente: **Paso 3 — Alta de cuenta: añadir un segundo servicio opcional**
+Siguiente: **Paso 4 — Autoservicio: añadir/abandonar unidades desde el perfil**
 (`docs/USUARIOS_MULTI.md`).
 
 ## Últimos pasos completados
+- [x] Paso 3 (`docs/USUARIOS_MULTI.md`) — alta de cuenta con segundo servicio
+  opcional: `registrar_usuario` acepta `unidades_extra` (lista de dicts con
+  hospital, unidad, categoría) y construye `{unidad_id: categoria_id}` para
+  `sincronizar_unidades`, sembrando la membresía principal + las extra en una
+  misma transacción. El formulario `RegistroForm` gana `BooleanField
+  extra_servicio` + campos prefijados `extra_*` (hospital, unidad, categoría,
+  geo). La ruta `registro` extrae el helper `_nombres_geo_registro(prefijo)` y
+  valida el bloque extra con sus propios mensajes de error. Plantilla
+  `registro.html` con checkbox "Añadir otro servicio" que revela una segunda
+  cascada completa (`extra-pais-select`...). `cascade-hospital.js` generalizado
+  a `inicializarCascada(prefix)` para reutilizarse con `''` y `'extra-'`.
+  `eliminar_usuario_admin` limpia también filas de `usuario_unidad`.
+  152 tests en verde.
 - [x] Paso 2 (`docs/USUARIOS_MULTI.md`) — migración Alembic
   `migrations/versions/def6b117664c_añade_tabla_usuario_unidad.py`:
   `op.create_table('usuario_unidad')` con PK compuesta `(usuario_id,

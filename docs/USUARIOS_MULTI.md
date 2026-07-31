@@ -173,20 +173,20 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
 
 ## Paso 3 — Alta de cuenta: añadir un segundo servicio opcional
 
-- [ ] Tests de `app/routes/auth.py::registro` (o del servicio
+- [x] Tests de `app/routes/auth.py::registro` (o del servicio
   `registrar_usuario`) cubriendo: registro con una sola unidad (comportamiento
   actual, no debe romperse) y registro añadiendo una segunda unidad +
   categoría en esa unidad.
-- [ ] Formulario de registro: añadir un bloque opcional "añadir otro
+- [x] Formulario de registro: añadir un bloque opcional "añadir otro
   servicio" (checkbox/botón "+ añadir servicio" que revela un segundo
   selector de hospital/unidad + categoría, igual de estructura que el
   principal — reutilizar los mismos endpoints `api_hospitales`/`api_unidades`
   ya existentes en `auth.py`).
-- [ ] `registrar_usuario` (`app/services/registro.py`) acepta una lista
+- [x] `registrar_usuario` (`app/services/registro.py`) acepta una lista
   opcional de unidades adicionales (cada una con su propia categoría) y
   llama a `sincronizar_unidades` tras crear el usuario con su unidad
   principal de siempre.
-- [ ] Plantilla de registro actualizada; verificar en navegador (`/run` o
+- [x] Plantilla de registro actualizada; verificar en navegador (`/run` o
   servidor de desarrollo) el flujo completo: alta con 1 unidad, alta con 2.
 
 ## Paso 4 — Autoservicio: añadir/abandonar unidades desde el perfil

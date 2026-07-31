@@ -73,6 +73,64 @@ def test_registro_con_categoria_nueva(client, db):
     assert Categoria.query.filter_by(nombre="Técnico/a de farmacia").count() == 1
 
 
+def _segunda_categoria_id(db):
+    insertar_categorias_semilla()
+    return Categoria.query.filter_by(nombre="Auxiliar de enfermería (TCAE)").first().id
+
+
+def _datos_registro_con_segunda_unidad(db, **overrides):
+    datos = _datos_registro(db)
+    datos.update({
+        "extra_servicio": "y",
+        "extra_hospital_id": 0,
+        "extra_hospital_nuevo": "Hospital Test",
+        "extra_unidad_id": 0,
+        "extra_unidad_nuevo": "Cirugía",
+        "extra_categoria_id": _segunda_categoria_id(db),
+        "extra_categoria_nueva": "",
+    })
+    datos.update(overrides)
+    return datos
+
+
+def test_registro_con_segunda_unidad_crea_usuario_en_bd(client, db):
+    from app.models.usuario_unidad import UsuarioUnidad
+    from app.services.unidad_usuario import unidades_de
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").one()
+    assert sorted(u.nombre for u in unidades_de(usuario)) == ["Cirugía", "Urgencias"]
+    assert UsuarioUnidad.query.filter_by(
+        usuario_id=usuario.id, unidad_id=usuario.unidad_id
+    ).count() == 1
+
+
+def test_registro_con_segunda_unidad_categoria_por_membresia(client, db):
+    from app.services.unidad_usuario import categoria_en_unidad
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").one()
+    urgencias = Unidad.query.filter_by(nombre="Urgencias").one()
+    cirugia = Unidad.query.filter_by(nombre="Cirugía").one()
+    assert categoria_en_unidad(usuario, urgencias).nombre == "Enfermería"
+    assert categoria_en_unidad(usuario, cirugia).nombre == "Auxiliar de enfermería (TCAE)"
+
+
+def test_registro_segunda_unidad_incorrecta_muestra_error(client, db):
+    """Segunda unidad marcada pero sin hospital: el alta no se procesa."""
+    datos = _datos_registro_con_segunda_unidad(db)
+    datos["extra_hospital_id"] = ""
+    datos["extra_hospital_nuevo"] = ""
+    resp = client.post("/auth/registro", data=datos, follow_redirects=True)
+    assert resp.status_code == 200
+    assert "hospital".encode() in resp.data
+    assert Usuario.query.filter_by(email="ana@test.es").count() == 0
+
+
+def test_get_registro_muestra_opcion_segundo_servicio(client):
+    resp = client.get("/auth/registro")
+    assert resp.status_code == 200
+    assert "extra_servicio".encode() in resp.data
+
+
 def _crear_unidad_existente(db, categoria_id, nombre_hospital="Hospital Test", nombre_unidad="Urgencias"):
     from app.models import Hospital, Unidad, Categoria, GrupoIntercambio
     categoria = db.session.get(Categoria, categoria_id)

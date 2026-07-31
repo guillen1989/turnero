@@ -67,6 +67,76 @@ def _choices_categorias():
 # Registro / login / logout
 # ---------------------------------------------------------------------------
 
+def _nombres_geo_registro(prefijo=""):
+    """Resuelve país/provincia/ciudad del bloque de registro `prefijo`
+    ("" o "extra_") a nombres para crear o reutilizar el hospital. Si se
+    elige un nivel existente por id, arrastra los nombres de sus ancestros
+    (ciudad → provincia + país). Devuelve (pais_nombre, provincia_nombre,
+    ciudad_nombre)."""
+    pais_id = request.form.get(f"{prefijo}pais_id", type=int)
+    provincia_id = request.form.get(f"{prefijo}provincia_id", type=int)
+    ciudad_id = request.form.get(f"{prefijo}ciudad_id", type=int)
+    pais_nombre = request.form.get(f"{prefijo}pais_nuevo", "").strip() or None
+    provincia_nombre = request.form.get(f"{prefijo}provincia_nueva", "").strip() or None
+    ciudad_nombre = request.form.get(f"{prefijo}ciudad_nueva", "").strip() or None
+
+    if ciudad_id and ciudad_id != _OPCION_NUEVA:
+        c = db.session.get(Ciudad, ciudad_id)
+        if c:
+            return c.provincia.pais.nombre, c.provincia.nombre, c.nombre
+    elif provincia_id and provincia_id != _OPCION_NUEVA:
+        p = db.session.get(Provincia, provincia_id)
+        if p:
+            return p.pais.nombre, p.nombre, None
+    elif pais_id and pais_id != _OPCION_NUEVA:
+        pa = db.session.get(Pais, pais_id)
+        if pa:
+            return pa.nombre, None, None
+    return pais_nombre, provincia_nombre, ciudad_nombre
+
+
+def _resolver_extra_servicio(form):
+    """Lee el bloque opcional "añadir otro servicio" del formulario de
+    registro y devuelve (unidades_extra, errores): la lista de dicts de
+    unidades adicionales lista para `registrar_usuario`, o errores flash
+    si el bloque está marcado pero incompleto."""
+    if not form.extra_servicio.data:
+        return [], False
+
+    hospital_nombre = resolver_hospital(
+        request.form.get("extra_hospital_id", type=int), form.extra_hospital_nuevo.data
+    )
+    unidad_nombre = resolver_unidad(
+        request.form.get("extra_unidad_id", type=int), form.extra_unidad_nuevo.data
+    )
+    categoria_id = form.extra_categoria_id.data or None
+    categoria_nueva = form.extra_categoria_nueva.data or None
+
+    errores = False
+    if not hospital_nombre:
+        flash(_("Para el segundo servicio, selecciona un hospital o escribe el nombre de uno nuevo."), "danger")
+        errores = True
+    if not unidad_nombre:
+        flash(_("Para el segundo servicio, selecciona una unidad o escribe el nombre de una nueva."), "danger")
+        errores = True
+    if not categoria_id and not categoria_nueva:
+        form.extra_categoria_nueva.errors.append(_("Para el segundo servicio, indica una categoría o escribe una nueva."))
+        errores = True
+    if errores:
+        return [], True
+
+    pais_nombre, provincia_nombre, ciudad_nombre = _nombres_geo_registro("extra_")
+    return [{
+        "hospital_nombre": hospital_nombre,
+        "unidad_nombre": unidad_nombre,
+        "categoria_id": categoria_id if categoria_id != _OPCION_NUEVA_CATEGORIA else None,
+        "categoria_nueva_nombre": categoria_nueva,
+        "pais_nombre": pais_nombre,
+        "provincia_nombre": provincia_nombre,
+        "ciudad_nombre": ciudad_nombre,
+    }], False
+
+
 @bp.route("/registro", methods=["GET", "POST"])
 def registro():
     if current_user.is_authenticated:
@@ -74,6 +144,7 @@ def registro():
 
     form = RegistroForm()
     form.categoria_id.choices = _choices_categorias()
+    form.extra_categoria_id.choices = _choices_categorias()
 
     if form.validate_on_submit():
         pais_id = request.form.get("pais_id", type=int)
@@ -98,26 +169,12 @@ def registro():
             form.categoria_nueva.errors.append(_("Indica una categoría o escribe una nueva."))
             errores = True
 
+        unidades_extra, errores_extra = _resolver_extra_servicio(form)
+        errores = errores or errores_extra
+
         if not errores:
             try:
-                pais_nombre = (form.pais_nuevo.data or "").strip() or None
-                provincia_nombre = (form.provincia_nueva.data or "").strip() or None
-                ciudad_nombre = (form.ciudad_nueva.data or "").strip() or None
-                if ciudad_id and ciudad_id != _OPCION_NUEVA:
-                    c = db.session.get(Ciudad, ciudad_id)
-                    if c:
-                        ciudad_nombre = c.nombre
-                        provincia_nombre = c.provincia.nombre
-                        pais_nombre = c.provincia.pais.nombre
-                elif provincia_id and provincia_id != _OPCION_NUEVA:
-                    p = db.session.get(Provincia, provincia_id)
-                    if p:
-                        provincia_nombre = p.nombre
-                        pais_nombre = p.pais.nombre
-                elif pais_id and pais_id != _OPCION_NUEVA:
-                    pa = db.session.get(Pais, pais_id)
-                    if pa:
-                        pais_nombre = pa.nombre
+                pais_nombre, provincia_nombre, ciudad_nombre = _nombres_geo_registro()
 
                 usuario = registrar_usuario(
                     nombre=form.nombre.data,
@@ -130,6 +187,7 @@ def registro():
                     pais_nombre=pais_nombre,
                     provincia_nombre=provincia_nombre,
                     ciudad_nombre=ciudad_nombre,
+                    unidades_extra=unidades_extra or None,
                 )
                 login_user(usuario, remember=True)
                 flash(_("¡Bienvenido/a, %(nombre)s!", nombre=usuario.nombre), "success")
