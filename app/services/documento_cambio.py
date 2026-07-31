@@ -17,7 +17,7 @@ from app.models import (
     TurnoPlanilla,
 )
 from app.push.sender import enviar_push
-from app.services.email import enviar_email, url_absoluta
+from app.services.email import enviar_email_async, url_absoluta
 from app.services.factibilidad_documento_cambio import comprobar_factibilidad
 from app.services.junte_semanal import distribucion_desde_fechas
 
@@ -83,7 +83,7 @@ def _enviar_email_completo(documento, usuario, companero):
         "email/documento_cambio_completo.html",
         usuario=usuario, companero=companero, documento=documento, enlace=enlace,
     )
-    enviar_email(usuario.email, _("Hoja de cambio completa"), cuerpo_html)
+    enviar_email_async(usuario.email, _("Hoja de cambio completa"), cuerpo_html)
 
 
 def _usuario_que_recibe(documento, participante):

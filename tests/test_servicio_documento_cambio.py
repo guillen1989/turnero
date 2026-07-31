@@ -580,7 +580,7 @@ def test_firmar_documento_envia_email_a_ambos_al_completarse(db, monkeypatch):
         enviados.append((destinatario, asunto))
         return True
 
-    monkeypatch.setattr("app.services.documento_cambio.enviar_email", _fake_enviar_email)
+    monkeypatch.setattr("app.services.documento_cambio.enviar_email_async", _fake_enviar_email)
 
     crear_usuario, manyana, tarde = _setup(db, "l")
     claudia = crear_usuario("Claudia Pérez", "claudial@h.es")
@@ -609,7 +609,7 @@ def test_firmar_documento_no_envia_email_si_usuario_lo_desactivo(db, monkeypatch
         enviados.append((destinatario, asunto))
         return True
 
-    monkeypatch.setattr("app.services.documento_cambio.enviar_email", _fake_enviar_email)
+    monkeypatch.setattr("app.services.documento_cambio.enviar_email_async", _fake_enviar_email)
 
     crear_usuario, manyana, tarde = _setup(db, "p")
     claudia = crear_usuario("Claudia Pérez", "claudiap@h.es")
@@ -636,7 +636,7 @@ def test_firmar_documento_cadena_3_envia_email_con_usuario_correcto(db, monkeypa
         enviados.append((destinatario, asunto))
         return True
 
-    monkeypatch.setattr("app.services.documento_cambio.enviar_email", _fake_enviar_email)
+    monkeypatch.setattr("app.services.documento_cambio.enviar_email_async", _fake_enviar_email)
 
     crear_usuario, manyana, tarde = _setup(db, "fdc3e")
     doc, a, b, c, pa, pb, pc = _crear_documento_cadena_3(

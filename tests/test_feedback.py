@@ -256,7 +256,7 @@ def _crear_admin(email="admin@test.es"):
 def test_nuevo_feedback_tipo_error_envia_email_al_admin(client, db):
     _crear_admin("admin@test.es")
 
-    with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+    with patch("app.routes.feedback.enviar_email_async", return_value=True) as mock_enviar:
         client.post("/feedback", data={
             "tipo": "error",
             "descripcion": "La app no carga en Safari.",
@@ -270,7 +270,7 @@ def test_nuevo_feedback_tipo_error_envia_email_al_admin(client, db):
 def test_nuevo_feedback_email_incluye_descripcion(client, db):
     _crear_admin("admin@test.es")
 
-    with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+    with patch("app.routes.feedback.enviar_email_async", return_value=True) as mock_enviar:
         client.post("/feedback", data={
             "tipo": "sugerencia",
             "descripcion": "Sería genial poder exportar el calendario.",
@@ -285,7 +285,7 @@ def test_nuevo_feedback_email_incluye_descripcion(client, db):
 def test_nuevo_feedback_tipo_recuperacion_no_envia_email(client, db):
     _crear_admin("admin@test.es")
 
-    with patch("app.routes.feedback.enviar_email") as mock_enviar:
+    with patch("app.routes.feedback.enviar_email_async") as mock_enviar:
         client.post("/feedback", data={
             "tipo": "recuperacion",
             "descripcion": "Solicitud de recuperación.",
@@ -299,7 +299,7 @@ def test_nuevo_feedback_envia_email_a_todos_los_admins(client, db):
     _crear_admin("admin1@test.es")
     _crear_admin("admin2@test.es")
 
-    with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+    with patch("app.routes.feedback.enviar_email_async", return_value=True) as mock_enviar:
         client.post("/feedback", data={
             "tipo": "error",
             "descripcion": "Fallo visible para ambos admins.",
@@ -311,7 +311,7 @@ def test_nuevo_feedback_envia_email_a_todos_los_admins(client, db):
 
 
 def test_feedback_sin_admins_no_envia_email_ni_falla(client, db):
-    with patch("app.routes.feedback.enviar_email") as mock_enviar:
+    with patch("app.routes.feedback.enviar_email_async") as mock_enviar:
         resp = client.post("/feedback", data={
             "tipo": "error",
             "descripcion": "Sin admins en el sistema.",
@@ -330,7 +330,7 @@ def test_nuevo_feedback_email_usa_app_base_url_si_esta_configurada(app, client, 
 
     app.config["APP_BASE_URL"] = "https://app.turnero.xyz"
     try:
-        with patch("app.routes.feedback.enviar_email", return_value=True) as mock_enviar:
+        with patch("app.routes.feedback.enviar_email_async", return_value=True) as mock_enviar:
             client.post("/feedback", data={
                 "tipo": "error",
                 "descripcion": "La app no carga en Safari.",
