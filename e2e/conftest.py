@@ -36,6 +36,9 @@ def _activar_feature_flags_de_test():
         "planilla_supervision_multiunidad",
         "importacion_planilla",
         "hoja_cambio_digital",
+        "cambios_encadenados",
+        "cambios_a_3",
+        "cambios_a_4",
     ):
         try:
             crear_flag(clave)

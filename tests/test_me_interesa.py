@@ -246,3 +246,68 @@ def test_me_interesa_junte_crea_match(client, db):
     assert pub_b.tipo == "junte"
     fechas_cedidas_b = {tc.fecha for tc in pub_b.turnos_cedidos}
     assert fechas_cedidas_b == {date(2026, 9, 2), date(2026, 9, 4)}
+
+
+# ---------------------------------------------------------------------------
+# Cambio_dia (tipo) — publicaciones con turno_aceptado "cualquier franja"
+# ---------------------------------------------------------------------------
+
+def test_me_interesa_cambio_dia_crea_match(client, db):
+    ana, pedro, franja = _setup()
+    otra_franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=ana.unidad.grupo_intercambio_id, nombre="Tarde"
+    ).first()
+
+    pub_a = PublicacionCambio(usuario_id=ana.id, tipo="cambio_dia")
+    db.session.add(pub_a)
+    db.session.flush()
+    tc = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    ta = TurnoAceptado(publicacion_id=pub_a.id, fecha=date(2026, 9, 1), franja_horaria_id=otra_franja.id)
+    db.session.add_all([tc, ta])
+    db.session.commit()
+
+    _login(client, "pedro@test.es")
+    with patch("app.push.sender.webpush"):
+        resp = client.post(f"/cambios/{pub_a.id}/me-interesa", data={}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert MatchCambio.query.count() == 1
+
+
+def test_me_interesa_cambio_dia_con_aceptado_cualquier_franja_no_rompe(client, db):
+    """Publicaciones cambio_dia con turno_aceptado de 'cualquier franja' (dato
+    inválido para este tipo, pero presente en producción) no deben provocar
+    un 500: al mirar el turno_aceptado no hay franja concreta que ceder, así
+    que se informa de que el cambio ya no está disponible."""
+    ana, pedro, franja = _setup()
+
+    pub_a = PublicacionCambio(usuario_id=ana.id, tipo="cambio_dia")
+    db.session.add(pub_a)
+    db.session.flush()
+    tc = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    ta = TurnoAceptado(publicacion_id=pub_a.id, fecha=date(2026, 9, 8), cualquier_franja=True)
+    db.session.add_all([tc, ta])
+    db.session.commit()
+
+    _login(client, "pedro@test.es")
+    with patch("app.push.sender.webpush"):
+        resp = client.post(f"/cambios/{pub_a.id}/me-interesa", data={}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert MatchCambio.query.count() == 0
+
+
+def test_me_interesa_junte_con_aceptado_cualquier_franja_no_rompe(client, db):
+    ana, pedro, franja = _setup()
+
+    pub_a = PublicacionCambio(usuario_id=ana.id, tipo="junte")
+    db.session.add(pub_a)
+    db.session.flush()
+    tc = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    ta = TurnoAceptado(publicacion_id=pub_a.id, fecha=date(2026, 9, 2), cualquier_franja=True)
+    db.session.add_all([tc, ta])
+    db.session.commit()
+
+    _login(client, "pedro@test.es")
+    with patch("app.push.sender.webpush"):
+        resp = client.post(f"/cambios/{pub_a.id}/me-interesa", data={}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert MatchCambio.query.count() == 0

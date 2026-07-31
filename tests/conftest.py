@@ -41,12 +41,18 @@ def _crear_bd_si_falta(uri, nombre_bd):
 
 @pytest.fixture(scope="session")
 def app():
-    flask_app = create_app("testing")
-    uri, nombre_bd = _uri_aislada_por_checkout(
-        flask_app.config["SQLALCHEMY_DATABASE_URI"]
-    )
+    from config import TestingConfig
+
+    # Flask-SQLAlchemy lee SQLALCHEMY_DATABASE_URI dentro de db.init_app(),
+    # que create_app() ya ha invocado cuando esta función recibe el app
+    # devuelto -- reasignar app.config después no tiene ningún efecto sobre
+    # el engine ya vinculado. Hay que parchear la URI aislada ANTES de crear
+    # la app, sobre la clase de config que create_app() va a leer.
+    uri, nombre_bd = _uri_aislada_por_checkout(TestingConfig.SQLALCHEMY_DATABASE_URI)
     _crear_bd_si_falta(uri, nombre_bd)
-    flask_app.config["SQLALCHEMY_DATABASE_URI"] = uri
+    TestingConfig.SQLALCHEMY_DATABASE_URI = uri
+
+    flask_app = create_app("testing")
     with flask_app.app_context():
         _db.create_all()
         yield flask_app
@@ -59,6 +65,9 @@ def _activar_feature_flags_de_test():
         "planilla_supervision_multiunidad",
         "importacion_planilla",
         "hoja_cambio_digital",
+        "cambios_encadenados",
+        "cambios_a_3",
+        "cambios_a_4",
     ):
         try:
             crear_flag(clave)

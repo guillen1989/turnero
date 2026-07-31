@@ -10,7 +10,7 @@ from app.models import Ciudad, Hospital, Pais, Provincia, Unidad, Usuario
 from app.routes.admin import admin_required, bp
 from app.routes.admin.helpers import _OPCION_NUEVA_CATEGORIA, _choices_cats, _choices_unidades
 from app.services.registro import (
-    crear_supervisora_con_invitacion,
+    crear_usuario_con_invitacion,
     encontrar_o_crear_categoria,
     encontrar_o_crear_hospital,
     encontrar_o_crear_unidad,
@@ -62,8 +62,9 @@ def usuario_nuevo():
         if not cat_id and not cat_nueva:
             flash(_("Indica una categoría o escribe una nueva."), "danger")
             errores = True
-        if not errores and not form.es_supervisora.data and not form.password.data:
-            flash(_("La contraseña es obligatoria para usuarios nuevos."), "danger")
+        email = form.email.data.strip().lower()
+        if Usuario.query.filter_by(email=email).first():
+            flash(_("Ya existe un usuario con ese email."), "danger")
             errores = True
 
         if not errores:
@@ -75,16 +76,13 @@ def usuario_nuevo():
             unidad, _is_new = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
             u = Usuario(
                 nombre=form.nombre.data.strip(),
-                email=form.email.data.strip().lower(),
+                email=email,
                 unidad=unidad,
                 categoria=categoria,
                 es_admin=form.es_admin.data,
                 es_supervisora=form.es_supervisora.data,
             )
-            if u.es_supervisora:
-                u.set_password(secrets.token_urlsafe(32))
-            else:
-                u.set_password(form.password.data)
+            u.set_password(secrets.token_urlsafe(32))
             db.session.add(u)
             db.session.flush()
             if u.es_supervisora:
@@ -92,14 +90,20 @@ def usuario_nuevo():
                     u, set(form.unidades_supervisadas.data) | {unidad.id}
                 )
             db.session.commit()
-            if u.es_supervisora:
-                crear_supervisora_con_invitacion(u)
+            email_enviado = crear_usuario_con_invitacion(u)
             flash(_("Usuario creado."), "success")
+            if not email_enviado:
+                flash(
+                    _("No se ha podido enviar el email de invitación. "
+                      "El usuario puede usar \"He olvidado mi contraseña\" en la "
+                      "pantalla de acceso para recibir un enlace."),
+                    "danger",
+                )
             return redirect(url_for("admin.usuarios"))
 
     paises = Pais.query.order_by(Pais.nombre).all()
     return render_template(
-        "admin/usuario_form.html", form=form, titulo=_("Nuevo usuario"),
+        "admin/usuario_form.html", form=form, titulo=_("Nuevo usuario"), es_creacion=True,
         paises=paises,
         current_pais_id=None, current_provincia_id=None, current_ciudad_id=None,
         current_hospital_id=None, current_unidad_id=None,
@@ -141,6 +145,10 @@ def usuario_editar(id):
         if not cat_id and not cat_nueva:
             flash(_("Indica una categoría o escribe una nueva."), "danger")
             errores = True
+        email = form.email.data.strip().lower()
+        if Usuario.query.filter(Usuario.email == email, Usuario.id != u.id).first():
+            flash(_("Ya existe un usuario con ese email."), "danger")
+            errores = True
 
         if not errores:
             hospital = encontrar_o_crear_hospital(hospital_nombre, ciudad)
@@ -150,7 +158,7 @@ def usuario_editar(id):
             )
             unidad, _is_new = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
             u.nombre = form.nombre.data.strip()
-            u.email = form.email.data.strip().lower()
+            u.email = email
             u.unidad = unidad
             u.categoria = categoria
             u.es_admin = form.es_admin.data
@@ -196,7 +204,7 @@ def usuario_editar(id):
 
     paises = Pais.query.order_by(Pais.nombre).all()
     return render_template(
-        "admin/usuario_form.html", form=form, titulo=_("Editar usuario"),
+        "admin/usuario_form.html", form=form, titulo=_("Editar usuario"), es_creacion=False,
         paises=paises,
         current_pais_id=current_pais.id if current_pais else None,
         current_provincia_id=current_provincia.id if current_provincia else None,

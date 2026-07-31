@@ -1,8 +1,25 @@
 from datetime import date, time, timedelta
 
 from app.extensions import db
-from app.models import Categoria, FranjaHoraria, GrupoIntercambio, Hospital, Unidad, Usuario
+from app.models import Categoria, DocumentoCambio, FranjaHoraria, GrupoIntercambio, Hospital, Unidad, Usuario
 from tests.helpers_documento_cambio import _setup, _login, _FIRMA_PNG
+
+
+def _post_cadena_3(client, pedro_id, luis_id, manyana_id, firmar_ambos_data=None):
+    data = {
+        "tipo": "cadena_3",
+        "companero_id": pedro_id,
+        "tercero_id": luis_id,
+        "turno_cede_fecha": "2026-08-03",
+        "turno_cede_franja_id": manyana_id,
+        "turno_companero_cede_fecha": "2026-08-04",
+        "turno_companero_cede_franja_id": manyana_id,
+        "turno_recibe_fecha": "2026-08-05",
+        "turno_recibe_franja_id": manyana_id,
+    }
+    if firmar_ambos_data:
+        data.update(firmar_ambos_data)
+    return client.post("/documentos-cambio/nuevo", data=data)
 
 
 def test_nuevo_requiere_login(client):
@@ -201,3 +218,231 @@ def test_post_nuevo_firmando_ambos_guarda_firma_propia_si_se_pide(db, client):
     # No se ha guardado por error la firma del compañero en su cuenta.
     db.session.refresh(juan)
     assert juan.firma_guardada is None
+
+
+def test_get_nuevo_incluye_toggle_de_cambio_en_el_dia(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "cd1")
+    claudia = crear_usuario("Claudia Pérez", "claudiacd1@h.es")
+    crear_usuario("Juan Rodríguez", "juancd1@h.es")
+    _login(client, claudia.email)
+
+    resp = client.get("/documentos-cambio/nuevo")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert 'id="es_cambio_dia"' in html
+    assert 'name="es_cambio_dia"' in html
+
+
+def test_post_nuevo_cambio_en_el_dia_misma_fecha_distinta_franja(db, client):
+    from app.models import DocumentoCambio
+
+    crear_usuario, manyana, tarde = _setup(db, "cd2")
+    claudia = crear_usuario("Claudia Pérez", "claudiacd2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juancd2@h.es")
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "companero_id": juan.id,
+        "es_cambio_dia": "on",
+        "turno_cede_fecha": "2026-07-07",
+        "turno_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-07-07",
+        "turno_recibe_franja_id": tarde.id,
+    })
+
+    assert resp.status_code == 302
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+    fechas = {p.turno_cede_fecha for p in documento.participantes}
+    assert fechas == {date(2026, 7, 7)}
+
+
+def _crear_franja_noche(db, grupo):
+    noche = FranjaHoraria(
+        nombre="Noche", hora_inicio=time(22, 0), hora_fin=time(7, 0), grupo_intercambio=grupo,
+    )
+    db.session.add(noche)
+    db.session.commit()
+    return noche
+
+
+def test_post_nuevo_junte_crea_documento_tipo_junte(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "junte1")
+    claudia = crear_usuario("Claudia Pérez", "claudiajunte1@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanjunte1@h.es")
+    _crear_franja_noche(db, claudia.unidad.grupo_intercambio)
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "junte",
+        "companero_id": juan.id,
+        "junte_semana": "2026-08-03",
+        "junte_cadencia": "LMVD",
+        "junte_noches": ["1", "2", "4", "6"],
+    })
+
+    assert resp.status_code == 302
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.tipo == "junte"
+    assert len(documento.participantes) == 2
+    claudia_fila = next(p for p in documento.participantes if p.usuario_id == claudia.id)
+    assert claudia_fila.turno_cede_fecha == date(2026, 8, 3)  # lunes cedido
+    assert claudia_fila.turno_recibe_fecha == date(2026, 8, 4)  # martes recibido
+
+
+def test_post_nuevo_junte_con_semana_pasada_da_error_sin_crear_nada(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "junte2")
+    claudia = crear_usuario("Claudia Pérez", "claudiajunte2@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanjunte2@h.es")
+    _crear_franja_noche(db, claudia.unidad.grupo_intercambio)
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "junte",
+        "companero_id": juan.id,
+        "junte_semana": "2020-01-06",
+        "junte_cadencia": "LMVD",
+        "junte_noches": ["1", "2", "4", "6"],
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0
+
+
+def test_post_nuevo_junte_con_numero_de_noches_incorrecto_da_error(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "junte3")
+    claudia = crear_usuario("Claudia Pérez", "claudiajunte3@h.es")
+    juan = crear_usuario("Juan Rodríguez", "juanjunte3@h.es")
+    _crear_franja_noche(db, claudia.unidad.grupo_intercambio)
+    _login(client, claudia.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "junte",
+        "companero_id": juan.id,
+        "junte_semana": "2026-08-03",
+        "junte_cadencia": "LMVD",
+        "junte_noches": ["1", "2"],
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0
+
+
+def test_post_nuevo_cadena_3_crea_documento_tipo_cadena_3(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3a")
+    ana = crear_usuario("Ana Pérez", "anac3a@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3a@h.es")
+    luis = crear_usuario("Luis Ruiz", "luisc3a@h.es")
+    _login(client, ana.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "cadena_3",
+        "companero_id": pedro.id,
+        "tercero_id": luis.id,
+        "turno_cede_fecha": "2026-08-03",
+        "turno_cede_franja_id": manyana.id,
+        "turno_companero_cede_fecha": "2026-08-04",
+        "turno_companero_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-08-05",
+        "turno_recibe_franja_id": manyana.id,
+    })
+
+    assert resp.status_code == 302
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+    assert documento.tipo == "cadena_3"
+    assert len(documento.participantes) == 3
+
+    ana_fila = next(p for p in documento.participantes if p.usuario_id == ana.id)
+    pedro_fila = next(p for p in documento.participantes if p.usuario_id == pedro.id)
+    luis_fila = next(p for p in documento.participantes if p.usuario_id == luis.id)
+
+    assert ana_fila.turno_cede_fecha == date(2026, 8, 3)
+    assert ana_fila.turno_recibe_fecha == date(2026, 8, 5)
+    assert pedro_fila.turno_cede_fecha == date(2026, 8, 4)
+    assert pedro_fila.turno_recibe_fecha == date(2026, 8, 3)
+    assert luis_fila.turno_cede_fecha == date(2026, 8, 5)
+    assert luis_fila.turno_recibe_fecha == date(2026, 8, 4)
+
+
+def test_post_nuevo_cadena_3_sin_tercero_da_error_sin_crear_nada(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3b")
+    ana = crear_usuario("Ana Pérez", "anac3b@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3b@h.es")
+    _login(client, ana.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "cadena_3",
+        "companero_id": pedro.id,
+        "tercero_id": "",
+        "turno_cede_fecha": "2026-08-03",
+        "turno_cede_franja_id": manyana.id,
+        "turno_companero_cede_fecha": "2026-08-04",
+        "turno_companero_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-08-05",
+        "turno_recibe_franja_id": manyana.id,
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0
+
+
+def test_post_nuevo_cadena_3_firmando_los_tres_completa_el_documento(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3d")
+    ana = crear_usuario("Ana Pérez", "anac3d@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3d@h.es")
+    luis = crear_usuario("Luis Ruiz", "luisc3d@h.es")
+    _login(client, ana.email)
+
+    resp = _post_cadena_3(client, pedro.id, luis.id, manyana.id, {
+        "firmar_ambos": "on",
+        "imagen_firma_propia": _FIRMA_PNG,
+        "imagen_firma_companero": _FIRMA_PNG,
+        "imagen_firma_tercero": _FIRMA_PNG,
+    })
+    documento_id = int(resp.headers["Location"].rstrip("/").split("/")[-1])
+    documento = db.session.get(DocumentoCambio, documento_id)
+
+    assert documento.estado == "completo"
+    assert {f.usuario_id for f in documento.firmas} == {ana.id, pedro.id, luis.id}
+
+
+def test_post_nuevo_cadena_3_firmando_ambos_sin_firma_del_tercero_da_error(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3e")
+    ana = crear_usuario("Ana Pérez", "anac3e@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3e@h.es")
+    luis = crear_usuario("Luis Ruiz", "luisc3e@h.es")
+    _login(client, ana.email)
+
+    resp = _post_cadena_3(client, pedro.id, luis.id, manyana.id, {
+        "firmar_ambos": "on",
+        "imagen_firma_propia": _FIRMA_PNG,
+        "imagen_firma_companero": _FIRMA_PNG,
+        "imagen_firma_tercero": "",
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0
+
+
+def test_post_nuevo_cadena_3_con_tercero_igual_al_companero_da_error(db, client):
+    crear_usuario, manyana, tarde = _setup(db, "c3c")
+    ana = crear_usuario("Ana Pérez", "anac3c@h.es")
+    pedro = crear_usuario("Pedro Gómez", "pedroc3c@h.es")
+    _login(client, ana.email)
+
+    resp = client.post("/documentos-cambio/nuevo", data={
+        "tipo": "cadena_3",
+        "companero_id": pedro.id,
+        "tercero_id": pedro.id,
+        "turno_cede_fecha": "2026-08-03",
+        "turno_cede_franja_id": manyana.id,
+        "turno_companero_cede_fecha": "2026-08-04",
+        "turno_companero_cede_franja_id": manyana.id,
+        "turno_recibe_fecha": "2026-08-05",
+        "turno_recibe_franja_id": manyana.id,
+    })
+
+    assert resp.status_code == 200
+    assert DocumentoCambio.query.count() == 0

@@ -2614,3 +2614,129 @@ mitigación preventiva independiente de la causa.
 - [x] test(e2e): el golden path sintético (`test_golden_path_staging`) dejaba cuentas de prueba (Ana/Pedro/Carlos) huérfanas en staging en cada ejecución; se envuelve en try/finally con un nuevo helper `_eliminar_cuenta()` que borra las tres cuentas vía UI al terminar (best-effort: si el test falla a medio registro, el cleanup no oculta el fallo real).
 - [x] fix(i18n): auditoría detectó que `app/routes/planilla.py` tenía ~20 `flash()` con mensaje literal (str/f-string) sin pasar por `_()`, y que `ETIQUETAS_ESTADO` estaba duplicado (con textos distintos: "No disponible" vs "No disponible para cambios") entre `planilla.py` y `planilla_supervision.py` · todos los `flash()` envueltos en `_()`, los f-strings convertidos a placeholders con nombre (`%(n)s`) siguiendo el patrón ya usado en `documento_cambio.py` · `ETIQUETAS_ESTADO` unificado en `app/models/planilla.py` con `lazy_gettext` (necesario porque es un diccionario a nivel de módulo: `_()` normal se evaluaría en el momento de importar, no por request) e importado desde ambas rutas · de paso, se encontró y corrigió un bug de shadowing: `_, num_dias = calendar.monthrange(...)` en 3 archivos que también importan `_` de `flask_babel` convertía `_` en variable local para el resto de esa función, rompiendo cualquier `_()` posterior (renombrado a `_primer_dia_semana`) · **medida preventiva** en `tests/test_i18n.py`: `test_flash_no_usa_literales_sin_traducir` escanea (vía `ast`) todos los `app/routes/*.py` y falla si algún `flash()` recibe un literal sin `_()`/`gettext()`; `test_no_se_reasigna_guion_bajo_en_archivos_con_gettext` falla si una función reasigna `_` en un archivo que lo importa de `flask_babel` — ambos tests fallaban (rojo) contra el código original antes del fix · catálogo de traducción regenerado (`translations/messages.pot`, `translations/es/LC_MESSAGES/messages.po` y `.mo`; se dejó fuera el `messages.pot` de la raíz, que es un artefacto obsoleto sin uso, no referenciado desde ningún script).
 
+
+## Fase 11 — Junte de noches en la hoja de cambio digital + supervisoras multiunidad + fixes de usuarios (movido desde PROGRESS.md)
+
+### Junte de noches en /documentos-cambio/nuevo (`docs/PLAN_JUNTE.md`)
+- [x] Paso 1 — Modelo: columna `tipo` en `DocumentoCambio` (`"cambio"` por defecto, `server_default`) y constraint `uq_participante_documento_usuario` ampliado a `(documento_id, usuario_id, turno_cede_fecha, turno_cede_franja_id)`. Migración `aec48c5be24e`.
+- [x] Paso 2 — `app/services/junte_semanal.py`: `distribucion_desde_fechas(fechas_cedidas, fechas_aceptadas)`, extraída de `calcular_distribucion`.
+- [x] Paso 3 — `app/services/factibilidad_documento_cambio.py`: overlay siempre activo, incluyendo las propias filas de `documento.participantes`; `_construir_overlay` acepta `excluir_participante`.
+- [x] Paso 4 — `crear_documento_cambio_junte(creado_por, companero, cedidos, aceptados, depende_de_id=None)` en `app/services/documento_cambio.py`.
+- [x] Paso 5 — `_contexto_pdf_junte` en `generar_pdf_documento`; los 5 campos de turno único de `pdf.html` pasan a `{% if not mostrar_junte %}`.
+- [x] Paso 6 — `app/routes/documento_cambio.py::nueva()`: campo `tipo`, rama a `crear_documento_cambio_junte` si `tipo == "junte"`.
+- [x] Paso 7 — `nuevo.html`: selector de tipo, sección `section-junte` con grid de noches (JS reutilizado de `publicar.html`).
+
+Notas: tests de PDF fallaban por bug de entorno (`md5(usedforsecurity=False)` no soportado en Python 3.8 en ese momento, no introducido por este trabajo). Flakiness preexistente detectada en `tests/test_documento_cambio_creacion.py` (no relacionada, no bloqueante).
+
+### Junte de noches — layout inicial en pdf.html (worktree `feature/junte-frames-pdf`)
+- 18 `@frame` nuevos para las 2 rejillas L-M-X-J-V-S-D (nombres + 14 celdas de día), condicionados a `mostrar_junte`. Tests en `tests/test_pdf_junte_frames.py` (renderizado directo de plantilla, sin `generar_pdf_documento` porque `DocumentoCambio` aún no admitía juntes).
+
+### Supervisoras multiunidad (`PLAN_SUPERVISORAS_MULTIUNIDAD.md`)
+- [x] Paso 1 — Modelo `UnidadSupervisada` (N:M `Usuario`↔`Unidad`), migración `666dde3fff3c` con backfill desde `es_supervisora`.
+- [x] Paso 2 — `app/services/supervision.py`: `unidades_supervisadas_de`, `puede_supervisar`.
+- [x] Paso 3 — Rutas `planilla_supervision.py`: `_unidad_supervisada_o_403`, `unidad_id` propagado por querystring/campo oculto.
+- [x] Paso 4 — Selector de unidad en `index.html`/`reglas.html` (oculto si solo hay una unidad supervisada). Test E2E de cambio de unidad.
+- [x] Paso 5 — Formulario admin: `sincronizar_unidades_supervisadas`, `AdminUsuarioForm.unidades_supervisadas` (multi-select).
+- [x] Paso 6 — Contraseña por invitación para supervisoras creadas por admin: `crear_supervisora_con_invitacion` (luego generalizada, ver más abajo).
+- [x] Paso 7 — Extensión a `planilla_import.py`: helper compartido `unidad_supervisada_o_403` movido a `app/services/supervision.py`.
+- [x] Paso 8 — Fix de integración: feature flags no activados en conftest causaban 404 en tests de supervisión.
+- [x] Paso 9 — Test E2E de flujo completo (`e2e/test_supervisora_multiunidad_e2e.py`).
+
+### Fixes puntuales sobre supervisoras multiunidad / importación de planilla (rama `fix-supervisor-unidad-planilla`)
+- [x] Label visible junto al selector de unidad (antes solo `aria-label`).
+- [x] `/auth/perfil` de supervisoras: solo lectura de hospital/unidad/categoría (no pueden cambiar su unidad base, solo alternar entre supervisadas).
+- [x] `/planilla/importar`: columna `descartado` en `MapeoTrabajadorPlanilla`, ruta `descartar_trabajadores`, checkboxes + "seleccionar todos" en la UI.
+
+Nota de flakiness pre-existente: `tests/test_rutas_importar_planilla.py` falla de forma no determinista en ejecución completa (`ObjectDeletedError`/`IntegrityError`), reproducible también en el código original sin modificar; deuda de infraestructura de test, no bloqueante.
+
+### Fixes de creación/eliminación de usuarios (rama `fix-user-creation-bugs`)
+- [x] Contraseña por invitación generalizada a todos los usuarios nuevos (`crear_usuario_con_invitacion`, antes solo supervisoras).
+- [x] Email duplicado al crear usuario causaba 500: comprobación explícita antes del INSERT/UPDATE.
+- [x] Eliminar una supervisora daba 500: ampliado el borrado en cascada de `eliminar_usuario_admin` para cubrir FKs de `DocumentoCambio`/`AjustePlanillaSupervisora`/`MapeoTrabajadorPlanilla`.
+- [x] Email de invitación no llegaba en Railway staging: sin cambio de código, ya usaba Resend vía HTTPS al generalizar el punto 1.
+
+## Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3)
+Plan completo en `docs/PLAN_3.md`. Fase cerrada; detalle paso a paso:
+
+- [x] Paso 8 (`docs/PLAN_3.md`) — revisión final y UAT: UAT-7.1 a 7.4
+  (detección de la cadena por el motor de matching) ya cubiertos por
+  `tests/test_motor_matching.py`, `tests/test_integracion_matching.py`,
+  `tests/test_pub_sintetica.py` y `tests/test_sintetica_4.py`; la
+  generación de la hoja de cambio cadena_3 (alcance de este plan) cubierta
+  por `tests/test_servicio_documento_cambio.py`,
+  `tests/test_documento_cambio_desde_match.py`,
+  `tests/test_documento_cambio_creacion.py`, `tests/test_cadena_3.py` y
+  `tests/test_confirmar_con_documento.py`. Suite completa
+  (`anaconda3/bin/python3 -m pytest`) en verde. PDF real de una cadena_3
+  generado con datos ficticios y revisado visualmente: los 3 participantes
+  aparecen, los paréntesis `(lo trabaja <nombre>)` resuelven al usuario
+  correcto y el solape del tercer compañero es el esperado.
+- [x] Paso 7 (`docs/PLAN_3.md`) — `app/routes/documento_cambio.py` +
+  `app/templates/documento_cambio/nuevo.html`: nueva opción `cadena_3` en
+  el selector de tipo; rama `elif tipo == "cadena_3":` en `nueva()` que
+  recoge `tercero_id`, `turno_companero_cede_fecha/franja_id` (reutilizando
+  `turno_cede_*`/`turno_recibe_*` para lo que cede/recibe el creador) y
+  llama a `crear_documento_cambio_cadena_3`. Validaciones: tercero
+  seleccionado y distinto del compañero, franjas y fechas válidas.
+  `firmar_ambos` se ignora para `cadena_3` (solo soporta 2 firmantes, fuera
+  de alcance de este paso). JS del formulario muestra/oculta el select de
+  tercero y el bloque de turno intermedio según el tipo elegido. Testeado
+  con `pytest --testmon` (creación correcta con 3 participantes y ciclo
+  A→B→C→A, y los 2 casos de error).
+- [x] Paso 6 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  `match_admite_documento_cambio()` ahora admite también
+  `match.tipo == "cadena_3"` con exactamente 3 `MatchParticipacion` (misma
+  validación de franja/aceptado concreto que ya tenía para `directo_2`).
+  `crear_documento_cambio_desde_match()` generalizado para iterar sobre
+  todas las participaciones del match (2 o 3) en vez de desempaquetar
+  `p1, p2` a mano, construyendo el `DocumentoCambio` con `tipo="cadena_3"`
+  cuando corresponde (y `tipo="cambio"` sin cambios para `directo_2`).
+  Testeado con un match cadena_3 completo (ciclo ana→pedro→luis→ana, cada
+  participación con `turno_cedido` y `turno_aceptado`); el test previo que
+  verificaba que una cadena_3 incompleta (sin `turno_aceptado`) seguía sin
+  admitirse se mantiene sin cambios. `pytest --testmon` en verde.
+- [x] Paso 5 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  nueva función `crear_documento_cambio_cadena_3(creado_por, companero,
+  tercero, turno_creado_por_cede, turno_companero_cede, turno_tercero_cede,
+  depende_de_id=None)` que crea un `DocumentoCambio(tipo="cadena_3")` con 3
+  `ParticipanteDocumentoCambio` coherentes con el ciclo
+  creado_por→companero→tercero→creado_por, calcula factibilidad y notifica
+  a `companero` y `tercero` (no a `creado_por`). Sigue el estilo de
+  `crear_documento_cambio_junte`. Testeado con `pytest -k cadena_3` (8
+  passed); pendiente ejecutar la suite completa al cierre de la fase
+  (Paso 8).
+- [x] Paso 4 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  `generar_notas_ilog` y el email de `firmar_documento` usan
+  `_usuario_que_recibe` en vez del patrón «otro por exclusión», que con 3
+  participantes era ambiguo. Para documentos cadena_3 de 3 participantes
+  cada nota/email referencia al usuario correcto (el que recibe el turno
+  cedido). El comportamiento con 2 participantes no cambia. Testeado con
+  casos de 2 y 3 participantes.
+- [x] Paso 3 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  función `_contexto_pdf_cadena_3(documento)` (paralela a `_contexto_pdf_junte`)
+  que devuelve `mostrar_cadena_3=True` + variables para el tercer participante
+  (`cede_tercer_franja_c`, `cede_tercer_fecha_c`, `tercer_companero_c`,
+  `firma_tercero`). `generar_pdf_documento` modificado para identificar
+  correctamente los 3 roles (solicitante, compañero=quien recibe del
+  solicitante, tercero=quien cede al solicitante) y pasar
+  `cede_fecha_receptor_nombre`/`recibe_fecha_receptor_nombre` via
+  `_usuario_que_recibe`. Testeado con documento cadena_3 de 3 participantes
+  firmado y generación de PDF.
+- [x] Paso 2 (`docs/PLAN_3.md`) — `app/services/documento_cambio.py`:
+  función `_usuario_que_recibe(documento, participante)` que, dado un
+  participante, devuelve el `Usuario` del participante que recibe el
+  turno que cede. Funciona para 2 o 3 participantes y reemplaza el
+  patrón «otro por exclusión». Testeado con ciclo A→B→C→A y con
+  intercambio 1-a-1 clásico.
+- [x] Paso 1 (`docs/PLAN_3.md`) — `app/templates/documento_cambio/pdf.html`:
+  5 `@frame` nuevos para el tercer participante de una cadena_3
+  (`cede_tercer_franja_frame`, `cede_tercer_fecha_frame`,
+  `tercer_companero_frame`, `firma_tercero_frame`, coordenadas exactas del
+  plan), todos condicionados a un flag nuevo `mostrar_cadena_3` (mismo
+  patrón que `mostrar_junte`). `cede_fecha_c`/`recibe_fecha_c` (ya
+  existentes) ganan un paréntesis opcional `(lo trabaja <nombre>)` vía
+  `cede_fecha_receptor_nombre`/`recibe_fecha_receptor_nombre` (variables que
+  llenará el Paso 2/3). Sin tests unitarios de layout en este proyecto
+  (validado renderizando un PDF de prueba manual con datos ficticios y
+  confirmando visualmente las 5 posiciones nuevas, incluido el solape
+  intencional con `firma_solicitante_frame`/`firma_companero_frame`).

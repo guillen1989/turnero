@@ -9,14 +9,18 @@ from sqlalchemy import and_, or_
 
 from app.models import DocumentoCambio, FranjaHoraria, ParticipanteDocumentoCambio, Unidad, Usuario
 from app.extensions import db
+from app.routes.publicaciones import _extraer_turnos_junte
 from app.services.documento_cambio import (
-    crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
+    crear_documento_cambio, crear_documento_cambio_junte,
+    crear_documento_cambio_cadena_3, firmar_documento,
+    generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, anular_documento, puede_anularse,
     registrar_documento_cambio_papel, CambioNoFactibleError,
 )
 from app.services.feature_flags import requiere_feature
 from app.services.planilla import franjas_trabajadas_en_fecha
 from app.services.registro import crear_franjas_default
+from app.services.supervision import unidad_supervisada_o_403, unidades_supervisadas_de
 
 bp = Blueprint("documento_cambio", __name__, url_prefix="/documentos-cambio")
 
@@ -117,6 +121,15 @@ def _usuarios_del_grupo(grupo_id):
     )
 
 
+def _usuarios_de_la_unidad(unidad_id):
+    return (
+        Usuario.query
+        .filter(Usuario.unidad_id == unidad_id)
+        .order_by(Usuario.nombre)
+        .all()
+    )
+
+
 def _subquery_ids_por_usuario_del_grupo(grupo_id):
     return (
         db.session.query(ParticipanteDocumentoCambio.documento_id)
@@ -178,18 +191,22 @@ def _filtros_supervisora_desde_request():
         "estado_decision": request.args.get("estado_decision", "").strip(),
         "factibilidad": request.args.get("factibilidad", "").strip(),
         "numero": request.args.get("numero", type=int),
+        "unidad_id": request.args.get("unidad_id", type=int),
     }
 
 
-def _documentos_del_grupo_supervisora(filtros):
+def _documentos_del_grupo_supervisora(filtros, unidad_id=None):
     """Hojas de cambio completas (dos firmas) del grupo de intercambio de la
     supervisora, aplicando los filtros dados. Los cambios `pendiente_firmas`
-    quedan siempre fuera: todavía no le han llegado a la supervisora."""
-    grupo_id = current_user.grupo_intercambio.id
-    query = DocumentoCambio.query.filter(
-        DocumentoCambio.estado == "completo",
-        DocumentoCambio.id.in_(_subquery_ids_por_usuario_del_grupo(grupo_id)),
-    )
+    quedan siempre fuera: todavía no le han llegado a la supervisora.
+    
+    Si se indica `unidad_id`, solo se muestran documentos de esa unidad."""
+    query = DocumentoCambio.query.filter(DocumentoCambio.estado == "completo")
+    if unidad_id is not None:
+        query = query.filter(DocumentoCambio.unidad_id == unidad_id)
+    else:
+        grupo_id = current_user.grupo_intercambio.id
+        query = query.filter(DocumentoCambio.id.in_(_subquery_ids_por_usuario_del_grupo(grupo_id)))
 
     fecha = None
     if filtros["fecha"]:
@@ -234,14 +251,27 @@ def _documentos_del_grupo_supervisora(filtros):
 def supervisora():
     if not current_user.es_supervisora:
         abort(403)
-    grupo_id = current_user.grupo_intercambio.id
     filtros = _filtros_supervisora_desde_request()
-    documentos = _documentos_del_grupo_supervisora(filtros)
+    unidades = unidades_supervisadas_de(current_user)
+
+    if unidades:
+        unidad = unidad_supervisada_o_403(current_user, filtros["unidad_id"])
+        filtros["unidad_id"] = unidad.id
+        trabajadores = _usuarios_de_la_unidad(unidad.id)
+        documentos = _documentos_del_grupo_supervisora(filtros, unidad_id=unidad.id)
+    else:
+        grupo_id = current_user.grupo_intercambio.id
+        unidad = None
+        trabajadores = _usuarios_del_grupo(grupo_id)
+        documentos = _documentos_del_grupo_supervisora(filtros)
+
     return render_template(
         "documento_cambio/supervisora.html",
         documentos=documentos, filtros=filtros,
-        trabajadores=_usuarios_del_grupo(grupo_id),
+        trabajadores=trabajadores,
         franjas=_franjas_disponibles(),
+        unidad=unidad,
+        unidades_supervisadas=unidades,
     )
 
 
@@ -366,6 +396,7 @@ def nueva():
     hoy = date.today()
 
     if request.method == "POST":
+        tipo = request.form.get("tipo", "cambio")
         companero_id = request.form.get("companero_id", type=int)
         cede_fecha_str = request.form.get("turno_cede_fecha", "")
         cede_franja_id = request.form.get("turno_cede_franja_id", type=int)
@@ -375,23 +406,59 @@ def nueva():
         firmar_ambos = request.form.get("firmar_ambos") == "on"
         imagen_firma_propia = request.form.get("imagen_firma_propia", "")
         imagen_firma_companero = request.form.get("imagen_firma_companero", "")
+        imagen_firma_tercero = request.form.get("imagen_firma_tercero", "")
 
         companero = next((c for c in companeros if c.id == companero_id), None)
         franja_ids_validas = {f.id for f in franjas}
 
+        tercero_id = request.form.get("tercero_id", type=int)
+        tercero = next((c for c in companeros if c.id == tercero_id), None)
+        companero_cede_fecha_str = request.form.get("turno_companero_cede_fecha", "")
+        companero_cede_franja_id = request.form.get("turno_companero_cede_franja_id", type=int)
+
         error = None
-        try:
-            cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
-            recibe_fecha = datetime.strptime(recibe_fecha_str, "%Y-%m-%d").date()
-        except (ValueError, TypeError):
-            error = _("Fechas incorrectas.")
-            cede_fecha = recibe_fecha = None
+        cedidos = aceptados = None
+        if tipo == "junte":
+            cedidos, aceptados, error = _extraer_turnos_junte()
+        elif tipo == "cadena_3":
+            try:
+                cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
+                recibe_fecha = datetime.strptime(recibe_fecha_str, "%Y-%m-%d").date()
+                companero_cede_fecha = datetime.strptime(companero_cede_fecha_str, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                error = _("Fechas incorrectas.")
+                cede_fecha = recibe_fecha = companero_cede_fecha = None
+
+            if not error and (
+                cede_franja_id not in franja_ids_validas
+                or recibe_franja_id not in franja_ids_validas
+                or companero_cede_franja_id not in franja_ids_validas
+            ):
+                error = _("Selecciona un turno válido.")
+            if not error and tercero is None:
+                error = _("Selecciona un tercer compañero válido.")
+            if not error and tercero_id == companero_id:
+                error = _("El tercer compañero debe ser distinto del compañero.")
+        else:
+            try:
+                cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
+                recibe_fecha = datetime.strptime(recibe_fecha_str, "%Y-%m-%d").date()
+            except (ValueError, TypeError):
+                error = _("Fechas incorrectas.")
+                cede_fecha = recibe_fecha = None
+
+            if not error and (cede_franja_id not in franja_ids_validas or recibe_franja_id not in franja_ids_validas):
+                error = _("Selecciona un turno válido.")
 
         if not error and companero is None:
             error = _("Selecciona un compañero válido.")
-        if not error and (cede_franja_id not in franja_ids_validas or recibe_franja_id not in franja_ids_validas):
-            error = _("Selecciona un turno válido.")
-        if not error and firmar_ambos and (
+        if not error and firmar_ambos and tipo == "cadena_3" and (
+            not imagen_firma_propia.startswith("data:image/")
+            or not imagen_firma_companero.startswith("data:image/")
+            or not imagen_firma_tercero.startswith("data:image/")
+        ):
+            error = _("Faltan una o varias firmas. Dibujad las tres antes de guardar.")
+        if not error and firmar_ambos and tipo != "cadena_3" and (
             not imagen_firma_propia.startswith("data:image/")
             or not imagen_firma_companero.startswith("data:image/")
         ):
@@ -405,14 +472,40 @@ def nueva():
                 hojas_pendientes=_hojas_pendientes_encadenables(current_user.grupo_intercambio.id),
             )
 
-        documento = crear_documento_cambio(
-            creado_por=current_user, companero=companero,
-            turno_cede_fecha=cede_fecha, turno_cede_franja_id=cede_franja_id,
-            turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=recibe_franja_id,
-            depende_de_id=depende_de_id,
-        )
+        if tipo == "junte":
+            documento = crear_documento_cambio_junte(
+                creado_por=current_user, companero=companero,
+                cedidos=cedidos, aceptados=aceptados,
+                depende_de_id=depende_de_id,
+            )
+        elif tipo == "cadena_3":
+            documento = crear_documento_cambio_cadena_3(
+                creado_por=current_user, companero=companero, tercero=tercero,
+                turno_creado_por_cede=(cede_fecha, cede_franja_id),
+                turno_companero_cede=(companero_cede_fecha, companero_cede_franja_id),
+                turno_tercero_cede=(recibe_fecha, recibe_franja_id),
+                depende_de_id=depende_de_id,
+            )
+        else:
+            documento = crear_documento_cambio(
+                creado_por=current_user, companero=companero,
+                turno_cede_fecha=cede_fecha, turno_cede_franja_id=cede_franja_id,
+                turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=recibe_franja_id,
+                depende_de_id=depende_de_id,
+            )
 
-        if firmar_ambos:
+        if firmar_ambos and tipo == "cadena_3":
+            # Las tres partes están rellenando el cambio juntas, desde el
+            # mismo dispositivo -- excepción explícita a la firma cruzada
+            # habitual (cada uno firma solo lo suyo desde su cuenta).
+            firmar_documento(documento, current_user, imagen_firma_propia)
+            firmar_documento(documento, companero, imagen_firma_companero)
+            firmar_documento(documento, tercero, imagen_firma_tercero)
+            if request.form.get("guardar_firma") and not current_user.firma_guardada:
+                current_user.firma_guardada = imagen_firma_propia
+                db.session.commit()
+            flash(_("Hoja de cambio creada y firmada por los tres. Ya está completa."), "success")
+        elif firmar_ambos:
             # Las dos partes están rellenando el cambio juntas, desde el
             # mismo dispositivo -- excepción explícita a la firma cruzada
             # habitual (cada uno firma solo lo suyo desde su cuenta).
@@ -423,7 +516,7 @@ def nueva():
                 db.session.commit()
             flash(_("Hoja de cambio creada y firmada por los dos. Ya está completa."), "success")
         else:
-            flash(_("Hoja de cambio creada. Ahora recoge las dos firmas."), "success")
+            flash(_("Hoja de cambio creada. Ahora recoge las firmas restantes."), "success")
 
         return redirect(url_for("documento_cambio.ver", documento_id=documento.id))
 
@@ -601,7 +694,7 @@ def anular(documento_id):
 
 _CAMPOS_FILTRO_BLOQUE = (
     "anyo", "mes", "fecha", "trabajador1_id", "trabajador2_id",
-    "franja_id", "estado_decision", "factibilidad", "numero",
+    "franja_id", "estado_decision", "factibilidad", "numero", "unidad_id",
 )
 
 

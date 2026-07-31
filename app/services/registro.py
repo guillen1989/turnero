@@ -10,6 +10,10 @@ from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, Usuario, FranjaHoraria,
     MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio,
     BusquedaGuardada, SuscripcionPublicaciones,
+    PasswordResetToken, EstadoDiaPlanilla, CompatibilidadPlanilla, TurnoPlanilla,
+    PlanillaMes, SalienteDia, NotaDia, AjustePlanillaSupervisora,
+    MapeoTrabajadorPlanilla, DocumentoCambio, ParticipanteDocumentoCambio,
+    FirmaDocumentoCambio,
 )
 from app.services.email import enviar_email, url_absoluta
 from app.services.password_reset import TOKEN_TTL_MINUTOS, generar_token_reset
@@ -250,6 +254,46 @@ def eliminar_usuario_admin(usuario):
     """
     pub_ids = [p.id for p in usuario.publicaciones]
 
+    PasswordResetToken.query.filter_by(usuario_id=usuario.id).delete()
+    EstadoDiaPlanilla.query.filter_by(usuario_id=usuario.id).delete()
+    CompatibilidadPlanilla.query.filter_by(usuario_id=usuario.id).delete()
+    TurnoPlanilla.query.filter_by(usuario_id=usuario.id).delete()
+    PlanillaMes.query.filter_by(usuario_id=usuario.id).delete()
+    SalienteDia.query.filter_by(usuario_id=usuario.id).delete()
+    NotaDia.query.filter_by(usuario_id=usuario.id).delete()
+    AjustePlanillaSupervisora.query.filter(
+        db.or_(
+            AjustePlanillaSupervisora.usuario_id == usuario.id,
+            AjustePlanillaSupervisora.realizado_por_id == usuario.id,
+        )
+    ).delete()
+    MapeoTrabajadorPlanilla.query.filter_by(usuario_id=usuario.id).update({"usuario_id": None})
+
+    # Documentos que el usuario creó (creado_por_id es NOT NULL): se borran
+    # enteros, incluyendo participantes/firmas de OTROS usuarios en ellos.
+    doc_ids_a_borrar = [
+        d.id for d in DocumentoCambio.query.filter_by(creado_por_id=usuario.id).all()
+    ]
+    if doc_ids_a_borrar:
+        DocumentoCambio.query.filter(
+            DocumentoCambio.depende_de_id.in_(doc_ids_a_borrar)
+        ).update({"depende_de_id": None}, synchronize_session=False)
+        FirmaDocumentoCambio.query.filter(
+            FirmaDocumentoCambio.documento_id.in_(doc_ids_a_borrar)
+        ).delete(synchronize_session=False)
+        ParticipanteDocumentoCambio.query.filter(
+            ParticipanteDocumentoCambio.documento_id.in_(doc_ids_a_borrar)
+        ).delete(synchronize_session=False)
+        DocumentoCambio.query.filter(
+            DocumentoCambio.id.in_(doc_ids_a_borrar)
+        ).delete(synchronize_session=False)
+
+    # Participación/firma del usuario en documentos ajenos (no se borra el documento)
+    FirmaDocumentoCambio.query.filter_by(usuario_id=usuario.id).delete()
+    ParticipanteDocumentoCambio.query.filter_by(usuario_id=usuario.id).delete()
+    DocumentoCambio.query.filter_by(supervisora_id=usuario.id).update({"supervisora_id": None})
+    DocumentoCambio.query.filter_by(anulado_por_id=usuario.id).update({"anulado_por_id": None})
+
     BusquedaGuardada.query.filter_by(usuario_id=usuario.id).delete()
     SuscripcionPublicaciones.query.filter(
         db.or_(
@@ -364,17 +408,21 @@ def registrar_usuario(
     return usuario
 
 
-def crear_supervisora_con_invitacion(usuario):
+def crear_usuario_con_invitacion(usuario):
     """Da de alta la contraseña de `usuario` con un valor aleatorio desconocido
     y le envía un email para que establezca la suya propia (mismo flujo que
-    "recuperar contraseña", con texto adaptado a una invitación)."""
+    "recuperar contraseña", con texto adaptado a una invitación).
+
+    Devuelve si el email se ha enviado correctamente, para que quien llame
+    pueda avisar al admin si el envío falla en vez de dejarlo pasar en
+    silencio (solo queda un warning en los logs)."""
     usuario.set_password(secrets.token_urlsafe(32))
     db.session.commit()
 
     token = generar_token_reset(usuario)
     enlace = url_absoluta("auth.restablecer_password", token=token)
     cuerpo_html = render_template(
-        "email/invitacion_supervisora.html",
+        "email/invitacion_usuario.html",
         usuario=usuario, enlace=enlace, ttl_minutos=TOKEN_TTL_MINUTOS,
     )
-    enviar_email(usuario.email, _("Se ha creado tu cuenta de supervisora en Turnero"), cuerpo_html)
+    return enviar_email(usuario.email, _("Se ha creado tu cuenta en Turnero"), cuerpo_html)

@@ -6,9 +6,11 @@ from app.models import (
     NotaDia, DocumentoCambio, ParticipanteDocumentoCambio, PlanillaMes,
 )
 from app.services.documento_cambio import (
-    crear_documento_cambio, firmar_documento, generar_notas_ilog, generar_pdf_documento,
+    crear_documento_cambio, crear_documento_cambio_junte, crear_documento_cambio_cadena_3, firmar_documento,
+    generar_notas_ilog, generar_pdf_documento,
     autorizar_documento, denegar_documento, anular_documento,
     registrar_documento_cambio_papel, CambioNoFactibleError,
+    _usuario_que_recibe,
 )
 
 _FIRMA_PNG = (
@@ -178,6 +180,66 @@ def test_firmar_documento_guarda_mismo_hash_para_contenido_identico(db):
 
     assert len(f1.hash_documento) == 64
     assert f1.hash_documento == f2.hash_documento
+
+
+def _crear_documento_cadena_3(db, crear_usuario, manyana, a_nombre, b_nombre, c_nombre):
+    a = crear_usuario(a_nombre, f"{a_nombre.lower().replace(' ', '')}@h.es")
+    b = crear_usuario(b_nombre, f"{b_nombre.lower().replace(' ', '')}@h.es")
+    c = crear_usuario(c_nombre, f"{c_nombre.lower().replace(' ', '')}@h.es")
+
+    doc = DocumentoCambio(
+        creado_por=a, unidad_id=a.unidad_id, numero_unidad=1, tipo="cadena_3",
+    )
+    db.session.add(doc)
+    db.session.flush()
+
+    pa = ParticipanteDocumentoCambio(
+        usuario=a, documento=doc,
+        turno_cede_fecha=date(2026, 7, 1), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 3), turno_recibe_franja_id=manyana.id,
+    )
+    pb = ParticipanteDocumentoCambio(
+        usuario=b, documento=doc,
+        turno_cede_fecha=date(2026, 7, 2), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 1), turno_recibe_franja_id=manyana.id,
+    )
+    pc = ParticipanteDocumentoCambio(
+        usuario=c, documento=doc,
+        turno_cede_fecha=date(2026, 7, 3), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 2), turno_recibe_franja_id=manyana.id,
+    )
+    db.session.add_all([pa, pb, pc])
+    db.session.commit()
+    return doc, a, b, c, pa, pb, pc
+
+
+def test_generar_notas_ilog_cadena_3_referencia_a_usuarios_correctos(db):
+    crear_usuario, manyana, tarde = _setup(db, "gilc3")
+    doc, a, b, c, pa, pb, pc = _crear_documento_cadena_3(
+        db, crear_usuario, manyana, "Ana gilc3", "Berta gilc3", "Carmen gilc3",
+    )
+
+    notas = generar_notas_ilog(doc)
+
+    assert len(notas) == 6
+
+    nota_a_cede = next(
+        n for n in notas if n["usuario"].id == a.id and n["fecha"] == date(2026, 7, 1)
+    )
+    assert b.nombre in nota_a_cede["texto"]
+    assert a.nombre not in nota_a_cede["texto"]
+
+    nota_b_cede = next(
+        n for n in notas if n["usuario"].id == b.id and n["fecha"] == date(2026, 7, 2)
+    )
+    assert c.nombre in nota_b_cede["texto"]
+    assert a.nombre not in nota_b_cede["texto"]
+
+    nota_c_cede = next(
+        n for n in notas if n["usuario"].id == c.id and n["fecha"] == date(2026, 7, 3)
+    )
+    assert a.nombre in nota_c_cede["texto"]
+    assert b.nombre not in nota_c_cede["texto"]
 
 
 def test_generar_notas_ilog_contenido_para_ejemplo_del_usuario(db):
@@ -565,6 +627,32 @@ def test_firmar_documento_no_envia_email_si_usuario_lo_desactivo(db, monkeypatch
 
     destinatarios = {d for d, _ in enviados}
     assert destinatarios == {"claudiap@h.es"}  # Claudia sí, Juan lo desactivó
+
+
+def test_firmar_documento_cadena_3_envia_email_con_usuario_correcto(db, monkeypatch):
+    enviados = []
+
+    def _fake_enviar_email(destinatario, asunto, cuerpo_html):
+        enviados.append((destinatario, asunto))
+        return True
+
+    monkeypatch.setattr("app.services.documento_cambio.enviar_email", _fake_enviar_email)
+
+    crear_usuario, manyana, tarde = _setup(db, "fdc3e")
+    doc, a, b, c, pa, pb, pc = _crear_documento_cadena_3(
+        db, crear_usuario, manyana, "Ana fdc3e", "Berta fdc3e", "Carmen fdc3e",
+    )
+
+    firmar_documento(doc, a, _FIRMA_PNG)
+    assert enviados == []
+
+    firmar_documento(doc, b, _FIRMA_PNG)
+    assert enviados == []
+
+    firmar_documento(doc, c, _FIRMA_PNG)
+
+    destinatarios = {d for d, _ in enviados}
+    assert destinatarios == {a.email, b.email, c.email}
 
 
 def _crear_documento_completo(db, sufijo):
@@ -968,3 +1056,360 @@ def test_al_anular_documento_autorizado_dependientes_pasan_a_no_factible(db):
     anular_documento(doc_a, supervisora, motivo="Error")
     db.session.refresh(doc_b)
     assert doc_b.factibilidad_estado == "no_factible"
+
+
+def test_usuario_que_recibe_cadena_3_identifica_recibidor_en_ciclo_A_B_C_A(db):
+    crear_usuario, manyana, tarde = _setup(db, "uqrc3")
+    a = crear_usuario("Ana", "anauqrc3@h.es")
+    b = crear_usuario("Berta", "bertauqrc3@h.es")
+    c = crear_usuario("Carmen", "carmenuqrc3@h.es")
+
+    documento = DocumentoCambio(
+        creado_por=a,
+        unidad_id=a.unidad_id,
+        numero_unidad=1,
+        tipo="cadena_3",
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    pa = ParticipanteDocumentoCambio(
+        usuario=a, documento=documento,
+        turno_cede_fecha=date(2026, 7, 1), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 3), turno_recibe_franja_id=manyana.id,
+    )
+    pb = ParticipanteDocumentoCambio(
+        usuario=b, documento=documento,
+        turno_cede_fecha=date(2026, 7, 2), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 1), turno_recibe_franja_id=manyana.id,
+    )
+    pc = ParticipanteDocumentoCambio(
+        usuario=c, documento=documento,
+        turno_cede_fecha=date(2026, 7, 3), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 2), turno_recibe_franja_id=manyana.id,
+    )
+    db.session.add_all([pa, pb, pc])
+    db.session.commit()
+
+    assert _usuario_que_recibe(documento, pa) == b
+    assert _usuario_que_recibe(documento, pb) == c
+    assert _usuario_que_recibe(documento, pc) == a
+
+
+def test_usuario_que_recibe_funciona_con_2_participantes_igual_que_exclusion(db):
+    crear_usuario, manyana, tarde = _setup(db, "uqr2")
+    claudia = crear_usuario("Claudia UQR2", "claudiauqr2@h.es")
+    juan = crear_usuario("Juan UQR2", "juanuqr2@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+
+    p_claudia = next(p for p in documento.participantes if p.usuario_id == claudia.id)
+    p_juan = next(p for p in documento.participantes if p.usuario_id == juan.id)
+
+    assert _usuario_que_recibe(documento, p_claudia) == juan
+    assert _usuario_que_recibe(documento, p_juan) == claudia
+
+
+def test_crear_documento_cambio_junte_genera_filas_espejo_por_noche(db):
+    from app.models import Notificacion
+
+    crear_usuario, manyana, tarde = _setup(db, "junte1")
+    claudia = crear_usuario("Claudia Junte", "claudiajunte1@h.es")
+    juan = crear_usuario("Juan Junte", "juanjunte1@h.es")
+
+    cedidos = [
+        (date(2026, 7, 6), manyana.id),
+        (date(2026, 7, 7), manyana.id),
+        (date(2026, 7, 8), manyana.id),
+    ]
+    aceptados = [
+        (date(2026, 7, 20), manyana.id),
+        (date(2026, 7, 21), manyana.id),
+        (date(2026, 7, 22), manyana.id),
+    ]
+
+    documento = crear_documento_cambio_junte(
+        creado_por=claudia, companero=juan, cedidos=cedidos, aceptados=aceptados,
+    )
+
+    assert documento.tipo == "junte"
+    assert documento.estado == "borrador"
+    assert len(documento.participantes) == 6
+
+    filas_claudia = sorted(
+        (p for p in documento.participantes if p.usuario_id == claudia.id),
+        key=lambda p: p.turno_cede_fecha,
+    )
+    filas_juan = sorted(
+        (p for p in documento.participantes if p.usuario_id == juan.id),
+        key=lambda p: p.turno_cede_fecha,
+    )
+    assert len(filas_claudia) == 3
+    assert len(filas_juan) == 3
+
+    for i, (fecha_cede, franja_id) in enumerate(cedidos):
+        assert filas_claudia[i].turno_cede_fecha == fecha_cede
+        assert filas_claudia[i].turno_cede_franja_id == franja_id
+        assert filas_claudia[i].turno_recibe_fecha == aceptados[i][0]
+        # El compañero es el espejo exacto de cada fila.
+        assert filas_juan[i].turno_cede_fecha == aceptados[i][0]
+        assert filas_juan[i].turno_recibe_fecha == fecha_cede
+
+    notifs_juan = Notificacion.query.filter_by(usuario_id=juan.id, documento_cambio_id=documento.id).all()
+    assert len(notifs_juan) == 1
+    assert notifs_juan[0].tipo == "documento_cambio_pendiente_firma"
+    notifs_claudia = Notificacion.query.filter_by(usuario_id=claudia.id, documento_cambio_id=documento.id).all()
+    assert notifs_claudia == []
+
+
+def test_crear_documento_cambio_junte_calcula_factibilidad_no_verificado_por_defecto(db):
+    crear_usuario, manyana, tarde = _setup(db, "junte2")
+    claudia = crear_usuario("Claudia Junte2", "claudiajunte2@h.es")
+    juan = crear_usuario("Juan Junte2", "juanjunte2@h.es")
+
+    cedidos = [(date(2026, 7, 6), manyana.id)]
+    aceptados = [(date(2026, 7, 20), manyana.id)]
+
+    # Ninguna planilla publicada -> no se puede verificar todavía.
+    documento = crear_documento_cambio_junte(
+        creado_por=claudia, companero=juan, cedidos=cedidos, aceptados=aceptados,
+    )
+
+    assert documento.factibilidad_estado == "no_verificado"
+
+
+def test_generar_pdf_documento_junte_muestra_las_dos_distribuciones(db):
+    """documento.tipo == 'junte': generar_pdf_documento agrupa las filas por
+    usuario, calcula su distribución semanal (Paso 2) y pasa mostrar_junte +
+    las variables junte_* que espera pdf.html (Paso 5 de docs/PLAN_JUNTE.md)."""
+    import pypdf
+    import io as _io
+
+    crear_usuario, manyana, tarde = _setup(db, "junte3")
+    claudia = crear_usuario("Claudia Junte3", "claudiajunte3@h.es")
+    juan = crear_usuario("Juan Junte3", "juanjunte3@h.es")
+
+    # Semana de referencia: lunes 6/7/2026. LMVD = lunes,miércoles,viernes,domingo
+    # (weekday 0,2,4,6); MJS = martes,jueves,sábado (weekday 1,3,5).
+    # Claudia (LMVD) cede lunes/miércoles/viernes (se queda el domingo) y
+    # acepta martes/jueves/sábado de Juan (MJS, los cede todos).
+    cedidos = [
+        (date(2026, 7, 6), manyana.id),   # lunes
+        (date(2026, 7, 8), manyana.id),   # miércoles
+        (date(2026, 7, 10), manyana.id),  # viernes
+    ]
+    aceptados = [
+        (date(2026, 7, 7), manyana.id),   # martes
+        (date(2026, 7, 9), manyana.id),   # jueves
+        (date(2026, 7, 11), manyana.id),  # sábado
+    ]
+
+    documento = crear_documento_cambio_junte(
+        creado_por=claudia, companero=juan, cedidos=cedidos, aceptados=aceptados,
+    )
+    firmar_documento(documento, claudia, _FIRMA_PNG)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    assert pdf_bytes[:5] == b"%PDF-"
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    # Claudia aparece en la cabecera común (solicitante) + en las dos tablas
+    # del junte (corresponde/cambio) de su propia distribución -- 3 veces.
+    assert texto.count("Claudia Junte3") == 3
+    # Juan solo aparece en las tablas del junte: el bloque de turno único
+    # (companero_c) está oculto en un junte.
+    assert texto.count("Juan Junte3") == 2
+    # No debe aparecer el bloque de turno único (cede_franja_c/etc.), que en
+    # un junte no representa bien la relación (varias filas por persona).
+    assert "Mañana" not in texto
+
+
+def test_contexto_pdf_cadena_3_para_documento_tipo_cadena_3_devuelve_variables(db):
+    from app.services.documento_cambio import _contexto_pdf_cadena_3
+
+    crear_usuario, manyana, tarde = _setup(db, "ctxc3")
+    a = crear_usuario("Ana", "anactxc3@h.es")
+    b = crear_usuario("Berta", "bertactxc3@h.es")
+    c = crear_usuario("Carmen", "carmenctxc3@h.es")
+
+    documento = DocumentoCambio(
+        creado_por=a, unidad_id=a.unidad_id, numero_unidad=1, tipo="cadena_3",
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    pa = ParticipanteDocumentoCambio(
+        usuario=a, documento=documento,
+        turno_cede_fecha=date(2026, 7, 1), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 3), turno_recibe_franja_id=manyana.id,
+    )
+    pb = ParticipanteDocumentoCambio(
+        usuario=b, documento=documento,
+        turno_cede_fecha=date(2026, 7, 2), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 1), turno_recibe_franja_id=manyana.id,
+    )
+    pc = ParticipanteDocumentoCambio(
+        usuario=c, documento=documento,
+        turno_cede_fecha=date(2026, 7, 3), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 2), turno_recibe_franja_id=manyana.id,
+    )
+    db.session.add_all([pa, pb, pc])
+
+    firmar_documento(documento, a, _FIRMA_PNG)
+    firmar_documento(documento, b, _FIRMA_PNG)
+    firmar_documento(documento, c, _FIRMA_PNG)
+
+    resultado = _contexto_pdf_cadena_3(documento)
+
+    assert resultado["mostrar_cadena_3"] is True
+    assert "Carmen" in resultado["tercer_companero_c"]
+    # cede_tercer_fecha_c describe la fila propia de Carmen (tercero): lo
+    # que trabaja (recibe, 02/07, cedido por Berta) y lo que libra (cede,
+    # 03/07) -- en ese orden, al contrario que cede_fecha_c/recibe_fecha_c.
+    assert "Carmen" in resultado["cede_tercer_fecha_c"]
+    assert "trabaja" in resultado["cede_tercer_fecha_c"]
+    assert "02/07/2026" in resultado["cede_tercer_fecha_c"]
+    assert "libra" in resultado["cede_tercer_fecha_c"]
+    assert "03/07/2026" in resultado["cede_tercer_fecha_c"]
+    assert resultado["firma_tercero"] is not None
+
+
+def test_contexto_pdf_cadena_3_para_documento_no_cadena_3_devuelve_mostrar_false(db):
+    from app.services.documento_cambio import _contexto_pdf_cadena_3
+
+    crear_usuario, manyana, tarde = _setup(db, "ctxnc3")
+    claudia = crear_usuario("Claudia", "claudiagtxnc3@h.es")
+    juan = crear_usuario("Juan", "juangtxnc3@h.es")
+
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+
+    resultado = _contexto_pdf_cadena_3(documento)
+
+    assert resultado == {"mostrar_cadena_3": False}
+
+
+def test_generar_pdf_documento_cadena_3_muestra_los_tres_participantes(db):
+    import pypdf
+    import io as _io
+
+    crear_usuario, manyana, tarde = _setup(db, "pdfc3")
+    a = crear_usuario("Ana", "anapdfc3@h.es")
+    b = crear_usuario("Berta", "bertapdfc3@h.es")
+    c = crear_usuario("Carmen", "carmenpdfc3@h.es")
+
+    documento = DocumentoCambio(
+        creado_por=a, unidad_id=a.unidad_id, numero_unidad=1, tipo="cadena_3",
+    )
+    db.session.add(documento)
+    db.session.flush()
+
+    pa = ParticipanteDocumentoCambio(
+        usuario=a, documento=documento,
+        turno_cede_fecha=date(2026, 7, 1), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 3), turno_recibe_franja_id=manyana.id,
+    )
+    pb = ParticipanteDocumentoCambio(
+        usuario=b, documento=documento,
+        turno_cede_fecha=date(2026, 7, 2), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 1), turno_recibe_franja_id=manyana.id,
+    )
+    pc = ParticipanteDocumentoCambio(
+        usuario=c, documento=documento,
+        turno_cede_fecha=date(2026, 7, 3), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 2), turno_recibe_franja_id=manyana.id,
+    )
+    db.session.add_all([pa, pb, pc])
+    db.session.commit()
+
+    firmar_documento(documento, a, _FIRMA_PNG)
+    firmar_documento(documento, b, _FIRMA_PNG)
+    firmar_documento(documento, c, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+
+    assert pdf_bytes[:5] == b"%PDF-"
+    texto = pypdf.PdfReader(_io.BytesIO(pdf_bytes)).pages[0].extract_text()
+    assert "Ana" in texto
+    assert "Berta" in texto
+    assert "Carmen" in texto
+    assert "01/07/2026" in texto
+    assert "02/07/2026" in texto
+    assert "03/07/2026" in texto
+    assert "libra" in texto
+    assert "trabaja" in texto
+
+
+def test_crear_documento_cambio_cadena_3_crea_documento_con_ciclo_abc(db):
+    from app.models import Notificacion
+
+    crear_usuario, manyana, tarde = _setup(db, "cadena3_1")
+    ana = crear_usuario("Ana Cadena3_1", "anacadena3_1@h.es")
+    berta = crear_usuario("Berta Cadena3_1", "bertacadena3_1@h.es")
+    carmen = crear_usuario("Carmen Cadena3_1", "carmencadena3_1@h.es")
+
+    turno_ana_cede = (date(2026, 7, 1), manyana.id)
+    turno_berta_cede = (date(2026, 7, 2), manyana.id)
+    turno_carmen_cede = (date(2026, 7, 3), manyana.id)
+
+    documento = crear_documento_cambio_cadena_3(
+        creado_por=ana, companero=berta, tercero=carmen,
+        turno_creado_por_cede=turno_ana_cede,
+        turno_companero_cede=turno_berta_cede,
+        turno_tercero_cede=turno_carmen_cede,
+    )
+
+    assert documento.tipo == "cadena_3"
+    assert documento.estado == "borrador"
+    assert len(documento.participantes) == 3
+
+    p_ana = next(p for p in documento.participantes if p.usuario_id == ana.id)
+    p_berta = next(p for p in documento.participantes if p.usuario_id == berta.id)
+    p_carmen = next(p for p in documento.participantes if p.usuario_id == carmen.id)
+
+    assert p_ana.turno_cede_fecha == turno_ana_cede[0]
+    assert p_ana.turno_cede_franja_id == turno_ana_cede[1]
+    assert p_ana.turno_recibe_fecha == turno_carmen_cede[0]
+    assert p_ana.turno_recibe_franja_id == turno_carmen_cede[1]
+
+    assert p_berta.turno_cede_fecha == turno_berta_cede[0]
+    assert p_berta.turno_recibe_fecha == turno_ana_cede[0]
+
+    assert p_carmen.turno_cede_fecha == turno_carmen_cede[0]
+    assert p_carmen.turno_recibe_fecha == turno_berta_cede[0]
+
+    assert _usuario_que_recibe(documento, p_ana) == berta
+    assert _usuario_que_recibe(documento, p_berta) == carmen
+    assert _usuario_que_recibe(documento, p_carmen) == ana
+
+    notifs_berta = Notificacion.query.filter_by(usuario_id=berta.id, documento_cambio_id=documento.id).all()
+    assert len(notifs_berta) == 1
+    assert notifs_berta[0].tipo == "documento_cambio_pendiente_firma"
+    notifs_carmen = Notificacion.query.filter_by(usuario_id=carmen.id, documento_cambio_id=documento.id).all()
+    assert len(notifs_carmen) == 1
+    notifs_ana = Notificacion.query.filter_by(usuario_id=ana.id, documento_cambio_id=documento.id).all()
+    assert notifs_ana == []
+
+
+def test_crear_documento_cambio_cadena_3_calcula_factibilidad_no_verificado_por_defecto(db):
+    crear_usuario, manyana, tarde = _setup(db, "cadena3_2")
+    ana = crear_usuario("Ana Cadena3_2", "anacadena3_2@h.es")
+    berta = crear_usuario("Berta Cadena3_2", "bertacadena3_2@h.es")
+    carmen = crear_usuario("Carmen Cadena3_2", "carmencadena3_2@h.es")
+
+    documento = crear_documento_cambio_cadena_3(
+        creado_por=ana, companero=berta, tercero=carmen,
+        turno_creado_por_cede=(date(2026, 7, 1), manyana.id),
+        turno_companero_cede=(date(2026, 7, 2), manyana.id),
+        turno_tercero_cede=(date(2026, 7, 3), manyana.id),
+    )
+
+    assert documento.factibilidad_estado == "no_verificado"

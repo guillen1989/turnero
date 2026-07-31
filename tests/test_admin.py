@@ -84,23 +84,24 @@ def test_admin_lista_usuarios(client, db):
 
 
 def test_admin_crea_usuario(client, db):
+    from unittest.mock import patch
     _login_admin(client, db)
-    resp = client.post(
-        "/admin/usuarios/nuevo",
-        data={
-            "nombre": "Nuevo Enfermero",
-            "email": "nuevo@test.es",
-            "password": "contraseña123",
-            "hospital_id": "0",
-            "hospital_nuevo": "Hospital Admin Test",
-            "unidad_id": "0",
-            "unidad_nuevo": "UCI",
-            "categoria_id": _cat_id(db),
-            "categoria_nueva": "",
-            "es_admin": False,
-        },
-        follow_redirects=True,
-    )
+    with patch("app.services.registro.enviar_email", return_value=True):
+        resp = client.post(
+            "/admin/usuarios/nuevo",
+            data={
+                "nombre": "Nuevo Enfermero",
+                "email": "nuevo@test.es",
+                "hospital_id": "0",
+                "hospital_nuevo": "Hospital Admin Test",
+                "unidad_id": "0",
+                "unidad_nuevo": "UCI",
+                "categoria_id": _cat_id(db),
+                "categoria_nueva": "",
+                "es_admin": False,
+            },
+            follow_redirects=True,
+        )
     assert resp.status_code == 200
     assert Usuario.query.filter_by(email="nuevo@test.es").count() == 1
 
@@ -260,18 +261,79 @@ def test_admin_crea_supervisora_password_generada_no_es_conocida(client, db):
     assert not u.check_password("contraseña123")
 
 
-def test_admin_crea_usuario_normal_sigue_exigiendo_password(client, db):
+def test_admin_crea_usuario_normal_no_exige_password_y_envia_invitacion(client, db):
+    from unittest.mock import patch
     _login_admin(client, db)
+
+    with patch("app.services.registro.enviar_email", return_value=True) as mock_enviar:
+        resp = client.post(
+            "/admin/usuarios/nuevo",
+            data={
+                "nombre": "Usuario Normal Invitado",
+                "email": "normal_invitado@test.es",
+                "hospital_id": "0",
+                "hospital_nuevo": "Hospital Admin Test",
+                "unidad_id": "0",
+                "unidad_nuevo": "Urgencias Normal",
+                "categoria_id": _cat_id(db),
+                "categoria_nueva": "",
+                "es_admin": False,
+            },
+            follow_redirects=True,
+        )
+    assert resp.status_code == 200
+    u = Usuario.query.filter_by(email="normal_invitado@test.es").first()
+    assert u is not None
+    assert not u.check_password("")
+
+    mock_enviar.assert_called_once()
+    destinatario = mock_enviar.call_args[0][0]
+    assert destinatario == "normal_invitado@test.es"
+    cuerpo_html = mock_enviar.call_args[0][2]
+    assert "/auth/restablecer-contrasena/" in cuerpo_html
+
+
+def test_admin_crea_usuario_avisa_si_falla_el_envio_de_invitacion(client, db):
+    """Regression: si Resend falla (p. ej. RESEND_API_KEY sin configurar en el
+    entorno), el admin veía "Usuario creado" sin ninguna pista de que el email
+    de invitación no había llegado."""
+    from unittest.mock import patch
+    _login_admin(client, db)
+
+    with patch("app.services.registro.enviar_email", return_value=False):
+        resp = client.post(
+            "/admin/usuarios/nuevo",
+            data={
+                "nombre": "Usuario Sin Email",
+                "email": "sin_email@test.es",
+                "hospital_id": "0",
+                "hospital_nuevo": "Hospital Admin Test",
+                "unidad_id": "0",
+                "unidad_nuevo": "Urgencias Sin Email",
+                "categoria_id": _cat_id(db),
+                "categoria_nueva": "",
+                "es_admin": False,
+            },
+            follow_redirects=True,
+        )
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(email="sin_email@test.es").count() == 1
+    assert "no se ha podido enviar" in resp.get_data(as_text=True).lower()
+
+
+def test_admin_crea_usuario_con_email_duplicado_muestra_error(client, db):
+    _login_admin(client, db)
+    u_existente = _crear_usuario(client, db, email="duplicado@test.es")
+
     resp = client.post(
         "/admin/usuarios/nuevo",
         data={
-            "nombre": "Usuario Normal Sin Password",
-            "email": "normal_sin_pass@test.es",
-            "password": "",
+            "nombre": "Otro Usuario",
+            "email": "duplicado@test.es",
             "hospital_id": "0",
             "hospital_nuevo": "Hospital Admin Test",
             "unidad_id": "0",
-            "unidad_nuevo": "Urgencias Normal",
+            "unidad_nuevo": "Urgencias Duplicado",
             "categoria_id": _cat_id(db),
             "categoria_nueva": "",
             "es_admin": False,
@@ -279,7 +341,34 @@ def test_admin_crea_usuario_normal_sigue_exigiendo_password(client, db):
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert Usuario.query.filter_by(email="normal_sin_pass@test.es").count() == 0
+    assert Usuario.query.filter_by(email="duplicado@test.es").count() == 1
+
+
+def test_admin_edita_usuario_con_email_duplicado_muestra_error(client, db):
+    from app.extensions import db as _db
+    _login_admin(client, db)
+    _crear_usuario(client, db, email="ya_existe@test.es")
+    u = _crear_usuario(client, db, email="a_editar@test.es")
+
+    resp = client.post(
+        f"/admin/usuarios/{u.id}/editar",
+        data={
+            "nombre": u.nombre,
+            "email": "ya_existe@test.es",
+            "password": "",
+            "hospital_id": "0",
+            "hospital_nuevo": "Hospital Admin Test",
+            "unidad_id": "0",
+            "unidad_nuevo": "Urgencias",
+            "categoria_id": _cat_id(db),
+            "categoria_nueva": "",
+            "es_admin": False,
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    _db.session.refresh(u)
+    assert u.email == "a_editar@test.es"
 
 
 def test_admin_edita_usuario_actualiza_unidades_supervisadas(client, db):
@@ -346,6 +435,74 @@ def test_admin_desmarca_es_supervisora_limpia_unidades_supervisadas(client, db):
     )
     assert resp.status_code == 200
     assert UnidadSupervisada.query.filter_by(usuario_id=u.id).count() == 0
+
+
+def test_admin_elimina_supervisora_con_datos_planilla_y_documentos(client, db):
+    """Regression: borrar una supervisora con filas en planilla, hojas de
+    cambio y tokens de reseteo de contraseña violaba varias FKs NOT NULL
+    (visto en producción como NotNullViolation en estado_dia_planilla)."""
+    from app.extensions import db as _db
+    from app.models import (
+        EstadoDiaPlanilla, CompatibilidadPlanilla, TurnoPlanilla, PlanillaMes,
+        SalienteDia, NotaDia, AjustePlanillaSupervisora, MapeoTrabajadorPlanilla,
+        PasswordResetToken, DocumentoCambio, ParticipanteDocumentoCambio,
+        FirmaDocumentoCambio, PublicacionCambio,
+    )
+    from app.services.password_reset import generar_token_reset
+
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="supervisora_planilla@test.es")
+    u.es_supervisora = True
+    _db.session.commit()
+    otro = _crear_usuario(client, db, email="companero_planilla@test.es")
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+    pub = PublicacionCambio(usuario_id=otro.id)
+    _db.session.add(pub)
+    _db.session.flush()
+
+    _db.session.add(EstadoDiaPlanilla(usuario_id=u.id, fecha=date(2026, 9, 1), tipo="libre"))
+    _db.session.add(CompatibilidadPlanilla(publicacion_id=pub.id, usuario_id=u.id, tipo="compatible"))
+    _db.session.add(TurnoPlanilla(usuario_id=u.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+    _db.session.add(PlanillaMes(usuario_id=u.id, anyo=2026, mes=9))
+    _db.session.add(SalienteDia(usuario_id=u.id, fecha=date(2026, 9, 3)))
+    _db.session.add(NotaDia(usuario_id=u.id, fecha=date(2026, 9, 4), texto="nota"))
+    _db.session.add(AjustePlanillaSupervisora(
+        usuario_id=otro.id, realizado_por_id=u.id, fecha=date(2026, 9, 5),
+        descripcion_anterior="Turno", descripcion_nueva="Libre",
+    ))
+    _db.session.add(MapeoTrabajadorPlanilla(
+        unidad_id=u.unidad_id, numero_empleado="123", nombre_planilla="Nombre Planilla", usuario_id=u.id,
+    ))
+    _db.session.commit()
+
+    generar_token_reset(u)
+    assert PasswordResetToken.query.filter_by(usuario_id=u.id).count() == 1
+
+    doc = DocumentoCambio(creado_por_id=u.id, unidad_id=u.unidad_id, numero_unidad=1, supervisora_id=u.id)
+    _db.session.add(doc)
+    _db.session.flush()
+    _db.session.add(ParticipanteDocumentoCambio(
+        documento_id=doc.id, usuario_id=u.id,
+        turno_cede_fecha=date(2026, 9, 6), turno_cede_franja_id=franja.id,
+        turno_recibe_fecha=date(2026, 9, 7), turno_recibe_franja_id=franja.id,
+    ))
+    _db.session.add(FirmaDocumentoCambio(
+        documento_id=doc.id, usuario_id=u.id, imagen_firma="data:image/png;base64,x",
+        hash_documento="hash",
+    ))
+    _db.session.commit()
+
+    resp = client.post(
+        f"/admin/usuarios/{u.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(email="supervisora_planilla@test.es").count() == 0
+    assert MapeoTrabajadorPlanilla.query.filter_by(numero_empleado="123").first().usuario_id is None
 
 
 def test_admin_elimina_usuario_con_publicaciones(client, db):
