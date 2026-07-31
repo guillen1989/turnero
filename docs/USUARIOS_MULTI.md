@@ -209,11 +209,11 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
 
 ## Paso 5 — Selector de unidad activa en `/calendario`, `/cambios`, `/planilla`
 
-- [ ] Tests de cada ruta: usuario con 2 unidades, comprobar que sin
+- [x] Tests de cada ruta: usuario con 2 unidades, comprobar que sin
   `unidad_id` en la URL se usa la de sesión (o la principal si no hay
   sesión), que con `unidad_id` válido cambia el contexto, y que con
   `unidad_id` de una unidad a la que NO pertenece devuelve 403.
-- [ ] Sustituir los usos directos de `current_user.unidad` /
+- [x] Sustituir los usos directos de `current_user.unidad` /
   `current_user.grupo_intercambio` en `app/routes/calendario.py`,
   `app/routes/main.py::cambios` y `app/routes/planilla.py` (incluida
   `_resolver_seleccion`) por `unidad_activa_o_403(current_user, unidad_id)`
@@ -222,18 +222,30 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
   visibilidad (p. ej. `main.py:400` `Usuario.categoria_id ==
   current_user.categoria_id` debe pasar a comparar contra la categoría del
   usuario **en la unidad activa**, no la global).
-- [ ] Guardar la unidad activa en sesión al cambiarla (nueva clave de
+- [x] Guardar la unidad activa en sesión al cambiarla (nueva clave de
   sesión, p. ej. `session["unidad_activa_id"]`).
-- [ ] Reutilizar el patrón de plantilla del `<select onchange=...>` (mismo
+- [x] Reutilizar el patrón de plantilla del `<select onchange=...>` (mismo
   idioma que `documento_cambio/supervisora.html`) en las plantillas de
   `calendario`, `cambios` (dashboard) y `planilla`, mostrando el selector
   solo si `len(unidades_de(current_user)) > 1` (simplicidad MVP: usuarios de
   una sola unidad no ven ningún selector nuevo).
-- [ ] Auditar otros puntos que asuman implícitamente una sola unidad del
+- [x] Auditar otros puntos que asuman implícitamente una sola unidad del
   usuario al construir/filtrar publicaciones o el motor de matching (grep
   de `current_user.unidad` / `current_user.categoria_id` / `current_user.grupo_intercambio`
   fuera de las 3 rutas ya cubiertas) y decidir, caso a caso, si deben pasar
   a depender de la unidad activa.
+  - **Resultados de la auditoría:** 41 referencias encontradas en 5 archivos.
+    - `auth.py`: 16/16 OK as-is (perfil, invitaciones, gestión multi-unidad).
+    - `publicaciones.py`: 8/8 MUST change (publicar, editar, me-interesa,
+      contraoferta — todas en el flujo de matching).
+    - `busquedas.py`: 1/1 MUST change (validación de franja en búsquedas
+      guardadas).
+    - `unidad.py`: 5/5 MUST change (configuración de turnos/franjas).
+    - `documento_cambio.py`: 7/11 MUST change (flujo de cambio normal),
+      4/11 DEFER (código específico de supervisora, requiere decisión de
+      diseño sobre cómo interactúa multi-unidad con supervisión).
+  - Los 21 casos MUST change quedan pendientes para un paso futuro
+    (probablemente Paso 6 o un paso intermedio antes de Paso 6).
 - [ ] Verificar manualmente en navegador: usuario con 2 unidades cambiando
   entre ellas en las 3 páginas, comprobando que el calendario/cambios/planilla
   mostrados corresponden solo a la unidad seleccionada.

@@ -35,14 +35,21 @@ def unidad_activa_o_403(usuario, unidad_id, session_key="unidad_activa_id"):
     Precedencia: query param `unidad_id` > unidad activa guardada en sesión
     (`session_key`) > unidad principal (`usuario.unidad`). Con `unidad_id`
     informado, exige que el usuario pertenezca a esa unidad o aborta 403.
+
+    Cuando `unidad_id` viene explícitamente informado (query param), lo
+    persiste en sesión para que las navegaciones posteriores mantengan el
+    contexto sin necesitar el param en cada URL.
     """
-    if unidad_id is None:
+    explicitamente_pedida = unidad_id is not None
+    if not explicitamente_pedida:
         unidad_id = session.get(session_key)
     if unidad_id is None:
         return usuario.unidad
     unidad = db.session.get(Unidad, unidad_id)
     if unidad is None or not pertenece_a(usuario, unidad):
         abort(403)
+    if explicitamente_pedida:
+        session[session_key] = unidad_id
     return unidad
 
 

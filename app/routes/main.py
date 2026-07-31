@@ -1,6 +1,6 @@
 from urllib.parse import quote as _urlquote
 
-from flask import Blueprint, current_app, jsonify, make_response, render_template, request
+from flask import Blueprint, current_app, jsonify, make_response, render_template, request, session
 from flask_login import current_user, login_required
 from sqlalchemy import and_, exists, extract, or_
 from sqlalchemy.orm import contains_eager, joinedload, selectinload
@@ -10,6 +10,7 @@ from app.models import BusquedaGuardada, CompatibilidadPlanilla, FranjaHoraria, 
 from app.services.caducidad import caducar_publicaciones_expiradas
 from app.services.junte_semanal import calcular_distribucion, resumen_textual
 from app.services.matches import calcular_trabajas
+from app.services.unidad_usuario import categoria_en_unidad, unidad_activa_o_403, unidades_de
 
 bp = Blueprint("main", __name__)
 
@@ -382,7 +383,11 @@ def cambios():
     if tipo_fecha not in {"cedido", "aceptado"}:
         tipo_fecha = ""
 
-    grupo_id = current_user.unidad.grupo_intercambio_id
+    unidad_id = request.args.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+
+    grupo_id = unidad_activa.grupo_intercambio_id
+    categoria_id = categoria_en_unidad(current_user, unidad_activa).id
     franjas = (
         FranjaHoraria.query
         .filter_by(grupo_intercambio_id=grupo_id)
@@ -397,7 +402,7 @@ def cambios():
         .filter(
             PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
             PublicacionCambio.usuario_id != current_user.id,
-            Usuario.categoria_id == current_user.categoria_id,
+            Usuario.categoria_id == categoria_id,
             Unidad.grupo_intercambio_id == grupo_id,
         )
         .options(
@@ -470,7 +475,9 @@ def cambios():
                            tipo=tipo, tipo_fecha=tipo_fecha,
                            franjas=franjas, pub_js_data=pub_js_data, franjas_js=franjas_js,
                            tab=tab, busquedas=busquedas, junte_info=junte_info,
-                           sint_info=sint_info)
+                           sint_info=sint_info,
+                           unidad_activa=unidad_activa,
+                           unidades=unidades_de(current_user))
 
 
 def _cargar_sint_info(sinteticas):

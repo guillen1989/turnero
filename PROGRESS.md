@@ -5,21 +5,30 @@ Fase 13 — Usuarios normales en varios servicios (unidades). Plan completo en
 `docs/USUARIOS_MULTI.md`. **En curso.**
 
 ## Paso actual / siguiente paso
-Siguiente: **Paso 5 — Selector de unidad activa en `/calendario`, `/cambios`, `/planilla`**
-(`docs/USUARIOS_MULTI.md`).
+Siguiente: **Paso 6 — Notificaciones: unidad de origen + bandeja única** 
+(`docs/USUARIOS_MULTI.md`). Nota: antes del Paso 6 conviene abordar los 21
+casos MUST change de la auditoría del Paso 5 (publicaciones.py, 
+busquedas.py, unidad.py, documento_cambio.py), que extienden el selector de
+unidad activa al resto de rutas del flujo de matching/cambios.
 
 ## Últimos pasos completados
-- [x] Paso 4 (`docs/USUARIOS_MULTI.md`) — autoservicio: añadir/abandonar unidades desde el
-  perfil. Nueva pestaña "Servicios" en `app/templates/auth/perfil.html` (para
-  usuarios normales y supervisoras) accesible vía `GET /auth/perfil/servicios`.
-  Lista las unidades del usuario con su categoría en cada una y etiqueta
-  "Principal" en la unidad primaria. Permite añadir un servicio adicional
-  (`POST /auth/perfil/unidades/agregar`) con cascada geográfica completa
-  (prefijo `svc-`, soportado por `cascade-hospital.js`) y abandonar una
-  unidad no-principal (`POST /auth/perfil/unidades/<id>/abandonar`) con
-  confirmación Javascript. Ambas acciones delegan en `sincronizar_unidades`.
-  No se puede abandonar la unidad principal (flash danger) ni una ajena (403).
-  13 tests nuevos en `tests/test_auth_routes.py`, todos en verde.
+- [x] Paso 5 (`docs/USUARIOS_MULTI.md`) — selector de unidad activa en
+  `/calendario`, `/cambios`, `/planilla`. `unidad_activa_o_403` ahora
+  persiste en sesión (`session["unidad_activa_id"]`) cuando se elige una
+  unidad explícitamente por query param. Las 3 rutas sustituyen
+  `current_user.unidad`/`grupo_intercambio`/`categoria_id` por la unidad
+  activa y su categoría. `calendario_mercado.py` (`_candidatas`,
+  `construir_calendario_mes`, `construir_semanas_juntes`) acepta ahora
+  `categoria_id` y `grupo_id` opcionales para filtrar por la unidad
+  activa. `planilla.py` recibe `unidad_id` en todas las rutas (GET y
+  POST) y valida las franjas contra el grupo de la unidad activa.
+  Plantillas: `<select onchange=...>` en `calendario.html`,
+  `cambios.html` y `planilla.html`, visible solo si el usuario pertenece
+  a más de una unidad. 16 tests nuevos en `tests/test_unidad_activa_rutas.py`,
+  todos en verde. **Auditoría de 41 referencias a `current_user.unidad`/
+  `categoria_id`/`grupo_intercambio` completada:** 21 casos MUST change en
+  `publicaciones.py`, `busquedas.py`, `unidad.py` y `documento_cambio.py`
+  quedan pendientes de implementación (ver `docs/USUARIOS_MULTI.md`).
 - [x] Paso 3 (`docs/USUARIOS_MULTI.md`) — alta de cuenta con segundo servicio
   opcional: `registrar_usuario` acepta `unidades_extra` (lista de dicts con
   hospital, unidad, categoría) y construye `{unidad_id: categoria_id}` para
@@ -151,6 +160,11 @@ El registro detallado de fases y pasos anteriores está en
   (invariante sembrado por el backfill de la migración; `sincronizar_unidades`
   lo mantiene y no permite eliminarla).
 - `unidad_activa_o_403` sigue la precedencia query param > sesión
-  (`session["unidad_activa_id"]`) > unidad principal.
+  (`session["unidad_activa_id"]`) > unidad principal. Persiste en sesión
+  automáticamente cuando se pasa `unidad_id` explícito por query param.
+- Quedan 21 referencias MUST change en `publicaciones.py`, `busquedas.py`,
+  `unidad.py` y `documento_cambio.py` que deberían usar la unidad activa pero
+  aún usan `current_user.unidad`/`categoria_id`/`grupo_intercambio`. Se
+  abordarán en un paso intermedio antes del Paso 6 (notificaciones).
 - Preguntas abiertas del plan (registro libre de unidades, abandono de
-  unidad) siguen pendientes de confirmar antes de los Pasos 3/4.
+  unidad) siguen pendientes de confirmar.
