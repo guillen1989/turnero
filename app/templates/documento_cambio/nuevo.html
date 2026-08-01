@@ -7,8 +7,22 @@
   <h1>{{ _('Nueva hoja de cambio') }}</h1>
   <p>{{ _('Rellena los datos del cambio. Por defecto, tu compañero/a firmará más tarde desde su propia cuenta.') }}</p>
 
+  {% if unidades|length > 1 %}
+  <div class="form-group">
+    <label for="hoja-select-unidad">{{ _('Unidad') }}:</label>
+    <select id="hoja-select-unidad" class="planilla-select" aria-label="{{ _('Unidad') }}"
+            onchange="window.location.href=this.value">
+      {% for u in unidades %}
+        <option value="{{ url_for('documento_cambio.nueva', unidad_id=u.id) }}"
+                {% if u.id == unidad_activa.id %}selected{% endif %}>{{ u.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endif %}
+
   <form method="post" id="nueva-hoja-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="unidad_id" value="{{ unidad_activa.id }}">
 
     <section class="turnos-section">
       <h2>{{ _('¿Qué tipo de hoja quieres crear?') }}</h2>

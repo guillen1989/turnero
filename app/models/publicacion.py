@@ -34,8 +34,10 @@ class PublicacionCambio(db.Model):
     # sintetica_pub_intermedio_id solo se usa en sintéticas de cadena_4: es la
     # banda real "B" del trío A→B→C ya cerrado, que la sintética completa
     # haciendo de "D" (C→D→A). En sintéticas de cadena_3 queda NULL.
+    unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), nullable=False)
 
     usuario = db.relationship("Usuario", back_populates="publicaciones")
+    unidad = db.relationship("Unidad")
     turnos_cedidos = db.relationship(
         "TurnoCedido", back_populates="publicacion", cascade="all, delete-orphan"
     )
@@ -115,3 +117,16 @@ def _auto_fecha_cierre(target, value, oldvalue, initiator):
     """Sella fecha_cierre la primera vez que el estado pasa a un estado cerrado."""
     if value in _ESTADOS_CERRADO and target.fecha_cierre is None:
         target.fecha_cierre = datetime.now(timezone.utc)
+
+
+@sa_event.listens_for(PublicacionCambio, "before_insert")
+def _auto_unidad_id(mapper, connection, target):
+    """Rellena unidad_id desde usuario.unidad_id si no se pasó explícitamente."""
+    if target.unidad_id is None and target.usuario_id is not None:
+        from sqlalchemy import text
+        result = connection.execute(
+            text("SELECT unidad_id FROM usuario WHERE id = :uid"),
+            {"uid": target.usuario_id},
+        ).scalar()
+        if result is not None:
+            target.unidad_id = result

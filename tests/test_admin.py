@@ -463,12 +463,12 @@ def test_admin_elimina_supervisora_con_datos_planilla_y_documentos(client, db):
     _db.session.add(pub)
     _db.session.flush()
 
-    _db.session.add(EstadoDiaPlanilla(usuario_id=u.id, fecha=date(2026, 9, 1), tipo="libre"))
+    _db.session.add(EstadoDiaPlanilla(usuario_id=u.id, fecha=date(2026, 9, 1), tipo="libre", unidad_id=u.unidad_id))
     _db.session.add(CompatibilidadPlanilla(publicacion_id=pub.id, usuario_id=u.id, tipo="compatible"))
-    _db.session.add(TurnoPlanilla(usuario_id=u.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
-    _db.session.add(PlanillaMes(usuario_id=u.id, anyo=2026, mes=9))
-    _db.session.add(SalienteDia(usuario_id=u.id, fecha=date(2026, 9, 3)))
-    _db.session.add(NotaDia(usuario_id=u.id, fecha=date(2026, 9, 4), texto="nota"))
+    _db.session.add(TurnoPlanilla(usuario_id=u.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id, unidad_id=u.unidad_id))
+    _db.session.add(PlanillaMes(usuario_id=u.id, anyo=2026, mes=9, unidad_id=u.unidad_id))
+    _db.session.add(SalienteDia(usuario_id=u.id, fecha=date(2026, 9, 3), unidad_id=u.unidad_id))
+    _db.session.add(NotaDia(usuario_id=u.id, fecha=date(2026, 9, 4), texto="nota", unidad_id=u.unidad_id))
     _db.session.add(AjustePlanillaSupervisora(
         usuario_id=otro.id, realizado_por_id=u.id, fecha=date(2026, 9, 5),
         descripcion_anterior="Turno", descripcion_nueva="Libre",
@@ -760,7 +760,7 @@ def test_admin_elimina_publicacion_con_notificacion_publicacion_id(client, db):
         grupo_intercambio_id=u1.unidad.grupo_intercambio_id
     ).first()
     _db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 10, 1), franja_horaria_id=franja.id))
-    notif = Notificacion(usuario_id=u2.id, publicacion_id=pub.id, tipo="nueva_publicacion_seguido")
+    notif = Notificacion(usuario_id=u2.id, unidad_id=u2.unidad_id, publicacion_id=pub.id, tipo="nueva_publicacion_seguido")
     _db.session.add(notif)
     _db.session.commit()
     pub_id = pub.id
@@ -841,7 +841,7 @@ def test_admin_elimina_usuario_con_notificaciones_ajenas_sobre_sus_pubs(client, 
     _db.session.flush()
     _db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
     # Notification for the observer referencing this publication
-    _db.session.add(Notificacion(usuario_id=observer.id, publicacion_id=pub.id, tipo="nueva_publicacion_seguido"))
+    _db.session.add(Notificacion(usuario_id=observer.id, unidad_id=observer.unidad_id, publicacion_id=pub.id, tipo="nueva_publicacion_seguido"))
     _db.session.commit()
 
     uid = u.id

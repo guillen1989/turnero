@@ -156,6 +156,7 @@ def test_flujo_eliminar_pub_con_sintetica_y_notificacion(client, db):
 
     notif = Notificacion(
         usuario_id=u2.id,
+        unidad_id=u2.unidad_id,
         publicacion_id=pub_a.id,
         tipo="nueva_publicacion_seguido",
     )

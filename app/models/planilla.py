@@ -23,12 +23,21 @@ class EstadoDiaPlanilla(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
     fecha = db.Column(db.Date, nullable=False)
     tipo = db.Column(db.String(20), nullable=False)  # libre | vacaciones | no_disponible
+    unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), nullable=False)
 
     usuario = db.relationship("Usuario", back_populates="estados_dia_planilla")
 
     __table_args__ = (
-        db.UniqueConstraint("usuario_id", "fecha", name="uq_estado_dia_usuario_fecha"),
+        db.UniqueConstraint("usuario_id", "fecha", "unidad_id", name="uq_estado_dia_usuario_fecha_unidad"),
     )
+
+    def __init__(self, *args, usuario=None, unidad_id=None, **kwargs):
+        if unidad_id is None and usuario is not None:
+            unidad_id = usuario.unidad_id
+        init_kwargs = {"unidad_id": unidad_id}
+        if usuario is not None or "usuario" in kwargs:
+            init_kwargs["usuario"] = usuario
+        super().__init__(*args, **init_kwargs, **kwargs)
 
     def __repr__(self):
         return f"<EstadoDiaPlanilla {self.fecha} [{self.tipo}]>"
@@ -71,6 +80,7 @@ class TurnoPlanilla(db.Model):
     franja_horaria_id = db.Column(
         db.Integer, db.ForeignKey("franja_horaria.id"), nullable=False
     )
+    unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), nullable=False)
 
     usuario = db.relationship("Usuario", back_populates="turnos_planilla")
     franja_horaria = db.relationship("FranjaHoraria")
@@ -78,10 +88,18 @@ class TurnoPlanilla(db.Model):
     # Permite doblajes (varias franjas el mismo día) pero impide duplicar la misma franja
     __table_args__ = (
         db.UniqueConstraint(
-            "usuario_id", "fecha", "franja_horaria_id",
-            name="uq_turno_planilla_usuario_fecha_franja",
+            "usuario_id", "fecha", "franja_horaria_id", "unidad_id",
+            name="uq_turno_planilla_usuario_fecha_franja_unidad",
         ),
     )
+
+    def __init__(self, *args, usuario=None, unidad_id=None, **kwargs):
+        if unidad_id is None and usuario is not None:
+            unidad_id = usuario.unidad_id
+        init_kwargs = {"unidad_id": unidad_id}
+        if usuario is not None or "usuario" in kwargs:
+            init_kwargs["usuario"] = usuario
+        super().__init__(*args, **init_kwargs, **kwargs)
 
     def __repr__(self):
         return f"<TurnoPlanilla {self.fecha} franja={self.franja_horaria_id}>"
@@ -95,12 +113,21 @@ class PlanillaMes(db.Model):
     anyo = db.Column(db.Integer, nullable=False)
     mes = db.Column(db.Integer, nullable=False)
     publicada = db.Column(db.Boolean, nullable=False, default=False)
+    unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), nullable=False)
 
     usuario = db.relationship("Usuario", back_populates="planillas_mes")
 
     __table_args__ = (
-        db.UniqueConstraint("usuario_id", "anyo", "mes", name="uq_planilla_mes_usuario"),
+        db.UniqueConstraint("usuario_id", "anyo", "mes", "unidad_id", name="uq_planilla_mes_usuario_unidad"),
     )
+
+    def __init__(self, *args, usuario=None, unidad_id=None, **kwargs):
+        if unidad_id is None and usuario is not None:
+            unidad_id = usuario.unidad_id
+        init_kwargs = {"unidad_id": unidad_id}
+        if usuario is not None or "usuario" in kwargs:
+            init_kwargs["usuario"] = usuario
+        super().__init__(*args, **init_kwargs, **kwargs)
 
     def __repr__(self):
         estado = "publicada" if self.publicada else "borrador"
@@ -117,12 +144,21 @@ class SalienteDia(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
     fecha = db.Column(db.Date, nullable=False)
+    unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), nullable=False)
 
     usuario = db.relationship("Usuario", back_populates="salientes_dia")
 
     __table_args__ = (
-        db.UniqueConstraint("usuario_id", "fecha", name="uq_saliente_dia_usuario_fecha"),
+        db.UniqueConstraint("usuario_id", "fecha", "unidad_id", name="uq_saliente_dia_usuario_fecha_unidad"),
     )
+
+    def __init__(self, *args, usuario=None, unidad_id=None, **kwargs):
+        if unidad_id is None and usuario is not None:
+            unidad_id = usuario.unidad_id
+        init_kwargs = {"unidad_id": unidad_id}
+        if usuario is not None or "usuario" in kwargs:
+            init_kwargs["usuario"] = usuario
+        super().__init__(*args, **init_kwargs, **kwargs)
 
     def __repr__(self):
         return f"<SalienteDia {self.fecha}>"
@@ -136,12 +172,21 @@ class NotaDia(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
     fecha = db.Column(db.Date, nullable=False)
     texto = db.Column(db.Text, nullable=False, default="")
+    unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), nullable=False)
 
     usuario = db.relationship("Usuario", back_populates="notas_dia")
 
     __table_args__ = (
-        db.UniqueConstraint("usuario_id", "fecha", name="uq_nota_dia_usuario_fecha"),
+        db.UniqueConstraint("usuario_id", "fecha", "unidad_id", name="uq_nota_dia_usuario_fecha_unidad"),
     )
+
+    def __init__(self, *args, usuario=None, unidad_id=None, **kwargs):
+        if unidad_id is None and usuario is not None:
+            unidad_id = usuario.unidad_id
+        init_kwargs = {"unidad_id": unidad_id}
+        if usuario is not None or "usuario" in kwargs:
+            init_kwargs["usuario"] = usuario
+        super().__init__(*args, **init_kwargs, **kwargs)
 
     def __repr__(self):
         return f"<NotaDia {self.fecha}>"

@@ -21,6 +21,7 @@ from app.services.feature_flags import requiere_feature
 from app.services.planilla import franjas_trabajadas_en_fecha
 from app.services.registro import crear_franjas_default
 from app.services.supervision import unidad_supervisada_o_403, unidades_supervisadas_de
+from app.services.unidad_usuario import unidad_activa_o_403, unidades_de, categoria_en_unidad
 
 bp = Blueprint("documento_cambio", __name__, url_prefix="/documentos-cambio")
 
@@ -31,14 +32,16 @@ _ESTADOS_DECISION_FILTRO = ("pendiente", "autorizado", "denegado")
 _FACTIBILIDAD_FILTRO = ("factible", "no_factible", "no_verificado")
 
 
-def _companeros_disponibles():
+def _companeros_disponibles(unidad=None):
+    if unidad is None:
+        unidad = current_user.unidad
+    categoria = categoria_en_unidad(current_user, unidad)
     return (
         Usuario.query
         .join(Unidad, Usuario.unidad_id == Unidad.id)
         .filter(
             Usuario.id != current_user.id,
-            Usuario.categoria_id == current_user.categoria_id,
-            Unidad.grupo_intercambio_id == current_user.grupo_intercambio.id,
+            Unidad.grupo_intercambio_id == unidad.grupo_intercambio_id,
         )
         .order_by(Usuario.nombre)
         .all()
@@ -73,10 +76,10 @@ def _hojas_pendientes_encadenables(grupo_id):
     )
 
 
-def _franjas_disponibles():
+def _franjas_disponibles(grupo_id):
     return (
         FranjaHoraria.query
-        .filter_by(grupo_intercambio_id=current_user.grupo_intercambio.id)
+        .filter_by(grupo_intercambio_id=grupo_id)
         .order_by(FranjaHoraria.hora_inicio)
         .all()
     )
@@ -84,15 +87,14 @@ def _franjas_disponibles():
 
 def _get_documento_validado(documento_id):
     """Devuelve el documento o aborta 403/404. Puede verlo quien es alguno
-    de sus participantes (quien lo creó siempre es uno de ellos), o una
+    de sus participantes (quien lo creo siempre es uno de ellos), o una
     supervisora del mismo grupo de intercambio que alguno de ellos."""
     documento = db.get_or_404(DocumentoCambio, documento_id)
     ids_participantes = {p.usuario_id for p in documento.participantes}
     if current_user.id in ids_participantes:
         return documento
     if current_user.es_supervisora:
-        grupos_documento = {p.usuario.grupo_intercambio.id for p in documento.participantes}
-        if current_user.grupo_intercambio.id in grupos_documento:
+        if current_user.grupo_intercambio.id == documento.unidad.grupo_intercambio_id:
             return documento
     abort(403)
 
@@ -259,17 +261,19 @@ def supervisora():
         filtros["unidad_id"] = unidad.id
         trabajadores = _usuarios_de_la_unidad(unidad.id)
         documentos = _documentos_del_grupo_supervisora(filtros, unidad_id=unidad.id)
+        franjas = _franjas_disponibles(unidad.grupo_intercambio_id)
     else:
         grupo_id = current_user.grupo_intercambio.id
         unidad = None
         trabajadores = _usuarios_del_grupo(grupo_id)
         documentos = _documentos_del_grupo_supervisora(filtros)
+        franjas = _franjas_disponibles(grupo_id)
 
     return render_template(
         "documento_cambio/supervisora.html",
         documentos=documentos, filtros=filtros,
         trabajadores=trabajadores,
-        franjas=_franjas_disponibles(),
+        franjas=franjas,
         unidad=unidad,
         unidades_supervisadas=unidades,
     )
@@ -281,19 +285,21 @@ def supervisora():
 def turnos_disponibles():
     """JSON con las franjas que un usuario del mismo grupo de intercambio
     trabaja realmente en una fecha, para repoblar los desplegables de turno
-    de los formularios de alta según lo que dice la planilla ya publicada."""
+    de los formularios de alta segun lo que dice la planilla ya publicada."""
     usuario_id = request.args.get("usuario_id", type=int)
     try:
         fecha = datetime.strptime(request.args.get("fecha", ""), "%Y-%m-%d").date()
     except (ValueError, TypeError):
         return jsonify([])
 
-    grupo_id = current_user.grupo_intercambio.id
+    unidad_id = request.args.get("unidad_id", type=int)
+    unidad = unidad_activa_o_403(current_user, unidad_id)
+    grupo_id = unidad.grupo_intercambio_id
     usuario = next((u for u in _usuarios_del_grupo(grupo_id) if u.id == usuario_id), None)
     if usuario is None:
         return jsonify([])
 
-    franjas = franjas_trabajadas_en_fecha(usuario, fecha)
+    franjas = franjas_trabajadas_en_fecha(usuario, fecha, unidad=unidad)
     return jsonify([{"id": f.id, "nombre": f.nombre} for f in franjas])
 
 
@@ -309,7 +315,7 @@ def registrar_papel():
         abort(403)
     grupo_id = current_user.grupo_intercambio.id
     trabajadores = _usuarios_del_grupo(grupo_id)
-    franjas = _franjas_disponibles()
+    franjas = _franjas_disponibles(grupo_id)
     hoy = date.today()
 
     if request.method == "POST":
@@ -387,12 +393,16 @@ def registrar_papel():
 @login_required
 @requiere_feature("hoja_cambio_digital")
 def nueva():
-    grupo = current_user.grupo_intercambio
-    crear_franjas_default(grupo)
+    unidad_id = request.args.get("unidad_id", type=int)
+    if request.method == "POST":
+        unidad_id = request.form.get("unidad_id", type=int) or unidad_id
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+
+    crear_franjas_default(unidad_activa.grupo_intercambio)
     db.session.commit()
 
-    companeros = _companeros_disponibles()
-    franjas = _franjas_disponibles()
+    companeros = _companeros_disponibles(unidad_activa)
+    franjas = _franjas_disponibles(unidad_activa.grupo_intercambio_id)
     hoy = date.today()
 
     if request.method == "POST":
@@ -419,7 +429,7 @@ def nueva():
         error = None
         cedidos = aceptados = None
         if tipo == "junte":
-            cedidos, aceptados, error = _extraer_turnos_junte()
+            cedidos, aceptados, error = _extraer_turnos_junte(unidad_activa.grupo_intercambio_id)
         elif tipo == "cadena_3":
             try:
                 cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
@@ -469,7 +479,9 @@ def nueva():
             return render_template(
                 "documento_cambio/nuevo.html", companeros=companeros,
                 franjas=franjas, today=hoy.isoformat(),
-                hojas_pendientes=_hojas_pendientes_encadenables(current_user.grupo_intercambio.id),
+                hojas_pendientes=_hojas_pendientes_encadenables(unidad_activa.grupo_intercambio_id),
+                unidad_activa=unidad_activa,
+                unidades=unidades_de(current_user),
             )
 
         if tipo == "junte":
@@ -477,6 +489,7 @@ def nueva():
                 creado_por=current_user, companero=companero,
                 cedidos=cedidos, aceptados=aceptados,
                 depende_de_id=depende_de_id,
+                unidad_id=unidad_activa.id,
             )
         elif tipo == "cadena_3":
             documento = crear_documento_cambio_cadena_3(
@@ -485,6 +498,7 @@ def nueva():
                 turno_companero_cede=(companero_cede_fecha, companero_cede_franja_id),
                 turno_tercero_cede=(recibe_fecha, recibe_franja_id),
                 depende_de_id=depende_de_id,
+                unidad_id=unidad_activa.id,
             )
         else:
             documento = crear_documento_cambio(
@@ -492,6 +506,7 @@ def nueva():
                 turno_cede_fecha=cede_fecha, turno_cede_franja_id=cede_franja_id,
                 turno_recibe_fecha=recibe_fecha, turno_recibe_franja_id=recibe_franja_id,
                 depende_de_id=depende_de_id,
+                unidad_id=unidad_activa.id,
             )
 
         if firmar_ambos and tipo == "cadena_3":
@@ -523,7 +538,9 @@ def nueva():
     return render_template(
         "documento_cambio/nuevo.html", companeros=companeros,
         franjas=franjas, today=hoy.isoformat(),
-        hojas_pendientes=_hojas_pendientes_encadenables(current_user.grupo_intercambio.id),
+        hojas_pendientes=_hojas_pendientes_encadenables(unidad_activa.grupo_intercambio_id),
+        unidad_activa=unidad_activa,
+        unidades=unidades_de(current_user),
     )
 
 

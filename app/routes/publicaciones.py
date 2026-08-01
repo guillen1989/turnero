@@ -10,6 +10,8 @@ from app.services.eventos import registrar_evento
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default, asignar_color_franja
 from app.services.compat_planilla_persistente import calcular_y_guardar_compatibilidad
+from app.services.unidad_usuario import categoria_en_unidad, unidad_activa_o_403
+from app.models.unidad import Unidad
 from app.matching.service import (
     buscar_avisos_interes_para,
     buscar_cadenas_3_para,
@@ -44,7 +46,7 @@ _CADENCIA_DIAS = {
 }
 
 
-def _extraer_turnos_junte():
+def _extraer_turnos_junte(grupo_intercambio_id):
     """
     Procesa el formulario de junte de noches.
     Devuelve (cedidos, aceptados, error_msg). error_msg es None si todo va bien.
@@ -59,7 +61,7 @@ def _extraer_turnos_junte():
         return [], [], _('Selecciona tu cadencia de noches.')
 
     franja_noche = FranjaHoraria.query.filter_by(
-        grupo_intercambio_id=current_user.unidad.grupo_intercambio_id,
+        grupo_intercambio_id=grupo_intercambio_id,
         nombre='Noche',
     ).first()
     if not franja_noche:
@@ -220,7 +222,8 @@ def _turnos_aceptados_a_json(turnos_aceptados):
 @bp.route("/publicar", methods=["GET", "POST"])
 @login_required
 def nueva():
-    grupo_id = current_user.unidad.grupo_intercambio_id
+    unidad_activa = unidad_activa_o_403(current_user, None)
+    grupo_id = unidad_activa.grupo_intercambio_id
     _asegurar_franjas(grupo_id)
     franjas = (
         FranjaHoraria.query
@@ -272,7 +275,7 @@ def nueva():
         hoy = date.today()
 
         if tipo == "junte":
-            cedidos, aceptados, error = _extraer_turnos_junte()
+            cedidos, aceptados, error = _extraer_turnos_junte(grupo_id)
             if error:
                 flash(error, "danger")
                 return render_template(
@@ -301,7 +304,7 @@ def nueva():
                 )
 
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
-        pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
+        pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje, tipo=tipo, unidad_id=unidad_activa.id)
         candidatas = candidatas_activas_para(pub)
         for candidata in buscar_matches_para(pub, candidatas):
             crear_match_directo(pub, candidata)
@@ -367,7 +370,8 @@ def editar(pub_id):
         flash(_("Solo puedes editar publicaciones activas."), "danger")
         return redirect(url_for("main.index"))
 
-    grupo_id = current_user.unidad.grupo_intercambio_id
+    unidad_activa = unidad_activa_o_403(current_user, None)
+    grupo_id = unidad_activa.grupo_intercambio_id
     _asegurar_franjas(grupo_id)
     franjas = (
         FranjaHoraria.query
@@ -432,6 +436,18 @@ def eliminar(pub_id):
     return redirect(url_for("main.index"))
 
 
+@bp.post("/publicaciones/eliminar-caducadas")
+@login_required
+def eliminar_caducadas():
+    caducadas = PublicacionCambio.query.filter_by(
+        usuario_id=current_user.id, estado="caducada"
+    ).all()
+    for pub in caducadas:
+        eliminar_publicacion(pub)
+    flash(_("Publicaciones caducadas eliminadas."), "success")
+    return redirect(url_for("main.index", estado="caducada"))
+
+
 @bp.post("/cambios/<int:pub_id>/me-interesa")
 @login_required
 def me_interesa(pub_id):
@@ -449,8 +465,11 @@ def me_interesa(pub_id):
         return redirect(url_for("main.cambios"))
 
     autor = db.session.get(Usuario, pub_a.usuario_id)
-    if (autor.categoria_id != current_user.categoria_id or
-            autor.unidad.grupo_intercambio_id != current_user.unidad.grupo_intercambio_id):
+    pub_unidad = db.session.get(Unidad, pub_a.unidad_id)
+    from app.services.unidad_usuario import pertenece_a
+    if not pertenece_a(current_user, pub_unidad) or not pertenece_a(autor, pub_unidad):
+        abort(403)
+    if categoria_en_unidad(autor, pub_unidad).id != categoria_en_unidad(current_user, pub_unidad).id:
         abort(403)
 
     if pub_a.es_sintetica:
@@ -468,7 +487,7 @@ def me_interesa(pub_id):
         if not cedidos_nuevo or not aceptados_nuevo:
             flash(_("Esta oportunidad ya no está disponible."), "warning")
             return redirect(url_for("main.cambios"))
-        pub_nuevo = publicar_cambio(current_user.id, cedidos_nuevo, aceptados_nuevo)
+        pub_nuevo = publicar_cambio(current_user.id, cedidos_nuevo, aceptados_nuevo, unidad_id=pub_unidad.id)
         match = _resolver_sintetica(pub_nuevo, pub_a)
         if match is None:
             eliminar_publicacion(pub_nuevo)
@@ -481,7 +500,7 @@ def me_interesa(pub_id):
         return redirect(url_for("main.index"))
 
     try:
-        pub_b = _crear_publicacion_espejo(pub_a)
+        pub_b = _crear_publicacion_espejo(pub_a, pub_unidad.id)
     except ValueError as exc:
         flash(str(exc), "warning")
         return redirect(url_for("main.cambios"))
@@ -495,7 +514,7 @@ def me_interesa(pub_id):
     return redirect(url_for("main.index"))
 
 
-def _crear_publicacion_espejo(pub_a):
+def _crear_publicacion_espejo(pub_a, unidad_id):
     """Crea la publicación de current_user que encaja con pub_a y lanza el match."""
     tipo = pub_a.tipo
 
@@ -507,7 +526,7 @@ def _crear_publicacion_espejo(pub_a):
         ]
         if not cedidos:
             raise ValueError(_("Este regalo no tiene turnos disponibles."))
-        return publicar_cambio(current_user.id, cedidos, [], tipo="peticion")
+        return publicar_cambio(current_user.id, cedidos, [], tipo="peticion", unidad_id=unidad_id)
 
     if tipo == "peticion":
         cedidos_abiertos = [tc for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
@@ -520,7 +539,7 @@ def _crear_publicacion_espejo(pub_a):
             tc = TurnoCedido.query.filter_by(id=tc_id, publicacion_id=pub_a.id, estado="abierto").first()
             if tc is None:
                 raise ValueError(_("Turno no encontrado o ya resuelto."))
-        return publicar_cambio(current_user.id, [], [(tc.fecha, tc.franja_horaria_id)], tipo="regalo")
+        return publicar_cambio(current_user.id, [], [(tc.fecha, tc.franja_horaria_id)], tipo="regalo", unidad_id=unidad_id)
 
     if tipo == "junte":
         cedidos_b = [
@@ -531,7 +550,7 @@ def _crear_publicacion_espejo(pub_a):
         aceptados_b = [(tc.fecha, tc.franja_horaria_id) for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
         if not cedidos_b or not aceptados_b:
             raise ValueError(_("El junte ya no tiene turnos disponibles."))
-        return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="junte")
+        return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="junte", unidad_id=unidad_id)
 
     if tipo == "cambio_dia":
         cedidos_b = [
@@ -542,7 +561,7 @@ def _crear_publicacion_espejo(pub_a):
         aceptados_b = [(tc.fecha, tc.franja_horaria_id) for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
         if not cedidos_b or not aceptados_b:
             raise ValueError(_("Este cambio de turno ya no está disponible."))
-        return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="cambio_dia")
+        return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="cambio_dia", unidad_id=unidad_id)
 
     if tipo == "cambio":
         tc_id = request.form.get("turno_cedido_id", type=int)
@@ -561,7 +580,7 @@ def _crear_publicacion_espejo(pub_a):
         else:
             cedidos_b = [(ta.fecha, ta.franja_horaria_id)]
         aceptados_b = [(tc.fecha, tc.franja_horaria_id)]
-        return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="cambio")
+        return publicar_cambio(current_user.id, cedidos_b, aceptados_b, tipo="cambio", unidad_id=unidad_id)
 
     raise ValueError(_("Tipo de publicación no reconocido."))
 
@@ -589,11 +608,15 @@ def contraoferta(pub_id):
         return redirect(url_for("main.cambios"))
 
     autor = db.session.get(Usuario, pub_original.usuario_id)
-    if (autor.categoria_id != current_user.categoria_id or
-            autor.unidad.grupo_intercambio_id != current_user.unidad.grupo_intercambio_id):
+    pub_unidad = db.session.get(Unidad, pub_original.unidad_id)
+    from app.services.unidad_usuario import pertenece_a
+    if not pertenece_a(current_user, pub_unidad) or not pertenece_a(autor, pub_unidad):
+        abort(403)
+    if categoria_en_unidad(autor, pub_unidad).id != categoria_en_unidad(current_user, pub_unidad).id:
         abort(403)
 
-    grupo_id = current_user.unidad.grupo_intercambio_id
+    unidad_activa = unidad_activa_o_403(current_user, None)
+    grupo_id = unidad_activa.grupo_intercambio_id
     franjas = (
         FranjaHoraria.query
         .filter_by(grupo_intercambio_id=grupo_id)
@@ -626,7 +649,7 @@ def contraoferta(pub_id):
             )
             return render_template("main/contraoferta.html", pub=pub_original, franjas=franjas, today=hoy)
 
-        pub_nueva = publicar_cambio(current_user.id, cedidos, aceptados, tipo="cambio", mensaje=mensaje)
+        pub_nueva = publicar_cambio(current_user.id, cedidos, aceptados, tipo="cambio", mensaje=mensaje, unidad_id=unidad_activa.id)
 
         candidatas = candidatas_activas_para(pub_nueva)
         for candidata in buscar_matches_para(pub_nueva, candidatas):
@@ -644,6 +667,7 @@ def contraoferta(pub_id):
 
         notif = Notificacion(
             usuario_id=pub_original.usuario_id,
+            unidad_id=pub_nueva.unidad_id,
             publicacion_id=pub_nueva.id,
             tipo="contraoferta",
         )

@@ -58,9 +58,9 @@ def _resumen_cambio(documento):
 
 
 def _notificar(usuario, documento, tipo, titulo, cuerpo):
-    db.session.add(Notificacion(usuario=usuario, documento_cambio=documento, tipo=tipo, mensaje=cuerpo))
+    db.session.add(Notificacion(usuario=usuario, unidad_id=documento.unidad_id, documento_cambio=documento, tipo=tipo, mensaje=cuerpo))
     if usuario.push_activo:
-        enviar_push(usuario, titulo, cuerpo, url=_url_documento(documento))
+        enviar_push(usuario, titulo, cuerpo, url=_url_documento(documento), unidad_nombre=documento.unidad.nombre)
 
 
 def _siguiente_numero_unidad(unidad_id):
@@ -115,6 +115,7 @@ def crear_documento_cambio(
     turno_cede_fecha, turno_cede_franja_id,
     turno_recibe_fecha, turno_recibe_franja_id,
     depende_de_id=None,
+    unidad_id=None,
 ):
     """
     Crea el documento con sus dos participantes espejo: lo que cede/recibe
@@ -122,10 +123,12 @@ def crear_documento_cambio(
     compañero (a quien lo crea no le hace falta, ya sabe que lo acaba de
     hacer) de que tiene una hoja de cambio pendiente de su firma.
     """
+    if unidad_id is None:
+        unidad_id = creado_por.unidad_id
     documento = DocumentoCambio(
         creado_por=creado_por,
-        unidad_id=creado_por.unidad_id,
-        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        unidad_id=unidad_id,
+        numero_unidad=_siguiente_numero_unidad(unidad_id),
         depende_de_id=depende_de_id,
     )
     db.session.add(documento)
@@ -158,7 +161,7 @@ def crear_documento_cambio(
 
 
 def crear_documento_cambio_junte(
-    creado_por, companero, cedidos, aceptados, depende_de_id=None,
+    creado_por, companero, cedidos, aceptados, depende_de_id=None, unidad_id=None,
 ):
     """
     Como crear_documento_cambio, pero para un junte de varias noches: crea
@@ -166,12 +169,14 @@ def crear_documento_cambio_junte(
 
     cedidos/aceptados son listas de (fecha, franja_id) de creado_por, del
     mismo formato y misma longitud (una noche cedida se empareja con la
-    noche aceptada de su mismo índice).
+    noche aceptada de su mismo indice).
     """
+    if unidad_id is None:
+        unidad_id = creado_por.unidad_id
     documento = DocumentoCambio(
         creado_por=creado_por,
-        unidad_id=creado_por.unidad_id,
-        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        unidad_id=unidad_id,
+        numero_unidad=_siguiente_numero_unidad(unidad_id),
         tipo="junte",
         depende_de_id=depende_de_id,
     )
@@ -208,22 +213,24 @@ def crear_documento_cambio_junte(
 def crear_documento_cambio_cadena_3(
     creado_por, companero, tercero,
     turno_creado_por_cede, turno_companero_cede, turno_tercero_cede,
-    depende_de_id=None,
+    depende_de_id=None, unidad_id=None,
 ):
     """
-    Crea un documento de una cadena de 3 bandas: ciclo creado_por→companero→
-    tercero→creado_por, donde cada `turno_X_cede` es una tupla
+    Crea un documento de una cadena de 3 bandas: ciclo creado_por->companero->
+    tercero->creado_por, donde cada `turno_X_cede` es una tupla
     (fecha, franja_id) con el turno que esa persona cede a la siguiente del
     ciclo (y por tanto recibe de la anterior).
 
-    A diferencia de crear_documento_cambio/_junte (intercambio simétrico
-    entre 2 personas), aquí cada participante cede y recibe turnos
-    distintos, así que no hay filas espejo: una fila por participante.
+    A diferencia de crear_documento_cambio/_junte (intercambio simetrico
+    entre 2 personas), aqui cada participante cede y recibe turnos
+    distintos, asi que no hay filas espejo: una fila por participante.
     """
+    if unidad_id is None:
+        unidad_id = creado_por.unidad_id
     documento = DocumentoCambio(
         creado_por=creado_por,
-        unidad_id=creado_por.unidad_id,
-        numero_unidad=_siguiente_numero_unidad(creado_por.unidad_id),
+        unidad_id=unidad_id,
+        numero_unidad=_siguiente_numero_unidad(unidad_id),
         tipo="cadena_3",
         depende_de_id=depende_de_id,
     )

@@ -18,6 +18,13 @@ class Unidad(db.Model):
     supervisoras = db.relationship(
         "Usuario", secondary="unidad_supervisada", back_populates="unidades_supervisadas"
     )
+    miembros = db.relationship(
+        "Usuario", secondary="usuario_unidad", back_populates="unidades",
+        overlaps="membresias_unidad",
+    )
+    membresias_unidad = db.relationship(
+        "UsuarioUnidad", back_populates="unidad", overlaps="miembros"
+    )
 
     __table_args__ = (
         db.UniqueConstraint("nombre", "hospital_id", "categoria_id", name="uq_unidad_nombre_hospital_categoria"),

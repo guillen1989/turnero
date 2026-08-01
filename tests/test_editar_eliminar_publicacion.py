@@ -163,6 +163,19 @@ def test_eliminar_borra_publicacion(client, db):
     assert db.session.get(PublicacionCambio, pub_id) is None
 
 
+def test_eliminar_borra_publicacion_caducada(client, db):
+    u = _usuario()
+    _login(client, u.email)
+    pub = _pub(u)
+    pub_id = pub.id
+    pub.estado = "caducada"
+    db.session.commit()
+
+    resp = client.post(f"/publicaciones/{pub_id}/eliminar", follow_redirects=False)
+    assert resp.status_code == 302
+    assert db.session.get(PublicacionCambio, pub_id) is None
+
+
 def test_eliminar_403_si_publicacion_ajena(client, db):
     u1 = _usuario(email="u1@test.es")
     u2 = _usuario(email="u2@test.es")
@@ -322,6 +335,7 @@ def test_eliminar_con_notificacion_publicacion_id_no_da_error(client, db):
 
     notif = Notificacion(
         usuario_id=u2.id,
+        unidad_id=u2.unidad_id,
         publicacion_id=pub.id,
         tipo="nueva_publicacion_seguido",
     )
@@ -334,3 +348,41 @@ def test_eliminar_con_notificacion_publicacion_id_no_da_error(client, db):
     assert resp.status_code == 302
     assert db.session.get(PublicacionCambio, pub.id) is None
     assert db.session.get(Notificacion, notif_id) is None
+
+
+# ---------------------------------------------------------------------------
+# Eliminar caducadas (masivo)
+# ---------------------------------------------------------------------------
+
+def test_eliminar_caducadas_requiere_login(client, db):
+    resp = client.post("/publicaciones/eliminar-caducadas", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
+def test_eliminar_caducadas_borra_solo_las_propias_caducadas(client, db):
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+
+    caducada_1 = _pub(u1, date(2026, 9, 1), date(2026, 9, 2))
+    caducada_1.estado = "caducada"
+    caducada_2 = _pub(u1, date(2026, 9, 3), date(2026, 9, 4))
+    caducada_2.estado = "caducada"
+    abierta = _pub(u1, date(2026, 9, 5), date(2026, 9, 6))
+    caducada_ajena = _pub(u2, date(2026, 9, 7), date(2026, 9, 8))
+    caducada_ajena.estado = "caducada"
+    db.session.commit()
+
+    caducada_1_id, caducada_2_id = caducada_1.id, caducada_2.id
+    abierta_id = abierta.id
+    caducada_ajena_id = caducada_ajena.id
+
+    resp = client.post("/publicaciones/eliminar-caducadas", follow_redirects=False)
+
+    assert resp.status_code == 302
+    assert "estado=caducada" in resp.headers["Location"]
+    assert db.session.get(PublicacionCambio, caducada_1_id) is None
+    assert db.session.get(PublicacionCambio, caducada_2_id) is None
+    assert db.session.get(PublicacionCambio, abierta_id) is not None
+    assert db.session.get(PublicacionCambio, caducada_ajena_id) is not None

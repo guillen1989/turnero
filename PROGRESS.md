@@ -1,21 +1,46 @@
 # Estado del desarrollo
 
 ## Fase actual
-Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 6
-(pruebas cerradas) en curso; Fase 3 (aspectos legales) completa; Fase 2
-(dominio) parcialmente completa.
+Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
+1. Publicación en Google Play Store (`docs/PLAN_PLAY_STORE.md`) — Fase 6
+   (pruebas cerradas) en curso; Fase 3 (aspectos legales) completa; Fase 2
+   (dominio) parcialmente completa.
+2. Fase 16 — Feature flag general `multi_unidad` para poder desactivar por
+   completo el sistema de usuarios en varios servicios, plan completo en
+   `docs/FEAT_FLAG_MULTI.md`.
 
 ## Paso actual / siguiente paso
-Resuelta la incidencia crítica de nivel de API de destino de Google Play
-(ver "Últimos pasos completados"): nuevo `.aab` con `targetSdkVersion 36`
-subido a la pista cerrada. Siguiente paso: esperar la confirmación de
-Google de que la app ya no está afectada, y seguir con lo pendiente de la
-Fase 6 (mantener la pista cerrada activa 14 días con ≥12 testers). En
-paralelo sigue pendiente Fase 2 (actualizar `APP_BASE_URL`/referencias de
-URL de producción en el repo para usar `app.turnero.xyz`, y verificar que
-`/manifest.json` y `/sw.js` se sirven correctamente desde ese dominio).
+- Multi-unidad (Fase 16): empezar por el Paso 1 de `docs/FEAT_FLAG_MULTI.md`:
+  migración de seed que crea el flag `multi_unidad` (desactivado por
+  defecto).
+- Play Store (en paralelo): resuelta la incidencia crítica de nivel de API
+  de destino (ver "Últimos pasos completados"); esperar la confirmación de
+  Google de que la app ya no está afectada, y seguir con lo pendiente de la
+  Fase 6 (mantener la pista cerrada activa 14 días con ≥12 testers).
+  Pendiente también Fase 2 (actualizar `APP_BASE_URL`/referencias de URL de
+  producción en el repo para usar `app.turnero.xyz`, y verificar que
+  `/manifest.json` y `/sw.js` se sirven correctamente desde ese dominio).
+
+## Decisiones de diseño (Fase 16)
+- Un único flag `multi_unidad`, reutilizando `FeatureFlag`/`feature_activa`
+  tal cual (sin tabla ni mecanismo nuevo). "Global-only" se consigue por
+  convención: nunca se puebla `FeatureFlagUnidad` para esta clave, y el
+  `<select>` de unidades se oculta para ella en el admin de flags.
+  Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] Fase 15 (`docs/FIX_MULTI.md`) cerrada — Paso 5: Cierre: suite completa
+  en verde (1503 passed), PROGRESS.md cerrando Fase 15, revisión de código
+  muerto.
+- [x] Paso 4 (`docs/FIX_MULTI.md`) — `busquedas.py:32` validación de franja
+  con unidad activa; `unidad.py` (5 líneas) con `unidad_activa_o_403`.
+  Tests en `test_busquedas_guardadas.py` y `test_turnos_unidad.py`.
+- [x] Paso 3 (`docs/FIX_MULTI.md`) — `PublicacionCambio.unidad_id` + bandeja
+  única etiquetada en dashboard.
+- [x] Paso 2 (`docs/FIX_MULTI.md`) — Selector de unidad al crear hoja de
+  cambio.
+- [x] Paso 1 (`docs/FIX_MULTI.md`) — `TurnoPlanilla` (y compañía) por unidad.
+- [x] Paso 0 (`docs/FIX_MULTI.md`) — decisiones de diseño confirmadas.
 - [x] Incidencia de nivel de API de destino (2026-07-31): Google avisó de que
   `targetSdkVersion 35` incumplía el requisito de Android 16 (API 36) antes
   del 31 ago 2026. Corregido `android-twa/app/build.gradle`
@@ -60,6 +85,19 @@ URL de producción en el repo para usar `app.turnero.xyz`, y verificar que
 - Lighthouse v13 (la que instala `npx lighthouse` por defecto) ya no trae la
   categoría `pwa` — Google la retiró del core. Para repetir esta auditoría
   en el futuro hay que fijar una versión antigua, p. ej. `npx lighthouse@10`.
+- La unidad principal del usuario siempre aparece en `usuario_unidad`
+  (invariante sembrado por el backfill de la migración; `sincronizar_unidades`
+  lo mantiene y no permite eliminarla).
+- `unidad_activa_o_403` sigue la precedencia query param > sesión
+  (`session["unidad_activa_id"]`) > unidad principal. Persiste en sesión
+  automáticamente cuando se pasa `unidad_id` explícito por query param.
+- Los 21 casos "MUST change" de la auditoría de `docs/USUARIOS_MULTI.md`
+  (Paso 5) ya están resueltos en los Pasos 1-4 de esa fase.
+- `unidad.py` usa `unidad_activa_o_403` (no `unidad_supervisada_o_403`)
+  porque la configuración de turnos es una acción de la unidad activa del
+  usuario, no exclusiva de supervisoras.
+- Preguntas abiertas del plan de la Fase 13 (registro libre de unidades,
+  abandono de unidad) siguen pendientes de confirmar.
 
 ## Mantenimiento reciente (independiente de la Fase 10 — supervisoras multiunidad)
 Implementación de `PLAN_SUPERVISORAS_MULTIUNIDAD.md`: las supervisoras podrán

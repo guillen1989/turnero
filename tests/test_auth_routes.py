@@ -73,6 +73,64 @@ def test_registro_con_categoria_nueva(client, db):
     assert Categoria.query.filter_by(nombre="Técnico/a de farmacia").count() == 1
 
 
+def _segunda_categoria_id(db):
+    insertar_categorias_semilla()
+    return Categoria.query.filter_by(nombre="Auxiliar de enfermería (TCAE)").first().id
+
+
+def _datos_registro_con_segunda_unidad(db, **overrides):
+    datos = _datos_registro(db)
+    datos.update({
+        "extra_servicio": "y",
+        "extra_hospital_id": 0,
+        "extra_hospital_nuevo": "Hospital Test",
+        "extra_unidad_id": 0,
+        "extra_unidad_nuevo": "Cirugía",
+        "extra_categoria_id": _segunda_categoria_id(db),
+        "extra_categoria_nueva": "",
+    })
+    datos.update(overrides)
+    return datos
+
+
+def test_registro_con_segunda_unidad_crea_usuario_en_bd(client, db):
+    from app.models.usuario_unidad import UsuarioUnidad
+    from app.services.unidad_usuario import unidades_de
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").one()
+    assert sorted(u.nombre for u in unidades_de(usuario)) == ["Cirugía", "Urgencias"]
+    assert UsuarioUnidad.query.filter_by(
+        usuario_id=usuario.id, unidad_id=usuario.unidad_id
+    ).count() == 1
+
+
+def test_registro_con_segunda_unidad_categoria_por_membresia(client, db):
+    from app.services.unidad_usuario import categoria_en_unidad
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").one()
+    urgencias = Unidad.query.filter_by(nombre="Urgencias").one()
+    cirugia = Unidad.query.filter_by(nombre="Cirugía").one()
+    assert categoria_en_unidad(usuario, urgencias).nombre == "Enfermería"
+    assert categoria_en_unidad(usuario, cirugia).nombre == "Auxiliar de enfermería (TCAE)"
+
+
+def test_registro_segunda_unidad_incorrecta_muestra_error(client, db):
+    """Segunda unidad marcada pero sin hospital: el alta no se procesa."""
+    datos = _datos_registro_con_segunda_unidad(db)
+    datos["extra_hospital_id"] = ""
+    datos["extra_hospital_nuevo"] = ""
+    resp = client.post("/auth/registro", data=datos, follow_redirects=True)
+    assert resp.status_code == 200
+    assert "hospital".encode() in resp.data
+    assert Usuario.query.filter_by(email="ana@test.es").count() == 0
+
+
+def test_get_registro_muestra_opcion_segundo_servicio(client):
+    resp = client.get("/auth/registro")
+    assert resp.status_code == 200
+    assert "extra_servicio".encode() in resp.data
+
+
 def _crear_unidad_existente(db, categoria_id, nombre_hospital="Hospital Test", nombre_unidad="Urgencias"):
     from app.models import Hospital, Unidad, Categoria, GrupoIntercambio
     categoria = db.session.get(Categoria, categoria_id)
@@ -699,3 +757,238 @@ def test_login_demo_supervisora_deshabilitada_devuelve_404(client, db, app, monk
     monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
     resp = client.post("/auth/login/demo", data={"tipo": "supervisora"}, follow_redirects=False)
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Perfil — Gestión de unidades (Paso 4 USUARIOS_MULTI)
+# ---------------------------------------------------------------------------
+
+
+def test_get_perfil_servicios_requiere_autenticacion(client):
+    resp = client.get("/auth/perfil/servicios", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
+def test_get_perfil_servicios_muestra_unidades_actuales(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/perfil/servicios")
+    assert resp.status_code == 200
+    assert b"Urgencias" in resp.data
+
+
+def test_perfil_servicios_muestra_la_categoria_de_cada_unidad(client, db):
+    from app.services.unidad_usuario import categoria_en_unidad
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    resp = client.get("/auth/perfil/servicios")
+    assert resp.status_code == 200
+    assert b"Enfermer" in resp.data
+    assert b"Auxiliar" in resp.data
+
+
+def test_formulario_abandonar_unidad_incluye_csrf_token(client, db):
+    """El formulario de abandonar servicio debe incluir el token CSRF.
+
+    WTF_CSRF_ENABLED está desactivado en tests, así que un POST directo
+    a la ruta no detecta si falta el token en la plantilla; hay que
+    comprobar el HTML renderizado.
+    """
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    resp = client.get("/auth/perfil/servicios")
+    assert resp.status_code == 200
+
+    html = resp.data.decode()
+    form_start = html.index("/abandonar")
+    form_fragment_start = html.rindex("<form", 0, form_start)
+    form_fragment_end = html.index("</form>", form_start) + len("</form>")
+    form_html = html[form_fragment_start:form_fragment_end]
+
+    assert 'name="csrf_token"' in form_html
+
+
+def test_perfil_servicios_supervisora_devuelve_200(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+    _hacer_supervisora(usuario)
+
+    resp = client.get("/auth/perfil/servicios")
+    assert resp.status_code == 200
+
+
+def test_perfil_muestra_pestaña_servicios(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/perfil")
+    assert resp.status_code == 200
+    assert b"/auth/perfil/servicios" in resp.data
+
+
+def test_agregar_unidad_desde_perfil_exitoso(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+
+    from app.services.unidad_usuario import unidades_de
+    assert len(unidades_de(usuario)) == 1
+
+    resp = client.post(
+        "/auth/perfil/unidades/agregar",
+        data={
+            "svc_hospital_id": 0,
+            "svc_hospital_nuevo": "Hospital Secundario",
+            "svc_unidad_id": 0,
+            "svc_unidad_nuevo": "Cirugía",
+            "svc_categoria_id": _segunda_categoria_id(db),
+            "svc_categoria_nueva": "",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert len(unidades_de(usuario)) == 2
+    nombres = sorted(u.nombre for u in unidades_de(usuario))
+    assert "Cirugía" in nombres
+
+
+def test_agregar_unidad_desde_perfil_categoria_nueva(client, db):
+    insertar_categorias_semilla()
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+
+    resp = client.post(
+        "/auth/perfil/unidades/agregar",
+        data={
+            "svc_hospital_id": 0,
+            "svc_hospital_nuevo": "Hospital Secundario",
+            "svc_unidad_id": 0,
+            "svc_unidad_nuevo": "Cirugía",
+            "svc_categoria_id": 0,
+            "svc_categoria_nueva": "Fisioterapia",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Categoria.query.filter_by(nombre="Fisioterapia").count() == 1
+
+
+def test_agregar_unidad_sin_hospital_muestra_error(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+
+    resp = client.post(
+        "/auth/perfil/unidades/agregar",
+        data={
+            "svc_hospital_id": "",
+            "svc_hospital_nuevo": "",
+            "svc_unidad_id": 0,
+            "svc_unidad_nuevo": "Cirugía",
+            "svc_categoria_id": _segunda_categoria_id(db),
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert b"hospital" in resp.data.lower()
+
+
+def test_agregar_unidad_sin_categoria_muestra_error(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+
+    resp = client.post(
+        "/auth/perfil/unidades/agregar",
+        data={
+            "svc_hospital_id": 0,
+            "svc_hospital_nuevo": "Hospital Test",
+            "svc_unidad_id": 0,
+            "svc_unidad_nuevo": "Cirugía",
+            "svc_categoria_id": "",
+            "svc_categoria_nueva": "",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert b"categor" in resp.data.lower()
+
+
+def test_abandonar_unidad_no_principal_exitoso(client, db):
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+
+    from app.services.unidad_usuario import unidades_de
+    assert len(unidades_de(usuario)) == 2
+
+    cirugia = Unidad.query.filter_by(nombre="Cirugía").first()
+
+    resp = client.post(
+        f"/auth/perfil/unidades/{cirugia.id}/abandonar",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert len(unidades_de(usuario)) == 1
+
+
+def test_abandonar_unidad_principal_no_permitido(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+
+    resp = client.post(
+        f"/auth/perfil/unidades/{usuario.unidad_id}/abandonar",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    from app.services.unidad_usuario import unidades_de
+    assert len(unidades_de(usuario)) == 1
+    assert b"principal" in resp.data.lower()
+
+
+def test_abandonar_unidad_a_la_que_no_se_pertenece_da_403(client, db):
+    client.post("/auth/registro", data=_datos_registro(db))
+
+    from app.models import Hospital, Unidad, Categoria, GrupoIntercambio
+    hospital = Hospital(nombre="Hospital Ajeno")
+    grupo = GrupoIntercambio()
+    db.session.add_all([hospital, grupo])
+    db.session.commit()
+    cat_id = _cat_id(db)
+    categoria = db.session.get(Categoria, cat_id)
+    unidad_ajena = Unidad(nombre="UCI Ajena", hospital=hospital, grupo_intercambio=grupo, categoria=categoria)
+    db.session.add(unidad_ajena)
+    db.session.commit()
+
+    resp = client.post(
+        f"/auth/perfil/unidades/{unidad_ajena.id}/abandonar",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 403
+
+
+def test_agregar_unidad_duplicada_es_idempotente(client, db):
+    """Añadir una unidad a la que ya se pertenece no hace daño."""
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    usuario = Usuario.query.filter_by(email="ana@test.es").first()
+
+    from app.services.unidad_usuario import unidades_de
+    n_antes = len(unidades_de(usuario))
+
+    cirugia = Unidad.query.filter_by(nombre="Cirugía").first()
+
+    resp = client.post(
+        "/auth/perfil/unidades/agregar",
+        data={
+            "svc_hospital_id": cirugia.hospital_id,
+            "svc_hospital_nuevo": "",
+            "svc_unidad_id": cirugia.id,
+            "svc_unidad_nuevo": "",
+            "svc_categoria_id": _segunda_categoria_id(db),
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+
+    from app.extensions import db as _db
+    _db.session.refresh(usuario)
+    assert len(unidades_de(usuario)) == n_antes

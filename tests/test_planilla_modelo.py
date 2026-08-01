@@ -33,7 +33,7 @@ def _crear_usuario(db, email="ana@test.es"):
 
 def test_turno_planilla_dia_trabajo(db):
     usuario, franja_m, _ = _crear_usuario(db)
-    turno = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_m)
+    turno = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_m, unidad_id=usuario.unidad_id)
     db.session.add(turno)
     db.session.commit()
 
@@ -44,8 +44,8 @@ def test_turno_planilla_dia_trabajo(db):
 
 def test_turno_planilla_doblaje(db):
     usuario, franja_m, franja_t = _crear_usuario(db, "doblaje@test.es")
-    t1 = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_m)
-    t2 = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_t)
+    t1 = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_m, unidad_id=usuario.unidad_id)
+    t2 = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_t, unidad_id=usuario.unidad_id)
     db.session.add_all([t1, t2])
     db.session.commit()
 
@@ -62,8 +62,8 @@ def test_turno_planilla_no_duplica_misma_franja(db):
     from sqlalchemy.exc import IntegrityError
 
     usuario, franja_m, _ = _crear_usuario(db, "dup@test.es")
-    t1 = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_m)
-    t2 = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_m)
+    t1 = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_m, unidad_id=usuario.unidad_id)
+    t2 = TurnoPlanilla(usuario=usuario, fecha=date(2026, 7, 1), franja_horaria=franja_m, unidad_id=usuario.unidad_id)
     db.session.add_all([t1, t2])
     with pytest.raises(IntegrityError):
         db.session.commit()
@@ -72,7 +72,7 @@ def test_turno_planilla_no_duplica_misma_franja(db):
 
 def test_planilla_mes_empieza_como_borrador(db):
     usuario, _, _ = _crear_usuario(db, "mes@test.es")
-    planilla = PlanillaMes(usuario=usuario, anyo=2026, mes=7)
+    planilla = PlanillaMes(usuario=usuario, anyo=2026, mes=7, unidad_id=usuario.unidad_id)
     db.session.add(planilla)
     db.session.commit()
 
@@ -82,7 +82,7 @@ def test_planilla_mes_empieza_como_borrador(db):
 
 def test_planilla_mes_se_puede_publicar(db):
     usuario, _, _ = _crear_usuario(db, "pub@test.es")
-    planilla = PlanillaMes(usuario=usuario, anyo=2026, mes=7)
+    planilla = PlanillaMes(usuario=usuario, anyo=2026, mes=7, unidad_id=usuario.unidad_id)
     db.session.add(planilla)
     db.session.commit()
 
@@ -97,8 +97,8 @@ def test_planilla_mes_unico_por_usuario(db):
     from sqlalchemy.exc import IntegrityError
 
     usuario, _, _ = _crear_usuario(db, "mesdup@test.es")
-    p1 = PlanillaMes(usuario=usuario, anyo=2026, mes=7)
-    p2 = PlanillaMes(usuario=usuario, anyo=2026, mes=7)
+    p1 = PlanillaMes(usuario=usuario, anyo=2026, mes=7, unidad_id=usuario.unidad_id)
+    p2 = PlanillaMes(usuario=usuario, anyo=2026, mes=7, unidad_id=usuario.unidad_id)
     db.session.add_all([p1, p2])
     with pytest.raises(IntegrityError):
         db.session.commit()

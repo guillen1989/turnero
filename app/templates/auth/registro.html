@@ -133,6 +133,96 @@
     </p>
 
     <div class="form-group">
+      <label class="checkbox-label">
+        {{ form.extra_servicio() }}
+        <span>{{ _('Añadir otro servicio') }}</span>
+      </label>
+    </div>
+
+    <div id="extra-servicio-block" style="display:none">
+      <h2 class="section-title">{{ _('Segundo servicio') }}</h2>
+
+      <div class="form-group">
+        <label>{{ _('País (segundo servicio)') }}</label>
+        <select id="extra-pais-select" name="extra_pais_id">
+          <option value="">{{ _('— Selecciona país —') }}</option>
+          {% for p in paises %}
+            <option value="{{ p.id }}">{{ p.nombre }}</option>
+          {% endfor %}
+          <option value="0">{{ _('— Añadir nuevo país —') }}</option>
+        </select>
+        <div id="extra-pais-nuevo-group" style="display:none">
+          {{ form.extra_pais_nuevo(placeholder=_('Nombre del país')) }}
+          {% for e in form.extra_pais_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>{{ _('Provincia (segundo servicio)') }}</label>
+        <select id="extra-provincia-select" name="extra_provincia_id">
+          <option value="">{{ _('— Selecciona primero el país —') }}</option>
+          <option value="0">{{ _('— Añadir nueva provincia —') }}</option>
+        </select>
+        <div id="extra-provincia-nueva-group" style="display:none">
+          {{ form.extra_provincia_nueva(placeholder=_('Nombre de la provincia')) }}
+          {% for e in form.extra_provincia_nueva.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>{{ _('Ciudad (segundo servicio)') }}</label>
+        <select id="extra-ciudad-select" name="extra_ciudad_id">
+          <option value="">{{ _('— Selecciona primero la provincia —') }}</option>
+          <option value="0">{{ _('— Añadir nueva ciudad —') }}</option>
+        </select>
+        <div id="extra-ciudad-nueva-group" style="display:none">
+          {{ form.extra_ciudad_nueva(placeholder=_('Nombre de la ciudad')) }}
+          {% for e in form.extra_ciudad_nueva.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>{{ _('Hospital (segundo servicio)') }}</label>
+        <select id="extra-hospital-select" name="extra_hospital_id">
+          <option value="">{{ _('— Selecciona primero la ciudad —') }}</option>
+          <option value="0">{{ _('— Añadir nuevo hospital —') }}</option>
+        </select>
+        <div id="extra-hospital-nuevo-group" style="display:none">
+          {{ form.extra_hospital_nuevo(placeholder=_('Nombre del hospital')) }}
+          {% for e in form.extra_hospital_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        {{ form.extra_categoria_id.label }}
+        {{ form.extra_categoria_id(id="extra-categoria-select") }}
+        {% for error in form.extra_categoria_id.errors %}
+          <p class="field-error">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="form-group" id="extra-categoria-nueva-group" style="display:none">
+        {{ form.extra_categoria_nueva.label }}
+        {{ form.extra_categoria_nueva() }}
+        {% for error in form.extra_categoria_nueva.errors %}
+          <p class="field-error">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label>{{ _('Unidad / servicio (segundo servicio)') }}</label>
+        <select id="extra-unidad-select" name="extra_unidad_id">
+          <option value="">{{ _('— Selecciona primero hospital y categoría —') }}</option>
+          <option value="0">{{ _('— Añadir nueva unidad —') }}</option>
+        </select>
+        <div id="extra-unidad-nuevo-group" style="display:none">
+          {{ form.extra_unidad_nuevo(placeholder=_('Nombre de la unidad')) }}
+          {% for e in form.extra_unidad_nuevo.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
       {{ form.submit(class="btn btn-primary btn-full") }}
     </div>
   </form>
@@ -144,12 +234,23 @@
 
 <script src="{{ url_for('static', filename='js/cascade-hospital.js') }}"></script>
 <script>
-  var select = document.getElementById('categoria-select');
-  var nuevaGroup = document.getElementById('categoria-nueva-group');
-  function toggleNueva() {
-    nuevaGroup.style.display = select.value === '0' ? 'block' : 'none';
+  var extraCheckbox = document.getElementById('extra_servicio');
+  var extraBloque = document.getElementById('extra-servicio-block');
+  if (extraCheckbox && extraBloque) {
+    extraCheckbox.addEventListener('change', function () {
+      extraBloque.style.display = extraCheckbox.checked ? 'block' : 'none';
+    });
   }
-  select.addEventListener('change', toggleNueva);
-  toggleNueva();
+
+  ['', 'extra-'].forEach(function (prefix) {
+    var select = document.getElementById(prefix + 'categoria-select');
+    var nuevaGroup = document.getElementById(prefix + 'categoria-nueva-group');
+    if (!select || !nuevaGroup) return;
+    function toggleNueva() {
+      nuevaGroup.style.display = select.value === '0' ? 'block' : 'none';
+    }
+    select.addEventListener('change', toggleNueva);
+    toggleNueva();
+  });
 </script>
 {% endblock %}
