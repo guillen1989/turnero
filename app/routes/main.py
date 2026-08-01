@@ -211,6 +211,7 @@ def index():
         if estado_filtro not in _ESTADOS_DASHBOARD:
             estado_filtro = "activos"
 
+        user_unidades = unidades_de(current_user)
         oportunidades_3 = []
         avisos_interes = []
         compat_por_pub: dict = {}
@@ -234,6 +235,7 @@ def index():
                 .filter(PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]))
                 .filter(PublicacionCambio.es_sintetica.is_(False))
                 .filter(~PublicacionCambio.id.in_(sa_select(pendientes_subq)))
+                .options(joinedload(PublicacionCambio.unidad))
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
             )
@@ -315,6 +317,7 @@ def index():
                 .filter_by(usuario_id=current_user.id)
                 .filter(PublicacionCambio.estado == "confirmada")
                 .filter(PublicacionCambio.es_sintetica.is_(False))
+                .options(joinedload(PublicacionCambio.unidad))
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
             )
@@ -331,6 +334,7 @@ def index():
                 .filter_by(usuario_id=current_user.id)
                 .filter(PublicacionCambio.estado.in_(estados))
                 .filter(PublicacionCambio.es_sintetica.is_(False))
+                .options(joinedload(PublicacionCambio.unidad))
                 .order_by(PublicacionCambio.fecha_creacion.desc())
                 .all()
             )
@@ -353,6 +357,7 @@ def index():
             sint_info=sint_info,
             compat_por_pub=compat_por_pub,
             mostrar_nombres_por_pub=mostrar_nombres_por_pub,
+            unidades=user_unidades,
         ))
         # Página dinámica y personal (estado de confirmaciones de matches):
         # nunca debe servirse desde caché del navegador ni de un proxy

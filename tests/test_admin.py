@@ -463,12 +463,12 @@ def test_admin_elimina_supervisora_con_datos_planilla_y_documentos(client, db):
     _db.session.add(pub)
     _db.session.flush()
 
-    _db.session.add(EstadoDiaPlanilla(usuario_id=u.id, fecha=date(2026, 9, 1), tipo="libre"))
+    _db.session.add(EstadoDiaPlanilla(usuario_id=u.id, fecha=date(2026, 9, 1), tipo="libre", unidad_id=u.unidad_id))
     _db.session.add(CompatibilidadPlanilla(publicacion_id=pub.id, usuario_id=u.id, tipo="compatible"))
-    _db.session.add(TurnoPlanilla(usuario_id=u.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
-    _db.session.add(PlanillaMes(usuario_id=u.id, anyo=2026, mes=9))
-    _db.session.add(SalienteDia(usuario_id=u.id, fecha=date(2026, 9, 3)))
-    _db.session.add(NotaDia(usuario_id=u.id, fecha=date(2026, 9, 4), texto="nota"))
+    _db.session.add(TurnoPlanilla(usuario_id=u.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id, unidad_id=u.unidad_id))
+    _db.session.add(PlanillaMes(usuario_id=u.id, anyo=2026, mes=9, unidad_id=u.unidad_id))
+    _db.session.add(SalienteDia(usuario_id=u.id, fecha=date(2026, 9, 3), unidad_id=u.unidad_id))
+    _db.session.add(NotaDia(usuario_id=u.id, fecha=date(2026, 9, 4), texto="nota", unidad_id=u.unidad_id))
     _db.session.add(AjustePlanillaSupervisora(
         usuario_id=otro.id, realizado_por_id=u.id, fecha=date(2026, 9, 5),
         descripcion_anterior="Turno", descripcion_nueva="Libre",

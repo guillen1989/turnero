@@ -23,12 +23,10 @@ from app.services.eventos import registrar_evento
 from app.services.unidad_usuario import unidad_activa_o_403, unidades_de
 
 
-def _resolver_seleccion(seleccion, grupo_id=None):
+def _resolver_seleccion(seleccion, grupo_id):
     """Dado el valor del campo 'seleccion', devuelve (tipo_estado, franja_id) o (None, None) si inválido.
     tipo_estado es str si es un estado del día; franja_id es int si es un turno de trabajo.
     """
-    if grupo_id is None:
-        grupo_id = current_user.grupo_intercambio.id
     if seleccion in TIPOS_ESTADO_DIA:
         return seleccion, None
     try:
@@ -56,19 +54,19 @@ def index():
     _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
     dias = [date(anyo, mes, d) for d in range(1, num_dias + 1)]
 
-    turnos = get_turnos_mes(current_user, anyo, mes)
+    turnos = get_turnos_mes(current_user, anyo, mes, unidad=unidad_activa)
     turnos_por_dia = {}
     for turno in turnos:
         turnos_por_dia.setdefault(turno.fecha, []).append(turno)
 
-    estados_por_dia   = get_estados_mes(current_user, anyo, mes)
-    salientes_por_dia = get_salientes_mes(current_user, anyo, mes)
-    notas_por_dia     = get_notas_mes(current_user, anyo, mes)
-    num_vacios        = len(dias_sin_cumplimentar(current_user, anyo, mes))
+    estados_por_dia   = get_estados_mes(current_user, anyo, mes, unidad=unidad_activa)
+    salientes_por_dia = get_salientes_mes(current_user, anyo, mes, unidad=unidad_activa)
+    notas_por_dia     = get_notas_mes(current_user, anyo, mes, unidad=unidad_activa)
+    num_vacios        = len(dias_sin_cumplimentar(current_user, anyo, mes, unidad=unidad_activa))
     matches_pendientes = get_matches_pendientes_volcar(current_user)
 
     planilla_mes_obj = PlanillaMes.query.filter_by(
-        usuario_id=current_user.id, anyo=anyo, mes=mes
+        usuario_id=current_user.id, anyo=anyo, mes=mes, unidad_id=unidad_activa.id,
     ).first()
 
     franjas = (
@@ -127,9 +125,9 @@ def dia_añadir():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     if seleccion == "saliente":
-        marcar_saliente(current_user, fecha)
+        marcar_saliente(current_user, fecha, unidad=unidad_activa)
     elif seleccion in TIPOS_ESTADO_DIA:
-        establecer_estado_dia(current_user, fecha, seleccion)
+        establecer_estado_dia(current_user, fecha, seleccion, unidad=unidad_activa)
     else:
         try:
             franja_id = int(seleccion)
@@ -196,15 +194,20 @@ def dia_limpiar():
     except ValueError:
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    limpiar_dia(current_user, fecha)
+    unidad_id = request.form.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+
+    limpiar_dia(current_user, fecha, unidad=unidad_activa)
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}",
-                            unidad_id=session.get("unidad_activa_id")))
+                            unidad_id=unidad_activa.id))
 
 
 @bp.route("/<int:anyo>/<int:mes>/publicar", methods=["POST"])
 @login_required
 def mes_publicar(anyo, mes):
-    vacios = dias_sin_cumplimentar(current_user, anyo, mes)
+    unidad_id = session.get("unidad_activa_id")
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    vacios = dias_sin_cumplimentar(current_user, anyo, mes, unidad=unidad_activa)
     if vacios:
         n = len(vacios)
         primero = vacios[0].strftime("%-d/%m")
@@ -218,7 +221,7 @@ def mes_publicar(anyo, mes):
         )
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    planilla = publicar_mes(current_user, anyo, mes)
+    planilla = publicar_mes(current_user, anyo, mes, unidad=unidad_activa)
     actualizar_compat_tras_publicar_planilla(current_user, anyo, mes)
     registrar_evento(current_user.id, "planilla_publicada", planilla.id)
     flash(_("Planilla del mes publicada. Tus compañeros ya pueden ver tu disponibilidad."), "success")
@@ -229,7 +232,9 @@ def mes_publicar(anyo, mes):
 @bp.route("/<int:anyo>/<int:mes>/despublicar", methods=["POST"])
 @login_required
 def mes_despublicar(anyo, mes):
-    despublicar_mes(current_user, anyo, mes)
+    unidad_id = session.get("unidad_activa_id")
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    despublicar_mes(current_user, anyo, mes, unidad=unidad_activa)
     flash(_("Planilla retirada. Tus compañeros ya no verán tu disponibilidad este mes."), "info")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes,
                             unidad_id=session.get("unidad_activa_id")))
@@ -287,9 +292,9 @@ def rango_aplicar():
     for d in range(dia_inicio, dia_fin + 1):
         fecha = date(anyo, mes, d)
         if tipo_estado:
-            establecer_estado_dia(current_user, fecha, tipo_estado)
+            establecer_estado_dia(current_user, fecha, tipo_estado, unidad=unidad_activa)
         else:
-            añadir_turno(current_user, fecha, franja_id)
+            añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa)
 
     n = dia_fin - dia_inicio + 1
     flash(_("%(n)s día(s) actualizados.", n=n), "success")
@@ -323,9 +328,9 @@ def multiples_aplicar():
             if fecha.year != anyo or fecha.month != mes:
                 continue  # sólo fechas del mes visible
             if tipo_estado:
-                establecer_estado_dia(current_user, fecha, tipo_estado)
+                establecer_estado_dia(current_user, fecha, tipo_estado, unidad=unidad_activa)
             else:
-                añadir_turno(current_user, fecha, franja_id)
+                añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa)
             count += 1
         except ValueError:
             pass
@@ -349,7 +354,9 @@ def dia_nota():
     except ValueError:
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    guardar_nota_dia(current_user, fecha, texto)
+    unidad_id = request.form.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    guardar_nota_dia(current_user, fecha, texto, unidad=unidad_activa)
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}",
                             unidad_id=session.get("unidad_activa_id")))
 
@@ -361,6 +368,8 @@ def volcar_cambios():
     anyo = request.form.get("anyo", type=int)
     mes  = request.form.get("mes",  type=int)
     ids_str = request.form.getlist("participacion_id[]")
+    unidad_id = request.form.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
 
     ids = []
     for s in ids_str:
@@ -370,7 +379,7 @@ def volcar_cambios():
             pass
 
     if ids:
-        n = volcar_matches_a_planilla(current_user, ids)
+        n = volcar_matches_a_planilla(current_user, ids, unidad=unidad_activa)
         if n:
             flash(
                 _(
@@ -405,16 +414,16 @@ def vacios_aplicar():
         flash(_("Selección no válida."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    vacios = dias_sin_cumplimentar(current_user, anyo, mes)
+    vacios = dias_sin_cumplimentar(current_user, anyo, mes, unidad=unidad_activa)
     if not vacios:
         flash(_("No hay días vacíos en este mes."), "info")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     for fecha in vacios:
         if tipo_estado:
-            establecer_estado_dia(current_user, fecha, tipo_estado)
+            establecer_estado_dia(current_user, fecha, tipo_estado, unidad=unidad_activa)
         else:
-            añadir_turno(current_user, fecha, franja_id)
+            añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa)
 
     flash(_("%(n)s día(s) vacío(s) rellenados.", n=len(vacios)), "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
@@ -448,5 +457,5 @@ def turno_añadir():
         flash(_("Turno no válido."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    añadir_turno(current_user, fecha, franja_id)
+    añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa)
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes, unidad_id=unidad_activa.id))

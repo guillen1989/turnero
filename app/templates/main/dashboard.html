@@ -200,6 +200,9 @@
       {% for pub in publicaciones %}
       <li class="publicacion-card publicacion--{{ pub.estado }}">
         <span class="estado-badge estado--{{ pub.estado }}">{{ pub.estado }}</span>
+        {% if unidades|length > 1 and pub.unidad %}
+        <span class="unidad-badge">{{ pub.unidad.nombre }}</span>
+        {% endif %}
         {% if pub.tipo == 'regalo' %}
         <span class="tipo-badge tipo-badge--regalo">{{ _('Regalo') }}</span>
         <div class="turnos-aceptados">
