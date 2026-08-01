@@ -5,11 +5,15 @@ Fase 13 — Eliminar publicaciones caducadas desde "Mis cambios", plan completo
 en `docs/BORRAR_CADUCADOS.md`.
 
 ## Paso actual / siguiente paso
-Paso 2 completado. Siguiente: Paso 3 (`docs/BORRAR_CADUCADOS.md`) — frontend:
-botones "Eliminar" (individual) y "Eliminar todos" en la pestaña Caducados
-de `app/templates/main/dashboard.html`.
+Paso 3 completado. Siguiente: Paso 4 `docs/BORRAR_CADUCADOS.md` — tests de integración de la vista.
 
 ## Últimos pasos completados
+- [x] Paso 3 (`docs/BORRAR_CADUCADOS.md`) — frontend en
+  `app/templates/main/dashboard.html`: botón "Eliminar todos" en el header
+  (visible solo en pestaña caducada con publicaciones), modal de confirmación
+  `modal-eliminar-todos-caducadas` con su JS. El bloque `pub-acciones`
+  ahora se muestra también en caducadas (`{% if pub.esta_activa() or estado_filtro == 'caducada' %}`),
+  pero los botones "Editar" y "Compartir" solo aparecen para publicaciones activas.
 - [x] Paso 2 (`docs/BORRAR_CADUCADOS.md`) — ruta backend
   `POST /publicaciones/eliminar-caducadas` (`eliminar_caducadas` en
   `app/routes/publicaciones.py`): borra todas las publicaciones `caducada`

@@ -7,6 +7,13 @@
 > `PROGRESS.md`. Continúa con el siguiente paso en una sesión nueva si hace
 > falta ahorrar contexto.
 
+> **IMPORTANTE — pytest**: El wrapper `rtk pytest` reporta incorrectamente
+> "No tests collected" en este proyecto. Usa siempre `rtk python -m pytest`
+> (con `--testmon`). Ejemplo:
+> ```bash
+> rtk python -m pytest tests/ -q --no-header -rF --testmon
+> ```
+
 ## Objetivo
 
 En la pantalla "Mis cambios" (`/`, `?estado=caducada`), permitir que el
@@ -118,9 +125,9 @@ opción de borrarlas.
   verde.
 - [x] Commit: `feat: añade ruta para eliminar todas las publicaciones caducadas`.
 
-## Paso 3 — Frontend: botones de eliminar en la pestaña Caducados ☐
+## Paso 3 — Frontend: botones de eliminar en la pestaña Caducados ☑
 
-- [ ] En `app/templates/main/dashboard.html`:
+- [x] En `app/templates/main/dashboard.html`:
   - Añadir un botón "Eliminar todos" junto a las demás acciones del
     header (`dashboard-header-actions`, línea ~9), visible solo cuando
     `estado_filtro == 'caducada' and publicaciones` (mismo patrón condicional
@@ -154,16 +161,16 @@ opción de borrarlas.
   - El botón de eliminar individual ya apunta a
     `publicaciones.eliminar` y ya usa el modal existente — no requiere
     cambios, solo que ahora sea alcanzable en esta pestaña.
-- [ ] Añadir el JS del nuevo modal (si se optó por uno separado en el punto
+- [x] Añadir el JS del nuevo modal (si se optó por uno separado en el punto
   anterior) siguiendo el mismo patrón que `abrirModalEliminar` /
   `cerrarModalEliminar` ya presentes al final de `dashboard.html`.
-- [ ] Comprobar manualmente en local (`flask run` o el flujo habitual del
+- [x] Comprobar manualmente en local (`flask run` o el flujo habitual del
   proyecto) que:
   - En la pestaña Caducados se ve el botón "Eliminar" por publicación y
     "Eliminar todos" en el header.
   - En el resto de pestañas no aparece "Eliminar todos" y el comportamiento
     de "Editar"/"Compartir"/"Eliminar" de publicaciones activas no cambia.
-- [ ] Commit: `feat: permite eliminar publicaciones caducadas desde el dashboard`.
+- [x] Commit: `feat: permite eliminar publicaciones caducadas desde el dashboard`.
 
 ## Paso 4 — Tests de integración de la vista (opcional pero recomendado) ☐
 
