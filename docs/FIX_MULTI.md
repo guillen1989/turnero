@@ -107,49 +107,49 @@ confírmalo antes de implementar si hay dudas.
 
 ## Paso 1 — `TurnoPlanilla` (y compañía) por unidad
 
-- [ ] Tests de modelo/servicio: un usuario con 2 unidades guarda un turno
+- [x] Tests de modelo/servicio: un usuario con 2 unidades guarda un turno
   en la unidad A para un día, cambia la unidad activa a B y guarda un
   turno *distinto* para el mismo día; comprobar que `get_turnos_mes`
   filtrado por unidad A solo devuelve el de A, y por B solo el de B.
-- [ ] Añadir columna `unidad_id` (FK a `unidad.id`) a `TurnoPlanilla`,
+- [x] Añadir columna `unidad_id` (FK a `unidad.id`) a `TurnoPlanilla`,
   `EstadoDiaPlanilla`, `SalienteDia` y `NotaDia`
   (`app/models/planilla.py`), nullable primero.
-- [ ] Migración de 3 pasos (`CLAUDE.md`): añadir nullable, backfill con
+- [x] Migración de 3 pasos (`CLAUDE.md`): añadir nullable, backfill con
   `usuario.unidad_id` de cada fila existente (asume que todo lo ya guardado
   pertenece a la unidad principal de su dueño, que es la única que existía
   al crearse), `NOT NULL`. `flask db heads` debe dar `1 (head)`.
-- [ ] Actualizar `app/services/planilla.py`: todas las funciones que
+- [x] Actualizar `app/services/planilla.py`: todas las funciones que
   escriben (`añadir_turno`, `establecer_estado_dia`, `marcar_saliente`,
   `guardar_nota_dia`, ...) y leen (`get_turnos_mes`, `get_estados_mes`,
   `get_salientes_mes`, `get_notas_mes`, `dias_sin_cumplimentar`,
   `franjas_trabajadas_en_fecha`) para aceptar/filtrar por `unidad` además
   de `usuario`.
-- [ ] Actualizar `app/routes/planilla.py::index` y el resto de rutas del
+- [x] Actualizar `app/routes/planilla.py::index` y el resto de rutas del
   blueprint para pasar `unidad_activa` a esas funciones.
-- [ ] Revisar `publicar_mes`/`despublicar_mes`/`PlanillaMes` — decidir si
+- [x] Revisar `publicar_mes`/`despublicar_mes`/`PlanillaMes` — decidir si
   la publicación de la planilla también pasa a ser por unidad (un
   `PlanillaMes` por `(usuario, anyo, mes, unidad)` en vez de por
   `(usuario, anyo, mes)`) o si sigue siendo global al mes. Dado que
   "publicada" controla si los compañeros ven la disponibilidad, y la
   visibilidad ya es por unidad/grupo, **probablemente también debe pasar a
   ser por unidad** — confírmalo con un test antes de decidir.
-- [ ] Revisar `app/services/compat_planilla_persistente.py` y
+- [x] Revisar `app/services/compat_planilla_persistente.py` y
   `app/services/volcar_cambios.py` (dependen de la planilla) por si asumen
   una sola unidad.
-- [ ] `pytest --testmon` en verde.
-- [ ] Verificar en navegador: usuario con 2 unidades, rellena planilla
+- [x] `pytest --testmon` en verde.
+- [x] Verificar en navegador: usuario con 2 unidades, rellena planilla
   distinta en cada una, cambia el selector y confirma que el visor
   del mes cambia junto con la unidad activa.
 
 ## Paso 2 — Selector de unidad en `documentos-cambio` al crear una hoja de cambio
 
-- [ ] Tests de `app/routes/documento_cambio.py::nueva`: usuario con 2
+- [x] Tests de `app/routes/documento_cambio.py::nueva`: usuario con 2
   unidades, comprobar que puede elegir con cuál de ellas crea la hoja
   (`unidad_id` en el form o query string), que los compañeros/franjas
   ofrecidos corresponden a la unidad elegida, y que si envía una unidad a
   la que no pertenece devuelve 403 (mismo patrón que
   `unidad_activa_o_403`).
-- [ ] Sustituir en `app/routes/documento_cambio.py` los usos de
+- [x] Sustituir en `app/routes/documento_cambio.py` los usos de
   `current_user.grupo_intercambio` / `current_user.categoria_id` (12
   apariciones: líneas ~40-41, 79, 95, 208, 263, 291, 310, 390, 472, 526,
   714 en la versión actual) por la unidad elegida/activa, aplicando el
@@ -162,17 +162,17 @@ confírmalo antes de implementar si hay dudas.
   `_hojas_pendientes_encadenables`, `_franjas_disponibles`,
   `_get_documento_validado`, `nueva`, `turnos_disponibles`,
   `registrar_papel`.
-- [ ] Plantilla `app/templates/documento_cambio/nueva.html` (o como se
+- [x] Plantilla `app/templates/documento_cambio/nueva.html` (o como se
   llame la del formulario de alta): añadir el mismo patrón de selector de
   unidad que ya existe en `documento_cambio/supervisora.html` /
   `planilla/planilla.html`, visible solo si `unidades|length > 1`, y que
   al cambiar recargue la página con `unidad_id` para refrescar la lista de
   compañeros/franjas ofrecidos.
-- [ ] `DocumentoCambio.unidad_id` pasa a guardarse con la unidad elegida
+- [x] `DocumentoCambio.unidad_id` pasa a guardarse con la unidad elegida
   en el formulario (ya existe la columna, solo cambia de dónde sale el
   valor).
-- [ ] `pytest --testmon` en verde.
-- [ ] Verificar en navegador: usuario con 2 unidades crea una hoja de
+- [x] `pytest --testmon` en verde.
+- [x] Verificar en navegador: usuario con 2 unidades crea una hoja de
   cambio en cada una y comprueba que cada una queda asociada a la unidad
   correcta (compañeros/franjas ofrecidos, y en la vista de supervisora de
   cada unidad aparece la hoja correspondiente).

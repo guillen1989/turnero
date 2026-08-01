@@ -177,9 +177,9 @@ def ajustar_turno_trabajador(
         db.session.commit()
 
     if tipo_estado:
-        establecer_estado_dia(trabajador, fecha, tipo_estado)
+        establecer_estado_dia(trabajador, fecha, tipo_estado, unidad=trabajador.unidad)
     elif franja_id:
-        añadir_turno(trabajador, fecha, franja_id)
+        añadir_turno(trabajador, fecha, franja_id, unidad=trabajador.unidad)
 
     return _registrar_ajuste(supervisora, trabajador, fecha, descripcion_anterior, motivo)
 
@@ -204,7 +204,7 @@ def editar_turno_trabajador(
     AjustePlanillaSupervisora con el antes/después."""
     descripcion_anterior = _describir_dia(trabajador, fecha)
     eliminar_turno(trabajador, fecha, franja_actual_id)
-    añadir_turno(trabajador, fecha, franja_nueva_id)
+    añadir_turno(trabajador, fecha, franja_nueva_id, unidad=trabajador.unidad)
     return _registrar_ajuste(supervisora, trabajador, fecha, descripcion_anterior, motivo)
 
 

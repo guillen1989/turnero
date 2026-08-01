@@ -162,7 +162,7 @@ def test_puede_anularse_falso_si_otro_cambio_toco_la_planilla_despues(db):
     documento, claudia, juan, supervisora, manyana, fecha_cede, fecha_recibe = _documento_autorizado(db, "g")
 
     # Alguien más le puso a Claudia otro turno justo en la fecha que cedió.
-    db.session.add(TurnoPlanilla(usuario_id=claudia.id, fecha=fecha_cede, franja_horaria_id=manyana.id))
+    db.session.add(TurnoPlanilla(usuario_id=claudia.id, fecha=fecha_cede, franja_horaria_id=manyana.id, unidad_id=claudia.unidad_id))
     db.session.commit()
 
     ok, motivo = puede_anularse(documento)

@@ -52,11 +52,11 @@ def importar_planilla(contenido: str, unidad) -> ResultadoImportacionPlanilla:
             continue
 
         usuario = mapeo.usuario
-        limpiar_mes_usuario(usuario, planilla.anyo, planilla.mes)
+        limpiar_mes_usuario(usuario, planilla.anyo, planilla.mes, unidad=unidad)
         for fecha, codigo in trabajador.turnos.items():
             franja = franja_por_codigo[codigo]
-            añadir_turno(usuario, fecha, franja.id)
-        publicar_mes(usuario, planilla.anyo, planilla.mes)
+            añadir_turno(usuario, fecha, franja.id, unidad=unidad)
+        publicar_mes(usuario, planilla.anyo, planilla.mes, unidad=unidad)
         resultado.trabajadores_actualizados.append(usuario)
 
     if resultado.trabajadores_actualizados:

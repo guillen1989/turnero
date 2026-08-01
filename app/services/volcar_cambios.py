@@ -66,7 +66,7 @@ def get_matches_pendientes_volcar(usuario) -> list[dict]:
     return result
 
 
-def volcar_matches_a_planilla(usuario, participacion_ids: list[int]) -> int:
+def volcar_matches_a_planilla(usuario, participacion_ids: list[int], unidad=None) -> int:
     """
     Aplica los cambios de las participaciones indicadas a la planilla del usuario:
     - Elimina el turno cedido de la planilla
@@ -79,6 +79,9 @@ def volcar_matches_a_planilla(usuario, participacion_ids: list[int]) -> int:
 
     Returns: número de participaciones efectivamente volcadas.
     """
+    if unidad is None:
+        unidad = usuario.unidad
+
     if not participacion_ids:
         return 0
 
@@ -117,7 +120,7 @@ def volcar_matches_a_planilla(usuario, participacion_ids: list[int]) -> int:
             _añadir_linea_nota(usuario, p.turno_cedido.fecha, nota)
 
         if turno_recibido:
-            añadir_turno(usuario, turno_recibido.fecha, turno_recibido.franja_horaria_id)
+            añadir_turno(usuario, turno_recibido.fecha, turno_recibido.franja_horaria_id, unidad=unidad)
             nota = f"{prefijo} {companero_nombres}: recibiste este turno."
             if p.turno_cedido:
                 nota += f" A cambio, cediste el {_fmt(p.turno_cedido)}."
