@@ -1,18 +1,20 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 14 — Eliminar publicaciones caducadas desde "Mis cambios", plan completo
-en `docs/BORRAR_CADUCADOS.md`. **Cerrada.**
+Fase 15 — Arreglar deuda pendiente de multi-unidad (usuarios en varios
+servicios), plan completo en `docs/FIX_MULTI.md`.
 
 ## Paso actual / siguiente paso
-Fase 14 cerrada. PR #55 contra staging mergeado. Pendiente para una fase
-futura: los 21 casos MUST change de la auditoría de la Fase 13
-(`publicaciones.py`, `busquedas.py`, `unidad.py`, `documento_cambio.py`) que
-deberían usar la unidad activa pero aún usan
-`current_user.unidad`/`categoria_id`/`grupo_intercambio`, y la verificación
-manual en navegador de los Pasos 4, 5 y 6 de esa fase.
+Paso 0 completado (decisiones de diseño confirmadas). Siguiente: Paso 1 —
+`TurnoPlanilla` (y compañía) por unidad.
+
+## Decisiones de diseño (Paso 0)
+- "Mis cambios publicados": bandeja única con etiqueta de unidad.
+- Planilla: una planilla por unidad (columna de unidad en `TurnoPlanilla`
+  y compañía, requiere migración de modelo).
 
 ## Últimos pasos completados
+- [x] Paso 0 (`docs/FIX_MULTI.md`) — decisiones de diseño confirmadas.
 - [x] Paso 5 (`docs/BORRAR_CADUCADOS.md`) — PR #55 contra staging: https://github.com/guillen1989/turnero/pull/55
 - [x] Paso 4 (`docs/BORRAR_CADUCADOS.md`) — tests de integración: `test_dashboard_caducada_muestra_botones_eliminar` y `test_dashboard_activos_no_muestra_botones_eliminar_caducadas` en `tests/test_dashboard.py`
 - [x] Paso 3 (`docs/BORRAR_CADUCADOS.md`) — frontend en

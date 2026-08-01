@@ -86,9 +86,10 @@ confírmalo antes de implementar si hay dudas.
 
 ## Paso 0 — Confirmar decisiones de diseño antes de tocar código
 
-- [ ] Confirmar (o cambiar) la decisión de "Mis cambios publicados" de
+- [x] Confirmar (o cambiar) la decisión de "Mis cambios publicados" de
   arriba: bandeja única con etiqueta de unidad vs. selector.
-- [ ] Decidir el alcance real del bug de `/planilla`: ¿la planilla debe
+  **Decidido: bandeja única con etiqueta de unidad.**
+- [x] Decidir el alcance real del bug de `/planilla`: ¿la planilla debe
   seguir siendo **un único calendario personal** (un turno por día,
   independientemente de en qué unidad se trabaje ese día — hoy es así de
   facto porque no hay columna de unidad) y el selector de unidad solo debe
@@ -101,8 +102,8 @@ confírmalo antes de implementar si hay dudas.
   asume la opción "una planilla por unidad" (con columna de unidad en
   `TurnoPlanilla` y compañía) porque es la que pide el enunciado original y
   la que hace falta para que la comprobación de factibilidad de cambios y
-  las cuentas de supervisora funcionen correctamente por unidad — confirma
-  antes de empezar si se prefiere la alternativa más simple.**
+  las cuentas de supervisora funcionen correctamente por unidad.**
+  **Decidido: una planilla por unidad.**
 
 ## Paso 1 — `TurnoPlanilla` (y compañía) por unidad
 
