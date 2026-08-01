@@ -68,6 +68,7 @@ def _activar_feature_flags_de_test():
         "cambios_encadenados",
         "cambios_a_3",
         "cambios_a_4",
+        "multi_unidad",
     ):
         try:
             crear_flag(clave)

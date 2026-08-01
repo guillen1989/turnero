@@ -162,7 +162,7 @@ unidad):
 
 ## Paso 3 — Choke points centrales: `unidades_de` y `unidad_activa_o_403`
 
-- [ ] Tests de `app/services/unidad_usuario.py` (mockeando/creando el flag
+- [x] Tests de `app/services/unidad_usuario.py` (mockeando/creando el flag
   `multi_unidad` activo/inactivo vía `app/services/feature_flags.py`):
   - `unidades_de(usuario)` con flag desactivado devuelve solo
     `[usuario.unidad]` aunque el usuario tenga membresías en
@@ -174,15 +174,15 @@ unidad):
     `session[session_key]` informado a una unidad secundaria, igual
     (devuelve la principal, ignora la sesión); con flag activo, comportamiento
     sin cambios (test de no-regresión).
-- [ ] Implementar: ambas funciones comprueban
+- [x] Implementar: ambas funciones comprueban
   `feature_activa("multi_unidad")` al principio y cortocircuitan como
   arriba si está desactivado.
-- [ ] `pertenece_a` — **sin cambios** (ver justificación en el contexto
+- [x] `pertenece_a` — **sin cambios** (ver justificación en el contexto
   técnico); añadir un test que lo documente explícitamente (con el flag
   desactivado, `pertenece_a` sigue devolviendo `True` para una membresía
   secundaria real, aunque `unidad_activa_o_403` ya no permita
   seleccionarla activamente).
-- [ ] `pytest --testmon` en verde.
+- [x] `pytest --testmon` en verde.
 
 ## Paso 4 — Rutas dedicadas de gestión de servicios: `@requiere_feature`
 

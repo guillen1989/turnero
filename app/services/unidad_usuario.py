@@ -7,7 +7,14 @@ from app.models.usuario_unidad import UsuarioUnidad
 
 def unidades_de(usuario):
     """Todas las unidades del usuario: la principal más las membresías de
-    `usuario_unidad`, ordenadas por nombre y sin repetidos."""
+    `usuario_unidad`, ordenadas por nombre y sin repetidos.
+
+    Con el flag `multi_unidad` desactivado, colapsa a solo la unidad
+    principal."""
+    from app.services.feature_flags import feature_activa
+
+    if not feature_activa("multi_unidad"):
+        return [usuario.unidad]
     unidades = {usuario.unidad}
     unidades.update(usuario.unidades)
     return sorted(unidades, key=lambda unidad: unidad.nombre)
@@ -39,7 +46,15 @@ def unidad_activa_o_403(usuario, unidad_id, session_key="unidad_activa_id"):
     Cuando `unidad_id` viene explícitamente informado (query param), lo
     persiste en sesión para que las navegaciones posteriores mantengan el
     contexto sin necesitar el param en cada URL.
+
+    Con el flag `multi_unidad` desactivado, ignora cualquier `unidad_id` y
+    sesión, devolviendo siempre `usuario.unidad`.
     """
+    from app.services.feature_flags import feature_activa
+
+    if not feature_activa("multi_unidad"):
+        return usuario.unidad
+
     explicitamente_pedida = unidad_id is not None
     if not explicitamente_pedida:
         unidad_id = session.get(session_key)

@@ -6,8 +6,8 @@ completo el sistema de usuarios en varios servicios, plan completo en
 `docs/FEAT_FLAG_MULTI.md`.
 
 ## Paso actual / siguiente paso
-Paso 2 completado. Siguiente: Paso 3 de `docs/FEAT_FLAG_MULTI.md` — Choke
-points centrales: `unidades_de` y `unidad_activa_o_403`.
+Paso 3 completado. Siguiente: Paso 4 de `docs/FEAT_FLAG_MULTI.md` — Rutas
+dedicadas de gestión de servicios: `@requiere_feature`.
 
 ## Decisiones de diseño (Fase 16)
 - Un único flag `multi_unidad`, reutilizando `FeatureFlag`/`feature_activa`
@@ -17,6 +17,10 @@ points centrales: `unidades_de` y `unidad_activa_o_403`.
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] Fase 16, Paso 3 (`docs/FEAT_FLAG_MULTI.md`) — Choke points centrales:
+  `unidades_de` y `unidad_activa_o_403` comprueban `feature_activa("multi_unidad")`.
+  Tests en `tests/test_unidad_usuario.py` (7 tests: 3 clases). `pertenece_a`
+  sin cambios (con test de no-regresión). `multi_unidad` añadido a conftest.
 - [x] Fase 16, Paso 2 (`docs/FEAT_FLAG_MULTI.md`) — Admin: ocultar `<select>` de
   unidades para el flag `multi_unidad` con mensaje "Este flag es global". Test
   en `test_admin_feature_flags.py::test_multi_unidad_no_muestra_selector_unidades`.

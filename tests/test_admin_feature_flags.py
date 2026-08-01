@@ -121,7 +121,6 @@ def test_sincroniza_unidades_habilitadas(client, db):
 def test_multi_unidad_no_muestra_selector_unidades(client, db):
     """El flag multi_unidad no debe mostrar el <select> de unidades habilitadas.
     El resto de flags sí deben mostrarlo."""
-    crear_flag("multi_unidad", "Usuarios en varios servicios")
     flag_normal = crear_flag("otro_flag", "Un flag cualquiera")
     _login_admin(client, db)
 
