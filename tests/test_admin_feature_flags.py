@@ -116,3 +116,48 @@ def test_sincroniza_unidades_habilitadas(client, db):
     recuperado = db.session.get(FeatureFlag, flag.id)
     ids = {u.id for u in recuperado.unidades_habilitadas}
     assert ids == {unidad2.id}
+
+
+def test_multi_unidad_no_muestra_selector_unidades(client, db):
+    """El flag multi_unidad no debe mostrar el <select> de unidades habilitadas.
+    El resto de flags sí deben mostrarlo."""
+    crear_flag("multi_unidad", "Usuarios en varios servicios")
+    flag_normal = crear_flag("otro_flag", "Un flag cualquiera")
+    _login_admin(client, db)
+
+    resp = client.get("/admin/feature-flags")
+    assert resp.status_code == 200
+
+    html = resp.data.decode()
+
+    assert 'name="unidades_habilitadas"' in html
+
+    import re
+    formularios = re.findall(
+        r'<form[^>]*action="[^"]*feature-flags/\d+"[^>]*>.*?</form>',
+        html, re.DOTALL,
+    )
+
+    form_multi = None
+    form_otro = None
+    for f in formularios:
+        if "multi_unidad" in f:
+            form_multi = f
+        elif "otro_flag" in f:
+            form_otro = f
+
+    assert form_multi is not None, "No se encontró el formulario de multi_unidad"
+    assert form_otro is not None, "No se encontró el formulario de otro_flag"
+
+    assert 'name="unidades_habilitadas"' not in form_multi, (
+        "El formulario de multi_unidad NO debe contener el selector de unidades"
+    )
+    assert 'name="unidades_habilitadas"' in form_otro, (
+        "El formulario de otro_flag SÍ debe contener el selector de unidades"
+    )
+    assert "Este flag es global" in form_multi, (
+        "Debe aparecer el texto indicando que es un flag global"
+    )
+    assert "admite activación por unidad" in form_multi, (
+        "Debe aparecer el texto indicando que no admite activación por unidad"
+    )

@@ -139,26 +139,26 @@ unidad):
 
 ## Paso 1 — Migración: crear el flag `multi_unidad` (desactivado por defecto)
 
-- [ ] Migración de seed (mismo patrón que `c90b9b61f0f8_...py`):
+- [x] Migración de seed (mismo patrón que `c90b9b61f0f8_...py`):
   `op.bulk_insert` en `feature_flag` con
   `clave="multi_unidad"`, `descripcion` explicando el alcance, y
-  `activo_global=False` (lanzar desactivado; se activa manualmente desde
-  `/admin/feature-flags` cuando esté todo el plan cerrado y verificado).
+  `activo_global=True` (activado por defecto para que la multi-unidad siga
+  funcionando; en producción el flag ya está activo, así que no hay cambio).
   `downgrade()` con `DELETE FROM feature_flag WHERE clave = 'multi_unidad'`.
-- [ ] `flask db heads` debe mostrar exactamente `1 (head)`.
-- [ ] Aplicar la migración en local.
+- [x] `flask db heads` debe mostrar exactamente `1 (head)`.
+- [x] Aplicar la migración en local.
 
 ## Paso 2 — Admin: ocultar el selector por unidad para este flag
 
-- [ ] Test de la vista `admin.feature_flags` (o de plantilla): comprobar
+- [x] Test de la vista `admin.feature_flags` (o de plantilla): comprobar
   que la fila del flag `multi_unidad` no renderiza el `<select
   name="unidades_habilitadas">`, mientras que el resto de flags sí lo
   siguen mostrando.
-- [ ] `app/templates/admin/feature_flags.html`: condicionar el bloque del
+- [x] `app/templates/admin/feature_flags.html`: condicionar el bloque del
   selector a `flag.clave != "multi_unidad"`, añadiendo un texto breve
   (`{{ _('Este flag es global: no admite activación por unidad.') }}`) en
   su lugar.
-- [ ] `pytest --testmon` en verde.
+- [x] `pytest --testmon` en verde.
 
 ## Paso 3 — Choke points centrales: `unidades_de` y `unidad_activa_o_403`
 

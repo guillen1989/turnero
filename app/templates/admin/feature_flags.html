@@ -19,6 +19,11 @@
     </label>
   </div>
 
+  {% if flag.clave == "multi_unidad" %}
+  <div class="form-row">
+    <p class="text-muted">{{ _('Este flag es global: no admite activación por unidad.') }}</p>
+  </div>
+  {% else %}
   <div class="form-row">
     <label>{{ _('Unidades habilitadas') }}</label>
     <select name="unidades_habilitadas" multiple class="form-control">
@@ -28,6 +33,7 @@
       {% endfor %}
     </select>
   </div>
+  {% endif %}
 
   <div class="form-row">
     <button type="submit" class="btn btn-primary btn-sm">{{ _('Guardar') }}</button>

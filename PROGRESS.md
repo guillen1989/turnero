@@ -6,8 +6,8 @@ completo el sistema de usuarios en varios servicios, plan completo en
 `docs/FEAT_FLAG_MULTI.md`.
 
 ## Paso actual / siguiente paso
-Empezar por el Paso 1 de `docs/FEAT_FLAG_MULTI.md`: migración de seed que
-crea el flag `multi_unidad` (desactivado por defecto).
+Paso 2 completado. Siguiente: Paso 3 de `docs/FEAT_FLAG_MULTI.md` — Choke
+points centrales: `unidades_de` y `unidad_activa_o_403`.
 
 ## Decisiones de diseño (Fase 16)
 - Un único flag `multi_unidad`, reutilizando `FeatureFlag`/`feature_activa`
@@ -17,6 +17,11 @@ crea el flag `multi_unidad` (desactivado por defecto).
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] Fase 16, Paso 2 (`docs/FEAT_FLAG_MULTI.md`) — Admin: ocultar `<select>` de
+  unidades para el flag `multi_unidad` con mensaje "Este flag es global". Test
+  en `test_admin_feature_flags.py::test_multi_unidad_no_muestra_selector_unidades`.
+- [x] Fase 16, Paso 1 (`docs/FEAT_FLAG_MULTI.md`) — Migración de seed `multi_unidad`
+  (`40d2e20fa8f0`), activado por defecto (`activo_global=True`), aplicado en local.
 - [x] Fase 15 (`docs/FIX_MULTI.md`) cerrada — Paso 5: Cierre: suite completa en verde (1503
   passed), PROGRESS.md cerrando Fase 15, revisión de código muerto.
 - [x] Paso 4 (`docs/FIX_MULTI.md`) — `busquedas.py:32` validación de franja
