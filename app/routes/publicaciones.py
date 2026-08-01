@@ -432,6 +432,18 @@ def eliminar(pub_id):
     return redirect(url_for("main.index"))
 
 
+@bp.post("/publicaciones/eliminar-caducadas")
+@login_required
+def eliminar_caducadas():
+    caducadas = PublicacionCambio.query.filter_by(
+        usuario_id=current_user.id, estado="caducada"
+    ).all()
+    for pub in caducadas:
+        eliminar_publicacion(pub)
+    flash(_("Publicaciones caducadas eliminadas."), "success")
+    return redirect(url_for("main.index", estado="caducada"))
+
+
 @bp.post("/cambios/<int:pub_id>/me-interesa")
 @login_required
 def me_interesa(pub_id):

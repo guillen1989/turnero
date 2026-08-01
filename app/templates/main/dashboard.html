@@ -8,6 +8,12 @@
     <h1>{{ _('Mis cambios publicados') }}</h1>
     <div class="dashboard-header-actions">
       <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">{{ _('Publicar cambio') }}</a>
+      {% if estado_filtro == 'caducada' and publicaciones %}
+      <form method="post" action="{{ url_for('publicaciones.eliminar_caducadas') }}" style="display:inline" onsubmit="return false">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="button" class="btn btn-danger btn-sm" onclick="abrirModalEliminarTodasCaducadas(this.closest('form'))">{{ _('Eliminar todos') }}</button>
+      </form>
+      {% endif %}
       <button type="button" class="btn btn-secondary btn-sm" id="btn-actualizar" onclick="window.location.reload()">{{ _('Actualizar') }}</button>
       <button type="button" class="btn btn-secondary btn-sm" id="btn-instalar-pwa" style="display:none" onclick="instalarPWA()">{{ _('Instalar app') }}</button>
     </div>
@@ -284,7 +290,7 @@
           </p>
         </div>
         {% endif %}
-        {% if pub.esta_activa() %}
+        {% if pub.esta_activa() or estado_filtro == 'caducada' %}
         {% set pub_url = url_for('main.cambios', pub_id=pub.id, _external=True) %}
         {% set wa_msg_extra = ('\n' + pub.mensaje) if pub.mensaje else '' %}
         {% if pub.tipo == 'regalo' %}
@@ -324,16 +330,16 @@
           {% endif %}
         {% endif %}
         <div class="pub-acciones">
-          <a href="{{ url_for('publicaciones.editar', pub_id=pub.id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>
+          {% if pub.esta_activa() %}<a href="{{ url_for('publicaciones.editar', pub_id=pub.id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>{% endif %}
           <form method="post" action="{{ url_for('publicaciones.eliminar', pub_id=pub.id) }}" style="display:inline"
                 onsubmit="return false">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="button" class="btn btn-danger btn-sm"
                     onclick="abrirModalEliminar(this.closest('form'))">{{ _('Eliminar') }}</button>
           </form>
-          <a href="https://wa.me/?text={{ wa_texto | urlquote }}"
+          {% if pub.esta_activa() %}<a href="https://wa.me/?text={{ wa_texto | urlquote }}"
              class="btn btn-whatsapp btn-sm"
-             target="_blank" rel="noopener">{{ _('Compartir') }}</a>
+             target="_blank" rel="noopener">{{ _('Compartir') }}</a>{% endif %}
         </div>
         {% endif %}
       </li>
@@ -462,6 +468,17 @@
   </div>
 </div>
 
+<div id="modal-eliminar-todos-caducadas" class="modal-overlay modal-hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <p class="modal-title">{{ _('Turnero') }}</p>
+    <p class="modal-body">{{ _('¿Seguro que quieres eliminar todas tus publicaciones caducadas? Esta acción es irreversible y afecta a todos los elementos de esta pestaña.') }}</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalEliminarTodasCaducadas()">{{ _('Cancelar') }}</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btn-modal-confirmar-todas-caducadas">{{ _('Eliminar todos') }}</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-firma" class="modal-overlay modal-hidden" role="dialog" aria-modal="true">
   <div class="modal-box modal-box--firma">
     <p class="modal-title">{{ _('Firma para confirmar el cambio') }}</p>
@@ -503,6 +520,26 @@ document.getElementById('btn-modal-confirmar').addEventListener('click', functio
 });
 document.getElementById('modal-eliminar').addEventListener('click', function (e) {
   if (e.target === this) cerrarModalEliminar();
+});
+
+var _formTodasCaducadas = null;
+function abrirModalEliminarTodasCaducadas(form) {
+  _formTodasCaducadas = form;
+  document.getElementById('modal-eliminar-todos-caducadas').classList.remove('modal-hidden');
+  document.getElementById('btn-modal-confirmar-todas-caducadas').focus();
+}
+function cerrarModalEliminarTodasCaducadas() {
+  _formTodasCaducadas = null;
+  document.getElementById('modal-eliminar-todos-caducadas').classList.add('modal-hidden');
+}
+document.getElementById('btn-modal-confirmar-todas-caducadas').addEventListener('click', function () {
+  if (_formTodasCaducadas) {
+    _formTodasCaducadas.onsubmit = null;
+    _formTodasCaducadas.submit();
+  }
+});
+document.getElementById('modal-eliminar-todos-caducadas').addEventListener('click', function (e) {
+  if (e.target === this) cerrarModalEliminarTodasCaducadas();
 });
 
 var _formFirmaPendiente = null;
@@ -601,6 +638,7 @@ if (_btnFirmaUsarGuardada) {
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
     cerrarModalEliminar();
+    cerrarModalEliminarTodasCaducadas();
     cerrarModalFirma();
   }
 });
