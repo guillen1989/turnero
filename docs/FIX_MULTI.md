@@ -230,10 +230,10 @@ el mismo paso; si se prefiere separarlo, muévelos aquí.)
 
 ## Paso 5 — Cierre
 
-- [ ] Pasar la suite completa una única vez (el resto de pasos usa
+- [x] Pasar la suite completa una única vez (el resto de pasos usa
   `pytest --testmon`).
-- [ ] Actualizar `PROGRESS.md` cerrando esta fase y anotando que los 21
+- [x] Actualizar `PROGRESS.md` cerrando esta fase y anotando que los 21
   casos "MUST change" de la auditoría de `docs/USUARIOS_MULTI.md` (Paso 5)
   ya están resueltos, referenciando este documento.
-- [ ] Revisar que no queda código muerto de la UI anterior a los
+- [x] Revisar que no queda código muerto de la UI anterior a los
   selectores nuevos.

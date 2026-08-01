@@ -23,12 +23,10 @@ from app.services.eventos import registrar_evento
 from app.services.unidad_usuario import unidad_activa_o_403, unidades_de
 
 
-def _resolver_seleccion(seleccion, grupo_id=None):
+def _resolver_seleccion(seleccion, grupo_id):
     """Dado el valor del campo 'seleccion', devuelve (tipo_estado, franja_id) o (None, None) si inválido.
     tipo_estado es str si es un estado del día; franja_id es int si es un turno de trabajo.
     """
-    if grupo_id is None:
-        grupo_id = current_user.grupo_intercambio.id
     if seleccion in TIPOS_ESTADO_DIA:
         return seleccion, None
     try:

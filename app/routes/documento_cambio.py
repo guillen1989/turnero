@@ -76,9 +76,7 @@ def _hojas_pendientes_encadenables(grupo_id):
     )
 
 
-def _franjas_disponibles(grupo_id=None):
-    if grupo_id is None:
-        grupo_id = current_user.grupo_intercambio.id
+def _franjas_disponibles(grupo_id):
     return (
         FranjaHoraria.query
         .filter_by(grupo_intercambio_id=grupo_id)
@@ -263,17 +261,19 @@ def supervisora():
         filtros["unidad_id"] = unidad.id
         trabajadores = _usuarios_de_la_unidad(unidad.id)
         documentos = _documentos_del_grupo_supervisora(filtros, unidad_id=unidad.id)
+        franjas = _franjas_disponibles(unidad.grupo_intercambio_id)
     else:
         grupo_id = current_user.grupo_intercambio.id
         unidad = None
         trabajadores = _usuarios_del_grupo(grupo_id)
         documentos = _documentos_del_grupo_supervisora(filtros)
+        franjas = _franjas_disponibles(grupo_id)
 
     return render_template(
         "documento_cambio/supervisora.html",
         documentos=documentos, filtros=filtros,
         trabajadores=trabajadores,
-        franjas=_franjas_disponibles(),
+        franjas=franjas,
         unidad=unidad,
         unidades_supervisadas=unidades,
     )
@@ -315,7 +315,7 @@ def registrar_papel():
         abort(403)
     grupo_id = current_user.grupo_intercambio.id
     trabajadores = _usuarios_del_grupo(grupo_id)
-    franjas = _franjas_disponibles()
+    franjas = _franjas_disponibles(grupo_id)
     hoy = date.today()
 
     if request.method == "POST":
@@ -429,7 +429,7 @@ def nueva():
         error = None
         cedidos = aceptados = None
         if tipo == "junte":
-            cedidos, aceptados, error = _extraer_turnos_junte()
+            cedidos, aceptados, error = _extraer_turnos_junte(unidad_activa.grupo_intercambio_id)
         elif tipo == "cadena_3":
             try:
                 cede_fecha = datetime.strptime(cede_fecha_str, "%Y-%m-%d").date()
