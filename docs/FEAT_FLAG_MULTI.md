@@ -210,33 +210,33 @@ unidad):
 - [x] `app/templates/auth/registro.html:130-135`: ocultar el checkbox y el
   bloque `#extra-servicio-block` con `{% if feature_activa('multi_unidad') %}`.
 - [x] `pytest --testmon` en verde.
-- [ ] Verificar en navegador con el flag desactivado: el formulario de
+- [x] Verificar en navegador con el flag desactivado: el formulario de
   registro no muestra la opción de segundo servicio.
 
 ## Paso 6 — Notificaciones y Web Push: etiquetas de unidad
 
-- [ ] Tests: con el flag desactivado, un usuario con membresías reales en
+- [x] Tests: con el flag desactivado, un usuario con membresías reales en
   2 unidades (dato preexistente) no ve la etiqueta de unidad en
   `/notificaciones` ni en el cuerpo de un push, aunque
   `aviso.unidad`/`unidad_nombre` vengan informados; con el flag activado,
   comportamiento actual sin cambios.
-- [ ] `app/routes/notificaciones.py` (función que renderiza `avisos`):
+- [x] `app/routes/notificaciones.py` (función que renderiza `avisos`):
   pasar al contexto de plantilla algo como `mostrar_unidad = len(unidades_de(usuario)) > 1`
   (ya calcula `unidades = unidades_de(usuario)` en la línea 182 — reusar
   esa variable) y sustituir en `app/templates/notificaciones/avisos.html`
   (líneas 22, 37, 59, 98) `current_user.unidades|length > 1` por la nueva
   variable de contexto.
-- [ ] `app/push/sender.py:230`: sustituir `len(usuario.unidades) > 1` por
+- [x] `app/push/sender.py:230`: sustituir `len(usuario.unidades) > 1` por
   `len(unidades_de(usuario)) > 1` (importar `unidades_de` desde
   `app.services.unidad_usuario`).
-- [ ] Confirmar que `app/templates/main/dashboard.html:203` ya usa la
+- [x] Confirmar que `app/templates/main/dashboard.html:203` ya usa la
   variable de contexto correcta (`unidades` desde `main.py:485`) — no
   debería requerir cambios, solo un test de no-regresión.
-- [ ] `pytest --testmon` en verde.
+- [x] `pytest --testmon` en verde.
 
 ## Paso 7 — Verificación manual end-to-end y cierre
 
-- [ ] Con un usuario demo que tenga 2 unidades reales en base de datos:
+- [x] Con un usuario demo que tenga 2 unidades reales en base de datos:
   - Flag **desactivado**: verificar en navegador que no aparece ningún
     selector de unidad en `/calendario`, `/cambios`, `/planilla`, ni en la
     hoja de cambio nueva; que `/perfil` no muestra la pestaña "Servicios";
@@ -248,7 +248,7 @@ unidad):
     existe para este flag) y repetir la misma navegación: todo debe volver
     a comportarse como hoy en `staging` (selectores visibles, pestaña
     "Servicios" accesible, etiquetas de unidad donde corresponda).
-- [ ] Pasar la suite completa una única vez (el resto de pasos usa
+- [x] Pasar la suite completa una única vez (el resto de pasos usa
   `pytest --testmon`).
-- [ ] Actualizar `PROGRESS.md` cerrando esta fase.
-- [ ] Revisar que no queda código muerto (imports sin usar, etc.).
+- [x] Actualizar `PROGRESS.md` cerrando esta fase.
+- [x] Revisar que no queda código muerto (imports sin usar, etc.).
