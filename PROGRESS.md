@@ -1,15 +1,94 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3), plan completo en
-`docs/PLAN_3.md`. **Fase cerrada.**
+Fase 13 — Usuarios normales en varios servicios (unidades). Plan completo en
+`docs/USUARIOS_MULTI.md`. **Cerrada.**
 
 ## Paso actual / siguiente paso
-Los 8 pasos de `docs/PLAN_3.md` están completos. Siguiente: abrir/mantener
-la Pull Request de la fase 12 contra `staging`; no queda trabajo pendiente
-en este plan. Próxima fase a definir por el usuario.
+Fase 13 cerrada. Pendiente para una fase futura: los 21 casos MUST change
+de la auditoría del Paso 5 (publicaciones.py, busquedas.py, unidad.py,
+documento_cambio.py) y la verificación manual en navegador de los Pasos 4, 5
+y 6.
 
 ## Últimos pasos completados
+- [x] Paso 8 (`docs/USUARIOS_MULTI.md`) — Documentación y cierre. Eliminadas
+  importaciones muertas en `app/routes/auth.py` (`encontrar_o_crear_pais`,
+  `encontrar_o_crear_provincia`, `encontrar_o_crear_ciudad`, no usadas en ese
+  módulo). Suite completa de tests en verde (excepto fallos preexistentes por
+  compatibilidad Python 3.8/OpenSSL en generación de PDFs). PROGRESS.md y
+  USUARIOS_MULTI.md actualizados reflejando el cierre de la fase.
+- [x] Paso 7 (`docs/USUARIOS_MULTI.md`) — Web Push: incluir unidad en el
+  payload. `enviar_push()` y `enviar_push_condicional()` aceptan
+  `unidad_nombre=None`. Si se proporciona y el usuario pertenece a más de una
+  unidad, se añade `[Unidad]` al cuerpo de la notificación push. Actualizados
+  los 7 callers: `matches.py` (4), `publicaciones.py` (1),
+  `busquedas_guardadas.py` (1) y `documento_cambio.py` (1). 4 tests nuevos en
+  `test_push.py`, todos en verde; suite completa de los servicios afectados
+  (push, matches, publicaciones, busquedas, documento_cambio, flujos) pasa sin
+  regresiones.
+- [x] Paso 6 (`docs/USUARIOS_MULTI.md`) — notificaciones con unidad de
+  origen + bandeja única. Añadido `unidad_id` (FK NOT NULL) al modelo
+  `Notificacion`, migración en 3 pasos, 15 sitios de creación actualizados
+  para registrar la unidad de origen. Plantilla `avisos.html` muestra el
+  nombre de la unidad junto a cada aviso solo si el usuario pertenece a más
+  de una. `_colegas_del_usuario()` considera todos los pares
+  (grupo_intercambio_id, categoria_id) de todas las unidades del usuario.
+  8 tests nuevos en `test_notificacion_unidad.py`; 27 tests existentes
+  adaptados al nuevo campo obligatorio.
+- [x] Paso 5 (`docs/USUARIOS_MULTI.md`) — selector de unidad activa en
+  `/calendario`, `/cambios`, `/planilla`. `unidad_activa_o_403` ahora
+  persiste en sesión (`session["unidad_activa_id"]`) cuando se elige una
+  unidad explícitamente por query param. Las 3 rutas sustituyen
+  `current_user.unidad`/`grupo_intercambio`/`categoria_id` por la unidad
+  activa y su categoría. `calendario_mercado.py` (`_candidatas`,
+  `construir_calendario_mes`, `construir_semanas_juntes`) acepta ahora
+  `categoria_id` y `grupo_id` opcionales para filtrar por la unidad
+  activa. `planilla.py` recibe `unidad_id` en todas las rutas (GET y
+  POST) y valida las franjas contra el grupo de la unidad activa.
+  Plantillas: `<select onchange=...>` en `calendario.html`,
+  `cambios.html` y `planilla.html`, visible solo si el usuario pertenece
+  a más de una unidad. 16 tests nuevos en `tests/test_unidad_activa_rutas.py`,
+  todos en verde. **Auditoría de 41 referencias a `current_user.unidad`/
+  `categoria_id`/`grupo_intercambio` completada:** 21 casos MUST change en
+  `publicaciones.py`, `busquedas.py`, `unidad.py` y `documento_cambio.py`
+  quedan pendientes de implementación (ver `docs/USUARIOS_MULTI.md`).
+- [x] Paso 3 (`docs/USUARIOS_MULTI.md`) — alta de cuenta con segundo servicio
+  opcional: `registrar_usuario` acepta `unidades_extra` (lista de dicts con
+  hospital, unidad, categoría) y construye `{unidad_id: categoria_id}` para
+  `sincronizar_unidades`, sembrando la membresía principal + las extra en una
+  misma transacción. El formulario `RegistroForm` gana `BooleanField
+  extra_servicio` + campos prefijados `extra_*` (hospital, unidad, categoría,
+  geo). La ruta `registro` extrae el helper `_nombres_geo_registro(prefijo)` y
+  valida el bloque extra con sus propios mensajes de error. Plantilla
+  `registro.html` con checkbox "Añadir otro servicio" que revela una segunda
+  cascada completa (`extra-pais-select`...). `cascade-hospital.js` generalizado
+  a `inicializarCascada(prefix)` para reutilizarse con `''` y `'extra-'`.
+  `eliminar_usuario_admin` limpia también filas de `usuario_unidad`.
+  152 tests en verde.
+- [x] Paso 2 (`docs/USUARIOS_MULTI.md`) — migración Alembic
+  `migrations/versions/def6b117664c_añade_tabla_usuario_unidad.py`:
+  `op.create_table('usuario_unidad')` con PK compuesta `(usuario_id,
+  unidad_id)`, FKs a `usuario.id`, `unidad.id` y `categoria.id`,
+  `categoria_id NOT NULL`; backfill `INSERT INTO usuario_unidad ...
+  SELECT id, unidad_id, categoria_id FROM usuario` que siembra la membresía
+  de la unidad principal de cada usuario existente; `downgrade()` simétrico
+  (`op.drop_table`). `flask db heads` → 1 head (`def6b117664c`). Migración
+  aplicada en local y verificada con ciclo downgrade→upgrade (el backfill
+  siembra correctamente). `flask db check` confirma sin drift.
+  Suite de modelos del paso 1: 20 tests en verde.
+- [x] Paso 1 (`docs/USUARIOS_MULTI.md`) — modelo de datos `usuario_unidad`:
+  `app/models/usuario_unidad.py` (PK compuesta `(usuario_id, unidad_id)` +
+  `categoria_id NOT NULL`), relaciones `Usuario.unidades` /
+  `Usuario.membresias_unidad` / `Unidad.miembros` / `Unidad.membresias_unidad`
+  (con `overlaps` declarados para silenciar los avisos de SQLAlchemy), y
+  servicio `app/services/unidad_usuario.py` con `unidades_de` (siempre
+  incluye la principal, ordenada por nombre), `categoria_en_unidad` (global
+  en la principal, de la membresía en el resto), `pertenece_a`,
+  `unidad_activa_o_403` (query param > sesión > principal) y
+  `sincronizar_unidades` (dict `{unidad_id: categoria_id}`, actualiza la
+  categoría de `usuario.categoria_id` con la de la principal, no permite
+  eliminar la principal). Tests: `tests/test_models_usuario_unidad.py` y
+  `tests/test_servicio_unidad_usuario.py` (20 tests en verde).
 - [x] Paso 8 (`docs/PLAN_3.md`) — revisión final y UAT: UAT-7.1 a 7.4
   (detección de la cadena por el motor de matching) ya cubiertos por
   `tests/test_motor_matching.py`, `tests/test_integracion_matching.py`,
@@ -98,10 +177,17 @@ El registro detallado de fases y pasos anteriores está en
 `PROGRESS_ARCHIVE.md`.
 
 ## Notas / decisiones / asunciones pendientes
-- El solape visual de `firma_tercero_frame` con los frames de firma vecinos
-  es una decisión explícita e irrevocable del usuario (ver cabecera de
-  `docs/PLAN_3.md`) — no proponer alternativas que reubiquen campos.
-- `_usuario_que_recibe` (Paso 2 de `docs/PLAN_3.md`) es la pieza central que
-  desbloquea los Pasos 3 y 4; implementarla y probarla bien antes de seguir.
-- `tipo == "cadena_3"` no requiere migración: `DocumentoCambio.tipo` es un
-  `String(20)` libre.
+- Fase 12 (`docs/PLAN_3.md`) cerrada — historial detallado en
+  `PROGRESS_ARCHIVE.md`.
+- La unidad principal del usuario siempre aparece en `usuario_unidad`
+  (invariante sembrado por el backfill de la migración; `sincronizar_unidades`
+  lo mantiene y no permite eliminarla).
+- `unidad_activa_o_403` sigue la precedencia query param > sesión
+  (`session["unidad_activa_id"]`) > unidad principal. Persiste en sesión
+  automáticamente cuando se pasa `unidad_id` explícito por query param.
+- Quedan 21 referencias MUST change en `publicaciones.py`, `busquedas.py`,
+  `unidad.py` y `documento_cambio.py` que deberían usar la unidad activa pero
+  aún usan `current_user.unidad`/`categoria_id`/`grupo_intercambio`. Se
+  abordarán a continuación.
+- Preguntas abiertas del plan (registro libre de unidades, abandono de
+  unidad) siguen pendientes de confirmar.

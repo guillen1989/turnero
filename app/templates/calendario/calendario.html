@@ -14,6 +14,16 @@
       <button type="button" class="planilla-ayuda-link" onclick="calendarioAyudaMostrar()">
         &#9432; {{ _('¿Cómo funciona?') }}
       </button>
+      {% if unidades|length > 1 %}
+      <label for="planilla-select-unidad" class="planilla-select-label">{{ _('Unidad') }}:</label>
+      <select id="planilla-select-unidad" class="planilla-select" aria-label="{{ _('Unidad') }}"
+              onchange="window.location.href=this.value">
+        {% for u in unidades %}
+          <option value="{{ url_for('calendario.index', unidad_id=u.id, anyo=anyo, mes=mes, modo=modo) }}"
+                  {% if u.id == unidad_activa.id %}selected{% endif %}>{{ u.nombre }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
     </div>
 
     <div class="planilla-mes-nav">

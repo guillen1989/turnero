@@ -9,8 +9,8 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models import Pais, Provincia, Ciudad, Hospital, Unidad, Categoria
 from app.forms.auth import (
-    CuentaForm, EliminarCuentaForm, LoginForm, PerfilForm, RegistroForm,
-    SolicitarResetForm, RestablecerPasswordForm,
+    AgregarUnidadForm, CuentaForm, EliminarCuentaForm, LoginForm, PerfilForm,
+    RegistroForm, SolicitarResetForm, RestablecerPasswordForm,
 )
 from app.models.usuario import Usuario
 from app.models.planilla_import import MapeoTrabajadorPlanilla
@@ -20,10 +20,12 @@ from app.services.password_reset import (
 )
 from app.services.registro import (
     actualizar_perfil, eliminar_cuenta, registrar_usuario,
-    encontrar_o_crear_pais, encontrar_o_crear_provincia, encontrar_o_crear_ciudad,
+    encontrar_o_crear_categoria, encontrar_o_crear_hospital, encontrar_o_crear_unidad,
     resolver_hospital, resolver_unidad,
+    _resolver_geografia,
 )
 from app.services.planilla_matching import sugerir_trabajador_planilla, vincular_usuario
+from app.services.unidad_usuario import categoria_en_unidad, pertenece_a, sincronizar_unidades, unidades_de
 
 bp = Blueprint("auth", __name__)
 
@@ -67,6 +69,76 @@ def _choices_categorias():
 # Registro / login / logout
 # ---------------------------------------------------------------------------
 
+def _nombres_geo_registro(prefijo=""):
+    """Resuelve país/provincia/ciudad del bloque de registro `prefijo`
+    ("" o "extra_") a nombres para crear o reutilizar el hospital. Si se
+    elige un nivel existente por id, arrastra los nombres de sus ancestros
+    (ciudad → provincia + país). Devuelve (pais_nombre, provincia_nombre,
+    ciudad_nombre)."""
+    pais_id = request.form.get(f"{prefijo}pais_id", type=int)
+    provincia_id = request.form.get(f"{prefijo}provincia_id", type=int)
+    ciudad_id = request.form.get(f"{prefijo}ciudad_id", type=int)
+    pais_nombre = request.form.get(f"{prefijo}pais_nuevo", "").strip() or None
+    provincia_nombre = request.form.get(f"{prefijo}provincia_nueva", "").strip() or None
+    ciudad_nombre = request.form.get(f"{prefijo}ciudad_nueva", "").strip() or None
+
+    if ciudad_id and ciudad_id != _OPCION_NUEVA:
+        c = db.session.get(Ciudad, ciudad_id)
+        if c:
+            return c.provincia.pais.nombre, c.provincia.nombre, c.nombre
+    elif provincia_id and provincia_id != _OPCION_NUEVA:
+        p = db.session.get(Provincia, provincia_id)
+        if p:
+            return p.pais.nombre, p.nombre, None
+    elif pais_id and pais_id != _OPCION_NUEVA:
+        pa = db.session.get(Pais, pais_id)
+        if pa:
+            return pa.nombre, None, None
+    return pais_nombre, provincia_nombre, ciudad_nombre
+
+
+def _resolver_extra_servicio(form):
+    """Lee el bloque opcional "añadir otro servicio" del formulario de
+    registro y devuelve (unidades_extra, errores): la lista de dicts de
+    unidades adicionales lista para `registrar_usuario`, o errores flash
+    si el bloque está marcado pero incompleto."""
+    if not form.extra_servicio.data:
+        return [], False
+
+    hospital_nombre = resolver_hospital(
+        request.form.get("extra_hospital_id", type=int), form.extra_hospital_nuevo.data
+    )
+    unidad_nombre = resolver_unidad(
+        request.form.get("extra_unidad_id", type=int), form.extra_unidad_nuevo.data
+    )
+    categoria_id = form.extra_categoria_id.data or None
+    categoria_nueva = form.extra_categoria_nueva.data or None
+
+    errores = False
+    if not hospital_nombre:
+        flash(_("Para el segundo servicio, selecciona un hospital o escribe el nombre de uno nuevo."), "danger")
+        errores = True
+    if not unidad_nombre:
+        flash(_("Para el segundo servicio, selecciona una unidad o escribe el nombre de una nueva."), "danger")
+        errores = True
+    if not categoria_id and not categoria_nueva:
+        form.extra_categoria_nueva.errors.append(_("Para el segundo servicio, indica una categoría o escribe una nueva."))
+        errores = True
+    if errores:
+        return [], True
+
+    pais_nombre, provincia_nombre, ciudad_nombre = _nombres_geo_registro("extra_")
+    return [{
+        "hospital_nombre": hospital_nombre,
+        "unidad_nombre": unidad_nombre,
+        "categoria_id": categoria_id if categoria_id != _OPCION_NUEVA_CATEGORIA else None,
+        "categoria_nueva_nombre": categoria_nueva,
+        "pais_nombre": pais_nombre,
+        "provincia_nombre": provincia_nombre,
+        "ciudad_nombre": ciudad_nombre,
+    }], False
+
+
 @bp.route("/registro", methods=["GET", "POST"])
 def registro():
     if current_user.is_authenticated:
@@ -74,6 +146,7 @@ def registro():
 
     form = RegistroForm()
     form.categoria_id.choices = _choices_categorias()
+    form.extra_categoria_id.choices = _choices_categorias()
 
     if form.validate_on_submit():
         pais_id = request.form.get("pais_id", type=int)
@@ -98,26 +171,12 @@ def registro():
             form.categoria_nueva.errors.append(_("Indica una categoría o escribe una nueva."))
             errores = True
 
+        unidades_extra, errores_extra = _resolver_extra_servicio(form)
+        errores = errores or errores_extra
+
         if not errores:
             try:
-                pais_nombre = (form.pais_nuevo.data or "").strip() or None
-                provincia_nombre = (form.provincia_nueva.data or "").strip() or None
-                ciudad_nombre = (form.ciudad_nueva.data or "").strip() or None
-                if ciudad_id and ciudad_id != _OPCION_NUEVA:
-                    c = db.session.get(Ciudad, ciudad_id)
-                    if c:
-                        ciudad_nombre = c.nombre
-                        provincia_nombre = c.provincia.nombre
-                        pais_nombre = c.provincia.pais.nombre
-                elif provincia_id and provincia_id != _OPCION_NUEVA:
-                    p = db.session.get(Provincia, provincia_id)
-                    if p:
-                        provincia_nombre = p.nombre
-                        pais_nombre = p.pais.nombre
-                elif pais_id and pais_id != _OPCION_NUEVA:
-                    pa = db.session.get(Pais, pais_id)
-                    if pa:
-                        pais_nombre = pa.nombre
+                pais_nombre, provincia_nombre, ciudad_nombre = _nombres_geo_registro()
 
                 usuario = registrar_usuario(
                     nombre=form.nombre.data,
@@ -130,6 +189,7 @@ def registro():
                     pais_nombre=pais_nombre,
                     provincia_nombre=provincia_nombre,
                     ciudad_nombre=ciudad_nombre,
+                    unidades_extra=unidades_extra or None,
                 )
                 login_user(usuario, remember=True)
                 flash(_("¡Bienvenido/a, %(nombre)s!", nombre=usuario.nombre), "success")
@@ -592,3 +652,93 @@ def eliminar_cuenta_route():
     logout_user()
     flash(_("Tu cuenta ha sido eliminada. Hasta pronto."), "info")
     return redirect(url_for("auth.login"))
+
+
+# ---------------------------------------------------------------------------
+# Perfil — Gestión de unidades (multi-unidad)
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/perfil/servicios")
+@login_required
+def perfil_servicios():
+    unidades_usuario = unidades_de(current_user)
+    datos_unidades = [
+        {
+            "unidad": u,
+            "categoria": categoria_en_unidad(current_user, u),
+            "es_principal": u.id == current_user.unidad_id,
+        }
+        for u in unidades_usuario
+    ]
+    paises = Pais.query.order_by(Pais.nombre).all()
+    agregar_form = AgregarUnidadForm()
+    agregar_form.categoria_id.choices = _choices_categorias()
+    return render_template(
+        "auth/perfil_servicios.html",
+        datos_unidades=datos_unidades,
+        paises=paises,
+        agregar_form=agregar_form,
+    )
+
+
+@bp.route("/perfil/unidades/agregar", methods=["POST"])
+@login_required
+def agregar_unidad():
+    hospital_id = request.form.get("svc_hospital_id", type=int)
+    unidad_id = request.form.get("svc_unidad_id", type=int)
+    categoria_id = request.form.get("svc_categoria_id", type=int) or None
+    categoria_nueva = (request.form.get("svc_categoria_nueva", "") or "").strip() or None
+    hospital_nuevo = (request.form.get("svc_hospital_nuevo", "") or "").strip() or None
+    unidad_nuevo = (request.form.get("svc_unidad_nuevo", "") or "").strip() or None
+
+    hospital_nombre = resolver_hospital(hospital_id, hospital_nuevo)
+    unidad_nombre = resolver_unidad(unidad_id, unidad_nuevo)
+
+    if not hospital_nombre:
+        flash(_("Selecciona un hospital o escribe el nombre de uno nuevo."), "danger")
+        return redirect(url_for("auth.perfil_servicios"))
+    if not unidad_nombre:
+        flash(_("Selecciona una unidad o escribe el nombre de una nueva."), "danger")
+        return redirect(url_for("auth.perfil_servicios"))
+    if not categoria_id and not categoria_nueva:
+        flash(_("Indica una categoría o escribe una nueva."), "danger")
+        return redirect(url_for("auth.perfil_servicios"))
+
+    pais_nombre, provincia_nombre, ciudad_nombre = _nombres_geo_registro("svc_")
+    ciudad = _resolver_geografia(pais_nombre, provincia_nombre, ciudad_nombre)
+    hospital = encontrar_o_crear_hospital(hospital_nombre, ciudad)
+    categoria = encontrar_o_crear_categoria(categoria_id, categoria_nueva)
+    unidad, _is_new = encontrar_o_crear_unidad(unidad_nombre, hospital, categoria)
+
+    membresias = {m.unidad_id: m.categoria_id for m in current_user.membresias_unidad}
+    if current_user.unidad_id not in membresias:
+        membresias[current_user.unidad_id] = current_user.categoria_id
+    membresias[unidad.id] = categoria.id
+    sincronizar_unidades(current_user, membresias)
+    db.session.commit()
+
+    flash(_("Servicio añadido correctamente."), "success")
+    return redirect(url_for("auth.perfil_servicios"))
+
+
+@bp.route("/perfil/unidades/<int:unidad_id>/abandonar", methods=["POST"])
+@login_required
+def abandonar_unidad(unidad_id):
+    if unidad_id == current_user.unidad_id:
+        flash(_("No puedes abandonar tu unidad principal."), "danger")
+        return redirect(url_for("auth.perfil_servicios"))
+
+    unidad = db.session.get(Unidad, unidad_id)
+    if unidad is None or not pertenece_a(current_user, unidad):
+        abort(403)
+
+    membresias = {m.unidad_id: m.categoria_id for m in current_user.membresias_unidad}
+    if current_user.unidad_id not in membresias:
+        membresias[current_user.unidad_id] = current_user.categoria_id
+    del membresias[unidad_id]
+    sincronizar_unidades(current_user, membresias)
+    db.session.commit()
+
+    flash(_("Has abandonado el servicio «%(nombre)s».", nombre=unidad.nombre), "success")
+    return redirect(url_for("auth.perfil_servicios"))

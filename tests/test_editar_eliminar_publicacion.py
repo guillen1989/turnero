@@ -322,6 +322,7 @@ def test_eliminar_con_notificacion_publicacion_id_no_da_error(client, db):
 
     notif = Notificacion(
         usuario_id=u2.id,
+        unidad_id=u2.unidad_id,
         publicacion_id=pub.id,
         tipo="nueva_publicacion_seguido",
     )

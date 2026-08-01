@@ -6,6 +6,16 @@
 <div class="cambios-page">
   <div class="dashboard-header">
     <h1>{{ _('Buscar cambios') }}</h1>
+    {% if unidades|length > 1 %}
+    <label for="planilla-select-unidad" class="planilla-select-label">{{ _('Unidad') }}:</label>
+    <select id="planilla-select-unidad" class="planilla-select" aria-label="{{ _('Unidad') }}"
+            onchange="window.location.href=this.value">
+      {% for u in unidades %}
+        <option value="{{ url_for('main.cambios', unidad_id=u.id, mes=mes or '', dia=dia or '', franja=franja_id or '', tipo=tipo, usuario=nombre, tipo_fecha=tipo_fecha, tab=tab) }}"
+                {% if u.id == unidad_activa.id %}selected{% endif %}>{{ u.nombre }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
   </div>
 
   <!-- Pestañas -->

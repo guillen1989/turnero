@@ -313,8 +313,8 @@ def crear_match_directo(pub_a, pub_b):
     db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, **kwargs_a))
     db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, **kwargs_b))
 
-    db.session.add(Notificacion(usuario_id=pub_a.usuario_id, match_id=match.id, tipo="nuevo_match"))
-    db.session.add(Notificacion(usuario_id=pub_b.usuario_id, match_id=match.id, tipo="nuevo_match"))
+    db.session.add(Notificacion(usuario_id=pub_a.usuario_id, unidad_id=pub_a.usuario.unidad_id, match_id=match.id, tipo="nuevo_match"))
+    db.session.add(Notificacion(usuario_id=pub_b.usuario_id, unidad_id=pub_b.usuario.unidad_id, match_id=match.id, tipo="nuevo_match"))
     db.session.commit()
 
     tipos_par = (pub_a.tipo, pub_b.tipo)
@@ -465,7 +465,7 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
 
     for pub in (pub_a, pub_b, pub_c):
         db.session.add(Notificacion(
-            usuario_id=pub.usuario_id, match_id=match.id, tipo="nuevo_match"
+            usuario_id=pub.usuario_id, unidad_id=pub.usuario.unidad_id, match_id=match.id, tipo="nuevo_match"
         ))
 
     db.session.commit()
@@ -631,7 +631,7 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
 
     for pub in (pub_a, pub_b, pub_c, pub_d):
         db.session.add(Notificacion(
-            usuario_id=pub.usuario_id, match_id=match.id, tipo="nuevo_match"
+            usuario_id=pub.usuario_id, unidad_id=pub.usuario.unidad_id, match_id=match.id, tipo="nuevo_match"
         ))
 
     db.session.commit()
@@ -776,6 +776,7 @@ def crear_aviso_oportunidad_4(pub_a, pub_b, pub_c):
         if not existe:
             db.session.add(Notificacion(
                 usuario_id=destinatario_id,
+                unidad_id=pub_ref.usuario.unidad_id,
                 publicacion_id=pub_ref.id,
                 tipo="aviso_oportunidad_4",
             ))

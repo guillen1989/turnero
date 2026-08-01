@@ -24,7 +24,8 @@ _TIPOS_POR_MODO = {
 _TIPOS_JUNTE = ("junte",)
 
 
-def _candidatas(usuario, tipos, mostrar_oportunidad_3=True, mostrar_oportunidad_4=True):
+def _candidatas(usuario, tipos, mostrar_oportunidad_3=True, mostrar_oportunidad_4=True,
+                categoria_id=None, grupo_id=None):
     """Publicaciones candidatas, visibles y activas para el usuario.
 
     Incluye las sintéticas (oportunidades a 3 y 4 bandas): tienen tipo
@@ -32,8 +33,13 @@ def _candidatas(usuario, tipos, mostrar_oportunidad_3=True, mostrar_oportunidad_
     también se muestran en el calendario (etiquetadas aparte, ver
     resumen_publicaciones), salvo que el usuario haya desactivado ese tipo
     de oportunidad en sus preferencias (mostrar_oportunidad_3/4).
+
+    `categoria_id` y `grupo_id` opcionales permiten sobrescribir los valores
+    por defecto que se obtienen del usuario, para filtrar por la unidad
+    activa cuando el usuario pertenece a varias.
     """
-    grupo_id = usuario.unidad.grupo_intercambio_id
+    grupo_id = grupo_id if grupo_id is not None else usuario.unidad.grupo_intercambio_id
+    categoria_id = categoria_id if categoria_id is not None else usuario.categoria_id
     pubs = (
         PublicacionCambio.query
         .join(Usuario, PublicacionCambio.usuario_id == Usuario.id)
@@ -42,7 +48,7 @@ def _candidatas(usuario, tipos, mostrar_oportunidad_3=True, mostrar_oportunidad_
             PublicacionCambio.usuario_id != usuario.id,
             PublicacionCambio.tipo.in_(tipos),
             PublicacionCambio.estado.in_(("abierta", "parcialmente_resuelta")),
-            Usuario.categoria_id == usuario.categoria_id,
+            Usuario.categoria_id == categoria_id,
             Unidad.grupo_intercambio_id == grupo_id,
         )
         .all()
@@ -60,6 +66,7 @@ def _candidatas(usuario, tipos, mostrar_oportunidad_3=True, mostrar_oportunidad_
 
 def construir_calendario_mes(
     usuario, anio, mes, modo, mostrar_oportunidad_3=True, mostrar_oportunidad_4=True,
+    categoria_id=None, grupo_id=None,
 ):
     """
     Devuelve {fecha: {clave_franja: [publicacion_id, ...]}} para el mes dado.
@@ -82,6 +89,7 @@ def construir_calendario_mes(
 
     candidatas = _candidatas(
         usuario, _TIPOS_POR_MODO[modo], mostrar_oportunidad_3, mostrar_oportunidad_4,
+        categoria_id=categoria_id, grupo_id=grupo_id,
     )
     if not candidatas:
         return {}
@@ -256,7 +264,7 @@ def resumen_publicaciones(pub_ids):
     ]
 
 
-def construir_semanas_juntes(usuario, anio, mes):
+def construir_semanas_juntes(usuario, anio, mes, categoria_id=None, grupo_id=None):
     """
     Devuelve la lista de semanas naturales (lunes a domingo) que solapan el
     mes dado, en orden cronológico: [{lunes, domingo, ofertas}, ...].
@@ -273,7 +281,8 @@ def construir_semanas_juntes(usuario, anio, mes):
     primer_lunes = primer_dia - timedelta(days=primer_dia.weekday())
 
     ofertas_por_lunes = {}
-    for pub in _candidatas(usuario, _TIPOS_JUNTE):
+    for pub in _candidatas(usuario, _TIPOS_JUNTE,
+                           categoria_id=categoria_id, grupo_id=grupo_id):
         lunes, trabaja, libra, _num_noches = calcular_distribucion(pub)
         if lunes is None:
             continue

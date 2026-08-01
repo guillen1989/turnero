@@ -37,6 +37,13 @@ class Usuario(UserMixin, db.Model):
     unidades_supervisadas = db.relationship(
         "Unidad", secondary="unidad_supervisada", back_populates="supervisoras"
     )
+    unidades = db.relationship(
+        "Unidad", secondary="usuario_unidad", back_populates="miembros",
+        overlaps="membresias_unidad,unidad,usuario",
+    )
+    membresias_unidad = db.relationship(
+        "UsuarioUnidad", back_populates="usuario", overlaps="miembros,unidades"
+    )
     categoria = db.relationship("Categoria", back_populates="usuarios")
     publicaciones = db.relationship("PublicacionCambio", back_populates="usuario", lazy="dynamic")
     notificaciones = db.relationship("Notificacion", back_populates="usuario", lazy="dynamic")

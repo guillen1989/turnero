@@ -117,26 +117,26 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
 
 ## Paso 1 — Modelo de datos: tabla `usuario_unidad` con categoría por unidad
 
-- [ ] Escribir tests de modelo: crear un `Usuario`, asociarlo a una segunda
+- [x] Escribir tests de modelo: crear un `Usuario`, asociarlo a una segunda
   `Unidad` con una `Categoria` propia distinta de `usuario.categoria_id`, y
   comprobar que `usuario.unidades` (nueva relación) devuelve ambas unidades
   y que se puede leer la categoría específica de cada membresía.
-- [ ] Modelo `UsuarioUnidad` (`app/models/usuario_unidad.py`), mirror de
+- [x] Modelo `UsuarioUnidad` (`app/models/usuario_unidad.py`), mirror de
   `unidad_supervisada.py` pero con columna propia:
   - `usuario_id` (FK, parte de la PK compuesta)
   - `unidad_id` (FK, parte de la PK compuesta)
   - `categoria_id` (FK a `categoria.id`, `NOT NULL` — la categoría del
     usuario *en esa unidad*)
-- [ ] Añadir a `Usuario` (`app/models/usuario.py`):
+- [x] Añadir a `Usuario` (`app/models/usuario.py`):
   - `unidades = db.relationship("Unidad", secondary="usuario_unidad", back_populates="miembros")`
   - considerar un helper/property para acceder a la membresía completa
     (con su categoría), no solo a la `Unidad`, ya que el `secondary=`
     simple no expone las columnas extra de la tabla de asociación — puede
     hacer falta acceder también a `usuario.membresias_unidad` (relationship
     directa al modelo `UsuarioUnidad`) cuando se necesite la categoría.
-- [ ] Añadir a `Unidad` (`app/models/unidad.py`) la relación inversa
+- [x] Añadir a `Unidad` (`app/models/unidad.py`) la relación inversa
   `miembros`.
-- [ ] Servicio `app/services/unidad_usuario.py` (mirror de
+- [x] Servicio `app/services/unidad_usuario.py` (mirror de
   `supervision.py`):
   - `unidades_de(usuario)` → lista ordenada por nombre, incluyendo siempre
     la unidad principal.
@@ -152,49 +152,49 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
     `sincronizar_unidades_supervisadas` pero conservando/actualizando la
     categoría de cada membresía, y **sin poder eliminar la unidad
     principal** de la lista (asegurar con un `assert`/validación explícita).
-- [ ] Todos los tests en verde (`pytest --testmon`).
+- [x] Todos los tests en verde (`pytest --testmon`).
 
 ## Paso 2 — Migración Alembic
 
-- [ ] Modificar los modelos (paso 1) y ejecutar
+- [x] Modificar los modelos (paso 1) y ejecutar
   `flask db migrate -m "añade tabla usuario_unidad"`.
-- [ ] Revisar el `upgrade()` generado y editarlo para que mirror-ee
+- [x] Revisar el `upgrade()` generado y editarlo para que mirror-ee
   `666dde3fff3c`: crear tabla con PK compuesta `(usuario_id, unidad_id)`,
   FKs a `usuario.id` y `unidad.id`, columna `categoria_id NOT NULL` con FK a
   `categoria.id`.
-- [ ] Backfill: `INSERT INTO usuario_unidad (usuario_id, unidad_id,
+- [x] Backfill: `INSERT INTO usuario_unidad (usuario_id, unidad_id,
   categoria_id) SELECT id, unidad_id, categoria_id FROM usuario` — siembra
   la membresía de la unidad principal de cada usuario existente, usando su
   categoría global actual.
-- [ ] `downgrade()` simétrico (`drop_table`).
-- [ ] `flask db heads` debe mostrar exactamente `1 (head)`.
-- [ ] Aplicar la migración en local y correr la suite de modelos del paso 1
+- [x] `downgrade()` simétrico (`drop_table`).
+- [x] `flask db heads` debe mostrar exactamente `1 (head)`.
+- [x] Aplicar la migración en local y correr la suite de modelos del paso 1
   contra la BD migrada.
 
 ## Paso 3 — Alta de cuenta: añadir un segundo servicio opcional
 
-- [ ] Tests de `app/routes/auth.py::registro` (o del servicio
+- [x] Tests de `app/routes/auth.py::registro` (o del servicio
   `registrar_usuario`) cubriendo: registro con una sola unidad (comportamiento
   actual, no debe romperse) y registro añadiendo una segunda unidad +
   categoría en esa unidad.
-- [ ] Formulario de registro: añadir un bloque opcional "añadir otro
+- [x] Formulario de registro: añadir un bloque opcional "añadir otro
   servicio" (checkbox/botón "+ añadir servicio" que revela un segundo
   selector de hospital/unidad + categoría, igual de estructura que el
   principal — reutilizar los mismos endpoints `api_hospitales`/`api_unidades`
   ya existentes en `auth.py`).
-- [ ] `registrar_usuario` (`app/services/registro.py`) acepta una lista
+- [x] `registrar_usuario` (`app/services/registro.py`) acepta una lista
   opcional de unidades adicionales (cada una con su propia categoría) y
   llama a `sincronizar_unidades` tras crear el usuario con su unidad
   principal de siempre.
-- [ ] Plantilla de registro actualizada; verificar en navegador (`/run` o
+- [x] Plantilla de registro actualizada; verificar en navegador (`/run` o
   servidor de desarrollo) el flujo completo: alta con 1 unidad, alta con 2.
 
 ## Paso 4 — Autoservicio: añadir/abandonar unidades desde el perfil
 
-- [ ] Tests de la nueva vista de gestión de unidades del perfil de usuario
+- [x] Tests de la nueva vista de gestión de unidades del perfil de usuario
   normal (no supervisora): añadir una unidad nueva con su categoría, listar
   las unidades actuales, abandonar una unidad no-principal.
-- [ ] Nueva sección en `app/templates/auth/perfil.html` (o pestaña nueva,
+- [x] Nueva sección en `app/templates/auth/perfil.html` (o pestaña nueva,
   a decidir por consistencia visual con `perfil_supervisora.html`) que
   liste las unidades actuales del usuario (con su categoría en cada una) y
   permita:
@@ -202,18 +202,18 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
     unidad), reutilizando `sincronizar_unidades`.
   - abandonar una unidad no-principal (confirmar respuesta a la pregunta
     abierta sobre restricciones antes de implementar el botón "abandonar").
-- [ ] Ruta nueva o ampliación de `app/routes/auth.py::perfil` para manejar
+- [x] Ruta nueva o ampliación de `app/routes/auth.py::perfil` para manejar
   el POST de alta/baja de unidad.
 - [ ] Verificar en navegador el flujo de añadir una segunda unidad desde un
   usuario ya registrado con una sola.
 
 ## Paso 5 — Selector de unidad activa en `/calendario`, `/cambios`, `/planilla`
 
-- [ ] Tests de cada ruta: usuario con 2 unidades, comprobar que sin
+- [x] Tests de cada ruta: usuario con 2 unidades, comprobar que sin
   `unidad_id` en la URL se usa la de sesión (o la principal si no hay
   sesión), que con `unidad_id` válido cambia el contexto, y que con
   `unidad_id` de una unidad a la que NO pertenece devuelve 403.
-- [ ] Sustituir los usos directos de `current_user.unidad` /
+- [x] Sustituir los usos directos de `current_user.unidad` /
   `current_user.grupo_intercambio` en `app/routes/calendario.py`,
   `app/routes/main.py::cambios` y `app/routes/planilla.py` (incluida
   `_resolver_seleccion`) por `unidad_activa_o_403(current_user, unidad_id)`
@@ -222,44 +222,56 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
   visibilidad (p. ej. `main.py:400` `Usuario.categoria_id ==
   current_user.categoria_id` debe pasar a comparar contra la categoría del
   usuario **en la unidad activa**, no la global).
-- [ ] Guardar la unidad activa en sesión al cambiarla (nueva clave de
+- [x] Guardar la unidad activa en sesión al cambiarla (nueva clave de
   sesión, p. ej. `session["unidad_activa_id"]`).
-- [ ] Reutilizar el patrón de plantilla del `<select onchange=...>` (mismo
+- [x] Reutilizar el patrón de plantilla del `<select onchange=...>` (mismo
   idioma que `documento_cambio/supervisora.html`) en las plantillas de
   `calendario`, `cambios` (dashboard) y `planilla`, mostrando el selector
   solo si `len(unidades_de(current_user)) > 1` (simplicidad MVP: usuarios de
   una sola unidad no ven ningún selector nuevo).
-- [ ] Auditar otros puntos que asuman implícitamente una sola unidad del
+- [x] Auditar otros puntos que asuman implícitamente una sola unidad del
   usuario al construir/filtrar publicaciones o el motor de matching (grep
   de `current_user.unidad` / `current_user.categoria_id` / `current_user.grupo_intercambio`
   fuera de las 3 rutas ya cubiertas) y decidir, caso a caso, si deben pasar
   a depender de la unidad activa.
+  - **Resultados de la auditoría:** 41 referencias encontradas en 5 archivos.
+    - `auth.py`: 16/16 OK as-is (perfil, invitaciones, gestión multi-unidad).
+    - `publicaciones.py`: 8/8 MUST change (publicar, editar, me-interesa,
+      contraoferta — todas en el flujo de matching).
+    - `busquedas.py`: 1/1 MUST change (validación de franja en búsquedas
+      guardadas).
+    - `unidad.py`: 5/5 MUST change (configuración de turnos/franjas).
+    - `documento_cambio.py`: 7/11 MUST change (flujo de cambio normal),
+      4/11 DEFER (código específico de supervisora, requiere decisión de
+      diseño sobre cómo interactúa multi-unidad con supervisión).
+  - Los 21 casos MUST change quedan pendientes para un paso futuro
+    (probablemente Paso 6 o un paso intermedio antes de Paso 6).
 - [ ] Verificar manualmente en navegador: usuario con 2 unidades cambiando
   entre ellas en las 3 páginas, comprobando que el calendario/cambios/planilla
   mostrados corresponden solo a la unidad seleccionada.
 
 ## Paso 6 — Notificaciones: unidad de origen + bandeja única
 
-- [ ] Tests: crear notificaciones para un usuario con 2 unidades desde
+- [x] Tests: crear notificaciones para un usuario con 2 unidades desde
   distintos orígenes (match, publicación, documento de cambio) y comprobar
   que cada una queda etiquetada con la unidad correcta; comprobar que
   `/notificaciones` sigue mostrando todas juntas (una sola bandeja, sin
   filtrar por unidad activa).
-- [ ] Migración de 3 pasos (`CLAUDE.md`) para añadir `unidad_id` (nullable
+- [x] Migración de 3 pasos (`CLAUDE.md`) para añadir `unidad_id` (nullable
   primero) a `Notificacion`, backfill desde `usuario.unidad_id` de cada
   notificación existente, luego `NOT NULL`.
-- [ ] Añadir el argumento `unidad_id`/`unidad` a la creación de
+- [x] Añadir el argumento `unidad_id`/`unidad` a la creación de
   `Notificacion` en los 6 sitios listados en el contexto técnico
   (`busquedas_guardadas.py:126`, `documento_cambio.py:61`, `matches.py:73,85,114,133`,
   `publicaciones.py:62`, `routes/publicaciones.py:645`), pasando en cada
   caso la unidad relevante al evento (normalmente la unidad de la
   publicación/documento que originó la notificación, no necesariamente
   `usuario.unidad` si el destinatario tiene varias).
-- [ ] Plantilla de `/notificaciones` (`app/routes/notificaciones.py` +
+- [x] Plantilla de `/notificaciones` (`app/routes/notificaciones.py` +
   su template): mostrar el nombre de la unidad de origen junto a cada
   aviso, **solo si `current_user` pertenece a más de una unidad** (si solo
   tiene una, no añadir ruido visual).
-- [ ] Revisar `_colegas_del_usuario` (`app/routes/notificaciones.py:178-188`)
+- [x] Revisar `_colegas_del_usuario` (`app/routes/notificaciones.py:178-188`)
   para que considere las unidades relevantes al calcular "colegas" cuando
   el usuario pertenece a varias.
 - [ ] Verificar en navegador con un usuario demo de 2 unidades que recibe
@@ -267,19 +279,19 @@ Precedente a imitar en todo: el mecanismo ya existente para que una
 
 ## Paso 7 — Web Push: incluir la unidad en el payload
 
-- [ ] Revisar el código que construye el payload de Web Push (buscar desde
+- [x] Revisar el código que construye el payload de Web Push (buscar desde
   `push_subscription`/`push_activo` en `app/models/usuario.py` hacia el
   servicio que envía las notificaciones push) y comprobar si ya incluye
   algún texto identificable de la unidad.
-- [ ] Si no lo incluye, añadir el nombre de la unidad de origen al título o
+- [x] Si no lo incluye, añadir el nombre de la unidad de origen al título o
   cuerpo del push, solo cuando el usuario destinatario pertenece a más de
   una unidad, siguiendo el mismo test-first que en el resto de pasos.
 
 ## Paso 8 — Documentación y cierre
 
-- [ ] Actualizar `PROGRESS.md` con el cierre de esta fase.
-- [ ] Revisar que no queda código muerto de rutas/plantillas antiguas
+- [x] Actualizar `PROGRESS.md` con el cierre de esta fase.
+- [x] Revisar que no queda código muerto de rutas/plantillas antiguas
   (p. ej. si el formulario de registro cambió de forma, limpiar el HTML
   anterior).
-- [ ] Pasar la suite completa una única vez al cerrar la fase (el resto de
+- [x] Pasar la suite completa una única vez al cerrar la fase (el resto de
   pasos usa `pytest --testmon`).

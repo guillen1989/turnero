@@ -1,7 +1,7 @@
 import calendar
 from datetime import date
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, session, url_for, flash
 from flask_babel import _
 from flask_login import login_required, current_user
 
@@ -20,18 +20,21 @@ from app.services.planilla import (
 from app.services.compat_planilla_persistente import actualizar_compat_tras_publicar_planilla
 from app.services.volcar_cambios import get_matches_pendientes_volcar, volcar_matches_a_planilla
 from app.services.eventos import registrar_evento
+from app.services.unidad_usuario import unidad_activa_o_403, unidades_de
 
 
-def _resolver_seleccion(seleccion):
+def _resolver_seleccion(seleccion, grupo_id=None):
     """Dado el valor del campo 'seleccion', devuelve (tipo_estado, franja_id) o (None, None) si inválido.
     tipo_estado es str si es un estado del día; franja_id es int si es un turno de trabajo.
     """
+    if grupo_id is None:
+        grupo_id = current_user.grupo_intercambio.id
     if seleccion in TIPOS_ESTADO_DIA:
         return seleccion, None
     try:
         franja_id = int(seleccion)
         franja = db.session.get(FranjaHoraria, franja_id)
-        if franja and franja.grupo_intercambio_id == current_user.grupo_intercambio.id:
+        if franja and franja.grupo_intercambio_id == grupo_id:
             return None, franja_id
     except (ValueError, TypeError):
         pass
@@ -46,6 +49,9 @@ def index():
     hoy = date.today()
     anyo = request.args.get("anyo", hoy.year, type=int)
     mes  = request.args.get("mes",  hoy.month, type=int)
+
+    unidad_id = request.args.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
 
     _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
     dias = [date(anyo, mes, d) for d in range(1, num_dias + 1)]
@@ -67,7 +73,7 @@ def index():
 
     franjas = (
         FranjaHoraria.query
-        .filter_by(grupo_intercambio_id=current_user.grupo_intercambio.id)
+        .filter_by(grupo_intercambio_id=unidad_activa.grupo_intercambio_id)
         .order_by(FranjaHoraria.hora_inicio)
         .all()
     )
@@ -93,6 +99,8 @@ def index():
         next_anyo=next_anyo, next_mes=next_mes,
         hoy=hoy,
         es_demo=current_user.es_demo,
+        unidad_activa=unidad_activa,
+        unidades=unidades_de(current_user),
     )
 
 
@@ -104,6 +112,10 @@ def dia_añadir():
     seleccion = request.form.get("seleccion", "").strip()
     anyo = request.form.get("anyo", type=int)
     mes  = request.form.get("mes",  type=int)
+
+    unidad_id = request.form.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    grupo_id = unidad_activa.grupo_intercambio_id
 
     try:
         fecha = date.fromisoformat(fecha_str)
@@ -126,13 +138,14 @@ def dia_añadir():
             return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
         franja = db.session.get(FranjaHoraria, franja_id)
-        if not franja or franja.grupo_intercambio_id != current_user.grupo_intercambio.id:
+        if not franja or franja.grupo_intercambio_id != grupo_id:
             flash(_("Turno no válido."), "error")
             return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
         añadir_turno(current_user, fecha, franja_id)
 
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, unidad_id=unidad_activa.id,
+                            _anchor=f"dia-{fecha.isoformat()}"))
 
 
 @bp.route("/turno/eliminar", methods=["POST"])
@@ -149,7 +162,8 @@ def turno_eliminar():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     eliminar_turno(current_user, fecha, franja_id)
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}",
+                            unidad_id=session.get("unidad_activa_id")))
 
 
 @bp.route("/saliente/quitar", methods=["POST"])
@@ -165,7 +179,8 @@ def saliente_quitar():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     quitar_saliente(current_user, fecha)
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}",
+                            unidad_id=session.get("unidad_activa_id")))
 
 
 @bp.route("/dia/limpiar", methods=["POST"])
@@ -182,7 +197,8 @@ def dia_limpiar():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     limpiar_dia(current_user, fecha)
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}",
+                            unidad_id=session.get("unidad_activa_id")))
 
 
 @bp.route("/<int:anyo>/<int:mes>/publicar", methods=["POST"])
@@ -206,7 +222,8 @@ def mes_publicar(anyo, mes):
     actualizar_compat_tras_publicar_planilla(current_user, anyo, mes)
     registrar_evento(current_user.id, "planilla_publicada", planilla.id)
     flash(_("Planilla del mes publicada. Tus compañeros ya pueden ver tu disponibilidad."), "success")
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes,
+                            unidad_id=session.get("unidad_activa_id")))
 
 
 @bp.route("/<int:anyo>/<int:mes>/despublicar", methods=["POST"])
@@ -214,7 +231,8 @@ def mes_publicar(anyo, mes):
 def mes_despublicar(anyo, mes):
     despublicar_mes(current_user, anyo, mes)
     flash(_("Planilla retirada. Tus compañeros ya no verán tu disponibilidad este mes."), "info")
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes,
+                            unidad_id=session.get("unidad_activa_id")))
 
 
 @bp.route("/mostrar-disponibilidad/toggle", methods=["POST"])
@@ -231,7 +249,8 @@ def toggle_mostrar_disponibilidad():
 
     anyo = request.form.get("anyo", type=int)
     mes = request.form.get("mes", type=int)
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes,
+                            unidad_id=session.get("unidad_activa_id")))
 
 
 @bp.route("/rango/aplicar", methods=["POST"])
@@ -243,6 +262,10 @@ def rango_aplicar():
     seleccion  = request.form.get("seleccion",  "").strip()
     anyo = request.form.get("anyo", type=int)
     mes  = request.form.get("mes",  type=int)
+
+    unidad_id = request.form.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    grupo_id = unidad_activa.grupo_intercambio_id
 
     _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
 
@@ -256,7 +279,7 @@ def rango_aplicar():
     dia_inicio = max(1, dia_inicio)
     dia_fin    = min(num_dias, dia_fin)
 
-    tipo_estado, franja_id = _resolver_seleccion(seleccion)
+    tipo_estado, franja_id = _resolver_seleccion(seleccion, grupo_id=grupo_id)
     if tipo_estado is None and franja_id is None:
         flash(_("Selección no válida."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
@@ -282,10 +305,14 @@ def multiples_aplicar():
     anyo = request.form.get("anyo", type=int)
     mes  = request.form.get("mes",  type=int)
 
+    unidad_id = request.form.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    grupo_id = unidad_activa.grupo_intercambio_id
+
     if not seleccion or not fechas_strs:
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    tipo_estado, franja_id = _resolver_seleccion(seleccion)
+    tipo_estado, franja_id = _resolver_seleccion(seleccion, grupo_id=grupo_id)
     if tipo_estado is None and franja_id is None:
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
@@ -323,7 +350,8 @@ def dia_nota():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     guardar_nota_dia(current_user, fecha, texto)
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}"))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, _anchor=f"dia-{fecha.isoformat()}",
+                            unidad_id=session.get("unidad_activa_id")))
 
 
 @bp.route("/volcar-cambios", methods=["POST"])
@@ -352,7 +380,8 @@ def volcar_cambios():
                 "success",
             )
 
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes,
+                            unidad_id=session.get("unidad_activa_id")))
 
 
 @bp.route("/vacios/aplicar", methods=["POST"])
@@ -363,11 +392,15 @@ def vacios_aplicar():
     anyo = request.form.get("anyo", type=int)
     mes  = request.form.get("mes",  type=int)
 
+    unidad_id = request.form.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    grupo_id = unidad_activa.grupo_intercambio_id
+
     if not seleccion:
         flash(_("Elige qué aplicar a los días vacíos."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    tipo_estado, franja_id = _resolver_seleccion(seleccion)
+    tipo_estado, franja_id = _resolver_seleccion(seleccion, grupo_id=grupo_id)
     if tipo_estado is None and franja_id is None:
         flash(_("Selección no válida."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
@@ -396,6 +429,10 @@ def turno_añadir():
     anyo = request.form.get("anyo", type=int)
     mes  = request.form.get("mes",  type=int)
 
+    unidad_id = request.form.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    grupo_id = unidad_activa.grupo_intercambio_id
+
     try:
         fecha = date.fromisoformat(fecha_str)
     except ValueError:
@@ -407,9 +444,9 @@ def turno_añadir():
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     franja = db.session.get(FranjaHoraria, franja_id)
-    if not franja or franja.grupo_intercambio_id != current_user.grupo_intercambio.id:
+    if not franja or franja.grupo_intercambio_id != grupo_id:
         flash(_("Turno no válido."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     añadir_turno(current_user, fecha, franja_id)
-    return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
+    return redirect(url_for("planilla.index", anyo=anyo, mes=mes, unidad_id=unidad_activa.id))

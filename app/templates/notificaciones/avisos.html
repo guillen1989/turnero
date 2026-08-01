@@ -19,6 +19,9 @@
       {% if aviso.tipo == 'contrasena_restablecida' %}
         <div class="aviso-info">
           <span class="aviso-tipo tipo-badge tipo-badge--admin">{{ _('Cuenta') }}</span>
+          {% if aviso.unidad_id and current_user.unidades|length > 1 and aviso.unidad %}
+          <span class="aviso-unidad">{{ aviso.unidad.nombre }}</span>
+          {% endif %}
           <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>
         <p class="aviso-mensaje">{{ aviso.mensaje }}</p>
@@ -31,6 +34,9 @@
       {% elif aviso.tipo in ('documento_cambio_pendiente_firma', 'documento_cambio_completo', 'documento_cambio_autorizado', 'documento_cambio_denegado') %}
         <div class="aviso-info">
           <span class="aviso-tipo tipo-badge tipo-badge--admin">{{ _('Hoja de cambio') }}</span>
+          {% if aviso.unidad_id and current_user.unidades|length > 1 and aviso.unidad %}
+          <span class="aviso-unidad">{{ aviso.unidad.nombre }}</span>
+          {% endif %}
           <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>
         <p class="aviso-mensaje">{{ aviso.mensaje }}</p>
@@ -49,6 +55,9 @@
           <span class="aviso-tipo tipo-badge tipo-badge--confirmado_total">{{ _('Cambio confirmado') }}</span>
           {% else %}
           <span class="aviso-tipo tipo-badge tipo-badge--rechazo">{{ _('Cambio rechazado') }}</span>
+          {% endif %}
+          {% if aviso.unidad_id and current_user.unidades|length > 1 and aviso.unidad %}
+          <span class="aviso-unidad">{{ aviso.unidad.nombre }}</span>
           {% endif %}
           <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>
@@ -85,6 +94,9 @@
           <span class="aviso-tipo tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 4') }}</span>
           {% else %}
           <span class="aviso-tipo tipo-badge tipo-badge--{{ aviso.publicacion.tipo }}">{{ _(aviso.publicacion.tipo) }}</span>
+          {% endif %}
+          {% if aviso.unidad_id and current_user.unidades|length > 1 and aviso.unidad %}
+          <span class="aviso-unidad">{{ aviso.unidad.nombre }}</span>
           {% endif %}
           <span class="aviso-fecha">{{ aviso.fecha.strftime('%d/%m/%Y %H:%M') }}</span>
         </div>

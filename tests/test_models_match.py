@@ -112,7 +112,7 @@ def test_crear_notificacion(db):
     db.session.add(match)
     db.session.commit()
 
-    notif = Notificacion(usuario=ana, match=match, tipo="nuevo_match")
+    notif = Notificacion(usuario=ana, unidad_id=ana.unidad_id, match=match, tipo="nuevo_match")
     db.session.add(notif)
     db.session.commit()
 
