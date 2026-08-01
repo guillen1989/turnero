@@ -84,9 +84,9 @@ opción de borrarlas.
   seguir).
 - [x] Commit: `test: cubre eliminar publicación individual en estado caducada`.
 
-## Paso 2 — Backend: ruta de borrado masivo de caducadas ☐
+## Paso 2 — Backend: ruta de borrado masivo de caducadas ✅
 
-- [ ] Test primero en `tests/test_editar_eliminar_publicacion.py` (o un
+- [x] Test primero en `tests/test_editar_eliminar_publicacion.py` (o un
   archivo nuevo `tests/test_eliminar_caducadas.py`, a discreción, siguiendo
   el estilo de los tests existentes en ese archivo):
   - Requiere login (302 a `/login` si no autenticado).
@@ -96,7 +96,7 @@ opción de borrarlas.
     por `usuario_id`).
   - Redirige a `main.index` con `?estado=caducada` (o equivalente,
     verificar `Location` en la respuesta).
-- [ ] Implementar en `app/routes/publicaciones.py` una nueva ruta
+- [x] Implementar en `app/routes/publicaciones.py` una nueva ruta
   `POST /publicaciones/eliminar-caducadas` (nombre de función sugerido:
   `eliminar_caducadas`), que:
   ```python
@@ -114,9 +114,9 @@ opción de borrarlas.
   Reutiliza `eliminar_publicacion` (ya importado en el archivo) en vez de un
   `.delete()` masivo, para no duplicar la lógica de limpieza de sintéticas /
   matches / notificaciones / auditoría que ya gestiona esa función.
-- [ ] Ejecutar `pytest --testmon` — todos los tests nuevos y existentes en
+- [x] Ejecutar `pytest --testmon` — todos los tests nuevos y existentes en
   verde.
-- [ ] Commit: `feat: añade ruta para eliminar todas las publicaciones caducadas`.
+- [x] Commit: `feat: añade ruta para eliminar todas las publicaciones caducadas`.
 
 ## Paso 3 — Frontend: botones de eliminar en la pestaña Caducados ☐
 
