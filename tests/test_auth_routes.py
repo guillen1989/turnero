@@ -992,3 +992,91 @@ def test_agregar_unidad_duplicada_es_idempotente(client, db):
     from app.extensions import db as _db
     _db.session.refresh(usuario)
     assert len(unidades_de(usuario)) == n_antes
+
+
+# ---------------------------------------------------------------------------
+# Paso 4 FEAT_FLAG_MULTI -- feature flag multi_unidad
+# ---------------------------------------------------------------------------
+
+
+def test_perfil_servicios_con_flag_inactivo_devuelve_404(client, db):
+    from app.services.feature_flags import desactivar_global
+    desactivar_global("multi_unidad")
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/perfil/servicios")
+    assert resp.status_code == 404
+
+
+def test_agregar_unidad_con_flag_inactivo_devuelve_404(client, db):
+    from app.services.feature_flags import desactivar_global
+    desactivar_global("multi_unidad")
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.post("/auth/perfil/unidades/agregar", data={
+        "svc_hospital_id": 0,
+        "svc_hospital_nuevo": "Hospital Test",
+        "svc_unidad_id": 0,
+        "svc_unidad_nuevo": "Cirugía",
+        "svc_categoria_id": _segunda_categoria_id(db),
+    })
+    assert resp.status_code == 404
+
+
+def test_abandonar_unidad_con_flag_inactivo_devuelve_404(client, db):
+    from app.services.feature_flags import desactivar_global
+    desactivar_global("multi_unidad")
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    cirugia = Unidad.query.filter_by(nombre="Cirugía").first()
+    if cirugia is None:
+        cirugia = _crear_unidad_existente(db, _segunda_categoria_id(db), nombre_unidad="Cirugía")
+    resp = client.post(f"/auth/perfil/unidades/{cirugia.id}/abandonar")
+    assert resp.status_code == 404
+
+
+def test_perfil_servicios_sin_flag_no_muestra_pestaña_servicios(client, db):
+    from app.services.feature_flags import desactivar_global
+    desactivar_global("multi_unidad")
+    client.post("/auth/registro", data=_datos_registro(db))
+    resp = client.get("/auth/perfil")
+    assert resp.status_code == 200
+    assert b"/auth/perfil/servicios" not in resp.data
+
+
+# ---------------------------------------------------------------------------
+# Paso 5 FEAT_FLAG_MULTI -- registro: bloque "añadir otro servicio"
+# ---------------------------------------------------------------------------
+
+
+def test_registro_con_flag_inactivo_ignora_segunda_unidad(client, db):
+    from app.services.feature_flags import desactivar_global
+    from app.services.unidad_usuario import unidades_de
+    desactivar_global("multi_unidad")
+    resp = client.post(
+        "/auth/registro",
+        data=_datos_registro_con_segunda_unidad(db),
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    usuario = Usuario.query.filter_by(email="ana@test.es").one()
+    assert len(unidades_de(usuario)) == 1
+
+
+def test_get_registro_con_flag_inactivo_no_muestra_bloque_extra(client, db):
+    from app.services.feature_flags import desactivar_global
+    desactivar_global("multi_unidad")
+    resp = client.get("/auth/registro")
+    assert resp.status_code == 200
+    assert "Segundo servicio".encode() not in resp.data
+
+
+def test_registro_con_flag_inactivo_no_crea_unidad_extra_ni_error(client, db):
+    """POST con campos de segundo servicio pero flag desactivado:
+    el usuario se registra sin error y con una sola unidad."""
+    from app.services.feature_flags import desactivar_global
+    desactivar_global("multi_unidad")
+    resp = client.post(
+        "/auth/registro",
+        data=_datos_registro_con_segunda_unidad(db),
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert b"Segundo servicio" not in resp.data

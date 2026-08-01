@@ -25,6 +25,7 @@ from app.services.registro import (
     _resolver_geografia,
 )
 from app.services.planilla_matching import sugerir_trabajador_planilla, vincular_usuario
+from app.services.feature_flags import feature_activa, requiere_feature
 from app.services.unidad_usuario import categoria_en_unidad, pertenece_a, sincronizar_unidades, unidades_de
 
 bp = Blueprint("auth", __name__)
@@ -102,6 +103,9 @@ def _resolver_extra_servicio(form):
     registro y devuelve (unidades_extra, errores): la lista de dicts de
     unidades adicionales lista para `registrar_usuario`, o errores flash
     si el bloque está marcado pero incompleto."""
+    if not feature_activa("multi_unidad"):
+        return [], False
+
     if not form.extra_servicio.data:
         return [], False
 
@@ -661,6 +665,7 @@ def eliminar_cuenta_route():
 
 @bp.route("/perfil/servicios")
 @login_required
+@requiere_feature("multi_unidad")
 def perfil_servicios():
     unidades_usuario = unidades_de(current_user)
     datos_unidades = [
@@ -684,6 +689,7 @@ def perfil_servicios():
 
 @bp.route("/perfil/unidades/agregar", methods=["POST"])
 @login_required
+@requiere_feature("multi_unidad")
 def agregar_unidad():
     hospital_id = request.form.get("svc_hospital_id", type=int)
     unidad_id = request.form.get("svc_unidad_id", type=int)
@@ -724,6 +730,7 @@ def agregar_unidad():
 
 @bp.route("/perfil/unidades/<int:unidad_id>/abandonar", methods=["POST"])
 @login_required
+@requiere_feature("multi_unidad")
 def abandonar_unidad(unidad_id):
     if unidad_id == current_user.unidad_id:
         flash(_("No puedes abandonar tu unidad principal."), "danger")

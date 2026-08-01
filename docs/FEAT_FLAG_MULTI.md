@@ -186,30 +186,30 @@ unidad):
 
 ## Paso 4 — Rutas dedicadas de gestión de servicios: `@requiere_feature`
 
-- [ ] Tests de `app/routes/auth.py`: con el flag desactivado,
+- [x] Tests de `app/routes/auth.py`: con el flag desactivado,
   `GET /perfil/servicios`, `POST /perfil/unidades/agregar` y
   `POST /perfil/unidades/<id>/abandonar` devuelven 404; con el flag
   activado, comportamiento actual sin cambios (test de no-regresión).
-- [ ] Decorar `perfil_servicios`, `agregar_unidad` y `abandonar_unidad` con
+- [x] Decorar `perfil_servicios`, `agregar_unidad` y `abandonar_unidad` con
   `@requiere_feature("multi_unidad")` (mismo patrón que
   `documento_cambio.py`/`planilla_import.py`).
-- [ ] `app/templates/auth/perfil.html:11`: ocultar el enlace a la pestaña
+- [x] `app/templates/auth/perfil.html:11`: ocultar el enlace a la pestaña
   "Servicios" con `{% if feature_activa('multi_unidad') %}` (si no, un
   usuario llegaría a un enlace que da 404).
-- [ ] `pytest --testmon` en verde.
+- [x] `pytest --testmon` en verde.
 
 ## Paso 5 — Registro: bloque "añadir otro servicio"
 
-- [ ] Tests de `app/routes/auth.py::registro` / `_resolver_extra_servicio`:
+- [x] Tests de `app/routes/auth.py::registro` / `_resolver_extra_servicio`:
   con el flag desactivado, un POST que incluya los campos
   `extra_servicio`/`extra_hospital_id`/... se registra igualmente pero
   **ignorando** esos campos (el usuario queda con una sola unidad, sin
   error); con el flag activado, comportamiento actual sin cambios.
-- [ ] `_resolver_extra_servicio(form)` (`app/routes/auth.py:100`): primera
+- [x] `_resolver_extra_servicio(form)` (`app/routes/auth.py:100`): primera
   línea, si `not feature_activa("multi_unidad")` devolver `([], False)`.
-- [ ] `app/templates/auth/registro.html:130-135`: ocultar el checkbox y el
+- [x] `app/templates/auth/registro.html:130-135`: ocultar el checkbox y el
   bloque `#extra-servicio-block` con `{% if feature_activa('multi_unidad') %}`.
-- [ ] `pytest --testmon` en verde.
+- [x] `pytest --testmon` en verde.
 - [ ] Verificar en navegador con el flag desactivado: el formulario de
   registro no muestra la opción de segundo servicio.
 

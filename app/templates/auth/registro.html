@@ -125,6 +125,7 @@
       </div>
     </div>
 
+    {% if feature_activa('multi_unidad') %}
     <div class="form-group">
       <label class="checkbox-label">
         {{ form.extra_servicio() }}
@@ -214,6 +215,7 @@
         </div>
       </div>
     </div>
+    {% endif %}
 
     <div class="form-group">
       {{ form.submit(class="btn btn-primary btn-full") }}

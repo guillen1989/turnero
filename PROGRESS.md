@@ -6,8 +6,8 @@ completo el sistema de usuarios en varios servicios, plan completo en
 `docs/FEAT_FLAG_MULTI.md`.
 
 ## Paso actual / siguiente paso
-Paso 3 completado. Siguiente: Paso 4 de `docs/FEAT_FLAG_MULTI.md` — Rutas
-dedicadas de gestión de servicios: `@requiere_feature`.
+Paso 5 completado. Siguiente: Paso 6 de `docs/FEAT_FLAG_MULTI.md` —
+Notificaciones y Web Push: etiquetas de unidad.
 
 ## Decisiones de diseño (Fase 16)
 - Un único flag `multi_unidad`, reutilizando `FeatureFlag`/`feature_activa`
@@ -17,6 +17,13 @@ dedicadas de gestión de servicios: `@requiere_feature`.
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] Fase 16, Paso 5 (`docs/FEAT_FLAG_MULTI.md`) — Registro: bloque "añadir otro
+  servicio" oculto con flag desactivado, `_resolver_extra_servicio` ignora campos
+  extra. Tests en `test_auth_routes.py`.
+- [x] Fase 16, Paso 4 (`docs/FEAT_FLAG_MULTI.md`) — Rutas de gestión de servicios
+  decoradas con `@requiere_feature("multi_unidad")`, pestaña "Servicios" oculta en
+  perfil. Bug corregido en `test_abandonar_unidad_con_flag_inactivo_devuelve_404`
+  (crear unidad directamente en vez de vía registro).
 - [x] Fase 16, Paso 3 (`docs/FEAT_FLAG_MULTI.md`) — Choke points centrales:
   `unidades_de` y `unidad_activa_o_403` comprueban `feature_activa("multi_unidad")`.
   Tests en `tests/test_unidad_usuario.py` (7 tests: 3 clases). `pertenece_a`
