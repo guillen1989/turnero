@@ -31,6 +31,7 @@
             </div>
             {% if not d.es_principal %}
               <form method="POST" action="{{ url_for('auth.abandonar_unidad', unidad_id=d.unidad.id) }}" style="margin:0" onsubmit="return confirm('{{ _('¿Seguro que quieres abandonar el servicio «%(nombre)s»?', nombre=d.unidad.nombre) }}')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-outline btn-sm">{{ _('Abandonar') }}</button>
               </form>
             {% endif %}
