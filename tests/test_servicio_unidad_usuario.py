@@ -133,6 +133,15 @@ def test_unidad_activa_o_403_prioriza_el_query_param_sobre_la_sesion(app, db):
         assert unidad_activa_o_403(usuario, unidad_uci.id) == unidad_uci
 
 
+def test_unidad_activa_o_403_con_sesion_obsoleta_cae_a_la_principal_y_la_limpia(app, db):
+    usuario, unidad_uci, _, unidad_ajena, _, _ = _crear_contexto(db)
+
+    with app.test_request_context():
+        session["unidad_activa_id"] = unidad_ajena.id
+        assert unidad_activa_o_403(usuario, None) == unidad_uci
+        assert "unidad_activa_id" not in session
+
+
 def test_unidad_activa_o_403_con_unidad_id_valido_devuelve_la_unidad(db):
     usuario, _, unidad_urgencias, _, _, _ = _crear_contexto(db)
 

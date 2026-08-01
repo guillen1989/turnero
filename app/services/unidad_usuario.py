@@ -39,6 +39,11 @@ def unidad_activa_o_403(usuario, unidad_id, session_key="unidad_activa_id"):
     Cuando `unidad_id` viene explícitamente informado (query param), lo
     persiste en sesión para que las navegaciones posteriores mantengan el
     contexto sin necesitar el param en cada URL.
+
+    Si el `unidad_id` obsoleto viene solo de la sesión (p. ej. tras un cambio
+    de unidad del usuario) y ya no le pertenece, no aborta: limpia la sesión
+    y cae a la unidad principal, para no dejar al usuario bloqueado por un
+    valor de sesión que arrastra desde antes del cambio.
     """
     explicitamente_pedida = unidad_id is not None
     if not explicitamente_pedida:
@@ -47,7 +52,10 @@ def unidad_activa_o_403(usuario, unidad_id, session_key="unidad_activa_id"):
         return usuario.unidad
     unidad = db.session.get(Unidad, unidad_id)
     if unidad is None or not pertenece_a(usuario, unidad):
-        abort(403)
+        if explicitamente_pedida:
+            abort(403)
+        session.pop(session_key, None)
+        return usuario.unidad
     if explicitamente_pedida:
         session[session_key] = unidad_id
     return unidad
