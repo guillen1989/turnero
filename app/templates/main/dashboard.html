@@ -8,12 +8,6 @@
     <h1>{{ _('Mis cambios publicados') }}</h1>
     <div class="dashboard-header-actions">
       <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary btn-sm">{{ _('Publicar cambio') }}</a>
-      {% if estado_filtro == 'caducada' and publicaciones %}
-      <form method="post" action="{{ url_for('publicaciones.eliminar_caducadas') }}" style="display:inline" onsubmit="return false">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="button" class="btn btn-danger btn-sm" onclick="abrirModalEliminarTodasCaducadas(this.closest('form'))">{{ _('Eliminar todos') }}</button>
-      </form>
-      {% endif %}
       <button type="button" class="btn btn-secondary btn-sm" id="btn-actualizar" onclick="window.location.reload()">{{ _('Actualizar') }}</button>
       <button type="button" class="btn btn-secondary btn-sm" id="btn-instalar-pwa" style="display:none" onclick="instalarPWA()">{{ _('Instalar app') }}</button>
     </div>
@@ -194,6 +188,14 @@
   {% endif %}
 
   {% if publicaciones %}
+    {% if estado_filtro == 'caducada' %}
+    <div class="publicaciones-list-actions">
+      <form method="post" action="{{ url_for('publicaciones.eliminar_caducadas') }}" style="display:inline" onsubmit="return false">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="button" class="btn btn-danger btn-sm" onclick="abrirModalEliminarTodasCaducadas(this.closest('form'))">{{ _('Eliminar todos') }}</button>
+      </form>
+    </div>
+    {% endif %}
     <ul class="publicaciones-list">
       {% for pub in publicaciones %}
       <li class="publicacion-card publicacion--{{ pub.estado }}">
