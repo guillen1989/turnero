@@ -73,6 +73,7 @@ def test_reset_demo_con_notificaciones_de_match_pendientes(db):
     assert match is not None
     notif = Notificacion(
         usuario_id=match.participaciones[0].publicacion.usuario_id,
+        unidad_id=match.participaciones[0].publicacion.usuario.unidad_id,
         match_id=match.id,
         tipo="nuevo_match",
     )

@@ -1,7 +1,7 @@
 import calendar
 from datetime import date
 
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, redirect, render_template, request, session, url_for
 from flask_babel import _
 from flask_login import login_required, current_user
 
@@ -15,6 +15,7 @@ from app.services.calendario_mercado import (
     preparar_semanas_juntes,
     resumen_publicaciones,
 )
+from app.services.unidad_usuario import categoria_en_unidad, unidad_activa_o_403, unidades_de
 
 bp = Blueprint("calendario", __name__, url_prefix="/calendario")
 
@@ -31,6 +32,9 @@ def index():
     if modo not in MODOS_VALIDOS:
         modo = "ofertas"
 
+    unidad_id = request.args.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+
     prev_mes = mes - 1 if mes > 1 else 12
     prev_anyo = anyo if mes > 1 else anyo - 1
     next_mes = mes + 1 if mes < 12 else 1
@@ -40,12 +44,19 @@ def index():
         anyo=anyo, mes=mes, modo=modo, hoy=hoy,
         prev_anyo=prev_anyo, prev_mes=prev_mes,
         next_anyo=next_anyo, next_mes=next_mes,
+        unidad_activa=unidad_activa,
+        unidades=unidades_de(current_user),
     )
 
-    # Un junte de noches es un patrón semanal completo, no una noche suelta:
-    # se agrupa por semana en vez de con el grid día a día de ofertas/peticiones.
+    cat_id = categoria_en_unidad(current_user, unidad_activa).id
+    grupo_id = unidad_activa.grupo_intercambio_id
+
     if modo == "juntes":
-        semanas = preparar_semanas_juntes(construir_semanas_juntes(current_user, anyo, mes), mes)
+        semanas = preparar_semanas_juntes(
+            construir_semanas_juntes(current_user, anyo, mes,
+                                     categoria_id=cat_id, grupo_id=grupo_id),
+            mes,
+        )
         return render_template("calendario/calendario.html", semanas=semanas, **contexto)
 
     _primer_dia_semana, num_dias = calendar.monthrange(anyo, mes)
@@ -54,11 +65,12 @@ def index():
     calendario_mes = construir_calendario_mes(
         current_user, anyo, mes, modo,
         current_user.mostrar_oportunidad_3, current_user.mostrar_oportunidad_4,
+        categoria_id=cat_id, grupo_id=grupo_id,
     )
 
     franjas = (
         FranjaHoraria.query
-        .filter_by(grupo_intercambio_id=current_user.grupo_intercambio.id)
+        .filter_by(grupo_intercambio_id=grupo_id)
         .order_by(FranjaHoraria.hora_inicio)
         .all()
     )
@@ -124,4 +136,5 @@ def guardar_preferencias():
     modo = request.form.get("modo", "ofertas")
     if modo not in MODOS_VALIDOS:
         modo = "ofertas"
-    return redirect(url_for("calendario.index", anyo=anyo, mes=mes, modo=modo))
+    unidad_id = session.get("unidad_activa_id")
+    return redirect(url_for("calendario.index", anyo=anyo, mes=mes, modo=modo, unidad_id=unidad_id))

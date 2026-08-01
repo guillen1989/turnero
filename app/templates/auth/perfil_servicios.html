@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Mis servicios') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('Mi perfil') }}</h1>
+
+  <nav class="estado-tabs" style="margin-bottom:1.25rem">
+    <a href="{{ url_for('auth.perfil') }}" class="estado-tab">{{ _('Unidad') }}</a>
+    <a href="{{ url_for('auth.perfil_servicios') }}" class="estado-tab estado-tab--active">{{ _('Servicios') }}</a>
+    <a href="{{ url_for('auth.perfil_cuenta') }}" class="estado-tab">{{ _('Cuenta') }}</a>
+  </nav>
+
+  <section class="perfil-servicios-lista">
+    <h2>{{ _('Mis servicios') }}</h2>
+    {% if datos_unidades|length == 0 %}
+      <p>{{ _('No tienes ningún servicio asignado.') }}</p>
+    {% else %}
+      <div class="unidades-lista">
+        {% for d in datos_unidades %}
+          <div class="unidad-item" style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem 0; border-bottom:1px solid var(--border)">
+            <div>
+              <strong>{{ d.unidad.nombre }}</strong>
+              <span style="color:var(--text-muted); margin-left:0.5rem">
+                — {{ d.categoria.nombre if d.categoria else _('Sin categoría') }}
+              </span>
+              {% if d.es_principal %}
+                <span class="badge" style="margin-left:0.5rem; background:var(--primary); color:#fff; padding:0.125rem 0.5rem; border-radius:999px; font-size:0.75rem">{{ _('Principal') }}</span>
+              {% endif %}
+            </div>
+            {% if not d.es_principal %}
+              <form method="POST" action="{{ url_for('auth.abandonar_unidad', unidad_id=d.unidad.id) }}" style="margin:0" onsubmit="return confirm('{{ _('¿Seguro que quieres abandonar el servicio «%(nombre)s»?', nombre=d.unidad.nombre) }}')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline btn-sm">{{ _('Abandonar') }}</button>
+              </form>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="perfil-servicios-agregar" style="margin-top:2rem">
+    <h2>{{ _('Añadir otro servicio') }}</h2>
+
+    <form method="POST" action="{{ url_for('auth.agregar_unidad') }}" novalidate>
+      {{ agregar_form.hidden_tag() }}
+
+      <div class="form-group">
+        <label>{{ _('País') }}</label>
+        <select id="svc-pais-select" name="svc_pais_id">
+          <option value="">{{ _('— Selecciona país —') }}</option>
+          {% for p in paises %}
+            <option value="{{ p.id }}">{{ p.nombre }}</option>
+          {% endfor %}
+          <option value="0">{{ _('— Añadir nuevo país —') }}</option>
+        </select>
+        <div id="svc-pais-nuevo-group" style="display:none">
+          {{ agregar_form.pais_nuevo(placeholder=_('Nombre del país')) }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>{{ _('Provincia') }}</label>
+        <select id="svc-provincia-select" name="svc_provincia_id">
+          <option value="">{{ _('— Selecciona primero el país —') }}</option>
+          <option value="0">{{ _('— Añadir nueva provincia —') }}</option>
+        </select>
+        <div id="svc-provincia-nuevo-group" style="display:none">
+          {{ agregar_form.provincia_nueva(placeholder=_('Nombre de la provincia')) }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>{{ _('Ciudad') }}</label>
+        <select id="svc-ciudad-select" name="svc_ciudad_id">
+          <option value="">{{ _('— Selecciona primero la provincia —') }}</option>
+          <option value="0">{{ _('— Añadir nueva ciudad —') }}</option>
+        </select>
+        <div id="svc-ciudad-nuevo-group" style="display:none">
+          {{ agregar_form.ciudad_nueva(placeholder=_('Nombre de la ciudad')) }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>{{ _('Hospital') }}</label>
+        <select id="svc-hospital-select" name="svc_hospital_id">
+          <option value="">{{ _('— Selecciona primero la ciudad —') }}</option>
+          <option value="0">{{ _('— Añadir nuevo hospital —') }}</option>
+        </select>
+        <div id="svc-hospital-nuevo-group" style="display:none">
+          {{ agregar_form.hospital_nuevo(placeholder=_('Nombre del hospital')) }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="svc-categoria-select">{{ _('Categoría profesional') }}</label>
+        <select id="svc-categoria-select" name="svc_categoria_id">
+          {% for value, label in agregar_form.categoria_id.choices %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" id="svc-categoria-nueva-group" style="display:none">
+        <label for="svc_categoria_nueva">{{ _('Nombre de la nueva categoría') }}</label>
+        <input type="text" id="svc_categoria_nueva" name="svc_categoria_nueva" placeholder="{{ _('Nombre de la nueva categoría') }}" maxlength="100">
+      </div>
+
+      <div class="form-group">
+        <label>{{ _('Unidad / servicio') }}</label>
+        <select id="svc-unidad-select" name="svc_unidad_id">
+          <option value="">{{ _('— Selecciona primero hospital y categoría —') }}</option>
+          <option value="0">{{ _('— Añadir nueva unidad —') }}</option>
+        </select>
+        <div id="svc-unidad-nuevo-group" style="display:none">
+          {{ agregar_form.unidad_nuevo(placeholder=_('Nombre de la unidad')) }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        {{ agregar_form.submit(class="btn btn-primary btn-full") }}
+      </div>
+    </form>
+  </section>
+
+  <p class="form-footer" style="margin-top:1.5rem">
+    <a href="{{ url_for('main.index') }}">{{ _('← Volver al inicio') }}</a>
+  </p>
+</div>
+
+<script src="{{ url_for('static', filename='js/cascade-hospital.js') }}"></script>
+<script>
+  var select = document.getElementById('svc-categoria-select');
+  var nuevaGroup = document.getElementById('svc-categoria-nueva-group');
+  function toggleNuevaCategoria() {
+    nuevaGroup.style.display = select.value === '0' ? 'block' : 'none';
+  }
+  select.addEventListener('change', toggleNuevaCategoria);
+  toggleNuevaCategoria();
+</script>
+{% endblock %}

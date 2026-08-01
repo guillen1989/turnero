@@ -2665,3 +2665,92 @@ Nota de flakiness pre-existente: `tests/test_rutas_importar_planilla.py` falla d
 - [x] Email duplicado al crear usuario causaba 500: comprobación explícita antes del INSERT/UPDATE.
 - [x] Eliminar una supervisora daba 500: ampliado el borrado en cascada de `eliminar_usuario_admin` para cubrir FKs de `DocumentoCambio`/`AjustePlanillaSupervisora`/`MapeoTrabajadorPlanilla`.
 - [x] Email de invitación no llegaba en Railway staging: sin cambio de código, ya usaba Resend vía HTTPS al generalizar el punto 1.
+
+## Fase 13 — Usuarios normales en varios servicios (unidades) (movido desde PROGRESS.md)
+
+Plan completo en `docs/USUARIOS_MULTI.md`. **Cerrada.**
+
+Pendiente para una fase futura: los 21 casos MUST change de la auditoría del
+Paso 5 (publicaciones.py, busquedas.py, unidad.py, documento_cambio.py) y la
+verificación manual en navegador de los Pasos 4, 5 y 6.
+
+- [x] Paso 8 — Documentación y cierre. Eliminadas importaciones muertas en
+  `app/routes/auth.py` (`encontrar_o_crear_pais`, `encontrar_o_crear_provincia`,
+  `encontrar_o_crear_ciudad`, no usadas en ese módulo). Suite completa de
+  tests en verde (excepto fallos preexistentes por compatibilidad Python
+  3.8/OpenSSL en generación de PDFs).
+- [x] Paso 7 — Web Push: incluir unidad en el payload. `enviar_push()` y
+  `enviar_push_condicional()` aceptan `unidad_nombre=None`. Si se proporciona
+  y el usuario pertenece a más de una unidad, se añade `[Unidad]` al cuerpo
+  de la notificación push. Actualizados los 7 callers: `matches.py` (4),
+  `publicaciones.py` (1), `busquedas_guardadas.py` (1) y
+  `documento_cambio.py` (1). 4 tests nuevos en `test_push.py`.
+- [x] Paso 6 — notificaciones con unidad de origen + bandeja única. Añadido
+  `unidad_id` (FK NOT NULL) al modelo `Notificacion`, migración en 3 pasos,
+  15 sitios de creación actualizados para registrar la unidad de origen.
+  Plantilla `avisos.html` muestra el nombre de la unidad junto a cada aviso
+  solo si el usuario pertenece a más de una. `_colegas_del_usuario()`
+  considera todos los pares (grupo_intercambio_id, categoria_id) de todas
+  las unidades del usuario. 8 tests nuevos en `test_notificacion_unidad.py`;
+  27 tests existentes adaptados al nuevo campo obligatorio.
+- [x] Paso 5 — selector de unidad activa en `/calendario`, `/cambios`,
+  `/planilla`. `unidad_activa_o_403` ahora persiste en sesión
+  (`session["unidad_activa_id"]`) cuando se elige una unidad explícitamente
+  por query param. Las 3 rutas sustituyen
+  `current_user.unidad`/`grupo_intercambio`/`categoria_id` por la unidad
+  activa y su categoría. `calendario_mercado.py` (`_candidatas`,
+  `construir_calendario_mes`, `construir_semanas_juntes`) acepta ahora
+  `categoria_id` y `grupo_id` opcionales para filtrar por la unidad activa.
+  `planilla.py` recibe `unidad_id` en todas las rutas (GET y POST) y valida
+  las franjas contra el grupo de la unidad activa. Plantillas: `<select
+  onchange=...>` en `calendario.html`, `cambios.html` y `planilla.html`,
+  visible solo si el usuario pertenece a más de una unidad. 16 tests nuevos
+  en `tests/test_unidad_activa_rutas.py`. **Auditoría de 41 referencias a
+  `current_user.unidad`/`categoria_id`/`grupo_intercambio` completada:** 21
+  casos MUST change en `publicaciones.py`, `busquedas.py`, `unidad.py` y
+  `documento_cambio.py` quedan pendientes de implementación (ver
+  `docs/USUARIOS_MULTI.md`).
+- [x] Paso 3 — alta de cuenta con segundo servicio opcional:
+  `registrar_usuario` acepta `unidades_extra` (lista de dicts con hospital,
+  unidad, categoría) y construye `{unidad_id: categoria_id}` para
+  `sincronizar_unidades`, sembrando la membresía principal + las extra en
+  una misma transacción. El formulario `RegistroForm` gana `BooleanField
+  extra_servicio` + campos prefijados `extra_*` (hospital, unidad,
+  categoría, geo). La ruta `registro` extrae el helper
+  `_nombres_geo_registro(prefijo)` y valida el bloque extra con sus propios
+  mensajes de error. Plantilla `registro.html` con checkbox "Añadir otro
+  servicio" que revela una segunda cascada completa
+  (`extra-pais-select`...). `cascade-hospital.js` generalizado a
+  `inicializarCascada(prefix)` para reutilizarse con `''` y `'extra-'`.
+  `eliminar_usuario_admin` limpia también filas de `usuario_unidad`. 152
+  tests en verde.
+- [x] Paso 2 — migración Alembic
+  `migrations/versions/def6b117664c_añade_tabla_usuario_unidad.py`:
+  `op.create_table('usuario_unidad')` con PK compuesta `(usuario_id,
+  unidad_id)`, FKs a `usuario.id`, `unidad.id` y `categoria.id`,
+  `categoria_id NOT NULL`; backfill `INSERT INTO usuario_unidad ... SELECT
+  id, unidad_id, categoria_id FROM usuario` que siembra la membresía de la
+  unidad principal de cada usuario existente; `downgrade()` simétrico
+  (`op.drop_table`). `flask db heads` → 1 head (`def6b117664c`). Migración
+  aplicada en local y verificada con ciclo downgrade→upgrade (el backfill
+  siembra correctamente). `flask db check` confirma sin drift.
+- [x] Paso 1 — modelo de datos `usuario_unidad`:
+  `app/models/usuario_unidad.py` (PK compuesta `(usuario_id, unidad_id)` +
+  `categoria_id NOT NULL`), relaciones `Usuario.unidades` /
+  `Usuario.membresias_unidad` / `Unidad.miembros` /
+  `Unidad.membresias_unidad` (con `overlaps` declarados para silenciar los
+  avisos de SQLAlchemy), y servicio `app/services/unidad_usuario.py` con
+  `unidades_de` (siempre incluye la principal, ordenada por nombre),
+  `categoria_en_unidad` (global en la principal, de la membresía en el
+  resto), `pertenece_a`, `unidad_activa_o_403` (query param > sesión >
+  principal) y `sincronizar_unidades` (dict `{unidad_id: categoria_id}`,
+  actualiza la categoría de `usuario.categoria_id` con la de la principal,
+  no permite eliminar la principal). Tests: `tests/test_models_usuario_unidad.py`
+  y `tests/test_servicio_unidad_usuario.py` (20 tests en verde).
+
+Notas: unidad principal siempre presente en `usuario_unidad` (invariante del
+backfill; `sincronizar_unidades` la protege). `unidad_activa_o_403` sigue
+precedencia query param > sesión (`session["unidad_activa_id"]`) > unidad
+principal, persiste en sesión al pasar `unidad_id` explícito por query
+param. Preguntas abiertas del plan (registro libre de unidades, abandono de
+unidad) quedaron sin confirmar.

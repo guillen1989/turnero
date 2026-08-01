@@ -283,7 +283,7 @@ def test_avisos_no_leidos_aparece_en_nav(client, db):
     u1 = _usuario()
     u2 = _usuario2()
     db.session.add(Notificacion(
-        usuario_id=u1.id, publicacion_id=None, tipo="nueva_publicacion_seguido", leida=False
+        usuario_id=u1.id, unidad_id=u1.unidad_id, publicacion_id=None, tipo="nueva_publicacion_seguido", leida=False
     ))
     db.session.commit()
     _login(client, "user@test.es")
@@ -297,7 +297,7 @@ def test_avisos_panel_marca_notificaciones_leidas(client, db):
     u1 = _usuario()
     u2 = _usuario2()
     db.session.add(Notificacion(
-        usuario_id=u1.id, publicacion_id=None, tipo="nueva_publicacion_seguido", leida=False
+        usuario_id=u1.id, unidad_id=u1.unidad_id, publicacion_id=None, tipo="nueva_publicacion_seguido", leida=False
     ))
     db.session.commit()
     _login(client, "user@test.es")
@@ -317,7 +317,7 @@ def test_avisos_panel_muestra_empty_state_sin_avisos(client, db):
 def test_avisos_panel_muestra_contrasena_restablecida(client, db):
     u1 = _usuario()
     db.session.add(Notificacion(
-        usuario_id=u1.id, tipo="contrasena_restablecida",
+        usuario_id=u1.id, unidad_id=u1.unidad_id, tipo="contrasena_restablecida",
         mensaje="Un administrador te ha restablecido la contraseña. Nueva contraseña temporal: abc12345",
         leida=False,
     ))
@@ -331,7 +331,7 @@ def test_avisos_panel_muestra_contrasena_restablecida(client, db):
 def test_avisos_no_leidos_cuenta_contrasena_restablecida_en_nav(client, db):
     u1 = _usuario()
     db.session.add(Notificacion(
-        usuario_id=u1.id, tipo="contrasena_restablecida",
+        usuario_id=u1.id, unidad_id=u1.unidad_id, tipo="contrasena_restablecida",
         mensaje="Nueva contraseña temporal: abc12345",
         leida=False,
     ))
@@ -346,7 +346,7 @@ def test_avisos_no_leidos_cuenta_contrasena_restablecida_en_nav(client, db):
 def test_avisos_panel_marca_contrasena_restablecida_como_leida(client, db):
     u1 = _usuario()
     db.session.add(Notificacion(
-        usuario_id=u1.id, tipo="contrasena_restablecida",
+        usuario_id=u1.id, unidad_id=u1.unidad_id, tipo="contrasena_restablecida",
         mensaje="Nueva contraseña temporal: abc12345",
         leida=False,
     ))

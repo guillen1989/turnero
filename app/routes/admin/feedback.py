@@ -60,6 +60,7 @@ def feedback_restablecer_contrasena(id):
     fb.leido = True
     db.session.add(Notificacion(
         usuario_id=usuario.id,
+        unidad_id=usuario.unidad_id,
         tipo="contrasena_restablecida",
         mensaje=_("Un administrador te ha restablecido la contraseña. Nueva contraseña temporal: %(pwd)s",
                    pwd=contrasena_temporal),

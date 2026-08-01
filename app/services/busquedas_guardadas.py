@@ -125,10 +125,11 @@ def notificar_busquedas_guardadas(pub):
         if publicacion_cumple_filtros(pub, busqueda.filtros):
             db.session.add(Notificacion(
                 usuario_id=busqueda.usuario_id,
+                unidad_id=pub.usuario.unidad_id,
                 publicacion_id=pub.id,
                 busqueda_guardada_id=busqueda.id,
                 tipo="alerta_busqueda_guardada",
             ))
-            enviar_push_condicional(busqueda.usuario, "busqueda_guardada")
+            enviar_push_condicional(busqueda.usuario, "busqueda_guardada", unidad_nombre=pub.usuario.unidad.nombre)
 
     db.session.commit()

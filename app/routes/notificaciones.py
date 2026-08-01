@@ -173,17 +173,40 @@ def borrar_todos_avisos():
     return redirect(url_for("notificaciones.avisos"))
 
 
+from app.services.unidad_usuario import unidades_de, categoria_en_unidad
+
+
 def _colegas_del_usuario(usuario):
-    """Usuarios del mismo grupo de intercambio y categoría, excluyendo al propio usuario."""
-    grupo_id = usuario.unidad.grupo_intercambio_id
-    return (
-        Usuario.query
-        .join(Unidad, Usuario.unidad_id == Unidad.id)
-        .filter(
-            Unidad.grupo_intercambio_id == grupo_id,
-            Usuario.categoria_id == usuario.categoria_id,
-            Usuario.id != usuario.id,
+    """Usuarios del mismo grupo de intercambio y categoría (en cada unidad del
+    usuario), excluyendo al propio usuario."""
+    unidades = unidades_de(usuario)
+    grupos_por_categoria = set()
+    for u in unidades:
+        cat = categoria_en_unidad(usuario, u)
+        if cat:
+            grupos_por_categoria.add((u.grupo_intercambio_id, cat.id))
+
+    if not grupos_por_categoria:
+        return []
+
+    colegas_ids = set()
+    colegas = []
+    for grupo_id, categoria_id in grupos_por_categoria:
+        candidatos = (
+            Usuario.query
+            .join(Unidad, Usuario.unidad_id == Unidad.id)
+            .filter(
+                Unidad.grupo_intercambio_id == grupo_id,
+                Usuario.categoria_id == categoria_id,
+                Usuario.id != usuario.id,
+            )
+            .order_by(Usuario.nombre)
+            .all()
         )
-        .order_by(Usuario.nombre)
-        .all()
-    )
+        for c in candidatos:
+            if c.id not in colegas_ids:
+                colegas_ids.add(c.id)
+                colegas.append(c)
+
+    colegas.sort(key=lambda c: c.nombre)
+    return colegas

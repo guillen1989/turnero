@@ -236,7 +236,7 @@ def test_push_condicional_mensaje_refleja_conteo(app, db):
 
     # Crea 2 notificaciones nuevo_match no leídas para u1
     for _ in range(2):
-        db.session.add(Notificacion(usuario_id=u1.id, tipo="nuevo_match", leida=False))
+        db.session.add(Notificacion(usuario_id=u1.id, unidad_id=u1.unidad_id, tipo="nuevo_match", leida=False))
     db.session.commit()
 
     old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
@@ -269,7 +269,7 @@ def test_limite_diario_avisos_oportunidad_corta_el_push(app, db):
     # Ya se han enviado justo el límite de avisos de oportunidad hoy.
     for i in range(LIMITE_DIARIO_AVISOS_OPORTUNIDAD):
         tipo = "aviso_oportunidad_3" if i % 2 == 0 else "aviso_oportunidad_4"
-        db.session.add(Notificacion(usuario_id=u1.id, tipo=tipo))
+        db.session.add(Notificacion(usuario_id=u1.id, unidad_id=u1.unidad_id, tipo=tipo))
     db.session.commit()
 
     old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
@@ -278,5 +278,103 @@ def test_limite_diario_avisos_oportunidad_corta_el_push(app, db):
         with patch("app.push.sender.webpush") as mock_wp:
             enviar_push_condicional(u1, "aviso_oportunidad_4")
             mock_wp.assert_not_called()
+    finally:
+        _teardown_vapid(app, old_key, old_email)
+
+
+# --- Paso 7: unidad de origen en payload push ---
+
+
+def _crear_usuario_multiumidad_push(db):
+    from app.models import Categoria, Hospital, Unidad
+    from app.services.unidad_usuario import sincronizar_unidades
+
+    insertar_categorias_semilla()
+    cat_enfermeria = Categoria.query.filter_by(nombre="Enfermería").first()
+    cat_aux = Categoria.query.filter_by(nombre="Auxiliar de enfermería (TCAE)").first()
+
+    usuario = registrar_usuario(
+        "Ana Multi", "ana.multi.push@test.es", "password123",
+        "H1", "UCI", cat_enfermeria.id,
+    )
+    hospital = Hospital.query.filter_by(nombre="H1").first()
+    grupo = usuario.unidad.grupo_intercambio
+    unidad_urgencias = Unidad(nombre="Urgencias", hospital=hospital, grupo_intercambio=grupo)
+    db.session.add(unidad_urgencias)
+    db.session.commit()
+
+    sincronizar_unidades(usuario, {
+        usuario.unidad_id: cat_enfermeria.id,
+        unidad_urgencias.id: cat_aux.id,
+    })
+    db.session.commit()
+    return usuario
+
+
+def test_push_incluye_unidad_si_usuario_tiene_multiples_unidades(app, db):
+    usuario = _crear_usuario_multiumidad_push(db)
+    usuario.push_subscription = json.dumps(SUBSCRIPTION)
+    db.session.commit()
+
+    old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
+    _setup_vapid(app)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push(usuario, "Título", "Cuerpo", unidad_nombre="UCI")
+            payload = _payload_enviado(mock_wp)
+            assert "[UCI]" in payload["body"]
+    finally:
+        _teardown_vapid(app, old_key, old_email)
+
+
+def test_push_no_incluye_unidad_si_usuario_tiene_una_sola(app, db):
+    usuario = _usuario()
+    usuario.push_subscription = json.dumps(SUBSCRIPTION)
+    db.session.commit()
+
+    old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
+    _setup_vapid(app)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push(usuario, "Título", "Cuerpo", unidad_nombre="UCI")
+            payload = _payload_enviado(mock_wp)
+            assert "[UCI]" not in payload["body"]
+            assert payload["body"] == "Cuerpo"
+    finally:
+        _teardown_vapid(app, old_key, old_email)
+
+
+def test_push_condicional_incluye_unidad_si_multiples(app, db):
+    from app.push.sender import enviar_push_condicional
+
+    usuario = _crear_usuario_multiumidad_push(db)
+    usuario.push_subscription = json.dumps(SUBSCRIPTION)
+    db.session.commit()
+
+    old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
+    _setup_vapid(app)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push_condicional(usuario, "publicacion", unidad_nombre="UCI")
+            payload = _payload_enviado(mock_wp)
+            assert "[UCI]" in payload["body"]
+    finally:
+        _teardown_vapid(app, old_key, old_email)
+
+
+def test_push_condicional_no_incluye_unidad_si_una_sola(app, db):
+    from app.push.sender import enviar_push_condicional
+
+    usuario = _usuario()
+    usuario.push_subscription = json.dumps(SUBSCRIPTION)
+    db.session.commit()
+
+    old_key, old_email = app.config.get("VAPID_PRIVATE_KEY"), app.config.get("VAPID_CLAIM_EMAIL")
+    _setup_vapid(app)
+    try:
+        with patch("app.push.sender.webpush") as mock_wp:
+            enviar_push_condicional(usuario, "publicacion", unidad_nombre="UCI")
+            payload = _payload_enviado(mock_wp)
+            assert "[UCI]" not in payload["body"]
     finally:
         _teardown_vapid(app, old_key, old_email)

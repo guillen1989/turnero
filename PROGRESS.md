@@ -1,11 +1,16 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 13 — Eliminar publicaciones caducadas desde "Mis cambios", plan completo
-en `docs/BORRAR_CADUCADOS.md`.
+Fase 14 — Eliminar publicaciones caducadas desde "Mis cambios", plan completo
+en `docs/BORRAR_CADUCADOS.md`. **Cerrada.**
 
 ## Paso actual / siguiente paso
-Plan completado. PR #55 contra staging creado.
+Fase 14 cerrada. PR #55 contra staging mergeado. Pendiente para una fase
+futura: los 21 casos MUST change de la auditoría de la Fase 13
+(`publicaciones.py`, `busquedas.py`, `unidad.py`, `documento_cambio.py`) que
+deberían usar la unidad activa pero aún usan
+`current_user.unidad`/`categoria_id`/`grupo_intercambio`, y la verificación
+manual en navegador de los Pasos 4, 5 y 6 de esa fase.
 
 ## Últimos pasos completados
 - [x] Paso 5 (`docs/BORRAR_CADUCADOS.md`) — PR #55 contra staging: https://github.com/guillen1989/turnero/pull/55
@@ -31,6 +36,8 @@ Plan completado. PR #55 contra staging creado.
   `POST /publicaciones/<id>/eliminar` ya borra correctamente una
   publicación en estado `caducada` (la ruta no comprueba `estado`, solo
   propiedad). No hizo falta tocar backend.
+- [x] Fase 13 (`docs/USUARIOS_MULTI.md`) — Usuarios normales en varios
+  servicios (unidades). Cerrada. Detalle completo en `PROGRESS_ARCHIVE.md`.
 
 ## Historial completo
 El registro detallado de fases y pasos anteriores está en
@@ -41,5 +48,17 @@ El registro detallado de fases y pasos anteriores está en
   reutilizar, precedente de "borrar todos" en avisos) está en la cabecera
   de `docs/BORRAR_CADUCADOS.md` — leer antes de cada paso.
 - Nombre final de ruta/endpoint (`eliminar_caducadas`,
-  `/publicaciones/eliminar-caducadas`) es orientativo, ajustable al
-  implementar el Paso 2 si hace falta.
+  `/publicaciones/eliminar-caducadas`) es orientativo, ajustable si hace
+  falta en el futuro.
+- La unidad principal del usuario siempre aparece en `usuario_unidad`
+  (invariante sembrado por el backfill de la migración; `sincronizar_unidades`
+  lo mantiene y no permite eliminarla).
+- `unidad_activa_o_403` sigue la precedencia query param > sesión
+  (`session["unidad_activa_id"]`) > unidad principal. Persiste en sesión
+  automáticamente cuando se pasa `unidad_id` explícito por query param.
+- Quedan 21 referencias MUST change en `publicaciones.py`, `busquedas.py`,
+  `unidad.py` y `documento_cambio.py` que deberían usar la unidad activa pero
+  aún usan `current_user.unidad`/`categoria_id`/`grupo_intercambio`. Se
+  abordarán en una fase futura.
+- Preguntas abiertas del plan de la Fase 13 (registro libre de unidades,
+  abandono de unidad) siguen pendientes de confirmar.

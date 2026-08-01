@@ -206,7 +206,7 @@ def _textos_para(tipo, n):
     return titulo, cuerpo
 
 
-def enviar_push(usuario, titulo, cuerpo, url="/", tag=None, urgente=False):
+def enviar_push(usuario, titulo, cuerpo, url="/", tag=None, urgente=False, unidad_nombre=None):
     """
     Envía una notificación push al usuario en un hilo daemon para no bloquear
     el worker. No hace nada si el usuario no tiene suscripción guardada
@@ -215,6 +215,10 @@ def enviar_push(usuario, titulo, cuerpo, url="/", tag=None, urgente=False):
     `urgente=True` añade la cabecera Urgency: high (RFC 8030) para que el
     servicio push la entregue con prioridad incluso en dispositivos con
     ahorro de batería.
+
+    Si `unidad_nombre` se proporciona y el usuario pertenece a más de una
+    unidad, se añade `[unidad_nombre]` al final del cuerpo para que el
+    destinatario identifique el origen.
     """
     if not usuario.push_subscription:
         return
@@ -222,6 +226,9 @@ def enviar_push(usuario, titulo, cuerpo, url="/", tag=None, urgente=False):
     vapid_private_key = current_app.config.get("VAPID_PRIVATE_KEY", "")
     if not vapid_private_key:
         return
+
+    if unidad_nombre and len(usuario.unidades) > 1:
+        cuerpo = f"{cuerpo} [{unidad_nombre}]"
 
     app = current_app._get_current_object()
     usuario_id = usuario.id
@@ -252,7 +259,7 @@ def enviar_push(usuario, titulo, cuerpo, url="/", tag=None, urgente=False):
         threading.Thread(target=_send, daemon=True).start()
 
 
-def enviar_push_condicional(usuario, tipo):
+def enviar_push_condicional(usuario, tipo, unidad_nombre=None):
     """
     Envía push solo si el usuario tiene habilitadas las notificaciones
     globalmente (push_activo) y el tipo específico dado. El texto refleja
@@ -272,4 +279,4 @@ def enviar_push_condicional(usuario, tipo):
     n = _contar_pendientes(usuario, tipo)
     titulo, cuerpo = _textos_para(tipo, n or 1)
     url = _URL_POR_TIPO.get(tipo, "/")
-    enviar_push(usuario, titulo, cuerpo, url, tag=tipo)
+    enviar_push(usuario, titulo, cuerpo, url, tag=tipo, unidad_nombre=unidad_nombre)
