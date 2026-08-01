@@ -5,9 +5,10 @@ Fase 13 — Eliminar publicaciones caducadas desde "Mis cambios", plan completo
 en `docs/BORRAR_CADUCADOS.md`.
 
 ## Paso actual / siguiente paso
-Paso 4 completado. Siguiente: Paso 5 `docs/BORRAR_CADUCADOS.md` — PR contra staging.
+Plan completado. PR #55 contra staging creado.
 
 ## Últimos pasos completados
+- [x] Paso 5 (`docs/BORRAR_CADUCADOS.md`) — PR #55 contra staging: https://github.com/guillen1989/turnero/pull/55
 - [x] Paso 4 (`docs/BORRAR_CADUCADOS.md`) — tests de integración: `test_dashboard_caducada_muestra_botones_eliminar` y `test_dashboard_activos_no_muestra_botones_eliminar_caducadas` en `tests/test_dashboard.py`
 - [x] Paso 3 (`docs/BORRAR_CADUCADOS.md`) — frontend en
   `app/templates/main/dashboard.html`: botón "Eliminar todos" en el header
