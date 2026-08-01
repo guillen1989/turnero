@@ -163,6 +163,19 @@ def test_eliminar_borra_publicacion(client, db):
     assert db.session.get(PublicacionCambio, pub_id) is None
 
 
+def test_eliminar_borra_publicacion_caducada(client, db):
+    u = _usuario()
+    _login(client, u.email)
+    pub = _pub(u)
+    pub_id = pub.id
+    pub.estado = "caducada"
+    db.session.commit()
+
+    resp = client.post(f"/publicaciones/{pub_id}/eliminar", follow_redirects=False)
+    assert resp.status_code == 302
+    assert db.session.get(PublicacionCambio, pub_id) is None
+
+
 def test_eliminar_403_si_publicacion_ajena(client, db):
     u1 = _usuario(email="u1@test.es")
     u2 = _usuario(email="u2@test.es")

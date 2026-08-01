@@ -6,6 +6,17 @@
 ## Pasos anteriores (narrativa, Fase 9 y anteriores)
 
 
+## Fase 12 — Hojas de cambio para "cambios a 3" (cadena_3, plan en `docs/PLAN_3.md`)
+Fase cerrada. Los 8 pasos completos: `pdf.html` con frames para el tercer
+participante (Paso 1), `_usuario_que_recibe` como pieza central que resuelve
+notas/emails/PDF para 2 o 3 participantes (Pasos 2-4), `crear_documento_cambio_cadena_3`
+(Paso 5), generalización de `match_admite_documento_cambio`/
+`crear_documento_cambio_desde_match` para 2 o 3 participaciones (Paso 6),
+opción `cadena_3` en el formulario de `documento_cambio` (Paso 7), y revisión
+final con suite completa en verde y PDF real verificado visualmente (Paso 8).
+Decisión irrevocable del usuario: el solape visual de `firma_tercero_frame`
+con los frames de firma vecinos es intencional, no reubicar.
+
 ## Cambios de turno en el día (independiente de la Fase 10 — plan en `docs/CAMBIOS_DE_TURNO_EN_EL_DIA.md`)
 Ejecución del plan de 8 fases/17 pasos para permitir cambios de turno dentro del
 mismo día (`cambio_dia`). Premisa del plan confirmada: el motor de
