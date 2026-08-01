@@ -1,20 +1,23 @@
 # Estado del desarrollo
 
 ## Fase actual
-Fase 15 — Arreglar deuda pendiente de multi-unidad (usuarios en varios
-servicios), plan completo en `docs/FIX_MULTI.md`. **COMPLETADA.**
+Fase 16 — Feature flag general `multi_unidad` para poder desactivar por
+completo el sistema de usuarios en varios servicios, plan completo en
+`docs/FEAT_FLAG_MULTI.md`.
 
 ## Paso actual / siguiente paso
-Fase 15 cerrada. Todos los pasos (0-5) completados. Siguiente fase pendiente
-de definir.
+Empezar por el Paso 1 de `docs/FEAT_FLAG_MULTI.md`: migración de seed que
+crea el flag `multi_unidad` (desactivado por defecto).
 
-## Decisiones de diseño (Paso 0)
-- "Mis cambios publicados": bandeja única con etiqueta de unidad.
-- Planilla: una planilla por unidad (columna de unidad en `TurnoPlanilla`
-  y compañía, requiere migración de modelo).
+## Decisiones de diseño (Fase 16)
+- Un único flag `multi_unidad`, reutilizando `FeatureFlag`/`feature_activa`
+  tal cual (sin tabla ni mecanismo nuevo). "Global-only" se consigue por
+  convención: nunca se puebla `FeatureFlagUnidad` para esta clave, y el
+  `<select>` de unidades se oculta para ella en el admin de flags.
+  Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
-- [x] Paso 5 (`docs/FIX_MULTI.md`) — Cierre: suite completa en verde (1503
+- [x] Fase 15 (`docs/FIX_MULTI.md`) cerrada — Paso 5: Cierre: suite completa en verde (1503
   passed), PROGRESS.md cerrando Fase 15, revisión de código muerto.
 - [x] Paso 4 (`docs/FIX_MULTI.md`) — `busquedas.py:32` validación de franja
   con unidad activa; `unidad.py` (5 líneas) con `unidad_activa_o_403`.
