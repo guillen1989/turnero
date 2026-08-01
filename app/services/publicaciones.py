@@ -9,13 +9,16 @@ _ESTADOS_MATCH_ACTIVOS = ("propuesto", "confirmado_parcial")
 
 
 
-def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, tipo="cambio"):
+def publicar_cambio(usuario_id, turnos_cedidos, turnos_aceptados, mensaje=None, tipo="cambio", unidad_id=None):
     """
     Crea una PublicacionCambio con los turnos indicados.
     turnos_cedidos/aceptados: listas de (fecha: date, franja_horaria_id: int)
     tipo: 'cambio' | 'regalo' | 'peticion'
     """
-    pub = PublicacionCambio(usuario_id=usuario_id, mensaje=mensaje or None, tipo=tipo)
+    if unidad_id is None:
+        user = db.session.get(Usuario, usuario_id)
+        unidad_id = user.unidad_id if user else None
+    pub = PublicacionCambio(usuario_id=usuario_id, unidad_id=unidad_id, mensaje=mensaje or None, tipo=tipo)
     db.session.add(pub)
     db.session.flush()
 
@@ -61,11 +64,11 @@ def _notificar_suscriptores(publicador, pub):
         if suscriptor:
             db.session.add(Notificacion(
                 usuario_id=suscriptor.id,
-                unidad_id=pub.usuario.unidad_id,
+                unidad_id=pub.unidad_id,
                 publicacion_id=pub.id,
                 tipo="nueva_publicacion_seguido",
             ))
-            enviar_push_condicional(suscriptor, "publicacion", unidad_nombre=pub.usuario.unidad.nombre)
+            enviar_push_condicional(suscriptor, "publicacion", unidad_nombre=pub.unidad.nombre)
     db.session.commit()
 
 
@@ -271,7 +274,7 @@ def _eliminar_sinteticas_de(pub_id):
 
 def eliminar_publicacion(pub):
     """Borra completamente una publicación y todos sus datos asociados."""
-    unidad_id = pub.usuario.unidad_id if pub.usuario else None
+    unidad_id = pub.unidad_id
     _eliminar_sinteticas_de(pub.id)
     _rechazar_matches_activos_de_publicacion(pub)
     _eliminar_matches_de_publicacion(pub.id)
