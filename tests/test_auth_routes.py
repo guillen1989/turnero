@@ -786,6 +786,26 @@ def test_perfil_servicios_muestra_la_categoria_de_cada_unidad(client, db):
     assert b"Auxiliar" in resp.data
 
 
+def test_formulario_abandonar_unidad_incluye_csrf_token(client, db):
+    """El formulario de abandonar servicio debe incluir el token CSRF.
+
+    WTF_CSRF_ENABLED está desactivado en tests, así que un POST directo
+    a la ruta no detecta si falta el token en la plantilla; hay que
+    comprobar el HTML renderizado.
+    """
+    client.post("/auth/registro", data=_datos_registro_con_segunda_unidad(db))
+    resp = client.get("/auth/perfil/servicios")
+    assert resp.status_code == 200
+
+    html = resp.data.decode()
+    form_start = html.index("/abandonar")
+    form_fragment_start = html.rindex("<form", 0, form_start)
+    form_fragment_end = html.index("</form>", form_start) + len("</form>")
+    form_html = html[form_fragment_start:form_fragment_end]
+
+    assert 'name="csrf_token"' in form_html
+
+
 def test_perfil_servicios_supervisora_devuelve_200(client, db):
     client.post("/auth/registro", data=_datos_registro(db))
     usuario = Usuario.query.filter_by(email="ana@test.es").first()
