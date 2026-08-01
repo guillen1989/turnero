@@ -1,0 +1,33 @@
+{
+  "packageId": "xyz.turnero.app",
+  "host": "app.turnero.xyz",
+  "name": "Turnero",
+  "launcherName": "Turnero",
+  "display": "standalone",
+  "themeColor": "#2563eb",
+  "navigationColor": "#000000",
+  "backgroundColor": "#ffffff",
+  "startUrl": "/",
+  "iconUrl": "https://app.turnero.xyz/static/icons/icon-512.png",
+  "maskableIconUrl": "https://app.turnero.xyz/static/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android-keystore.jks",
+    "alias": "turnero"
+  },
+  "appVersionName": "1.0.1",
+  "appVersionCode": 2,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap",
+  "webManifestUrl": "https://app.turnero.xyz/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": false
+    }
+  },
+  "enableNotifications": false,
+  "enableSiteSettingsShortcut": true,
+  "orientation": "default",
+  "fullScopeUrl": "https://app.turnero.xyz/"
+}

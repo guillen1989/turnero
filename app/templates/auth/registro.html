@@ -125,6 +125,13 @@
       </div>
     </div>
 
+    <p style="font-size:0.85rem;color:#6b7280">
+      {{ _('Al registrarte, aceptas nuestra') }}
+      <a href="{{ url_for('main.privacidad') }}">{{ _('política de privacidad') }}</a>
+      {{ _('y nuestros') }}
+      <a href="{{ url_for('main.terminos') }}">{{ _('términos de uso') }}</a>.
+    </p>
+
     {% if feature_activa('multi_unidad') %}
     <div class="form-group">
       <label class="checkbox-label">
