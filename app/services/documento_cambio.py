@@ -4,8 +4,10 @@ cuentas reales (cada participante firma su propia parte, desde su propia
 cuenta) y generación de las notas en lenguaje natural que la ayudante copia
 y pega en ilog.
 """
+import base64
 import hashlib
 import io
+import re
 from datetime import date, datetime, timezone
 
 from flask import current_app, render_template
@@ -629,6 +631,37 @@ def _contexto_pdf_junte(documento):
     return contexto
 
 
+_PLACEHOLDER_PNG = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlE"
+    "QVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+)
+
+
+def _sanitizar_imagen_firma(data_uri):
+    """Valida y repara un data URI de firma antes de pasarlo al generador de
+    PDF. Si el base64 está mal formado (sin padding, vacío, con prefijo
+    incorrecto o directamente basura), devuelve una imagen placeholder en
+    lugar de propagar la excepción."""
+    if not data_uri or not isinstance(data_uri, str):
+        return _PLACEHOLDER_PNG
+    match = re.match(r"^data:image/(\w+);base64,", data_uri)
+    if not match:
+        return _PLACEHOLDER_PNG
+    mime_type = match.group(1)
+    b64 = data_uri[match.end():]
+    if not b64:
+        return _PLACEHOLDER_PNG
+    try:
+        padding = 4 - len(b64) % 4
+        if padding != 4:
+            b64 += "=" * padding
+        raw = base64.b64decode(b64, validate=True)
+        reencoded = base64.b64encode(raw).decode("ascii")
+        return f"data:image/{mime_type};base64,{reencoded}"
+    except Exception:
+        return _PLACEHOLDER_PNG
+
+
 def generar_pdf_documento(documento):
     """
     Renderiza la hoja de cambio rellena y firmada como PDF. El impreso real
@@ -675,6 +708,14 @@ def generar_pdf_documento(documento):
 
     firmas_por_usuario = {f.usuario_id: f for f in documento.firmas}
 
+    for f in firmas_por_usuario.values():
+        f.imagen_firma = _sanitizar_imagen_firma(f.imagen_firma)
+
+    firma_supervisora_saneada = (
+        _sanitizar_imagen_firma(documento.firma_supervisora)
+        if documento.firma_supervisora else None
+    )
+
     html = render_template(
         "documento_cambio/pdf.html",
         hospital_nombre=solicitante.unidad.hospital.nombre,
@@ -698,7 +739,7 @@ def generar_pdf_documento(documento):
             documento.fecha_decision_supervisora.date()
             if documento.fecha_decision_supervisora else None
         ),
-        firma_supervisora=documento.firma_supervisora,
+        firma_supervisora=firma_supervisora_saneada,
         **_contexto_pdf_junte(documento),
         **_contexto_pdf_cadena_3(documento),
     )

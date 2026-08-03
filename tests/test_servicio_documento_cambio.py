@@ -1413,3 +1413,87 @@ def test_crear_documento_cambio_cadena_3_calcula_factibilidad_no_verificado_por_
     )
 
     assert documento.factibilidad_estado == "no_verificado"
+
+
+# ── Tests de sanitización de firma base64 en el PDF ─────────────────────
+
+_FIRMA_SIN_PADDING = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAADklE"
+
+
+def test_generar_pdf_con_firma_sin_padding_no_rompe(db):
+    """El base64 sin padding (= al final) es un caso real de firma mal
+    codificada. El PDF debe generarse sin error (usando placeholder o
+    reparando el padding)."""
+    crear_usuario, manyana, tarde = _setup(db, "b64pad")
+    claudia = crear_usuario("Claudia b64pad", "claudiab64pad@h.es")
+    juan = crear_usuario("Juan b64pad", "juanb64pad@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, _FIRMA_SIN_PADDING)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+    assert pdf_bytes[:5] == b"%PDF-"
+    assert len(pdf_bytes) > 1000
+
+
+def test_generar_pdf_con_firma_data_uri_vacio_no_rompe(db):
+    """Una firma con data URI pero sin base64 (solo el prefijo) no debe
+    romper la generación del PDF."""
+    crear_usuario, manyana, tarde = _setup(db, "b64vacio")
+    claudia = crear_usuario("Claudia b64vacio", "claudiab64vacio@h.es")
+    juan = crear_usuario("Juan b64vacio", "juanb64vacio@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, "data:image/png;base64,")
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+    assert pdf_bytes[:5] == b"%PDF-"
+    assert len(pdf_bytes) > 1000
+
+
+def test_generar_pdf_con_firma_texto_basura_no_rompe(db):
+    """Un valor que ni siquiera es un data URI válido no debe romper la
+    generación del PDF."""
+    crear_usuario, manyana, tarde = _setup(db, "b64basura")
+    claudia = crear_usuario("Claudia b64basura", "claudiab64basura@h.es")
+    juan = crear_usuario("Juan b64basura", "juanb64basura@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, "esto no es base64 ni nada")
+    firmar_documento(documento, juan, _FIRMA_PNG)
+
+    pdf_bytes = generar_pdf_documento(documento)
+    assert pdf_bytes[:5] == b"%PDF-"
+    assert len(pdf_bytes) > 1000
+
+
+def test_generar_pdf_con_firma_supervisora_malformada_no_rompe(db):
+    """La firma de la supervisora también usa data URI y también debe estar
+    protegida contra base64 mal formado."""
+    crear_usuario, manyana, tarde = _setup(db, "b64sup")
+    claudia = crear_usuario("Claudia b64sup", "claudiab64sup@h.es")
+    juan = crear_usuario("Juan b64sup", "juanb64sup@h.es")
+    supervisora = crear_usuario("Marta b64sup", "martab64sup@h.es")
+    documento = crear_documento_cambio(
+        creado_por=claudia, companero=juan,
+        turno_cede_fecha=date(2026, 7, 7), turno_cede_franja_id=manyana.id,
+        turno_recibe_fecha=date(2026, 7, 28), turno_recibe_franja_id=manyana.id,
+    )
+    firmar_documento(documento, claudia, _FIRMA_PNG)
+    firmar_documento(documento, juan, _FIRMA_PNG)
+    autorizar_documento(documento, supervisora, imagen_firma=_FIRMA_SIN_PADDING)
+
+    pdf_bytes = generar_pdf_documento(documento)
+    assert pdf_bytes[:5] == b"%PDF-"
+    assert len(pdf_bytes) > 1000

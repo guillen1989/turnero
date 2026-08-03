@@ -5,6 +5,20 @@ from urllib.parse import urlsplit
 import psycopg2
 import psycopg2.errors
 import pytest
+
+
+def _parche_md5():
+    def _md5(data=b"", *, usedforsecurity=True):
+        return hashlib.md5(data)
+
+    from reportlab.lib import utils
+    utils.md5 = _md5
+
+    from reportlab.pdfbase import pdfdoc
+    pdfdoc.md5 = _md5
+
+
+_parche_md5()
 from sqlalchemy import event, text
 from app import create_app
 from app.extensions import db as _db
