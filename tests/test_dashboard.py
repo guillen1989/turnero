@@ -35,7 +35,11 @@ def _franja(grupo_intercambio_id):
     return FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_intercambio_id, nombre="Mañana").first()
 
 
-def _publicacion(usuario, franja, fecha_cedida=date(2026, 8, 1), fecha_aceptada=date(2026, 8, 2)):
+def _publicacion(usuario, franja, fecha_cedida=None, fecha_aceptada=None):
+    if fecha_cedida is None:
+        fecha_cedida = date.today() + timedelta(days=30)
+    if fecha_aceptada is None:
+        fecha_aceptada = date.today() + timedelta(days=31)
     pub = PublicacionCambio(usuario_id=usuario.id)
     db.session.add(pub)
     db.session.flush()
@@ -74,9 +78,10 @@ def test_dashboard_activos_sin_publicaciones_muestra_estado_vacio(client, db):
 def test_dashboard_muestra_publicaciones_propias(client, db):
     usuario = _usuario_y_login(client)
     franja = _franja(usuario.unidad.grupo_intercambio_id)
-    _publicacion(usuario, franja)
+    fecha_cedida = date.today() + timedelta(days=30)
+    _publicacion(usuario, franja, fecha_cedida=fecha_cedida)
     resp = client.get("/?estado=abierta")
-    assert b"01/08/2026" in resp.data
+    assert fecha_cedida.strftime("%d/%m/%Y").encode() in resp.data
 
 
 def test_dashboard_tab_activos_es_default(client, db):
