@@ -13,10 +13,10 @@ def _init_sentry():
     sentry_sdk.init(
         dsn=dsn,
         integrations=[FlaskIntegration()],
-        # Subido temporalmente al 100% (era 0.1) para diagnosticar qué
-        # endpoints/queries van lentos. Bajarlo de nuevo tras el diagnóstico:
-        # con este volumen de tráfico no compensa mantenerlo al 100%.
-        traces_sample_rate=1.0,
+        # Auditoría 2026-07-31/08-03 completada (ver docs/sentry.md): el fix de
+        # email async (PR #52) ya está desplegado. Vuelve a 0.1 — con el tráfico
+        # actual, capturar el 100% de trazas no aporta más señal y sí más coste.
+        traces_sample_rate=0.1,
         environment=os.environ.get("FLASK_ENV", "production"),
     )
 
