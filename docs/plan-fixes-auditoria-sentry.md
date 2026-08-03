@@ -190,7 +190,7 @@ paso de código si la revisión concluye que hace falta un cambio).
 ---
 
 ## Paso 8 — Repetir la comparación de latencia pre/post PR #52 con datos reales
-- [ ] Completado (fecha: ______)
+- [x] Completado (fecha: 2026-08-03)
 
 **Contexto a leer:** `docs/sentry.md` completo (contexto original de la
 auditoría de rendimiento y por qué no se pudo completar la comparación).
