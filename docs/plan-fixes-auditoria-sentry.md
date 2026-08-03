@@ -83,7 +83,7 @@ reproducir primero antes de escribir el test.
 ---
 
 ## Paso 4 — `OSError: cannot load library 'libgobject-2.0-0'` al generar PDF
-- [ ] Completado (fecha: ______)
+- [x] Completado (fecha: 2026-08-03)
 
 **Contexto a leer:** `app/services/documento_cambio.py` (generación de
 `documento_cambio.pdf`), dependencias de PDF del proyecto (`svglib`,
@@ -94,25 +94,23 @@ build de Railway (Nixpacks o similar).
 despliegue de Railway, y alguna dependencia de PDF la necesita en tiempo de
 import o de render.
 
-**Criterio de aceptación:**
-- Identificar qué librería concreta importa/usa `libgobject-2.0-0` (probar
-  import de cada dependencia de PDF en un entorno limpio equivalente al de
-  Railway, o revisar el traceback completo en Sentry).
-- Añadir el paquete de sistema que falta a la configuración de build (p. ej.
-  `nixpacks.toml`, `apt.txt` o el fichero que use el proyecto para paquetes
-  de sistema en Railway).
-- Test/verificación: desplegar en un entorno de prueba o reproducir
-  localmente con la misma imagen base y confirmar que la generación del PDF
-  no lanza `OSError`.
-
-**Alcance del commit:** solo el fichero de configuración de build afectado,
-sin tocar lógica de `documento_cambio.py` salvo que la investigación
-demuestre que hace falta.
+**Resultado de la investigación (2026-08-03):** el bug ya estaba resuelto.
+La librería que requería `libgobject-2.0-0` era **WeasyPrint** (importa
+Pango/Cairo/GDK-Pixbuf vía cffi, que a su vez necesita libgobject de GLib).
+El fix se aplicó en el commit `bf7e657` (2026-07-16, el mismo día que se
+registraron los eventos en Sentry — fueron anteriores al deploy): se
+sustituyó WeasyPrint por **xhtml2pdf** (Python puro, usa reportlab por
+debajo, sin bindings nativos) y se eliminó `nixpacks.toml`. Verificado que
+las dependencias actuales (**xhtml2pdf, svglib, reportlab, pypdf, pyhanko,
+Pillow**) no cargan Cairo, GObject, GTK, Pango ni GDK — no queda ninguna
+dependencia nativa del ecosistema GTK en el flujo de generación de PDFs. No
+hace falta añadir paquetes de sistema al build config. Sin cambios de
+código.
 
 ---
 
 ## Paso 5 — `Invalid base64-encoded string` al generar PDF
-- [ ] Completado (fecha: ______)
+- [x] Completado (fecha: 2026-08-03)
 
 **Contexto a leer:** el mismo flujo del Paso 4 (`documento_cambio.py`), en
 concreto el punto donde se decodifica una imagen/firma en base64 antes de
