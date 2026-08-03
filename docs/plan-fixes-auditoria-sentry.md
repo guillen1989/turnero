@@ -136,7 +136,7 @@ independientes si no.
 ---
 
 ## Paso 6 — `ProgrammingError: UndefinedColumn` en `main.index` (prioridad baja)
-- [ ] Completado (fecha: ______)
+- [x] Completado (fecha: 2026-08-03)
 
 **Contexto a leer:** ruta `main.index`, historial de migraciones alrededor
 del 2026-07-09.
@@ -156,10 +156,17 @@ base de datos en el momento del deploy). No ha vuelto a aparecer.
 **Alcance del commit:** ninguno si se confirma que no se repite (solo marcar
 la casilla); si se repite, alcance a definir en ese momento.
 
+**Verificacion (2026-08-03):** el evento no se ha repetido desde el 2026-07-09.
+Causa probable: la migracion `f182c4111872` que añade `sintetica_pub_intermedio_id`
+a `publicacion_cambio` (commit `279fe5a`, 2026-07-10) se desplego despues del
+codigo que ya referenciaba esa columna en `_cargar_sint_info` (usada por `main.index`
+para oportunidades a 4 bandas). La migracion ya esta aplicada desde entonces y
+la columna existe en ambos entornos. Sin cambios de codigo.
+
 ---
 
 ## Paso 7 — Revisar si `--workers 3` de gunicorn sigue siendo suficiente
-- [ ] Completado (fecha: ______)
+- [x] Completado (fecha: 2026-08-03)
 
 **Contexto a leer:** `Procfile`, `docs/sentry.md` (sección "Pendiente para
 una próxima sesión"), logs de acceso de gunicorn ya disponibles vía

@@ -93,10 +93,36 @@ Como efecto secundario de revisar los eventos de `error` sí se encontraron vari
 `docs/bugs-detectados-auditoria-sentry.md`.
 
 ### Pendiente para una próxima sesión
-- Decidir si el modelo de `--workers 3` sync de gunicorn sigue siendo suficiente.
 - Con Sentry en producción ya funcionando, revisar en unos días si aparecen datos de
   performance/transactions reales para poder repetir la comparación de latencia que esta
   auditoría no pudo hacer por falta de datos.
+
+### Evaluacion de `--workers 3` de gunicorn (2026-08-03)
+
+Se reviso el estado actual del modelo de workers sync:
+
+- **Logs de acceso activos**: el `Procfile` ya incluye `--access-logfile -` y
+  `--access-logformat '%(h)s "%(r)s" %(s)s %(D)sus'`, capturando tiempos de respuesta
+  por request en `railway logs`.
+- **Datos disponibles**: los logs de produccion no muestran peticiones HTTP en la ventana
+  reciente — la app tiene trafico muy bajo (herramienta interna de gestion de cambios de
+  puesto en centros educativos). No hay datos para un analisis estadistico de p95/p99.
+- **Principales bloqueantes resueltas**:
+  - Email: paso a asincrono con PR #52 (`enviar_email_async`, hilo daemon). Ya no bloquea
+    los workers de gunicorn durante el bucle de notificaciones al cerrar hojas de cambio.
+  - Generacion de PDF: no es I/O-bloqueante (CPU); la sustitucion de WeasyPrint por
+    xhtml2pdf (commit `bf7e657`) elimino las dependencias nativas problematicas.
+  - Push web: ya era asincrono (`enviar_push()`, hilo daemon).
+
+**Conclusion: 3 workers sync es suficiente para el perfil de trafico actual.** No hay
+evidencia de agotamiento de workers, encolamiento de peticiones ni timeouts de gunicorn
+en los logs. El `--timeout 60` da margen para peticiones puntualmente lentas.
+
+**Plan de seguimiento**: si el trafico crece, monitorizar `railway logs` buscando
+entradas de access log con `%D` (tiempo de respuesta en microsegundos) creciente o
+lineas ERROR de gunicorn por `WORKER TIMEOUT`. El camino de upgrade mas sencillo es
+cambiar a `gthread` en vez de `sync`, que permite concurrencia por worker via hilos sin
+migrar a gevent/asgiref.
 
 ## Referencias
 - PR del fix de email async + subida de sample rate: #52 (rama `worktree-async-email-sending`
