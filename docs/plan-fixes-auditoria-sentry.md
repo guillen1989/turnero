@@ -40,7 +40,7 @@ otros flujos de borrado.
 ---
 
 ## Paso 2 — Alta de usuario: `UniqueViolation` sin validar antes del INSERT
-- [ ] Completado (fecha: ______)
+- [x] Completado (fecha: 2026-08-03)
 
 **Contexto a leer:** `admin.usuario_nuevo` (ruta) y el formulario/servicio que
 usa para crear el usuario.
@@ -61,7 +61,7 @@ error de validación en vez de un 500.
 ---
 
 ## Paso 3 — `IntegrityError` en `publicaciones.me_interesa`
-- [ ] Completado (fecha: ______)
+- [x] Completado (fecha: 2026-08-03)
 
 **Contexto a leer:** ruta `publicaciones.me_interesa` y el modelo/tabla
 implicada en el `INSERT` que falla (revisar el evento en Sentry/Glitchtip

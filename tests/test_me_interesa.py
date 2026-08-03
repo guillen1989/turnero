@@ -311,3 +311,88 @@ def test_me_interesa_junte_con_aceptado_cualquier_franja_no_rompe(client, db):
         resp = client.post(f"/cambios/{pub_a.id}/me-interesa", data={}, follow_redirects=False)
     assert resp.status_code == 302
     assert MatchCambio.query.count() == 0
+
+
+# ---------------------------------------------------------------------------
+# IntegrityError: turno_aceptado con franja_horaria_id=NULL y cualquier_franja=False
+# ---------------------------------------------------------------------------
+
+def test_me_interesa_aceptado_sin_franja_junte_responde_controlado(client, db):
+    """TurnoAceptado con any_franja=False y franja=NULL en junte no debe 500."""
+    ana, pedro, franja = _setup()
+    pub_a = PublicacionCambio(usuario_id=ana.id, tipo="junte")
+    db.session.add(pub_a)
+    db.session.flush()
+    tc = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    ta = TurnoAceptado(
+        publicacion_id=pub_a.id, fecha=date(2026, 9, 2),
+        franja_horaria_id=None, cualquier_franja=False,
+    )
+    db.session.add_all([tc, ta])
+    db.session.commit()
+
+    _login(client, "pedro@test.es")
+    resp = client.post(f"/cambios/{pub_a.id}/me-interesa", data={}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert MatchCambio.query.count() == 0
+
+
+def test_me_interesa_aceptado_sin_franja_regalo_responde_controlado(client, db):
+    """TurnoAceptado con any_franja=False y franja=NULL en regalo no debe 500."""
+    ana, pedro, franja = _setup()
+    pub_a = PublicacionCambio(usuario_id=ana.id, tipo="regalo")
+    db.session.add(pub_a)
+    db.session.flush()
+    ta = TurnoAceptado(
+        publicacion_id=pub_a.id, fecha=date(2026, 9, 5),
+        franja_horaria_id=None, cualquier_franja=False,
+    )
+    db.session.add(ta)
+    db.session.commit()
+
+    _login(client, "pedro@test.es")
+    resp = client.post(f"/cambios/{pub_a.id}/me-interesa", data={}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert MatchCambio.query.count() == 0
+
+
+def test_me_interesa_aceptado_sin_franja_cambio_dia_responde_controlado(client, db):
+    """TurnoAceptado con any_franja=False y franja=NULL en cambio_dia no debe 500."""
+    ana, pedro, franja = _setup()
+    pub_a = PublicacionCambio(usuario_id=ana.id, tipo="cambio_dia")
+    db.session.add(pub_a)
+    db.session.flush()
+    tc = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    ta = TurnoAceptado(
+        publicacion_id=pub_a.id, fecha=date(2026, 9, 1),
+        franja_horaria_id=None, cualquier_franja=False,
+    )
+    db.session.add_all([tc, ta])
+    db.session.commit()
+
+    _login(client, "pedro@test.es")
+    resp = client.post(f"/cambios/{pub_a.id}/me-interesa", data={}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert MatchCambio.query.count() == 0
+
+
+def test_me_interesa_aceptado_sin_franja_cambio_responde_controlado(client, db):
+    """TurnoAceptado con any_franja=False y franja=NULL seleccionado desde form
+    en cambio directo no debe 500."""
+    ana, pedro, franja = _setup()
+    pub_a = PublicacionCambio(usuario_id=ana.id, tipo="cambio")
+    db.session.add(pub_a)
+    db.session.flush()
+    tc = TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id)
+    ta = TurnoAceptado(
+        publicacion_id=pub_a.id, fecha=date(2026, 9, 2),
+        franja_horaria_id=None, cualquier_franja=False,
+    )
+    db.session.add_all([tc, ta])
+    db.session.commit()
+
+    _login(client, "pedro@test.es")
+    data = {"turno_cedido_id": tc.id, "turno_aceptado_id": ta.id}
+    resp = client.post(f"/cambios/{pub_a.id}/me-interesa", data=data, follow_redirects=False)
+    assert resp.status_code == 302
+    assert MatchCambio.query.count() == 0

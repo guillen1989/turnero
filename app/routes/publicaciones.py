@@ -4,6 +4,8 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_babel import _
 from flask_login import current_user, login_required
 
+from sqlalchemy.exc import IntegrityError
+
 from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.eventos import registrar_evento
@@ -504,6 +506,10 @@ def me_interesa(pub_id):
     except ValueError as exc:
         flash(str(exc), "warning")
         return redirect(url_for("main.cambios"))
+    except IntegrityError:
+        db.session.rollback()
+        flash(_("No se pudo crear la coincidencia. Inténtalo de nuevo."), "warning")
+        return redirect(url_for("main.cambios"))
 
     match = crear_match_directo(pub_b, pub_a)
     if match is None:
@@ -522,7 +528,7 @@ def _crear_publicacion_espejo(pub_a, unidad_id):
         cedidos = [
             (ta.fecha, ta.franja_horaria_id)
             for ta in pub_a.turnos_aceptados
-            if not ta.cualquier_franja
+            if not ta.cualquier_franja and ta.franja_horaria_id is not None
         ]
         if not cedidos:
             raise ValueError(_("Este regalo no tiene turnos disponibles."))
@@ -545,7 +551,7 @@ def _crear_publicacion_espejo(pub_a, unidad_id):
         cedidos_b = [
             (ta.fecha, ta.franja_horaria_id)
             for ta in pub_a.turnos_aceptados
-            if not ta.cualquier_franja
+            if not ta.cualquier_franja and ta.franja_horaria_id is not None
         ]
         aceptados_b = [(tc.fecha, tc.franja_horaria_id) for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
         if not cedidos_b or not aceptados_b:
@@ -556,7 +562,7 @@ def _crear_publicacion_espejo(pub_a, unidad_id):
         cedidos_b = [
             (ta.fecha, ta.franja_horaria_id)
             for ta in pub_a.turnos_aceptados
-            if not ta.cualquier_franja
+            if not ta.cualquier_franja and ta.franja_horaria_id is not None
         ]
         aceptados_b = [(tc.fecha, tc.franja_horaria_id) for tc in pub_a.turnos_cedidos if tc.estado == "abierto"]
         if not cedidos_b or not aceptados_b:
@@ -572,6 +578,8 @@ def _crear_publicacion_espejo(pub_a, unidad_id):
         ta = TurnoAceptado.query.filter_by(id=ta_id, publicacion_id=pub_a.id).first()
         if tc is None or ta is None:
             raise ValueError(_("Turnos no encontrados en esta publicación."))
+        if not ta.cualquier_franja and ta.franja_horaria_id is None:
+            raise ValueError(_("El turno seleccionado no tiene franja horaria definida."))
         if ta.cualquier_franja:
             franja_b = request.form.get("franja_b", type=int)
             if not franja_b:
