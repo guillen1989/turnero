@@ -285,6 +285,9 @@ def eliminar_usuario_admin(usuario):
         ParticipanteDocumentoCambio.query.filter(
             ParticipanteDocumentoCambio.documento_id.in_(doc_ids_a_borrar)
         ).delete(synchronize_session=False)
+        Notificacion.query.filter(
+            Notificacion.documento_cambio_id.in_(doc_ids_a_borrar)
+        ).delete(synchronize_session=False)
         DocumentoCambio.query.filter(
             DocumentoCambio.id.in_(doc_ids_a_borrar)
         ).delete(synchronize_session=False)

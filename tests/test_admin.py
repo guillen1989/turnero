@@ -850,3 +850,54 @@ def test_admin_elimina_usuario_con_notificaciones_ajenas_sobre_sus_pubs(client, 
     assert Usuario.query.filter_by(id=uid).count() == 0
     # Notification for the observer should also have been cleaned up
     assert Notificacion.query.filter_by(usuario_id=observer.id, tipo="nueva_publicacion_seguido").count() == 0
+
+
+def test_admin_elimina_usuario_con_documentos_y_notificaciones(client, db):
+    """Paso 1: al borrar un usuario, las notificaciones ajenas que referencian
+    sus DocumentoCambio no rompen el FK notificacion_documento_cambio_id_fkey."""
+    from app.extensions import db as _db
+    from app.models import DocumentoCambio
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="borrar@test.es")
+    observer = _crear_usuario(client, db, email="observer@test.es")
+
+    doc = DocumentoCambio(
+        creado_por_id=u.id,
+        unidad_id=u.unidad_id,
+        numero_unidad=1,
+    )
+    _db.session.add(doc)
+    _db.session.flush()
+    _db.session.add(Notificacion(
+        usuario_id=observer.id,
+        unidad_id=observer.unidad_id,
+        documento_cambio_id=doc.id,
+        tipo="documento_cambio_pendiente_firma",
+    ))
+    _db.session.commit()
+
+    uid = u.id
+    doc_id = doc.id
+    resp = client.post(
+        f"/admin/usuarios/{u.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(id=uid).count() == 0
+    assert Notificacion.query.filter_by(documento_cambio_id=doc_id).count() == 0
+
+
+def test_admin_elimina_usuario_sin_notificaciones_sigue_funcionando(client, db):
+    """Paso 1 — regresión: borrar un usuario sin notificaciones no se rompe
+    tras el fix de las notificaciones con FK a documento_cambio."""
+    _login_admin(client, db)
+    u = _crear_usuario(client, db, email="borrar@test.es")
+    uid = u.id
+    resp = client.post(
+        f"/admin/usuarios/{u.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Usuario.query.filter_by(id=uid).count() == 0
