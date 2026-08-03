@@ -344,6 +344,39 @@ def test_admin_crea_usuario_con_email_duplicado_muestra_error(client, db):
     assert Usuario.query.filter_by(email="duplicado@test.es").count() == 1
 
 
+def test_admin_crea_usuario_integrity_error_no_provoca_500(client, db):
+    """Race condition: si la query de email no detecta el duplicado pero el
+    INSERT falla con UniqueViolation, la ruta responde con error de validación
+    en vez de un 500."""
+    from unittest.mock import patch
+    from sqlalchemy.exc import IntegrityError
+    _login_admin(client, db)
+
+    with patch("app.services.registro.enviar_email") as mock_email:
+        with patch("app.routes.admin.usuarios.db.session.flush",
+                   side_effect=IntegrityError("mock", {}, Exception())):
+            resp = client.post(
+                "/admin/usuarios/nuevo",
+                data={
+                    "nombre": "Usuario Race",
+                    "email": "race@test.es",
+                    "hospital_id": "0",
+                    "hospital_nuevo": "Hospital Admin Test",
+                    "unidad_id": "0",
+                    "unidad_nuevo": "Urgencias",
+                    "categoria_id": _cat_id(db),
+                    "categoria_nueva": "",
+                    "es_admin": False,
+                },
+                follow_redirects=True,
+            )
+
+    assert resp.status_code == 200
+    assert "ya existe" in resp.get_data(as_text=True).lower()
+    assert Usuario.query.filter_by(email="race@test.es").count() == 0
+    mock_email.assert_not_called()
+
+
 def test_admin_edita_usuario_con_email_duplicado_muestra_error(client, db):
     from app.extensions import db as _db
     _login_admin(client, db)

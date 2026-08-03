@@ -3,6 +3,7 @@ import secrets
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_babel import _
 from flask_login import current_user
+from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.forms.admin import AdminUsuarioForm
@@ -84,12 +85,19 @@ def usuario_nuevo():
             )
             u.set_password(secrets.token_urlsafe(32))
             db.session.add(u)
-            db.session.flush()
-            if u.es_supervisora:
-                sincronizar_unidades_supervisadas(
-                    u, set(form.unidades_supervisadas.data) | {unidad.id}
-                )
-            db.session.commit()
+            try:
+                db.session.flush()
+                if u.es_supervisora:
+                    sincronizar_unidades_supervisadas(
+                        u, set(form.unidades_supervisadas.data) | {unidad.id}
+                    )
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                errores = True
+                flash(_("Ya existe un usuario con ese email."), "danger")
+
+        if not errores:
             email_enviado = crear_usuario_con_invitacion(u)
             flash(_("Usuario creado."), "success")
             if not email_enviado:
