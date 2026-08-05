@@ -667,6 +667,37 @@ def test_admin_no_elimina_unidad_con_historial_asociado(client, db):
     assert b"historial" in resp.data
 
 
+def test_admin_limpia_audit_eliminacion_al_borrar_unidad(client, db):
+    """Paso 4 — null out audit_eliminacion.unidad_id al eliminar la unidad."""
+    _login_admin(client, db)
+    from app.extensions import db as _db
+    from app.models import AuditEliminacion, GrupoIntercambio
+
+    grupo = GrupoIntercambio()
+    _db.session.add(grupo)
+    _db.session.flush()
+
+    h = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    u_test = Unidad(nombre="Unidad Con Auditoria", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    _db.session.add(u_test)
+    _db.session.flush()
+
+    _db.session.add(AuditEliminacion(unidad_id=u_test.id))
+    _db.session.commit()
+
+    resp = client.post(
+        f"/admin/unidades/{u_test.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Unidad.query.filter_by(id=u_test.id).count() == 0
+
+    audit_row = AuditEliminacion.query.first()
+    assert audit_row is not None
+    assert audit_row.unidad_id is None
+
+
 # ---------------------------------------------------------------------------
 # Categorías
 # ---------------------------------------------------------------------------
