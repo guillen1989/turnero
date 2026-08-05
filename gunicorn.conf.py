@@ -4,3 +4,4 @@ timeout = 60
 accesslog = "-"
 access_log_format = '%(h)s "%(r)s" %(s)s %(D)sus'
 errorlog = "-"
+loglevel = "info"
