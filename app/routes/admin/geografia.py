@@ -258,6 +258,9 @@ def unidad_eliminar(id):
     if u.usuarios.count() > 0:
         flash(_("No se puede eliminar: la unidad tiene usuarios asociados."), "danger")
         return redirect(url_for("admin.unidades"))
+    if u.membresias_unidad or u.supervisoras:
+        flash(_("No se puede eliminar: la unidad tiene usuarios asociados (membresía secundaria o supervisión)."), "danger")
+        return redirect(url_for("admin.unidades"))
     db.session.delete(u)
     db.session.commit()
     flash(_("Unidad eliminada."), "success")

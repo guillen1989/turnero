@@ -626,6 +626,85 @@ def test_admin_elimina_hospital_con_unidades_sin_usuarios(client, db):
 
 
 # ---------------------------------------------------------------------------
+# Unidades
+# ---------------------------------------------------------------------------
+
+def test_admin_no_elimina_unidad_con_membresia_secundaria(client, db):
+    _login_admin(client, db)
+    from app.extensions import db as _db
+    from app.models import GrupoIntercambio, UsuarioUnidad
+
+    grupo = GrupoIntercambio()
+    _db.session.add(grupo)
+    _db.session.flush()
+
+    h = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    u_principal = Unidad.query.filter_by(nombre="Urgencias", hospital_id=h.id).first()
+    u_otra = Unidad(nombre="Unidad Solo Membresía", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    _db.session.add(u_otra)
+    _db.session.flush()
+
+    cat_id = _cat_id(db)
+    usuario = Usuario(nombre="Usuario Secundario", email="sec@test.es",
+                      password_hash="test_hash", unidad=u_principal, categoria_id=cat_id)
+    _db.session.add(usuario)
+    _db.session.flush()
+
+    _db.session.add(UsuarioUnidad(usuario_id=usuario.id, unidad_id=u_otra.id, categoria_id=cat_id))
+    _db.session.commit()
+
+    assert u_otra.usuarios.count() == 0
+    assert len(u_otra.membresias_unidad) == 1
+
+    resp = client.post(
+        f"/admin/unidades/{u_otra.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Unidad.query.filter_by(id=u_otra.id).count() == 1
+    assert b"membres" in resp.data
+
+
+def test_admin_no_elimina_unidad_con_supervisora(client, db):
+    _login_admin(client, db)
+    from app.extensions import db as _db
+    from app.models import GrupoIntercambio, UnidadSupervisada
+
+    grupo = GrupoIntercambio()
+    _db.session.add(grupo)
+    _db.session.flush()
+
+    h = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    u_principal = Unidad.query.filter_by(nombre="Urgencias", hospital_id=h.id).first()
+    u_otra = Unidad(nombre="Unidad Supervisada", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    _db.session.add(u_otra)
+    _db.session.flush()
+
+    cat_id = _cat_id(db)
+    supervisor = Usuario(nombre="Supervisora", email="super@test.es",
+                         password_hash="test_hash", unidad=u_principal, categoria_id=cat_id,
+                         es_supervisora=True)
+    _db.session.add(supervisor)
+    _db.session.flush()
+
+    _db.session.add(UnidadSupervisada(usuario_id=supervisor.id, unidad_id=u_otra.id))
+    _db.session.commit()
+
+    assert u_otra.usuarios.count() == 0
+    assert len(u_otra.supervisoras) == 1
+
+    resp = client.post(
+        f"/admin/unidades/{u_otra.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Unidad.query.filter_by(id=u_otra.id).count() == 1
+    assert b"supervis" in resp.data
+
+
+# ---------------------------------------------------------------------------
 # Categorías
 # ---------------------------------------------------------------------------
 
