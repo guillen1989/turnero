@@ -625,6 +625,207 @@ def test_admin_elimina_hospital_con_unidades_sin_usuarios(client, db):
     assert Unidad.query.filter_by(hospital_id=h.id).count() == 0
 
 
+def test_admin_no_elimina_hospital_con_unidad_con_membresia_secundaria(client, db):
+    """Paso 6 — bloquea si alguna unidad del hospital tiene membresía secundaria."""
+    from app.extensions import db as _db
+    from app.models import GrupoIntercambio, UsuarioUnidad
+
+    _login_admin(client, db)
+    h = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    u_principal = Unidad.query.filter_by(nombre="Urgencias", hospital_id=h.id).first()
+
+    grupo = GrupoIntercambio()
+    _db.session.add(grupo)
+    _db.session.flush()
+
+    u_test = Unidad(nombre="Unidad Con Miembro", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    _db.session.add(u_test)
+    _db.session.flush()
+
+    cat_id = _cat_id(db)
+    usuario = Usuario(nombre="Usuario Miembro", email="miembro@test.es",
+                      password_hash="test_hash", unidad=u_principal, categoria_id=cat_id)
+    _db.session.add(usuario)
+    _db.session.flush()
+
+    membresia = UsuarioUnidad(usuario_id=usuario.id, unidad_id=u_test.id, categoria_id=cat_id)
+    _db.session.add(membresia)
+    _db.session.commit()
+
+    assert u_test.usuarios.count() == 0
+    assert len(u_test.membresias_unidad) == 1
+
+    resp = client.post(
+        f"/admin/hospitales/{h.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Hospital.query.filter_by(nombre="Hospital Admin Test").count() == 1
+    assert Unidad.query.filter_by(id=u_test.id).count() == 1
+    assert b"datos asociados" in resp.data
+
+
+# ---------------------------------------------------------------------------
+# Unidades
+# ---------------------------------------------------------------------------
+
+def test_admin_eliminar_unidad_con_membresia_secundaria_no_crash(client, db):
+    """Paso 1 — Reproduce el bug: AssertionError al eliminar una unidad sin
+    usuarios primarios pero con membresía secundaria (UsuarioUnidad)."""
+    from app.extensions import db as _db
+    from app.models import UsuarioUnidad, GrupoIntercambio, Categoria
+    from app.services.registro import registrar_usuario
+
+    _login_admin(client, db)
+
+    admin_unit = Unidad.query.filter_by(nombre="Urgencias").first()
+    hospital = admin_unit.hospital
+    grupo = admin_unit.grupo_intercambio
+    insertar_categorias_semilla()
+    cat_id = Categoria.query.filter_by(nombre="Auxiliar de enfermería (TCAE)").first().id
+
+    target = Unidad(
+        nombre="UCI TCAE",
+        hospital_id=hospital.id,
+        grupo_intercambio_id=grupo.id,
+        categoria_id=cat_id,
+    )
+    _db.session.add(target)
+    _db.session.commit()
+
+    otro = registrar_usuario(
+        nombre="Usuario Secundario",
+        email="secundario@test.es",
+        password="contraseña123",
+        hospital_nombre="Hospital Admin Test",
+        unidad_nombre="Urgencias",
+        categoria_id=cat_id,
+    )
+    _db.session.commit()
+
+    membresia = UsuarioUnidad(
+        usuario_id=otro.id,
+        unidad_id=target.id,
+        categoria_id=cat_id,
+    )
+    _db.session.add(membresia)
+    _db.session.commit()
+
+    assert target.usuarios.count() == 0
+    assert len(target.membresias_unidad) == 1
+
+    resp = client.post(
+        f"/admin/unidades/{target.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code != 500
+
+
+def test_admin_no_elimina_unidad_con_historial_asociado(client, db):
+    """Paso 3 — bloquea el borrado si la unidad tiene datos de negocio (grupo C)."""
+    _login_admin(client, db)
+    from app.extensions import db as _db
+    from app.models import GrupoIntercambio, PublicacionCambio
+
+    grupo = GrupoIntercambio()
+    _db.session.add(grupo)
+    _db.session.flush()
+
+    h = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    u_principal = Unidad.query.filter_by(nombre="Urgencias", hospital_id=h.id).first()
+    u_test = Unidad(nombre="Unidad Con Historial", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    _db.session.add(u_test)
+    _db.session.flush()
+
+    cat_id = _cat_id(db)
+    usuario = Usuario(nombre="Usuario Con Pub", email="pub@test.es",
+                      password_hash="test_hash", unidad=u_principal, categoria_id=cat_id)
+    _db.session.add(usuario)
+    _db.session.flush()
+
+    pub = PublicacionCambio(usuario_id=usuario.id, unidad_id=u_test.id)
+    _db.session.add(pub)
+    _db.session.commit()
+
+    assert u_test.usuarios.count() == 0
+
+    resp = client.post(
+        f"/admin/unidades/{u_test.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Unidad.query.filter_by(id=u_test.id).count() == 1
+    assert b"datos asociados" in resp.data
+
+
+def test_admin_limpia_audit_eliminacion_al_borrar_unidad(client, db):
+    """Paso 4 — null out audit_eliminacion.unidad_id al eliminar la unidad."""
+    _login_admin(client, db)
+    from app.extensions import db as _db
+    from app.models import AuditEliminacion, GrupoIntercambio
+
+    grupo = GrupoIntercambio()
+    _db.session.add(grupo)
+    _db.session.flush()
+
+    h = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    u_test = Unidad(nombre="Unidad Con Auditoria", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    _db.session.add(u_test)
+    _db.session.flush()
+
+    _db.session.add(AuditEliminacion(unidad_id=u_test.id))
+    _db.session.commit()
+
+    resp = client.post(
+        f"/admin/unidades/{u_test.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Unidad.query.filter_by(id=u_test.id).count() == 0
+
+    audit_row = AuditEliminacion.query.first()
+    assert audit_row is not None
+    assert audit_row.unidad_id is None
+
+
+def test_admin_elimina_unidad_con_feature_flag_unidad_sin_usuarios(client, db):
+    """Paso 5 — cascade limpia feature_flag_unidad al borrar unidad."""
+    _login_admin(client, db)
+    from app.extensions import db as _db
+    from app.models import FeatureFlag, FeatureFlagUnidad, GrupoIntercambio
+
+    grupo = GrupoIntercambio()
+    _db.session.add(grupo)
+    _db.session.flush()
+
+    h = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    u_test = Unidad(nombre="Unidad Con Feature Flag", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    _db.session.add(u_test)
+    _db.session.flush()
+
+    flag = FeatureFlag(clave="test_flag", descripcion="Flag para test", activo_global=False)
+    _db.session.add(flag)
+    _db.session.flush()
+
+    _db.session.add(FeatureFlagUnidad(feature_flag_id=flag.id, unidad_id=u_test.id))
+    _db.session.commit()
+
+    assert FeatureFlagUnidad.query.filter_by(unidad_id=u_test.id).count() == 1
+
+    resp = client.post(
+        f"/admin/unidades/{u_test.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Unidad.query.filter_by(id=u_test.id).count() == 0
+    assert FeatureFlagUnidad.query.filter_by(unidad_id=u_test.id).count() == 0
+
+
 # ---------------------------------------------------------------------------
 # Categorías
 # ---------------------------------------------------------------------------
