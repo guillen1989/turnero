@@ -10,7 +10,9 @@ class FeatureFlag(db.Model):
     activo_global = db.Column(db.Boolean, nullable=False, default=False)
 
     unidades_habilitadas = db.relationship(
-        "Unidad", secondary="feature_flag_unidad", backref="feature_flags_habilitados"
+        "Unidad", secondary="feature_flag_unidad",
+        back_populates="feature_flags_habilitados",
+        overlaps="feature_flags_unidad",
     )
 
     def __repr__(self):

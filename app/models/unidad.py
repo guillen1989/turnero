@@ -23,7 +23,21 @@ class Unidad(db.Model):
         overlaps="membresias_unidad",
     )
     membresias_unidad = db.relationship(
-        "UsuarioUnidad", back_populates="unidad", overlaps="miembros"
+        "UsuarioUnidad", back_populates="unidad", overlaps="miembros",
+        cascade="all, delete-orphan",
+    )
+    supervisoras_rel = db.relationship(
+        "UnidadSupervisada", back_populates="unidad", cascade="all, delete-orphan",
+        overlaps="supervisoras,unidades_supervisadas",
+    )
+    feature_flags_unidad = db.relationship(
+        "FeatureFlagUnidad", back_populates="unidad", cascade="all, delete-orphan",
+        overlaps="feature_flags_habilitados",
+    )
+    feature_flags_habilitados = db.relationship(
+        "FeatureFlag", secondary="feature_flag_unidad",
+        back_populates="unidades_habilitadas", viewonly=True,
+        overlaps="feature_flags_unidad",
     )
 
     __table_args__ = (
