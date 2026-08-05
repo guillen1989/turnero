@@ -450,6 +450,18 @@ def eliminar_caducadas():
     return redirect(url_for("main.index", estado="caducada"))
 
 
+@bp.post("/publicaciones/eliminar-confirmadas")
+@login_required
+def eliminar_confirmadas():
+    confirmadas = PublicacionCambio.query.filter_by(
+        usuario_id=current_user.id, estado="confirmada"
+    ).all()
+    for pub in confirmadas:
+        eliminar_publicacion(pub)
+    flash(_("Publicaciones confirmadas eliminadas."), "success")
+    return redirect(url_for("main.index", estado="confirmada"))
+
+
 @bp.post("/cambios/<int:pub_id>/me-interesa")
 @login_required
 def me_interesa(pub_id):

@@ -966,6 +966,10 @@ msgstr ""
 msgid "Publicaciones caducadas eliminadas."
 msgstr ""
 
+#: app/routes/publicaciones.py:458
+msgid "Publicaciones confirmadas eliminadas."
+msgstr ""
+
 #: app/routes/publicaciones.py:460
 msgid "No puedes aceptar tu propia publicación."
 msgstr ""
@@ -4597,6 +4601,12 @@ msgstr ""
 #: app/templates/main/dashboard.html:479
 msgid ""
 "¿Seguro que quieres eliminar todas tus publicaciones caducadas? Esta "
+"acción es irreversible y afecta a todos los elementos de esta pestaña."
+msgstr ""
+
+#: app/templates/main/dashboard.html:488
+msgid ""
+"¿Seguro que quieres eliminar todas tus publicaciones confirmadas? Esta "
 "acción es irreversible y afecta a todos los elementos de esta pestaña."
 msgstr ""
 

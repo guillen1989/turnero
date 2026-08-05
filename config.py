@@ -71,11 +71,15 @@ class ProductionConfig(Config):
     # "recuérdame" solo deben viajar cifradas.
     SESSION_COOKIE_SECURE = True
     REMEMBER_COOKIE_SECURE = True
-    # Railway cierra las conexiones ociosas a Postgres pasado un rato; sin esto
-    # el pool reutiliza conexiones muertas y salta "SSL SYSCALL error: EOF detected".
+    # pool_pre_ping=True detecta y reemplaza conexiones muertas antes de usarlas
+    # (Railway cierra las ociosas pasado un rato). pool_recycle=3600 mantiene
+    # las conexiones vivas hasta 1 h en el pool, lo que reduce drásticamente
+    # las reconexiones (handshake TLS) en apps con tráfico muy bajo como esta
+    # (ver docs/tiempo.md, Paso 4). El valor anterior de 280s forzaba reconexión
+    # en casi cada petición porque el gap medio entre peticiones es de ~3.7 h.
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
-        "pool_recycle": 280,
+        "pool_recycle": 3600,
     }
 
 

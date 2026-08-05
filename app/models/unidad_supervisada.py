@@ -11,5 +11,10 @@ class UnidadSupervisada(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), primary_key=True)
     unidad_id = db.Column(db.Integer, db.ForeignKey("unidad.id"), primary_key=True)
 
+    unidad = db.relationship(
+        "Unidad", back_populates="supervisoras_rel",
+        overlaps="supervisoras,unidades_supervisadas",
+    )
+
     def __repr__(self):
         return f"<UnidadSupervisada usuario_id={self.usuario_id} unidad_id={self.unidad_id}>"

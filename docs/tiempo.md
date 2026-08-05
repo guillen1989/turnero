@@ -50,7 +50,7 @@ la misma operación".
 ---
 
 ## Paso 1 — Arreglar `PYTHONUNBUFFERED` para que los access logs lleguen a Railway
-- [ ] Completado (fecha: ______)
+- [x] Completado (fecha: 2026-08-05)
 
 **Contexto a leer:** `Procfile` (línea `--access-logfile - --access-logformat
 ...`), variables de entorno del servicio `web` en producción.

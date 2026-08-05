@@ -29,6 +29,14 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] feat: sistema de eliminación (uno a uno y Eliminar todos) en la pestaña
+  Confirmados de Mis cambios publicados, replicando el mismo sistema ya
+  existente en Caducados. Nueva ruta `POST /publicaciones/eliminar-confirmadas`,
+  modal de confirmación y botones en el dashboard. Fix: `DocumentoCambio.match_id`
+  se desvincula (->NULL) al borrar matches huérfanos para evitar violación de FK.
+  Tests en `test_editar_eliminar_publicacion.py` (3 tests: login requerido,
+  borrado masivo con aislamiento, FK DocumentoCambio) y `test_dashboard.py`
+  (2 tests: presencia/ausencia de botones).
 - [x] Fix urgente (main → staging): `unidad_activa_o_403` ya no aborta con
   403 cuando el `unidad_id` obsoleto viene solo de la sesión (p. ej. tras
   un cambio de unidad del usuario); limpia la sesión y cae a la unidad
