@@ -626,6 +626,48 @@ def test_admin_elimina_hospital_con_unidades_sin_usuarios(client, db):
 
 
 # ---------------------------------------------------------------------------
+# Unidades
+# ---------------------------------------------------------------------------
+
+def test_admin_no_elimina_unidad_con_historial_asociado(client, db):
+    """Paso 3 — bloquea el borrado si la unidad tiene datos de negocio (grupo C)."""
+    _login_admin(client, db)
+    from app.extensions import db as _db
+    from app.models import GrupoIntercambio, PublicacionCambio
+
+    grupo = GrupoIntercambio()
+    _db.session.add(grupo)
+    _db.session.flush()
+
+    h = Hospital.query.filter_by(nombre="Hospital Admin Test").first()
+    u_principal = Unidad.query.filter_by(nombre="Urgencias", hospital_id=h.id).first()
+    u_test = Unidad(nombre="Unidad Con Historial", hospital_id=h.id, grupo_intercambio_id=grupo.id)
+    _db.session.add(u_test)
+    _db.session.flush()
+
+    cat_id = _cat_id(db)
+    usuario = Usuario(nombre="Usuario Con Pub", email="pub@test.es",
+                      password_hash="test_hash", unidad=u_principal, categoria_id=cat_id)
+    _db.session.add(usuario)
+    _db.session.flush()
+
+    pub = PublicacionCambio(usuario_id=usuario.id, unidad_id=u_test.id)
+    _db.session.add(pub)
+    _db.session.commit()
+
+    assert u_test.usuarios.count() == 0
+
+    resp = client.post(
+        f"/admin/unidades/{u_test.id}/eliminar",
+        data={"csrf_token": ""},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Unidad.query.filter_by(id=u_test.id).count() == 1
+    assert b"historial" in resp.data
+
+
+# ---------------------------------------------------------------------------
 # Categorías
 # ---------------------------------------------------------------------------
 

@@ -3,7 +3,11 @@ from flask_babel import _
 
 from app.extensions import db
 from app.forms.admin import AdminCiudadForm, AdminHospitalForm, AdminNombreForm, AdminProvinciaForm, AdminUnidadForm
-from app.models import Categoria, Ciudad, Hospital, Pais, Provincia, Unidad
+from app.models import (
+    Categoria, Ciudad, DocumentoCambio, EstadoDiaPlanilla, Hospital,
+    MapeoTrabajadorPlanilla, NotaDia, Notificacion, Pais, PlanillaMes,
+    Provincia, PublicacionCambio, SalienteDia, TurnoPlanilla, Unidad,
+)
 from app.routes.admin import admin_required, bp
 from app.routes.admin.helpers import _choices_cats_unidad, _choices_ciudades, _choices_hospitales, _choices_paises, _choices_provincias
 from app.services.registro import encontrar_o_crear_categoria, encontrar_o_crear_ciudad, encontrar_o_crear_hospital, encontrar_o_crear_pais, encontrar_o_crear_provincia, encontrar_o_crear_unidad
@@ -251,12 +255,35 @@ def unidad_editar(id):
     return render_template("admin/unidad_form.html", form=form, titulo=_("Editar unidad"))
 
 
+_HISTORIAL_MODELS = (
+    DocumentoCambio,
+    Notificacion,
+    EstadoDiaPlanilla,
+    TurnoPlanilla,
+    PlanillaMes,
+    SalienteDia,
+    NotaDia,
+    MapeoTrabajadorPlanilla,
+    PublicacionCambio,
+)
+
+
+def _unidad_tiene_historial(u):
+    for model in _HISTORIAL_MODELS:
+        if db.session.query(model.id).filter_by(unidad_id=u.id).first():
+            return True
+    return False
+
+
 @bp.route("/unidades/<int:id>/eliminar", methods=["POST"])
 @admin_required
 def unidad_eliminar(id):
     u = db.session.get(Unidad, id) or abort(404)
     if u.usuarios.count() > 0:
         flash(_("No se puede eliminar: la unidad tiene usuarios asociados."), "danger")
+        return redirect(url_for("admin.unidades"))
+    if _unidad_tiene_historial(u):
+        flash(_("No se puede eliminar: la unidad tiene historial asociado."), "danger")
         return redirect(url_for("admin.unidades"))
     db.session.delete(u)
     db.session.commit()
