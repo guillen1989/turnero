@@ -197,8 +197,8 @@ def hospital_eliminar(id):
     h = db.session.get(Hospital, id) or abort(404)
     unidades = h.unidades.all()
     for u in unidades:
-        if u.usuarios.count() > 0:
-            flash(_("No se puede eliminar: alguna de sus unidades tiene usuarios asociados."), "danger")
+        if _unidad_tiene_datos_asociados(u):
+            flash(_("No se puede eliminar: alguna de sus unidades tiene datos asociados."), "danger")
             return redirect(url_for("admin.hospitales"))
     for u in unidades:
         db.session.delete(u)
@@ -275,15 +275,22 @@ def _unidad_tiene_historial(u):
     return False
 
 
+def _unidad_tiene_datos_asociados(u):
+    if u.usuarios.count() > 0:
+        return True
+    if u.membresias_unidad or u.supervisoras:
+        return True
+    if _unidad_tiene_historial(u):
+        return True
+    return False
+
+
 @bp.route("/unidades/<int:id>/eliminar", methods=["POST"])
 @admin_required
 def unidad_eliminar(id):
     u = db.session.get(Unidad, id) or abort(404)
-    if u.usuarios.count() > 0:
-        flash(_("No se puede eliminar: la unidad tiene usuarios asociados."), "danger")
-        return redirect(url_for("admin.unidades"))
-    if _unidad_tiene_historial(u):
-        flash(_("No se puede eliminar: la unidad tiene historial asociado."), "danger")
+    if _unidad_tiene_datos_asociados(u):
+        flash(_("No se puede eliminar: la unidad tiene datos asociados."), "danger")
         return redirect(url_for("admin.unidades"))
     db.session.query(AuditEliminacion).filter_by(unidad_id=u.id).update({"unidad_id": None})
     db.session.delete(u)
