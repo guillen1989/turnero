@@ -828,3 +828,32 @@ def test_dashboard_activos_no_muestra_botones_eliminar_caducadas(client, db):
     html = resp.data.decode()
 
     assert "/publicaciones/eliminar-caducadas" not in html
+
+
+def test_dashboard_confirmada_muestra_botones_eliminar(client, db):
+    """GET /?estado=confirmada muestra el botón Eliminar individual y Eliminar todos."""
+    usuario = _usuario_y_login(client)
+    franja = _franja(usuario.unidad.grupo_intercambio_id)
+    pub = _publicacion(usuario, franja, fecha_cedida=date(2026, 11, 1), fecha_aceptada=date(2026, 11, 2))
+    pub.estado = "confirmada"
+    db.session.commit()
+
+    resp = client.get("/?estado=confirmada")
+    html = resp.data.decode()
+
+    assert "/publicaciones/eliminar-confirmadas" in html
+    assert f'/publicaciones/{pub.id}/eliminar' in html
+    assert "Eliminar todos" in html
+    assert "Eliminar" in html
+
+
+def test_dashboard_activos_no_muestra_botones_eliminar_confirmadas(client, db):
+    """GET /?estado=activos NO debe mostrar los botones de borrado masivo de confirmadas."""
+    usuario = _usuario_y_login(client)
+    franja = _franja(usuario.unidad.grupo_intercambio_id)
+    _publicacion(usuario, franja, fecha_cedida=date(2026, 10, 1), fecha_aceptada=date(2026, 10, 2))
+
+    resp = client.get("/?estado=abierta")
+    html = resp.data.decode()
+
+    assert "/publicaciones/eliminar-confirmadas" not in html

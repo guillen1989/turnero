@@ -1,6 +1,6 @@
 from app.services.validacion_cambio_dia import validar_publicacion_cambio_dia
 from app.extensions import db
-from app.models import AuditEliminacion, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, SuscripcionPublicaciones, TurnoCedido, TurnoAceptado, Usuario
+from app.models import AuditEliminacion, DocumentoCambio, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, SuscripcionPublicaciones, TurnoCedido, TurnoAceptado, Usuario
 from app.push.sender import enviar_push_condicional
 from app.services.eventos import registrar_evento
 from app.services.busquedas_guardadas import notificar_busquedas_guardadas
@@ -178,6 +178,9 @@ def _eliminar_matches_de_publicaciones(pub_ids):
         }
         huerfanos = match_ids - con_participaciones
         if huerfanos:
+            DocumentoCambio.query.filter(
+                DocumentoCambio.match_id.in_(huerfanos)
+            ).update({"match_id": None}, synchronize_session=False)
             Notificacion.query.filter(
                 Notificacion.match_id.in_(huerfanos)
             ).delete(synchronize_session=False)
