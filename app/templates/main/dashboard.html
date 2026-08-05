@@ -196,6 +196,14 @@
       </form>
     </div>
     {% endif %}
+    {% if estado_filtro == 'confirmada' %}
+    <div class="publicaciones-list-actions">
+      <form method="post" action="{{ url_for('publicaciones.eliminar_confirmadas') }}" style="display:inline" onsubmit="return false">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="button" class="btn btn-danger btn-sm" onclick="abrirModalEliminarTodasConfirmadas(this.closest('form'))">{{ _('Eliminar todos') }}</button>
+      </form>
+    </div>
+    {% endif %}
     <ul class="publicaciones-list">
       {% for pub in publicaciones %}
       <li class="publicacion-card publicacion--{{ pub.estado }}">
@@ -295,7 +303,7 @@
           </p>
         </div>
         {% endif %}
-        {% if pub.esta_activa() or estado_filtro == 'caducada' %}
+        {% if pub.esta_activa() or estado_filtro == 'caducada' or estado_filtro == 'confirmada' %}
         {% set pub_url = url_for('main.cambios', pub_id=pub.id, _external=True) %}
         {% set wa_msg_extra = ('\n' + pub.mensaje) if pub.mensaje else '' %}
         {% if pub.tipo == 'regalo' %}
@@ -484,6 +492,17 @@
   </div>
 </div>
 
+<div id="modal-eliminar-todos-confirmadas" class="modal-overlay modal-hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <p class="modal-title">{{ _('Turnero') }}</p>
+    <p class="modal-body">{{ _('¿Seguro que quieres eliminar todas tus publicaciones confirmadas? Esta acción es irreversible y afecta a todos los elementos de esta pestaña.') }}</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarModalEliminarTodasConfirmadas()">{{ _('Cancelar') }}</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btn-modal-confirmar-todas-confirmadas">{{ _('Eliminar todos') }}</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-firma" class="modal-overlay modal-hidden" role="dialog" aria-modal="true">
   <div class="modal-box modal-box--firma">
     <p class="modal-title">{{ _('Firma para confirmar el cambio') }}</p>
@@ -545,6 +564,26 @@ document.getElementById('btn-modal-confirmar-todas-caducadas').addEventListener(
 });
 document.getElementById('modal-eliminar-todos-caducadas').addEventListener('click', function (e) {
   if (e.target === this) cerrarModalEliminarTodasCaducadas();
+});
+
+var _formTodasConfirmadas = null;
+function abrirModalEliminarTodasConfirmadas(form) {
+  _formTodasConfirmadas = form;
+  document.getElementById('modal-eliminar-todos-confirmadas').classList.remove('modal-hidden');
+  document.getElementById('btn-modal-confirmar-todas-confirmadas').focus();
+}
+function cerrarModalEliminarTodasConfirmadas() {
+  _formTodasConfirmadas = null;
+  document.getElementById('modal-eliminar-todos-confirmadas').classList.add('modal-hidden');
+}
+document.getElementById('btn-modal-confirmar-todas-confirmadas').addEventListener('click', function () {
+  if (_formTodasConfirmadas) {
+    _formTodasConfirmadas.onsubmit = null;
+    _formTodasConfirmadas.submit();
+  }
+});
+document.getElementById('modal-eliminar-todos-confirmadas').addEventListener('click', function (e) {
+  if (e.target === this) cerrarModalEliminarTodasConfirmadas();
 });
 
 var _formFirmaPendiente = null;
@@ -644,6 +683,7 @@ document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
     cerrarModalEliminar();
     cerrarModalEliminarTodasCaducadas();
+    cerrarModalEliminarTodasConfirmadas();
     cerrarModalFirma();
   }
 });

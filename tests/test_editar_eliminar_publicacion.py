@@ -3,10 +3,17 @@ from datetime import date
 
 from app.extensions import db
 from app.models import (
-    Categoria, FranjaHoraria, MatchCambio, Notificacion, PublicacionCambio,
-    TurnoCedido, TurnoAceptado, insertar_categorias_semilla,
+    Categoria, DocumentoCambio, FranjaHoraria, MatchCambio, MatchParticipacion,
+    Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado,
+    insertar_categorias_semilla,
 )
 from app.services.registro import registrar_usuario
+
+# PNG 1x1 transparente válido, usado como firma de prueba.
+FIRMA_VALIDA = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4"
+    "2mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
 
 
 # ---------------------------------------------------------------------------
@@ -386,3 +393,114 @@ def test_eliminar_caducadas_borra_solo_las_propias_caducadas(client, db):
     assert db.session.get(PublicacionCambio, caducada_2_id) is None
     assert db.session.get(PublicacionCambio, abierta_id) is not None
     assert db.session.get(PublicacionCambio, caducada_ajena_id) is not None
+
+
+# ---------------------------------------------------------------------------
+# Eliminar confirmadas (masivo)
+# ---------------------------------------------------------------------------
+
+def test_eliminar_confirmadas_requiere_login(client, db):
+    resp = client.post("/publicaciones/eliminar-confirmadas", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["Location"]
+
+
+def test_eliminar_confirmadas_borra_solo_las_propias_confirmadas(client, db):
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+
+    confirmada_1 = _pub(u1, date(2026, 9, 1), date(2026, 9, 2))
+    confirmada_1.estado = "confirmada"
+    confirmada_2 = _pub(u1, date(2026, 9, 3), date(2026, 9, 4))
+    confirmada_2.estado = "confirmada"
+    abierta = _pub(u1, date(2026, 9, 5), date(2026, 9, 6))
+    confirmada_ajena = _pub(u2, date(2026, 9, 7), date(2026, 9, 8))
+    confirmada_ajena.estado = "confirmada"
+    db.session.commit()
+
+    confirmada_1_id, confirmada_2_id = confirmada_1.id, confirmada_2.id
+    abierta_id = abierta.id
+    confirmada_ajena_id = confirmada_ajena.id
+
+    resp = client.post("/publicaciones/eliminar-confirmadas", follow_redirects=False)
+
+    assert resp.status_code == 302
+    assert "estado=confirmada" in resp.headers["Location"]
+    assert db.session.get(PublicacionCambio, confirmada_1_id) is None
+    assert db.session.get(PublicacionCambio, confirmada_2_id) is None
+    assert db.session.get(PublicacionCambio, abierta_id) is not None
+    assert db.session.get(PublicacionCambio, confirmada_ajena_id) is not None
+
+
+def test_eliminar_publicacion_confirmada_con_documento_no_da_error(client, db):
+    """Regresión: borrar una publicación confirmada cuyo MatchCambio se queda
+    sin participaciones (la contraparte ya borró la suya) y que tiene un
+    DocumentoCambio enlazado (match_id) no debe violar la FK: el documento se
+    conserva como registro y solo se desvincula del match."""
+    from app.services.publicaciones import eliminar_publicacion
+    from app.models.documento_cambio import ParticipanteDocumentoCambio, FirmaDocumentoCambio
+
+    u1 = _usuario(email="ana@doc.test")
+    u2 = _usuario(email="pedro@doc.test")
+    franja = _franja(u1.unidad.grupo_intercambio_id)
+
+    pub1 = _pub(u1, date(2026, 9, 1), date(2026, 9, 2))
+    pub2 = _pub(u2, date(2026, 9, 2), date(2026, 9, 1))
+
+    tc1, ta1 = pub1.turnos_cedidos[0], pub1.turnos_aceptados[0]
+    tc2, ta2 = pub2.turnos_cedidos[0], pub2.turnos_aceptados[0]
+
+    match = MatchCambio(tipo="directo_2", estado="confirmado_total")
+    db.session.add(match)
+    db.session.flush()
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub1.id,
+        turno_cedido_id=tc1.id, turno_aceptado_id=ta1.id,
+    ))
+    db.session.add(MatchParticipacion(
+        match_id=match.id, publicacion_id=pub2.id,
+        turno_cedido_id=tc2.id, turno_aceptado_id=ta2.id,
+    ))
+
+    pub1.estado = "confirmada"
+    tc1.estado = "resuelto"
+    ta1.estado = "resuelto"
+    pub2.estado = "confirmada"
+    tc2.estado = "resuelto"
+    ta2.estado = "resuelto"
+
+    documento = DocumentoCambio(
+        creado_por=u1, match_id=match.id, unidad_id=u1.unidad_id,
+        numero_unidad=1, tipo="cambio",
+    )
+    db.session.add(documento)
+    db.session.flush()
+    db.session.add(ParticipanteDocumentoCambio(
+        documento_id=documento.id, usuario_id=u1.id,
+        turno_cede_fecha=date(2026, 9, 1), turno_cede_franja_id=franja.id,
+        turno_recibe_fecha=date(2026, 9, 2), turno_recibe_franja_id=franja.id,
+    ))
+    db.session.add(ParticipanteDocumentoCambio(
+        documento_id=documento.id, usuario_id=u2.id,
+        turno_cede_fecha=date(2026, 9, 2), turno_cede_franja_id=franja.id,
+        turno_recibe_fecha=date(2026, 9, 1), turno_recibe_franja_id=franja.id,
+    ))
+    db.session.commit()
+
+    match_id = match.id
+    documento_id = documento.id
+    pub1_id = pub1.id
+    pub2_id = pub2.id
+
+    eliminar_publicacion(pub2)
+    assert db.session.get(PublicacionCambio, pub2_id) is None
+    assert db.session.get(MatchCambio, match_id) is not None
+
+    eliminar_publicacion(pub1)
+    assert db.session.get(PublicacionCambio, pub1_id) is None
+    assert db.session.get(MatchCambio, match_id) is None
+    db.session.expire_all()
+    doc = db.session.get(DocumentoCambio, documento_id)
+    assert doc is not None
+    assert doc.match_id is None
