@@ -74,7 +74,7 @@ mismas notificaciones).
   - Documentar el resultado en este archivo (sección "Hallazgos", añadida en este paso).
   - Commit: `test: instrumenta conteo de queries en editar_publicacion para diagnosticar latencia`
 
-- [ ] **Paso 2 — Cachear `_franjas_del_grupo` por request**
+- [x] **Paso 2 — Cachear `_franjas_del_grupo` por request** (2026-08-07)
   - Los franjas de un grupo de intercambio no cambian dentro de un mismo request. Cachear
     el resultado de `FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id).all()`
     por `grupo_id`, con un caché simple de proceso/petición (p. ej. diccionario a nivel de
@@ -170,3 +170,22 @@ round-trip, no localhost).
 Se procede con el Paso 2 (cachear `_franjas_del_grupo` por request) tal como
 estaba previsto — no hace falta descartar la hipótesis ni investigar otras
 causas.
+
+### Paso 2 (2026-08-07)
+`_franjas_del_grupo` ahora cachea su resultado en `flask.g` (diccionario
+`_franjas_del_grupo_cache`, indexado por `grupo_id`), que vive solo durante el
+request. Test añadido: `test_franjas_del_grupo_se_cachea_por_request`, que
+llama dos veces a `_franjas_del_grupo` con el mismo grupo dentro del mismo
+`app.test_request_context()` y comprueba que la segunda llamada no ejecuta
+ningún SELECT nuevo.
+
+Resultado en el escenario del Paso 1 (`test_editar_publicacion_selects_crecen_con_candidatas_cualquier_franja`):
+
+| Candidatas activas (cualquier_franja=True) | SELECTs antes del Paso 2 | SELECTs después del Paso 2 |
+|---|---|---|
+| 1 | 31 | 27 |
+| 6 | 82 | 52 |
+
+El crecimiento por candidata adicional baja de ~10.2 a ~5 SELECTs. Sigue
+habiendo N+1 (varias de las 6 funciones de búsqueda recalculan `_cedidos_abiertos`/`_aceptados`
+para las mismas candidatas), lo que aborda el Paso 3.

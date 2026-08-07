@@ -7,6 +7,8 @@ Responsabilidades:
   - Delegar la lógica de coincidencia al motor puro (engine.py).
   - Crear registros MatchCambio, MatchParticipacion y Notificacion.
 """
+from flask import g
+
 from app.extensions import db
 from app.models import (
     FranjaHoraria,
@@ -38,9 +40,19 @@ def _cedidos_abiertos(pub):
 
 
 def _franjas_del_grupo(pub):
-    """Devuelve los IDs de todas las franjas disponibles en el grupo del usuario."""
+    """Devuelve los IDs de todas las franjas disponibles en el grupo del usuario.
+
+    Cacheada en `flask.g` por `grupo_id`: dentro de un mismo request las 6
+    búsquedas de matching pueden invocar esto repetidamente para las mismas
+    candidatas, y las franjas de un grupo no cambian durante el request.
+    """
     grupo_id = db.session.get(Usuario, pub.usuario_id).unidad.grupo_intercambio_id
-    return [f.id for f in FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id).all()]
+    cache = g.setdefault("_franjas_del_grupo_cache", {})
+    if grupo_id not in cache:
+        cache[grupo_id] = [
+            f.id for f in FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id).all()
+        ]
+    return cache[grupo_id]
 
 
 def _aceptados(pub):
