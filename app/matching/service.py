@@ -357,7 +357,6 @@ def crear_match_directo(pub_a, pub_b):
 
     db.session.add(Notificacion(usuario_id=pub_a.usuario_id, unidad_id=pub_a.usuario.unidad_id, match_id=match.id, tipo="nuevo_match"))
     db.session.add(Notificacion(usuario_id=pub_b.usuario_id, unidad_id=pub_b.usuario.unidad_id, match_id=match.id, tipo="nuevo_match"))
-    db.session.commit()
 
     tipos_par = (pub_a.tipo, pub_b.tipo)
     if tipos_par in _PARES_PARCIALES:
@@ -509,8 +508,6 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
         db.session.add(Notificacion(
             usuario_id=pub.usuario_id, unidad_id=pub.usuario.unidad_id, match_id=match.id, tipo="nuevo_match"
         ))
-
-    db.session.commit()
 
     enviar_push_condicional(pub_b.usuario, "match")
     enviar_push_condicional(pub_c.usuario, "match")
@@ -675,8 +672,6 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
         db.session.add(Notificacion(
             usuario_id=pub.usuario_id, unidad_id=pub.usuario.unidad_id, match_id=match.id, tipo="nuevo_match"
         ))
-
-    db.session.commit()
 
     enviar_push_condicional(pub_b.usuario, "match")
     enviar_push_condicional(pub_c.usuario, "match")
@@ -923,9 +918,8 @@ def crear_pub_sintetica(pub_a, pub_b, pub_intermedio=None):
             franja_horaria_id=tc.franja_horaria_id,
         ))
 
+    notificar_busquedas_guardadas(sint, commit=False)
     db.session.commit()
-
-    notificar_busquedas_guardadas(sint)
 
     return sint
 

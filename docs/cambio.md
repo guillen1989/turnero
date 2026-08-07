@@ -103,7 +103,7 @@ mismas notificaciones).
     independiente, solo comparte el de `publicacion`.
   - Commit: `perf: reutiliza cedidos/aceptados precalculados entre las búsquedas de matching`
 
-- [ ] **Paso 4 — Reducir commits duplicados en creación de matches**
+- [x] **Paso 4 — Reducir commits duplicados en creación de matches** (2026-08-07)
   - `crear_match_directo`, `crear_match_cadena_3`, `crear_match_cadena_4` y
     `crear_pub_sintetica` hacen más de un `db.session.commit()` en el mismo flujo
     (p. ej. uno tras crear notificaciones y otro tras `registrar_evento`). Revisar si se
@@ -224,3 +224,35 @@ Resultado en el mismo escenario:
 
 El crecimiento por candidata adicional baja de ~5 a **1.0 SELECT**. Suite
 completa (`pytest --testmon`) en verde.
+
+### Paso 4 (2026-08-07)
+Las 4 funciones de creación de matches hacían 2 `db.session.commit()` cada
+una: uno tras crear las notificaciones (y, en las cadenas, tras los envíos de
+push), y otro tras el/los `registrar_evento`. Se fusionaron en un único
+commit final por función, sin cambiar el orden de escritura:
+
+- `crear_match_directo`, `crear_match_cadena_3`, `crear_match_cadena_4`: se
+  eliminó el commit intermedio tras crear las `Notificacion`; el commit final
+  (tras `registrar_evento`) queda como único punto de persistencia. Es seguro
+  porque SQLAlchemy hace autoflush por defecto (no hay override de
+  `autoflush` en el proyecto), así que los objetos añadidos siguen siendo
+  visibles para queries posteriores dentro de la misma transacción aunque no
+  se haga commit todavía. Además, tanto `enviar_push_condicional`
+  (`app/push/sender.py`) como `registrar_evento` (`app/services/eventos.py`)
+  atrapan sus propias excepciones y nunca propagan un fallo que dejara la
+  transacción a medias.
+- `crear_pub_sintetica`: mismo patrón, pero aquí el commit intermedio vivía
+  dentro de `notificar_busquedas_guardadas` (`app/services/busquedas_guardadas.py`),
+  una función también usada de forma independiente desde `publicar_cambio`
+  (que sí debe seguir comiteando ella sola). Se le añadió un parámetro
+  `commit=True` (por defecto) para poder llamarla con `commit=False` desde
+  `crear_pub_sintetica` y hacer un único commit final después, sin tocar el
+  comportamiento de `publicar_cambio`.
+
+Test primero: `tests/test_commits_matching.py`, con un fixture
+`commit_counter` que monkeypatchea `sqlalchemy.orm.Session.commit` para
+contar invocaciones. Los 4 tests (uno por función) fallaban en rojo
+(`assert 2 == 1`) antes del cambio y pasan en verde después, sin tocar
+ningún otro test existente.
+
+Suite completa (`pytest --testmon`): 201 passed, 0 failed.
