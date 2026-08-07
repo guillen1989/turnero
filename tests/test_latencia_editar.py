@@ -151,3 +151,39 @@ def test_editar_publicacion_selects_crecen_poco_con_candidatas_tras_paso_3(clien
     )
 
     assert crecimiento_por_candidata < 2
+
+
+def test_medir_tiempo_editar_con_15_candidatas(client, db, query_counter):
+    """Paso 5 de docs/cambio.md: mide tiempo real de POST /editar con un
+    número de candidatas más cercano al escenario de producción (~15),
+    para comparar antes/después de los Pasos 2-4."""
+    import time
+
+    autor = _usuario_n(0)
+    franja = _franja(autor.unidad.grupo_intercambio_id)
+    pub = PublicacionCambio(usuario_id=autor.id, unidad_id=autor.unidad_id, tipo="cambio")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    for n in range(1, 16):
+        _candidata_cualquier_franja(_usuario_n(n), franja, date(2026, 9, 3), date(2026, 9, 4))
+
+    _login(client, autor.email)
+
+    query_counter.selects = 0
+    inicio = time.perf_counter()
+    client.post(f"/publicaciones/{pub.id}/editar", data={
+        "fecha_cedida_0": date(2026, 9, 20).isoformat(),
+        "franja_cedida_0": franja.id,
+        "fecha_aceptada_0": date(2026, 9, 21).isoformat(),
+        "franja_aceptada_0": franja.id,
+    })
+    duracion = time.perf_counter() - inicio
+
+    print(
+        f"\n[Paso 5 — medición] 15 candidatas: {query_counter.selects} SELECTs, "
+        f"{duracion*1000:.1f} ms"
+    )

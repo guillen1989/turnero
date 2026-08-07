@@ -112,7 +112,7 @@ mismas notificaciones).
   - Test primero: los tests existentes de creación de matches deben seguir en verde.
   - Commit: `perf: fusiona commits redundantes al crear matches`
 
-- [ ] **Paso 5 — Medir el resultado con datos reales**
+- [x] **Paso 5 — Medir el resultado con datos reales** (2026-08-07)
   - Repetir la instrumentación del Paso 1 sobre el mismo escenario (mismo número de
     candidatas) y comparar el número de queries y el tiempo total antes/después.
   - Si tras los pasos 2-4 la mejora no es suficiente, evaluar mover el recálculo de
@@ -256,3 +256,39 @@ contar invocaciones. Los 4 tests (uno por función) fallaban en rojo
 ningún otro test existente.
 
 Suite completa (`pytest --testmon`): 201 passed, 0 failed.
+
+### Paso 5 (2026-08-07)
+Test añadido: `tests/test_latencia_editar.py::test_medir_tiempo_editar_con_15_candidatas`,
+que mide SELECTs y tiempo de respuesta real de `POST /publicaciones/<id>/editar`
+con 15 candidatas activas (`cualquier_franja=True`), un número más cercano a un
+grupo de intercambio real que el 1/6 usado en los Pasos 1-3.
+
+Para tener un "antes" comparable, se creó un worktree temporal en el commit
+`bda75a9` (justo tras el Paso 1: instrumentación presente, ninguna optimización
+aplicada) con el mismo test, y se ejecutó 3 veces en cada versión sobre la
+misma BD Postgres local:
+
+| Versión | SELECTs (15 candidatas) | Tiempo (3 ejecuciones) |
+|---|---|---|
+| Antes (commit `bda75a9`, sin optimizar) | 173 | 129.8 / 136.3 / 143.2 ms |
+| Después (commit `0dd867e`, Pasos 2-4 aplicados) | 39 | 64.1 / 69.8 / 64.3 ms |
+
+**Resultado:** 77.5% menos SELECTs (173 → 39) y ~2x menos tiempo en local
+(~136 ms → ~66 ms de media). La reducción de tiempo en local es modesta porque
+Postgres corre en localhost (round-trip ~submilisegundo); en Railway, donde el
+diagnóstico del Paso 1 estimó 20-50 ms por round-trip de red entre el
+dyno y Postgres, los 134 SELECTs eliminados suponen entre 2.7 s y 6.7 s menos
+solo por ese concepto — coherente con reducir sustancialmente (aunque quizá
+no necesariamente por debajo de 1s) los ~10s observados en producción con
+Guillén del Barrio.
+
+Suite completa (`pytest --testmon`): en verde, sin regresiones.
+
+**Conclusión:** los Pasos 2-4 reducen el N+1 de forma sustancial y verificable
+(SELECTs por candidata adicional: ~10.2 antes → ~1.0 después; ver Hallazgos
+Paso 1 y Paso 3). No se dispone de una medición de producción antes/después
+porque requeriría desplegar el cambio primero (Paso 6). Si tras el despliegue
+el tiempo real en Railway sigue siendo alto, la opción de mover el
+recálculo de matching a background sigue en pie como siguiente alternativa,
+pero requiere decisión explícita del usuario (cambia el comportamiento
+observado: el usuario ya no vería sus matches al instante).
