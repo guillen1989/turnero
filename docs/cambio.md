@@ -60,7 +60,7 @@ mismas notificaciones).
     esta tarea, sustituyendo la excepción original de commitear directo en `main`).
   - Árbol de trabajo limpio al partir de `main` (commit base `16bb06d`).
 
-- [ ] **Paso 1 — Instrumentar y confirmar la causa antes de optimizar**
+- [x] **Paso 1 — Instrumentar y confirmar la causa antes de optimizar** (2026-08-07)
   - Añadir un test (o script puntual) que cuente las queries SQL ejecutadas durante
     `editar_publicacion` + las 6 búsquedas de matching, usando el evento
     `sqlalchemy.event.listen(engine, "before_cursor_execute", ...)` o
@@ -143,4 +143,30 @@ mismas notificaciones).
   latencia de red Railway↔Postgres en sí, cold start del worker, otro middleware, etc.).
 
 ## Hallazgos
-_(pendiente — se rellena en el Paso 1)_
+
+### Paso 1 (2026-08-07)
+Test añadido: `tests/test_latencia_editar.py::test_editar_publicacion_selects_crecen_con_candidatas_cualquier_franja`.
+Usa el fixture `query_counter` ya existente en `tests/conftest.py` (cuenta
+sentencias `SELECT` vía el evento `after_cursor_execute` de SQLAlchemy) sobre
+una petición HTTP real `POST /publicaciones/<id>/editar`, variando el número
+de candidatas activas (mismo grupo/categoría) con un turno aceptado
+`cualquier_franja=True`.
+
+Resultado:
+| Candidatas activas (cualquier_franja=True) | SELECTs ejecutados |
+|---|---|
+| 1 | 31 |
+| 6 | 82 |
+
+Crecimiento de ~10.2 SELECTs por candidata adicional (51 SELECTs extra para 5
+candidatas extra). **Confirma la hipótesis de N+1**: cada candidata con
+`cualquier_franja=True` dispara `_franjas_del_grupo()` (2 queries) de forma
+repetida en varias de las 6 funciones de búsqueda de matching, sin ningún
+caché entre ellas ni dentro del mismo request. Con el volumen de candidatas
+que puede darse en un grupo de intercambio real, esto es coherente con los
+~10s observados en producción sobre Railway (latencia de red real por
+round-trip, no localhost).
+
+Se procede con el Paso 2 (cachear `_franjas_del_grupo` por request) tal como
+estaba previsto — no hace falta descartar la hipótesis ni investigar otras
+causas.
