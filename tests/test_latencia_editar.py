@@ -112,3 +112,42 @@ def test_franjas_del_grupo_se_cachea_por_request(app, db, query_counter):
     assert selects_tras_segunda == selects_tras_primera
     assert primera == segunda
     assert franja.id in primera
+
+
+def test_editar_publicacion_selects_crecen_poco_con_candidatas_tras_paso_3(client, db, query_counter):
+    """Paso 3 de docs/cambio.md: al precalcular cedidos/aceptados una sola vez
+    por request y reutilizarlos entre las 6 búsquedas de matching, el
+    crecimiento de SELECTs por candidata adicional debe ser mucho menor que
+    el ~5/candidata medido en el Paso 2 (docs/cambio.md, Hallazgos)."""
+    autor = _usuario_n(0)
+    franja = _franja(autor.unidad.grupo_intercambio_id)
+    pub = PublicacionCambio(usuario_id=autor.id, unidad_id=autor.unidad_id, tipo="cambio")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    _candidata_cualquier_franja(_usuario_n(1), franja, date(2026, 9, 3), date(2026, 9, 4))
+
+    _login(client, autor.email)
+    selects_con_1_candidata = _editar_y_contar(
+        client, query_counter, pub.id, franja.id, date(2026, 9, 10), date(2026, 9, 11)
+    )
+
+    for n in range(2, 7):
+        _candidata_cualquier_franja(_usuario_n(n), franja, date(2026, 9, 3), date(2026, 9, 4))
+
+    selects_con_6_candidatas = _editar_y_contar(
+        client, query_counter, pub.id, franja.id, date(2026, 9, 20), date(2026, 9, 21)
+    )
+
+    crecimiento_por_candidata = (selects_con_6_candidatas - selects_con_1_candidata) / 5
+
+    print(
+        f"\n[Paso 3 — diagnóstico] SELECTs con 1 candidata: {selects_con_1_candidata}; "
+        f"con 6 candidatas: {selects_con_6_candidatas}; "
+        f"crecimiento/candidata: {crecimiento_por_candidata}"
+    )
+
+    assert crecimiento_por_candidata < 2

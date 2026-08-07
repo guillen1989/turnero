@@ -133,7 +133,34 @@ def _resolver_candidatas(publicacion, candidatas):
     return candidatas_activas_para(publicacion)
 
 
-def buscar_matches_para(publicacion, candidatas=None):
+def precalcular_cedidos_aceptados(publicacion, candidatas):
+    """Calcula de una vez los frozensets de cedidos/aceptados de `publicacion`
+    y todas las `candidatas`, indexados por `id` de publicación.
+
+    Pensado para llamarse justo tras `candidatas_activas_para`, antes de que
+    las 6 búsquedas de matching empiecen a crear matches: crear un match hace
+    `db.session.commit()`, que por defecto expira todas las instancias ORM ya
+    cargadas, así que sin este precálculo cada búsqueda posterior recarga
+    (con nuevas queries) los turnos de `publicacion` y de cada candidata.
+    """
+    todas = [publicacion, *candidatas]
+    return (
+        {p.id: _cedidos_abiertos(p) for p in todas},
+        {p.id: _aceptados(p) for p in todas},
+    )
+
+
+def _resolver_mapas(publicacion, candidatas, cedidos_map, aceptados_map):
+    """Devuelve `(cedidos_map, aceptados_map)` tal cual si ya se pasaron
+    calculados, o los calcula si no (mismo patrón que `_resolver_candidatas`,
+    para que cada búsqueda siga funcionando de forma independiente cuando se
+    llama sin esos argumentos, como en los tests)."""
+    if cedidos_map is not None and aceptados_map is not None:
+        return cedidos_map, aceptados_map
+    return precalcular_cedidos_aceptados(publicacion, candidatas)
+
+
+def buscar_matches_para(publicacion, candidatas=None, cedidos_map=None, aceptados_map=None):
     """
     Devuelve las publicaciones activas que hacen match con `publicacion`.
 
@@ -148,61 +175,64 @@ def buscar_matches_para(publicacion, candidatas=None):
       - cambio ↔ peticion: la peticion cubre uno de los aceptados del cambio
 
     `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
+    `cedidos_map`/`aceptados_map`: opcionales, ya calculados por el llamador
+    (ver `precalcular_cedidos_aceptados`).
     """
     candidatas = _resolver_candidatas(publicacion, candidatas)
+    cedidos_map, aceptados_map = _resolver_mapas(publicacion, candidatas, cedidos_map, aceptados_map)
 
     tipo = publicacion.tipo
 
     if tipo == "junte":
-        cedidos_pub = _cedidos_abiertos(publicacion)
-        aceptados_pub = _aceptados(publicacion)
+        cedidos_pub = cedidos_map[publicacion.id]
+        aceptados_pub = aceptados_map[publicacion.id]
         return [
             c for c in candidatas
             if c.tipo == "junte" and detectar_match_directo(
                 cedidos_pub, aceptados_pub,
-                _cedidos_abiertos(c), _aceptados(c),
+                cedidos_map[c.id], aceptados_map[c.id],
             )
         ]
 
     if tipo == "cambio":
-        cedidos_pub = _cedidos_abiertos(publicacion)
-        aceptados_pub = _aceptados(publicacion)
+        cedidos_pub = cedidos_map[publicacion.id]
+        aceptados_pub = aceptados_map[publicacion.id]
         resultado = []
         for c in candidatas:
             if c.tipo == "cambio" and detectar_match_directo(
-                cedidos_pub, aceptados_pub, _cedidos_abiertos(c), _aceptados(c)
+                cedidos_pub, aceptados_pub, cedidos_map[c.id], aceptados_map[c.id]
             ):
                 resultado.append(c)
-            elif c.tipo == "regalo" and bool(cedidos_pub & _aceptados(c)):
+            elif c.tipo == "regalo" and bool(cedidos_pub & aceptados_map[c.id]):
                 resultado.append(c)
-            elif c.tipo == "peticion" and bool(aceptados_pub & _cedidos_abiertos(c)):
+            elif c.tipo == "peticion" and bool(aceptados_pub & cedidos_map[c.id]):
                 resultado.append(c)
         return resultado
 
     if tipo == "regalo":
-        aceptados_pub = _aceptados(publicacion)
+        aceptados_pub = aceptados_map[publicacion.id]
         return [
             c for c in candidatas
-            if (c.tipo == "peticion" and detectar_match_regalo(aceptados_pub, _cedidos_abiertos(c)))
-            or (c.tipo == "cambio"   and bool(aceptados_pub & _cedidos_abiertos(c)))
+            if (c.tipo == "peticion" and detectar_match_regalo(aceptados_pub, cedidos_map[c.id]))
+            or (c.tipo == "cambio"   and bool(aceptados_pub & cedidos_map[c.id]))
         ]
 
     if tipo == "peticion":
-        cedidos_pub = _cedidos_abiertos(publicacion)
+        cedidos_pub = cedidos_map[publicacion.id]
         return [
             c for c in candidatas
-            if (c.tipo == "regalo" and detectar_match_regalo(_aceptados(c), cedidos_pub))
-            or (c.tipo == "cambio"  and bool(cedidos_pub & _aceptados(c)))
+            if (c.tipo == "regalo" and detectar_match_regalo(aceptados_map[c.id], cedidos_pub))
+            or (c.tipo == "cambio"  and bool(cedidos_pub & aceptados_map[c.id]))
         ]
 
     if tipo == "cambio_dia":
-        cedidos_pub = _cedidos_abiertos(publicacion)
-        aceptados_pub = _aceptados(publicacion)
+        cedidos_pub = cedidos_map[publicacion.id]
+        aceptados_pub = aceptados_map[publicacion.id]
         return [
             c for c in candidatas
             if c.tipo == "cambio_dia" and detectar_match_directo(
                 cedidos_pub, aceptados_pub,
-                _cedidos_abiertos(c), _aceptados(c),
+                cedidos_map[c.id], aceptados_map[c.id],
             )
         ]
 
@@ -374,25 +404,25 @@ def _cadenas_3_existentes(pub_id):
     return {frozenset(pubs) for pubs in agrupado.values()}
 
 
-def buscar_cadenas_3_para(publicacion, candidatas=None):
+def buscar_cadenas_3_para(publicacion, candidatas=None, cedidos_map=None, aceptados_map=None):
     """
     Devuelve lista de pares (pub_b, pub_c) donde publicacion→pub_b→pub_c→publicacion
     forma un ciclo de intercambio válido a 3 bandas.
 
     Solo opera sobre publicaciones de tipo 'cambio'.
     `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
+    `cedidos_map`/`aceptados_map`: opcionales, ya calculados por el llamador
+    (ver `precalcular_cedidos_aceptados`).
     """
     if publicacion.tipo != "cambio":
         return []
 
     candidatas = _resolver_candidatas(publicacion, candidatas)
+    cedidos_por_pub, aceptados_por_pub = _resolver_mapas(publicacion, candidatas, cedidos_map, aceptados_map)
     candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
 
-    cedidos_a = _cedidos_abiertos(publicacion)
-    aceptados_a = _aceptados(publicacion)
-
-    cedidos_por_pub = {c.id: _cedidos_abiertos(c) for c in candidatas_cambio}
-    aceptados_por_pub = {c.id: _aceptados(c) for c in candidatas_cambio}
+    cedidos_a = cedidos_por_pub[publicacion.id]
+    aceptados_a = aceptados_por_pub[publicacion.id]
 
     existing = _cadenas_3_existentes(publicacion.id)
     resultado = []
@@ -521,7 +551,7 @@ def _cadenas_4_existentes(pub_id):
     return {frozenset(pubs) for pubs in agrupado.values()}
 
 
-def buscar_cadenas_4_para(publicacion, candidatas=None):
+def buscar_cadenas_4_para(publicacion, candidatas=None, cedidos_map=None, aceptados_map=None):
     """
     Devuelve lista de tríos (pub_b, pub_c, pub_d) donde
     publicacion→pub_b→pub_c→pub_d→publicacion forma un ciclo de intercambio
@@ -529,18 +559,18 @@ def buscar_cadenas_4_para(publicacion, candidatas=None):
 
     Solo opera sobre publicaciones de tipo 'cambio'.
     `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
+    `cedidos_map`/`aceptados_map`: opcionales, ya calculados por el llamador
+    (ver `precalcular_cedidos_aceptados`).
     """
     if publicacion.tipo != "cambio":
         return []
 
     candidatas = _resolver_candidatas(publicacion, candidatas)
+    cedidos_por_pub, aceptados_por_pub = _resolver_mapas(publicacion, candidatas, cedidos_map, aceptados_map)
     candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
 
-    cedidos_a = _cedidos_abiertos(publicacion)
-    aceptados_a = _aceptados(publicacion)
-
-    cedidos_por_pub = {c.id: _cedidos_abiertos(c) for c in candidatas_cambio}
-    aceptados_por_pub = {c.id: _aceptados(c) for c in candidatas_cambio}
+    cedidos_a = cedidos_por_pub[publicacion.id]
+    aceptados_a = aceptados_por_pub[publicacion.id]
 
     existing = _cadenas_4_existentes(publicacion.id)
     resultado = []
@@ -659,7 +689,7 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
     return match
 
 
-def buscar_cadenas_parciales_4_para(publicacion, candidatas=None):
+def buscar_cadenas_parciales_4_para(publicacion, candidatas=None, cedidos_map=None, aceptados_map=None):
     """
     Devuelve lista de tríos (pub_a, pub_b, pub_c) donde pub_a→pub_b→pub_c
     cierra 2 de los 3 eslabones de un ciclo sin cerrar el tercero (pub_c→pub_a):
@@ -675,18 +705,18 @@ def buscar_cadenas_parciales_4_para(publicacion, candidatas=None):
     represente al cuarto usuario que falta. Solo opera sobre publicaciones
     de tipo 'cambio'.
     `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
+    `cedidos_map`/`aceptados_map`: opcionales, ya calculados por el llamador
+    (ver `precalcular_cedidos_aceptados`).
     """
     if publicacion.tipo != "cambio":
         return []
 
     candidatas = _resolver_candidatas(publicacion, candidatas)
+    cedidos_por_pub, aceptados_por_pub = _resolver_mapas(publicacion, candidatas, cedidos_map, aceptados_map)
     candidatas_cambio = [c for c in candidatas if c.tipo == "cambio"]
 
-    cedidos_pub = _cedidos_abiertos(publicacion)
-    aceptados_pub = _aceptados(publicacion)
-
-    cedidos_por_pub = {c.id: _cedidos_abiertos(c) for c in candidatas_cambio}
-    aceptados_por_pub = {c.id: _aceptados(c) for c in candidatas_cambio}
+    cedidos_pub = cedidos_por_pub[publicacion.id]
+    aceptados_pub = aceptados_por_pub[publicacion.id]
 
     def _distintos(pub_x, pub_y):
         return pub_x.id != pub_y.id and pub_x.usuario_id != pub_y.usuario_id
@@ -735,7 +765,7 @@ def buscar_cadenas_parciales_4_para(publicacion, candidatas=None):
     return resultado
 
 
-def buscar_avisos_interes_para(publicacion, candidatas=None):
+def buscar_avisos_interes_para(publicacion, candidatas=None, cedidos_map=None, aceptados_map=None):
     """
     Devuelve publicaciones cambio con solapamiento unilateral respecto a `publicacion`.
 
@@ -744,21 +774,24 @@ def buscar_avisos_interes_para(publicacion, candidatas=None):
     partes para que puedan ampliar sus aceptados o explorar cadenas.
     Solo opera sobre publicaciones de tipo 'cambio'.
     `candidatas`: opcional, ya calculadas por el llamador (ver `_resolver_candidatas`).
+    `cedidos_map`/`aceptados_map`: opcionales, ya calculados por el llamador
+    (ver `precalcular_cedidos_aceptados`).
     """
     if publicacion.tipo != "cambio":
         return []
 
     candidatas = _resolver_candidatas(publicacion, candidatas)
+    cedidos_map, aceptados_map = _resolver_mapas(publicacion, candidatas, cedidos_map, aceptados_map)
 
-    cedidos_pub = _cedidos_abiertos(publicacion)
-    aceptados_pub = _aceptados(publicacion)
+    cedidos_pub = cedidos_map[publicacion.id]
+    aceptados_pub = aceptados_map[publicacion.id]
 
     resultado = []
     for c in candidatas:
         if c.tipo != "cambio":
             continue
-        cedidos_c = _cedidos_abiertos(c)
-        aceptados_c = _aceptados(c)
+        cedidos_c = cedidos_map[c.id]
+        aceptados_c = aceptados_map[c.id]
         a_da_a_b = bool(cedidos_pub & aceptados_c)
         b_da_a_a = bool(cedidos_c & aceptados_pub)
         if a_da_a_b ^ b_da_a_a:
@@ -897,13 +930,18 @@ def crear_pub_sintetica(pub_a, pub_b, pub_intermedio=None):
     return sint
 
 
-def buscar_sinteticas_que_coinciden_con(publicacion):
+def buscar_sinteticas_que_coinciden_con(publicacion, cedidos_map=None, aceptados_map=None):
     """
     Devuelve publicaciones sintéticas activas con las que `publicacion` forma
     un match directo (ambas direcciones cubiertas).
 
     Cuando una pub sintética coincide con `publicacion`, la cadena a 3 está
     completa y se puede crear el MatchCambio cadena_3.
+
+    `cedidos_map`/`aceptados_map`: opcionales, ya calculados por el llamador
+    (ver `precalcular_cedidos_aceptados`). Las sintéticas no forman parte de
+    `candidatas`, así que su caché de cedidos/aceptados es independiente:
+    solo se reutiliza el de `publicacion`.
     """
     if publicacion.tipo != "cambio":
         return []
@@ -929,8 +967,8 @@ def buscar_sinteticas_que_coinciden_con(publicacion):
         .all()
     )
 
-    cedidos_pub = _cedidos_abiertos(publicacion)
-    aceptados_pub = _aceptados(publicacion)
+    cedidos_pub = cedidos_map[publicacion.id] if cedidos_map is not None else _cedidos_abiertos(publicacion)
+    aceptados_pub = aceptados_map[publicacion.id] if aceptados_map is not None else _aceptados(publicacion)
 
     # La sintética tiene:
     #   cedido  = aceptados_A  (días que C libraría, cubiertos por A)

@@ -85,7 +85,7 @@ mismas notificaciones).
     que vive solo durante el request, es la opción más segura).
   - Commit: `perf: cachea franjas del grupo por request para evitar queries repetidas`
 
-- [ ] **Paso 3 — Calcular `cedidos`/`aceptados` de todas las candidatas una sola vez por request**
+- [x] **Paso 3 — Calcular `cedidos`/`aceptados` de todas las candidatas una sola vez por request** (2026-08-07)
   - Extraer a la ruta `editar()` (y a `publicar()` si comparte el mismo patrón — revisar)
     el cálculo de `{pub.id: _cedidos_abiertos(pub)}` y `{pub.id: _aceptados(pub)}` para
     `publicacion` + todas las `candidatas`, una única vez.
@@ -189,3 +189,38 @@ Resultado en el escenario del Paso 1 (`test_editar_publicacion_selects_crecen_co
 El crecimiento por candidata adicional baja de ~10.2 a ~5 SELECTs. Sigue
 habiendo N+1 (varias de las 6 funciones de búsqueda recalculan `_cedidos_abiertos`/`_aceptados`
 para las mismas candidatas), lo que aborda el Paso 3.
+
+### Paso 3 (2026-08-07)
+Se añadió `precalcular_cedidos_aceptados(publicacion, candidatas)` en
+`app/matching/service.py`, llamado una única vez en la ruta `editar()` (y en
+`publicar()` y en la ruta de contraoferta, que comparten el mismo patrón)
+justo después de `candidatas_activas_para(...)`, antes de que las 6 búsquedas
+de matching empiecen a crear matches. Las 6 funciones (`buscar_matches_para`,
+`buscar_cadenas_3_para`, `buscar_cadenas_4_para`,
+`buscar_cadenas_parciales_4_para`, `buscar_sinteticas_que_coinciden_con`,
+`buscar_avisos_interes_para`) aceptan ahora `cedidos_map`/`aceptados_map`
+opcionales (mismo patrón que `_resolver_candidatas`, vía el nuevo helper
+`_resolver_mapas`); si no se pasan, cada una los calcula igual que antes, así
+que no rompe ningún test ni llamada existente (p. ej. el comando CLI
+`rematch` en `app/__init__.py`, que sigue llamando sin estos mapas).
+
+Motivo por el que hacía falta precalcular *antes* de las búsquedas y no solo
+compartir el cálculo entre ellas: `db.session.commit()` (que ocurre dentro de
+las funciones de creación de matches, ejecutadas entre búsqueda y búsqueda)
+expira por defecto las instancias ORM ya cargadas, así que sin este
+precálculo cada búsqueda posterior volvía a lanzar queries para releer
+`turnos_cedidos`/`turnos_aceptados` de `publicacion` y de cada candidata.
+
+Test añadido: `test_editar_publicacion_selects_crecen_poco_con_candidatas_tras_paso_3`,
+que repite el escenario del Paso 1/2 y comprueba que el crecimiento de
+SELECTs por candidata adicional es menor que 2.
+
+Resultado en el mismo escenario:
+
+| Candidatas activas (cualquier_franja=True) | SELECTs antes del Paso 3 | SELECTs después del Paso 3 |
+|---|---|---|
+| 1 | 27 | 23 |
+| 6 | 52 | 28 |
+
+El crecimiento por candidata adicional baja de ~5 a **1.0 SELECT**. Suite
+completa (`pytest --testmon`) en verde.
