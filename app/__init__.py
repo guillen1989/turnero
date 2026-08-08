@@ -31,6 +31,9 @@ def create_app(config_name=None):
     app.config.from_object(config[config_name])
 
     db.init_app(app)
+    with app.app_context():
+        from app.db_timing import init_db_timing
+        init_db_timing(app, db.engine)
     migrate.init_app(app, db)
     babel.init_app(app, locale_selector=_get_locale)
     csrf.init_app(app)
