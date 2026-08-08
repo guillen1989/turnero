@@ -91,3 +91,30 @@ def test_no_registra_nada_si_esta_deshabilitado(caplog):
     app.test_client().get("/ping")
 
     assert not [r for r in caplog.records if r.name == "db_timing"]
+
+
+def test_los_logs_llegan_a_stdout_sin_configuracion_externa(capsys):
+    # La app en producción no llama a logging.basicConfig ni configura
+    # handlers propios, así que init_db_timing debe encargarse de que sus
+    # logs sean visibles (si no, caen silenciosamente por el nivel WARNING
+    # por defecto del logger raíz).
+    logger = logging.getLogger("db_timing")
+    for handler in list(logger.handlers):
+        logger.removeHandler(handler)
+    logger.setLevel(logging.NOTSET)
+    logger.propagate = True
+
+    app = Flask(__name__)
+    app.config["DB_TIMING_ENABLED"] = True
+    engine = _FakeEngine()
+    init_db_timing(app, engine)
+
+    @app.route("/ping")
+    def ping():
+        engine.pool._creator()
+        return "ok"
+
+    app.test_client().get("/ping")
+
+    salida = capsys.readouterr()
+    assert "db_timing endpoint=ping" in (salida.out + salida.err)

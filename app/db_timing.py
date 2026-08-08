@@ -17,6 +17,16 @@ def init_db_timing(app, engine):
     if not app.config.get("DB_TIMING_ENABLED"):
         return
 
+    # La app no configura logging.basicConfig ni handlers propios, así que
+    # sin esto los mensajes INFO se descartan silenciosamente por el nivel
+    # WARNING por defecto del logger raíz (nunca llegarían a los logs de
+    # Railway/gunicorn).
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(handler)
+
     original_creator = engine.pool._creator
 
     def timed_creator(*args, **kwargs):
