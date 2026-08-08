@@ -185,6 +185,30 @@ def test_rechazar_redirige_al_dashboard(client, db):
     assert resp.headers["Location"].endswith("/")
 
 
+def test_rechazar_redirige_con_estado(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.post(
+        f"/matches/{match.id}/rechazar",
+        data={"redirect_estado": "pendiente"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/?estado=pendiente")
+
+
+def test_confirmar_redirige_con_estado(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.post(
+        f"/matches/{match.id}/confirmar",
+        data={"redirect_estado": "activos"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/?estado=activos")
+
+
 # --- Desconfirmación ---
 
 def test_desconfirmar_requiere_login(client, db):
@@ -268,6 +292,19 @@ def test_desconfirmar_redirige_al_dashboard(client, db):
     resp = client.post(f"/matches/{match.id}/desconfirmar", follow_redirects=False)
     assert resp.status_code == 302
     assert resp.headers["Location"].endswith("/")
+
+
+def test_desconfirmar_redirige_con_estado(client, db):
+    ana, pedro, match = _setup_match(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    client.post(f"/matches/{match.id}/confirmar")
+    resp = client.post(
+        f"/matches/{match.id}/desconfirmar",
+        data={"redirect_estado": "pendiente"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/?estado=pendiente")
 
 
 def test_desconfirmar_no_desconfirma_al_otro_usuario(client, db):
