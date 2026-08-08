@@ -88,6 +88,7 @@ desde `main` (no `staging`), con PR contra `main`. Worktree creado en
 ---
 
 ## Paso 1 — Confirmar con datos reales que el coste es la conexión, no las queries ni el matching
+- [x] Completado (fecha: 2026-08-08) — hipótesis **descartada**, ver sección "Hallazgos" al final de este documento. Pausa para decidir siguiente paso con el usuario.
 
 **Contexto a leer:** `config.py` (`ProductionConfig.SQLALCHEMY_ENGINE_OPTIONS`),
 `docs/tiempo.md` (Paso 1 y Paso 4), `docs/cambio.md` en el historial de git
@@ -220,4 +221,57 @@ commit).
   hipótesis de N+1.
 
 ## Hallazgos
-_(pendiente — se rellena en el Paso 1)_
+
+### Paso 1 (2026-08-08) — Hipótesis de reconexión **descartada**
+
+Instrumentación desplegada en staging (`app/db_timing.py`, envuelve
+`engine.pool._creator` para medir `connect_ms` — tiempo de abrir una
+conexión física nueva — por separado de `rest_ms` — resto de la
+petición). Datos reales capturados vía `railway logs` tras provocar
+peticiones GET reales a `/publicaciones/<id>/editar` (endpoint
+`publicaciones.editar`) con sesión autenticada (cuenta demo de staging):
+
+```
+db_timing endpoint=publicaciones.editar total_ms=26.5  connect_ms=0.0  rest_ms=26.5
+db_timing endpoint=publicaciones.editar total_ms=17.1  connect_ms=0.0  rest_ms=17.1
+db_timing endpoint=publicaciones.editar total_ms=14.5  connect_ms=0.0  rest_ms=14.5
+db_timing endpoint=publicaciones.editar total_ms=154.0 connect_ms=33.7 rest_ms=120.3
+db_timing endpoint=publicaciones.editar total_ms=20.5  connect_ms=0.0  rest_ms=20.5
+db_timing endpoint=publicaciones.editar total_ms=17.2  connect_ms=0.0  rest_ms=17.2
+db_timing endpoint=publicaciones.editar total_ms=14.5  connect_ms=0.0  rest_ms=14.5
+db_timing endpoint=publicaciones.editar total_ms=16.1  connect_ms=0.0  rest_ms=16.1
+```
+
+También se capturó una conexión física nueva aislada (`auth.login`, tras
+redeploy con el pool vacío):
+
+```
+db_timing physical_connect_ms=8.3
+```
+
+**Conclusión:** incluso el caso con reconexión física real
+(`connect_ms=33.7`) tarda decenas de milisegundos, no segundos. El
+`total_ms` más alto observado es 154ms — dos órdenes de magnitud por
+debajo de los ~10s reportados en producción. La hipótesis de
+`docs/tiempo.md` ("el coste dominante es el TLS handshake/reconexión a
+Postgres") **no se sostiene** con estos datos: abrir una conexión nueva
+contra la Postgres gestionada de Railway es barato.
+
+**Nota de contexto:** las peticiones de prueba se hicieron poco después
+de un redeploy (pool recién creado), no tras un gap de ~3.7h como el
+tráfico real. Aun así, el dato de `physical_connect_ms=8.3` mide
+directamente el coste de abrir una conexión física — que es la misma
+operación que ocurriría tras un gap largo — y ese coste es bajo
+independientemente de cuándo se dispare. No hay margen realista para que
+ese mismo `connect()` tarde ~10s solo por haber esperado más tiempo antes
+de ejecutarse.
+
+**Se descartan** los pasos 2-3 de este plan (warm-up periódico) tal como
+estaban planteados, porque atacarían un coste que estos datos muestran
+que no es el dominante. **Pendiente de decidir con el usuario** cuál es
+el siguiente paso: los ~10s reportados en producción siguen sin
+explicación confirmada — candidatos a investigar (no descartados ni
+confirmados todavía): tiempo de cola/arranque de un worker de gunicorn
+tras estar inactivo (cold start del proceso, no de la conexión),
+latencia de red/DNS específica de producción vs. staging, o algo
+específico del entorno de producción que no se reproduce en staging.

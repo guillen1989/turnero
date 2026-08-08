@@ -4,7 +4,6 @@ import time
 from flask import g, has_request_context, request
 
 logger = logging.getLogger("db_timing")
-print("DB_TIMING_MODULE_LOADED_DEBUG_MARKER", flush=True)
 
 
 def init_db_timing(app, engine):
