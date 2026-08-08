@@ -275,3 +275,51 @@ confirmados todavía): tiempo de cola/arranque de un worker de gunicorn
 tras estar inactivo (cold start del proceso, no de la conexión),
 latencia de red/DNS específica de producción vs. staging, o algo
 específico del entorno de producción que no se reproduce en staging.
+
+### Paso 1 (2026-08-08) — Repetido en producción (más volumen de datos real)
+
+Mismo experimento repetido contra Railway **producción** (no staging), a
+petición explícita del usuario para contrastar con datos reales de un
+entorno con más volumen ("pruébalo todo, pero con railway production en
+lugar de staging ... quiero ver cómo salen las pruebas en un entorno real
+con más volumen de datos"). Instrumentación desplegada vía PR #63
+(`main`), `DB_TIMING_ENABLED=true` activado solo para esta prueba.
+Peticiones GET reales a `/publicaciones/867/editar` con sesión demo
+autenticada:
+
+```
+db_timing endpoint=publicaciones.editar total_ms=146.4 connect_ms=0.0  rest_ms=146.4
+db_timing endpoint=publicaciones.editar total_ms=131.5 connect_ms=0.0  rest_ms=131.5
+db_timing endpoint=publicaciones.editar total_ms=114.4 connect_ms=0.0  rest_ms=114.4
+db_timing endpoint=publicaciones.editar total_ms=112.8 connect_ms=0.0  rest_ms=112.8
+db_timing endpoint=publicaciones.editar total_ms=114.9 connect_ms=0.0  rest_ms=114.9
+db_timing endpoint=publicaciones.editar total_ms=111.5 connect_ms=0.0  rest_ms=111.5
+db_timing endpoint=publicaciones.editar total_ms=110.6 connect_ms=0.0  rest_ms=110.6
+db_timing endpoint=publicaciones.editar total_ms=253.0 connect_ms=34.8 rest_ms=218.2
+```
+
+También se capturó la primera conexión física del pool tras el redeploy
+(pool vacío, arranque en frío real, no simulado):
+
+```
+db_timing physical_connect_ms=788.3
+```
+
+**Conclusión:** confirma lo observado en staging. El `total_ms` más alto
+en producción es 253ms (con reconexión incluida, `connect_ms=34.8`) — muy
+en línea con los números de staging, y de nuevo dos órdenes de magnitud
+por debajo de los ~10s reportados. Incluso el peor caso medido en todo el
+experimento, la primera conexión física del pool tras un redeploy en
+producción (`physical_connect_ms=788.3`), sigue estando muy lejos de 10s.
+Todas las peticiones HTTP completas (medidas con `curl -w time_total`)
+tardaron entre 0.4s y 0.6s de punta a punta.
+
+La hipótesis de reconexión queda **descartada también en producción**,
+con datos reales y mayor volumen. El origen de los ~10s reportados sigue
+sin confirmarse; se mantienen como candidatos a investigar los mismos de
+la nota anterior (cold start de worker gunicorn, latencia de red/DNS
+específica de producción, u otra causa no reproducida en estas pruebas
+puntuales).
+
+`DB_TIMING_ENABLED` se ha desactivado en producción tras esta prueba,
+dejando el entorno como estaba antes de empezar.
