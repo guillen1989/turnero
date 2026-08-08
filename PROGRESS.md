@@ -29,6 +29,14 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] fix: elimina el problema N+1 de commits en las rutas batch de
+  planilla (`rango/aplicar`, `multiples/aplicar`, `vacios/aplicar`), que
+  hacían un `db.session.commit()` por cada día procesado. `añadir_turno` y
+  `establecer_estado_dia` aceptan ahora `commit=False`; cada ruta hace un
+  único commit al final y `rollback()` con mensaje de error si falla a
+  mitad de lote (todo-o-nada). Tests en `test_planilla_relleno.py` (5
+  tests: un solo commit por ruta, regresión de un día, atomicidad ante
+  fallo simulado).
 - [x] fix: al confirmar/rechazar/desconfirmar un match desde el dashboard,
   la redirección conserva el filtro de estado activo (`?estado=...`) en vez
   de volver siempre a la vista por defecto. Nuevo campo oculto

@@ -36,9 +36,12 @@ def _limpiar_turnos_dia_sin_commit(usuario, fecha: date, unidad=None):
     ).delete()
 
 
-def añadir_turno(usuario, fecha: date, franja_horaria_id: int, unidad=None) -> TurnoPlanilla:
+def añadir_turno(usuario, fecha: date, franja_horaria_id: int, unidad=None, commit=True) -> TurnoPlanilla:
     """Añade un turno de trabajo. Limpia el estado especial del día si lo había.
     Idempotente: no falla si el mismo turno ya existe.
+
+    Si commit=False, el caller es responsable de hacer db.session.commit()
+    (útil para operaciones batch que procesan varios días con un solo commit).
     """
     if unidad is None:
         unidad = usuario.unidad
@@ -52,7 +55,8 @@ def añadir_turno(usuario, fecha: date, franja_horaria_id: int, unidad=None) -> 
     _get_o_crear_planilla_mes(usuario, fecha.year, fecha.month, unidad)
     turno = TurnoPlanilla(usuario=usuario, fecha=fecha, franja_horaria_id=franja_horaria_id, unidad_id=unidad.id)
     db.session.add(turno)
-    db.session.commit()
+    if commit:
+        db.session.commit()
     return turno
 
 
@@ -68,9 +72,12 @@ def eliminar_turno(usuario, fecha: date, franja_horaria_id: int) -> bool:
     return True
 
 
-def establecer_estado_dia(usuario, fecha: date, tipo: str, unidad=None) -> EstadoDiaPlanilla:
+def establecer_estado_dia(usuario, fecha: date, tipo: str, unidad=None, commit=True) -> EstadoDiaPlanilla:
     """Marca el día como libre / vacaciones / no_disponible.
     Elimina los turnos de trabajo del día si los hubiera (son mutuamente excluyentes).
+
+    Si commit=False, el caller es responsable de hacer db.session.commit()
+    (útil para operaciones batch que procesan varios días con un solo commit).
     """
     if unidad is None:
         unidad = usuario.unidad
@@ -89,7 +96,8 @@ def establecer_estado_dia(usuario, fecha: date, tipo: str, unidad=None) -> Estad
         estado.tipo = tipo
 
     _get_o_crear_planilla_mes(usuario, fecha.year, fecha.month, unidad)
-    db.session.commit()
+    if commit:
+        db.session.commit()
     return estado
 
 

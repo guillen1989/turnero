@@ -289,12 +289,18 @@ def rango_aplicar():
         flash(_("Selección no válida."), "error")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    for d in range(dia_inicio, dia_fin + 1):
-        fecha = date(anyo, mes, d)
-        if tipo_estado:
-            establecer_estado_dia(current_user, fecha, tipo_estado, unidad=unidad_activa)
-        else:
-            añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa)
+    try:
+        for d in range(dia_inicio, dia_fin + 1):
+            fecha = date(anyo, mes, d)
+            if tipo_estado:
+                establecer_estado_dia(current_user, fecha, tipo_estado, unidad=unidad_activa, commit=False)
+            else:
+                añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa, commit=False)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash(_("Error al aplicar los cambios. No se ha modificado ningún día."), "error")
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     n = dia_fin - dia_inicio + 1
     flash(_("%(n)s día(s) actualizados.", n=n), "success")
@@ -321,19 +327,25 @@ def multiples_aplicar():
     if tipo_estado is None and franja_id is None:
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    count = 0
-    for fecha_str in fechas_strs:
-        try:
-            fecha = date.fromisoformat(fecha_str)
-            if fecha.year != anyo or fecha.month != mes:
-                continue  # sólo fechas del mes visible
-            if tipo_estado:
-                establecer_estado_dia(current_user, fecha, tipo_estado, unidad=unidad_activa)
-            else:
-                añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa)
-            count += 1
-        except ValueError:
-            pass
+    try:
+        count = 0
+        for fecha_str in fechas_strs:
+            try:
+                fecha = date.fromisoformat(fecha_str)
+                if fecha.year != anyo or fecha.month != mes:
+                    continue  # sólo fechas del mes visible
+                if tipo_estado:
+                    establecer_estado_dia(current_user, fecha, tipo_estado, unidad=unidad_activa, commit=False)
+                else:
+                    añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa, commit=False)
+                count += 1
+            except ValueError:
+                pass
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash(_("Error al aplicar los cambios. No se ha modificado ningún día."), "error")
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     if count:
         flash(_("%(count)s día(s) actualizados.", count=count), "success")
@@ -419,11 +431,17 @@ def vacios_aplicar():
         flash(_("No hay días vacíos en este mes."), "info")
         return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
-    for fecha in vacios:
-        if tipo_estado:
-            establecer_estado_dia(current_user, fecha, tipo_estado, unidad=unidad_activa)
-        else:
-            añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa)
+    try:
+        for fecha in vacios:
+            if tipo_estado:
+                establecer_estado_dia(current_user, fecha, tipo_estado, unidad=unidad_activa, commit=False)
+            else:
+                añadir_turno(current_user, fecha, franja_id, unidad=unidad_activa, commit=False)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash(_("Error al aplicar los cambios. No se ha modificado ningún día."), "error")
+        return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
 
     flash(_("%(n)s día(s) vacío(s) rellenados.", n=len(vacios)), "success")
     return redirect(url_for("planilla.index", anyo=anyo, mes=mes))
