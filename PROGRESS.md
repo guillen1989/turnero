@@ -29,6 +29,14 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] fix: elimina el problema N+1 de commits en las rutas batch de
+  planilla (`rango/aplicar`, `multiples/aplicar`, `vacios/aplicar`), que
+  hacían un `db.session.commit()` por cada día procesado. `añadir_turno` y
+  `establecer_estado_dia` aceptan ahora `commit=False`; cada ruta hace un
+  único commit al final y `rollback()` con mensaje de error si falla a
+  mitad de lote (todo-o-nada). Tests en `test_planilla_relleno.py` (5
+  tests: un solo commit por ruta, regresión de un día, atomicidad ante
+  fallo simulado).
 - [x] feat: sistema de eliminación (uno a uno y Eliminar todos) en la pestaña
   Confirmados de Mis cambios publicados, replicando el mismo sistema ya
   existente en Caducados. Nueva ruta `POST /publicaciones/eliminar-confirmadas`,

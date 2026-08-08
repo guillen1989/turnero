@@ -243,3 +243,140 @@ def test_vacios_aplicar_sin_seleccion_redirige(client, db):
         "mes": 7,
     }, follow_redirects=False)
     assert resp.status_code == 302
+
+
+# ── Tests de commits N+1 corregidos ─────────────────────────────────────────
+
+def test_rango_aplica_con_un_solo_commit(client, db):
+    """Al aplicar un estado a 10 días, db.session.commit se llama una sola vez."""
+    from unittest.mock import patch
+
+    usuario, _, _ = _setup(client, db, "rango_1c@t.es")
+    with patch.object(db.session, "commit", wraps=db.session.commit) as commit_spy:
+        client.post("/planilla/rango/aplicar", data={
+            "dia_inicio": 1,
+            "dia_fin": 10,
+            "seleccion": "libre",
+            "anyo": 2026,
+            "mes": 7,
+        })
+    assert commit_spy.call_count == 1
+    estados = get_estados_mes(usuario, 2026, 7)
+    assert len(estados) == 10
+
+
+def test_multiples_aplica_con_un_solo_commit(client, db):
+    """Al aplicar un turno a varios días sueltos, db.session.commit se llama una sola vez."""
+    from unittest.mock import patch
+
+    usuario, franja_m, _ = _setup(client, db, "multi_1c@t.es")
+    fechas = [date(2026, 7, 1), date(2026, 7, 5), date(2026, 7, 10)]
+    with patch.object(db.session, "commit", wraps=db.session.commit) as commit_spy:
+        client.post("/planilla/multiples/aplicar", data={
+            "fecha[]": [f.isoformat() for f in fechas],
+            "seleccion": str(franja_m.id),
+            "anyo": 2026,
+            "mes": 7,
+        })
+    assert commit_spy.call_count == 1
+    turnos = TurnoPlanilla.query.filter_by(usuario_id=usuario.id).all()
+    assert len(turnos) == 3
+
+
+def test_vacios_aplica_con_un_solo_commit(client, db):
+    """Al rellenar todos los días vacíos de un mes, db.session.commit se llama una sola vez."""
+    from unittest.mock import patch
+
+    usuario, _, _ = _setup(client, db, "vacios_1c@t.es")
+    with patch.object(db.session, "commit", wraps=db.session.commit) as commit_spy:
+        client.post("/planilla/vacios/aplicar", data={
+            "seleccion": "libre",
+            "anyo": 2026,
+            "mes": 7,
+        })
+    assert commit_spy.call_count == 1
+    estados = get_estados_mes(usuario, 2026, 7)
+    assert len(estados) == 31
+
+
+def test_rango_un_solo_dia_sigue_funcionando(client, db):
+    """Regresión: aplicar un estado a un solo día con rango_aplicar funciona igual."""
+    from unittest.mock import patch
+
+    usuario, _, _ = _setup(client, db, "rango_reg@t.es")
+    with patch.object(db.session, "commit", wraps=db.session.commit) as commit_spy:
+        client.post("/planilla/rango/aplicar", data={
+            "dia_inicio": 20,
+            "dia_fin": 20,
+            "seleccion": "vacaciones",
+            "anyo": 2026,
+            "mes": 7,
+        })
+    assert commit_spy.call_count == 1
+    estados = get_estados_mes(usuario, 2026, 7)
+    assert len(estados) == 1
+    assert estados[date(2026, 7, 20)].tipo == "vacaciones"
+
+
+def test_rango_rollback_ante_error_no_deja_cambios_parciales(client, db):
+    """Si falla a mitad del lote, no se persiste ningún cambio (todo o nada)."""
+    from unittest.mock import patch
+
+    usuario, _, _ = _setup(client, db, "rango_atom@t.es")
+    call_count = 0
+    original = __import__("app.services.planilla", fromlist=["establecer_estado_dia"]).establecer_estado_dia
+
+    def falla_en_el_quinto(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 5:
+            raise RuntimeError("fallo simulado")
+        return original(*args, **kwargs)
+
+    with patch("app.routes.planilla.establecer_estado_dia", side_effect=falla_en_el_quinto):
+        resp = client.post("/planilla/rango/aplicar", data={
+            "dia_inicio": 1,
+            "dia_fin": 10,
+            "seleccion": "libre",
+            "anyo": 2026,
+            "mes": 7,
+        }, follow_redirects=True)
+
+    assert resp.status_code == 200
+    assert b"Error" in resp.data or b"error" in resp.data
+    estados = get_estados_mes(usuario, 2026, 7)
+    assert len(estados) == 0
+
+
+def test_service_con_commit_por_defecto_no_rompe_uso_directo(db):
+    """Las funciones de servicio con commit=True (default) siguen funcionando
+    cuando se llaman directamente, no solo desde las rutas batch."""
+    from app.services.planilla import añadir_turno, establecer_estado_dia
+    from app.models import Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario
+
+    hospital = Hospital(nombre="H-directo")
+    grupo = GrupoIntercambio()
+    db.session.add_all([hospital, grupo])
+    db.session.commit()
+
+    unidad = Unidad(nombre="UCI", hospital=hospital, grupo_intercambio=grupo)
+    categoria = Categoria(nombre="Cat-directo")
+    franja = FranjaHoraria(
+        nombre="M", hora_inicio=time(8, 0), hora_fin=time(15, 0),
+        grupo_intercambio=grupo,
+    )
+    db.session.add_all([unidad, categoria, franja])
+    db.session.commit()
+
+    usuario = Usuario(nombre="Dir", email="dir@test.es", unidad=unidad, categoria=categoria)
+    usuario.set_password("pass")
+    db.session.add(usuario)
+    db.session.commit()
+
+    turno = añadir_turno(usuario, date(2026, 7, 3), franja.id)
+    assert turno.id is not None
+
+    estado = establecer_estado_dia(usuario, date(2026, 7, 5), "libre")
+    assert estado.tipo == "libre"
+
+    assert TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 3)).count() == 1
