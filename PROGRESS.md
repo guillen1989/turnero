@@ -29,6 +29,12 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] fix: al confirmar/rechazar/desconfirmar un match desde el dashboard,
+  la redirección conserva el filtro de estado activo (`?estado=...`) en vez
+  de volver siempre a la vista por defecto. Nuevo campo oculto
+  `redirect_estado` en los formularios y helper `_redirect_a_dashboard()`
+  en `app/routes/matches.py`. Tests en `test_confirmacion.py` (3 tests:
+  confirmar/rechazar/desconfirmar con estado preservado).
 - [x] feat: sistema de eliminación (uno a uno y Eliminar todos) en la pestaña
   Confirmados de Mis cambios publicados, replicando el mismo sistema ya
   existente en Caducados. Nueva ruta `POST /publicaciones/eliminar-confirmadas`,

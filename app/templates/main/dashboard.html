@@ -153,6 +153,7 @@
       <div class="match-acciones">
         <form method="post" action="{{ url_for('matches.confirmar', match_id=match.id) }}" style="display:inline" class="{{ 'form-confirmar-con-firma' if admite_documento }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="redirect_estado" value="{{ estado_filtro }}">
           {% if admite_documento %}
           <input type="hidden" name="firma" class="firma-input">
           <input type="hidden" name="guardar_firma" class="guardar-firma-input">
@@ -163,6 +164,7 @@
         </form>
         <form method="post" action="{{ url_for('matches.rechazar', match_id=match.id) }}" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="redirect_estado" value="{{ estado_filtro }}">
           <button type="submit" class="btn btn-danger btn-sm">{{ _('Rechazar') }}</button>
         </form>
         {% if match.estado == 'confirmado_parcial' %}
@@ -177,6 +179,7 @@
       <div class="match-acciones">
         <form method="post" action="{{ url_for('matches.desconfirmar', match_id=match.id) }}" style="display:inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="redirect_estado" value="{{ estado_filtro }}">
           <button type="submit" class="btn btn-secondary btn-sm">{{ _('Desconfirmar') }}</button>
         </form>
         <a href="{{ url_for('publicaciones.editar', pub_id=mi_part.publicacion_id) }}" class="btn btn-secondary btn-sm">{{ _('Editar') }}</a>

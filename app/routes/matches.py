@@ -14,6 +14,13 @@ bp = Blueprint("matches", __name__)
 _ESTADOS_CERRADOS = ("confirmado_total", "rechazado")
 
 
+def _redirect_a_dashboard():
+    estado = request.form.get("redirect_estado", "")
+    if estado:
+        return redirect(url_for("main.index", estado=estado))
+    return redirect(url_for("main.index"))
+
+
 def _get_match_validado(match_id):
     """Devuelve el match o aborta con 403/404/409 según corresponda."""
     match = db.get_or_404(MatchCambio, match_id)
@@ -34,7 +41,7 @@ def confirmar(match_id):
         firma = request.form.get("firma", "").strip()
         if not firma.startswith("data:image/"):
             flash(_("Debes firmar el cambio antes de confirmarlo."), "danger")
-            return redirect(url_for("main.index"))
+            return _redirect_a_dashboard()
 
         documento = DocumentoCambio.query.filter_by(match_id=match.id).first()
         if documento is None:
@@ -49,7 +56,7 @@ def confirmar(match_id):
 
     confirmar_participacion(match, current_user.id)
     flash(_("Has confirmado tu parte del cambio."), "success")
-    return redirect(url_for("main.index"))
+    return _redirect_a_dashboard()
 
 
 @bp.post("/matches/<int:match_id>/desconfirmar")
@@ -64,7 +71,7 @@ def desconfirmar(match_id):
         abort(409)
     desconfirmar_participacion(match, current_user.id)
     flash(_("Has retirado tu confirmación del cambio."), "info")
-    return redirect(url_for("main.index"))
+    return _redirect_a_dashboard()
 
 
 @bp.post("/matches/<int:match_id>/rechazar")
@@ -73,4 +80,4 @@ def rechazar(match_id):
     match = _get_match_validado(match_id)
     rechazar_match(match, current_user.id)
     flash(_("Has rechazado el cambio."), "info")
-    return redirect(url_for("main.index"))
+    return _redirect_a_dashboard()
