@@ -44,6 +44,11 @@ class Config:
     # scripts/seed_staging.py para UCO·La Paz·Enfermería).
     DEMO_SUPERVISORA_LOGIN_EMAIL = os.environ.get("DEMO_SUPERVISORA_LOGIN_EMAIL", "")
     DEMO_SUPERVISORA_LOGIN_PASSWORD = os.environ.get("DEMO_SUPERVISORA_LOGIN_PASSWORD", "")
+    # Instrumentación temporal de diagnóstico (docs/rapido_cambio.md, Paso 1):
+    # loguea, por petición, el tiempo de crear una conexión física nueva a
+    # Postgres vs. el resto del tiempo de la petición. Desactivada por
+    # defecto; retirar del todo tras el Paso 3 del plan.
+    DB_TIMING_ENABLED = os.environ.get("DB_TIMING_ENABLED", "").lower() == "true"
 
 
 class DevelopmentConfig(Config):

@@ -103,8 +103,12 @@ def eliminar_busqueda(busqueda_id, usuario_id):
     db.session.commit()
 
 
-def notificar_busquedas_guardadas(pub):
-    """Creates panel notifications and sends push for saved searches matching a new pub."""
+def notificar_busquedas_guardadas(pub, commit=True):
+    """
+    Creates panel notifications and sends push for saved searches matching a new pub.
+    `commit`: si es False, no hace su propio commit (el llamador ya va a
+    commitear tras esta llamada, para evitar un round-trip extra a BD).
+    """
     grupo_id = pub.usuario.unidad.grupo_intercambio_id
     categoria_id = pub.usuario.categoria_id
 
@@ -132,4 +136,5 @@ def notificar_busquedas_guardadas(pub):
             ))
             enviar_push_condicional(busqueda.usuario, "busqueda_guardada", unidad_nombre=pub.usuario.unidad.nombre)
 
-    db.session.commit()
+    if commit:
+        db.session.commit()

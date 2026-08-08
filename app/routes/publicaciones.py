@@ -27,6 +27,7 @@ from app.matching.service import (
     crear_match_cadena_3,
     crear_match_cadena_4,
     crear_match_directo,
+    precalcular_cedidos_aceptados,
     procesar_aviso_y_sintetica,
     procesar_cadena_parcial_4,
 )
@@ -308,17 +309,18 @@ def nueva():
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
         pub = publicar_cambio(current_user.id, cedidos, aceptados, mensaje=mensaje, tipo=tipo, unidad_id=unidad_activa.id)
         candidatas = candidatas_activas_para(pub)
-        for candidata in buscar_matches_para(pub, candidatas):
+        cedidos_map, aceptados_map = precalcular_cedidos_aceptados(pub, candidatas)
+        for candidata in buscar_matches_para(pub, candidatas, cedidos_map, aceptados_map):
             crear_match_directo(pub, candidata)
-        for pub_b, pub_c in buscar_cadenas_3_para(pub, candidatas):
+        for pub_b, pub_c in buscar_cadenas_3_para(pub, candidatas, cedidos_map, aceptados_map):
             crear_match_cadena_3(pub, pub_b, pub_c)
-        for pub_b, pub_c, pub_d in buscar_cadenas_4_para(pub, candidatas):
+        for pub_b, pub_c, pub_d in buscar_cadenas_4_para(pub, candidatas, cedidos_map, aceptados_map):
             crear_match_cadena_4(pub, pub_b, pub_c, pub_d)
-        for pub_a, pub_b, pub_c in buscar_cadenas_parciales_4_para(pub, candidatas):
+        for pub_a, pub_b, pub_c in buscar_cadenas_parciales_4_para(pub, candidatas, cedidos_map, aceptados_map):
             procesar_cadena_parcial_4(pub_a, pub_b, pub_c)
-        for sint in buscar_sinteticas_que_coinciden_con(pub):
+        for sint in buscar_sinteticas_que_coinciden_con(pub, cedidos_map, aceptados_map):
             _resolver_sintetica(pub, sint)
-        for candidata in buscar_avisos_interes_para(pub, candidatas):
+        for candidata in buscar_avisos_interes_para(pub, candidatas, cedidos_map, aceptados_map):
             procesar_aviso_y_sintetica(pub, candidata)
         flash(_("Publicación creada correctamente."), "success")
         calcular_y_guardar_compatibilidad(pub)
@@ -404,17 +406,18 @@ def editar(pub_id):
         mensaje = request.form.get("mensaje", "").strip()[:200] or None
         editar_publicacion(pub, cedidos, aceptados, mensaje=mensaje, tipo=tipo)
         candidatas = candidatas_activas_para(pub)
-        for candidata in buscar_matches_para(pub, candidatas):
+        cedidos_map, aceptados_map = precalcular_cedidos_aceptados(pub, candidatas)
+        for candidata in buscar_matches_para(pub, candidatas, cedidos_map, aceptados_map):
             crear_match_directo(pub, candidata)
-        for pub_b, pub_c in buscar_cadenas_3_para(pub, candidatas):
+        for pub_b, pub_c in buscar_cadenas_3_para(pub, candidatas, cedidos_map, aceptados_map):
             crear_match_cadena_3(pub, pub_b, pub_c)
-        for pub_b, pub_c, pub_d in buscar_cadenas_4_para(pub, candidatas):
+        for pub_b, pub_c, pub_d in buscar_cadenas_4_para(pub, candidatas, cedidos_map, aceptados_map):
             crear_match_cadena_4(pub, pub_b, pub_c, pub_d)
-        for pub_a, pub_b, pub_c in buscar_cadenas_parciales_4_para(pub, candidatas):
+        for pub_a, pub_b, pub_c in buscar_cadenas_parciales_4_para(pub, candidatas, cedidos_map, aceptados_map):
             procesar_cadena_parcial_4(pub_a, pub_b, pub_c)
-        for sint in buscar_sinteticas_que_coinciden_con(pub):
+        for sint in buscar_sinteticas_que_coinciden_con(pub, cedidos_map, aceptados_map):
             _resolver_sintetica(pub, sint)
-        for candidata in buscar_avisos_interes_para(pub, candidatas):
+        for candidata in buscar_avisos_interes_para(pub, candidatas, cedidos_map, aceptados_map):
             procesar_aviso_y_sintetica(pub, candidata)
         flash(_("Publicación actualizada."), "success")
         return redirect(url_for("main.index"))
@@ -672,17 +675,18 @@ def contraoferta(pub_id):
         pub_nueva = publicar_cambio(current_user.id, cedidos, aceptados, tipo="cambio", mensaje=mensaje, unidad_id=unidad_activa.id)
 
         candidatas = candidatas_activas_para(pub_nueva)
-        for candidata in buscar_matches_para(pub_nueva, candidatas):
+        cedidos_map, aceptados_map = precalcular_cedidos_aceptados(pub_nueva, candidatas)
+        for candidata in buscar_matches_para(pub_nueva, candidatas, cedidos_map, aceptados_map):
             crear_match_directo(pub_nueva, candidata)
-        for pub_b, pub_c in buscar_cadenas_3_para(pub_nueva, candidatas):
+        for pub_b, pub_c in buscar_cadenas_3_para(pub_nueva, candidatas, cedidos_map, aceptados_map):
             crear_match_cadena_3(pub_nueva, pub_b, pub_c)
-        for pub_b, pub_c, pub_d in buscar_cadenas_4_para(pub_nueva, candidatas):
+        for pub_b, pub_c, pub_d in buscar_cadenas_4_para(pub_nueva, candidatas, cedidos_map, aceptados_map):
             crear_match_cadena_4(pub_nueva, pub_b, pub_c, pub_d)
-        for pub_a, pub_b, pub_c in buscar_cadenas_parciales_4_para(pub_nueva, candidatas):
+        for pub_a, pub_b, pub_c in buscar_cadenas_parciales_4_para(pub_nueva, candidatas, cedidos_map, aceptados_map):
             procesar_cadena_parcial_4(pub_a, pub_b, pub_c)
-        for sint in buscar_sinteticas_que_coinciden_con(pub_nueva):
+        for sint in buscar_sinteticas_que_coinciden_con(pub_nueva, cedidos_map, aceptados_map):
             _resolver_sintetica(pub_nueva, sint)
-        for candidata in buscar_avisos_interes_para(pub_nueva, candidatas):
+        for candidata in buscar_avisos_interes_para(pub_nueva, candidatas, cedidos_map, aceptados_map):
             procesar_aviso_y_sintetica(pub_nueva, candidata)
 
         notif = Notificacion(
