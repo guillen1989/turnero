@@ -233,4 +233,36 @@ la mejora es parcial).
 
 ## Hallazgos
 
-(Se completa al cerrar cada paso.)
+### Paso 1 (2026-08-10)
+
+Test: `tests/test_push_concurrencia.py::test_enviar_push_lanza_un_hilo_daemon_sin_limite_por_llamada`.
+
+Se llamó a `enviar_push` 50 veces seguidas (con `TESTING=False` para forzar
+el camino real de `threading.Thread(daemon=True).start()`, en vez del
+`_send()` síncrono que usa el resto de la suite), mockeando `webpush` con
+`time.sleep(0.05)` para simular la llamada HTTP síncrona de `pywebpush`.
+
+**Confirmado:** hoy no hay ningún límite de concurrencia. De los 50 hilos
+lanzados, el pico de hilos vivos a la vez llegó al máximo (50/50 en la
+ejecución local), muy por encima del umbral de aceptación del test
+(`>= 80%`). El bucle que lanza los 50 hilos tarda un orden de magnitud menos
+que el tiempo simulado de un solo `webpush` (crear un hilo no bloquea al
+llamador), coherente con el mecanismo sospechoso: si 47 suscriptores hacen
+match a la vez (como en los logs de producción del 2026-08-08), se lanzan
+~47 hilos casi simultáneos.
+
+**No perseguido en este paso:** la medición de contención de CPU/GIL del
+hilo principal mientras los hilos de push están activos. Con un mock basado
+en `time.sleep()` (que libera el GIL) no se puede reproducir de forma fiable
+la contención real, que en producción viene de la firma VAPID (ECDSA,
+CPU-bound) dentro de cada hilo, no de la espera de red en sí. Reproducir esa
+parte requeriría un mock que mantenga el GIL ocupado (p. ej. un bucle
+CPU-bound corto en vez de `sleep`), lo cual añade complejidad y
+fragilidad al test sin aportar más certeza sobre el mecanismo ya confirmado
+(ausencia de límite de concurrencia). Se considera que el resultado ya
+justifica seguir al Paso 2 (acotar la concurrencia con
+`ThreadPoolExecutor`), que resuelve el problema con o sin contención real de
+GIL: menos hilos simultáneos siempre reduce la presión sobre el worker.
+
+**Decisión:** se confirma contención apreciable (nº de hilos concurrentes
+sin tope) → se continúa con el Paso 2 tal como está planteado.
