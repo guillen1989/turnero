@@ -4,6 +4,7 @@ import time
 from flask import g, has_request_context, request
 
 logger = logging.getLogger("db_timing")
+print("DB_TIMING_MODULE_LOADED_DEBUG_MARKER", flush=True)
 
 
 def init_db_timing(app, engine):
@@ -40,23 +41,10 @@ def init_db_timing(app, engine):
 
     engine.pool._creator = timed_creator
 
-    original_connect = engine.pool.connect
-
-    def timed_connect(*args, **kwargs):
-        start = time.monotonic()
-        conn = original_connect(*args, **kwargs)
-        elapsed_ms = (time.monotonic() - start) * 1000
-        if has_request_context():
-            g.db_checkout_ms = getattr(g, "db_checkout_ms", 0.0) + elapsed_ms
-        return conn
-
-    engine.pool.connect = timed_connect
-
     @app.before_request
     def _db_timing_start():
         g.request_start = time.monotonic()
         g.db_connect_ms = 0.0
-        g.db_checkout_ms = 0.0
 
     @app.after_request
     def _db_timing_end(response):
@@ -64,11 +52,8 @@ def init_db_timing(app, engine):
         if start is not None:
             total_ms = (time.monotonic() - start) * 1000
             connect_ms = getattr(g, "db_connect_ms", 0.0)
-            checkout_ms = getattr(g, "db_checkout_ms", 0.0)
             logger.info(
-                "db_timing endpoint=%s total_ms=%.1f connect_ms=%.1f "
-                "checkout_ms=%.1f rest_ms=%.1f",
-                request.endpoint, total_ms, connect_ms, checkout_ms,
-                total_ms - connect_ms,
+                "db_timing endpoint=%s total_ms=%.1f connect_ms=%.1f rest_ms=%.1f",
+                request.endpoint, total_ms, connect_ms, total_ms - connect_ms,
             )
         return response
