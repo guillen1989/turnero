@@ -5,11 +5,19 @@ permiso revocado, servicio push caído, etc. El flujo de negocio
 no debe depender de si la notificación llega o no.
 """
 import json
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from flask import current_app
 from pywebpush import WebPushException, webpush
+
+# Tamaño del pool que ejecuta los envíos de push. Acotado y bajo (en línea
+# con los `--workers 3` de gunicorn) para no competir por el GIL del worker
+# sync que atiende peticiones HTTP cuando una edición dispara muchos envíos
+# de golpe (ver docs/fix-daemon.md). Un solo pool por proceso worker basta:
+# los workers de gunicorn son procesos separados, no hace falta compartirlo.
+MAX_WORKERS_PUSH = 4
+_executor = ThreadPoolExecutor(max_workers=MAX_WORKERS_PUSH, thread_name_prefix="push")
 
 # Tope diario de pushes de "oportunidad" (a 3 + a 4 combinadas) por usuario.
 # El matching de cadena_4 explora más combinaciones que el de cadena_3 (busca
@@ -256,7 +264,7 @@ def enviar_push(usuario, titulo, cuerpo, url="/", tag=None, urgente=False, unida
     if app.config.get("TESTING"):
         _send()
     else:
-        threading.Thread(target=_send, daemon=True).start()
+        _executor.submit(_send)
 
 
 def enviar_push_condicional(usuario, tipo, unidad_nombre=None):
