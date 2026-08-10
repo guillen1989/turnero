@@ -7,6 +7,7 @@ from app.models import DocumentoCambio, MatchCambio
 from app.services.documento_cambio import (
     crear_documento_cambio_desde_match, firmar_documento, match_admite_documento_cambio,
 )
+from app.services.feature_flags import feature_activa_para_usuario_actual
 from app.services.matches import confirmar_participacion, desconfirmar_participacion, rechazar_match
 
 bp = Blueprint("matches", __name__)
@@ -37,7 +38,7 @@ def _get_match_validado(match_id):
 def confirmar(match_id):
     match = _get_match_validado(match_id)
 
-    if match_admite_documento_cambio(match):
+    if match_admite_documento_cambio(match) and feature_activa_para_usuario_actual("hoja_cambio_digital"):
         firma = request.form.get("firma", "").strip()
         if not firma.startswith("data:image/"):
             flash(_("Debes firmar el cambio antes de confirmarlo."), "danger")

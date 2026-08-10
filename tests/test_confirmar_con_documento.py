@@ -14,6 +14,7 @@ from app.models import (
     TurnoAceptado,
     insertar_categorias_semilla,
 )
+from app.services.feature_flags import desactivar_global
 from app.services.registro import registrar_usuario
 
 FIRMA_ANA = (
@@ -239,6 +240,18 @@ def test_confirmar_cadena_no_exige_firma(client, db):
 
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     resp = client.post(f"/matches/{match.id}/confirmar", follow_redirects=False)
+    assert resp.status_code == 302
+    db.session.refresh(match)
+    assert match.estado == "confirmado_parcial"
+    assert DocumentoCambio.query.filter_by(match_id=match.id).first() is None
+
+
+def test_confirmar_simetrico_no_exige_firma_con_flag_hoja_cambio_digital_inactivo(client, db):
+    desactivar_global("hoja_cambio_digital")
+    ana, pedro, match = _setup_match_simetrico(db)
+    client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
+    resp = client.post(f"/matches/{match.id}/confirmar", follow_redirects=False)
+
     assert resp.status_code == 302
     db.session.refresh(match)
     assert match.estado == "confirmado_parcial"

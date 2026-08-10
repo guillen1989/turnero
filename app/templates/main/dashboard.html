@@ -141,7 +141,7 @@
            target="_blank" rel="noopener">{{ _('Avisar por WhatsApp') }}</a>
       </div>
       {% endif %}
-      {% set admite_documento = match_admite_documento_cambio(match) %}
+      {% set admite_documento = match_admite_documento_cambio(match) and feature_activa('hoja_cambio_digital') %}
       {% if match.estado == 'confirmado_total' %}
       <p class="match-esperando">{{ _('Cambio confirmado por todas las partes.') }}</p>
       {% if admite_documento and match.documento_cambio and match.documento_cambio.estado == 'completo' %}
