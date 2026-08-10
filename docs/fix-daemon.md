@@ -109,6 +109,7 @@ nombre de rama si difiere de la convención habitual
 ---
 
 ## Paso 2 — Acotar la concurrencia de hilos de push
+- [x] Completado (fecha: 2026-08-10)
 
 **Depende de:** Paso 1 confirmando contención apreciable.
 
@@ -266,3 +267,28 @@ GIL: menos hilos simultáneos siempre reduce la presión sobre el worker.
 
 **Decisión:** se confirma contención apreciable (nº de hilos concurrentes
 sin tope) → se continúa con el Paso 2 tal como está planteado.
+
+### Paso 2 (2026-08-10)
+
+`app/push/sender.py` sustituye `threading.Thread(daemon=True).start()` por
+un `ThreadPoolExecutor` singleton a nivel de módulo
+(`MAX_WORKERS_PUSH = 4`, alineado con `--workers 3` de gunicorn), enviado
+con `_executor.submit(_send)`. El camino síncrono bajo `TESTING` no cambia.
+
+Test actualizado (`tests/test_push_concurrencia.py::test_enviar_push_acota_concurrencia_con_pool`):
+mismo escenario del Paso 1 (50 llamadas seguidas, `webpush` mockeado con
+`time.sleep(0.05)`), pero ahora comprueba que el pico de ejecuciones
+concurrentes nunca supera `MAX_WORKERS_PUSH` y que las 50 llamadas terminan
+completándose (no se pierden envíos). El bucle que llama a `enviar_push`
+sigue sin bloquearse (`submit()` no espera al hilo, igual que antes con
+`Thread.start()`).
+
+Suite completa relacionada con push ejecutada de forma aislada (un único
+`pytest` corriendo a la vez, sin runs en paralelo sobre la misma BD de
+test — dos runs simultáneos producen fallos cruzados no relacionados por
+contención de la BD compartida, ver `feedback_avoid_full_test_suite` en
+memoria): `tests/test_push_concurrencia.py`, `tests/test_push.py` y
+`tests/test_push_count.py`, 25 tests, todos en verde. La suite completa con
+`pytest --testmon` deja un único fallo (`test_dashboard.py::test_dashboard_junte_wa_mensaje_incluye_semana_y_dias`),
+confirmado preexistente y no relacionado (falla igual en `main` sin este
+cambio; parece depender de la fecha del sistema).

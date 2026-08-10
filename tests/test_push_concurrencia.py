@@ -1,13 +1,14 @@
-"""Paso 1 de docs/fix-daemon.md: reproduce de forma determinista y rápida el
-mecanismo sospechoso -- enviar_push lanza un hilo daemon nuevo por cada
-notificación, sin ningún límite de concurrencia."""
+"""Paso 1 y Paso 2 de docs/fix-daemon.md: primero reproduce el mecanismo
+sospechoso -- enviar_push lanzaba un hilo daemon nuevo por cada notificación,
+sin ningún límite de concurrencia -- y luego confirma que el
+ThreadPoolExecutor del Paso 2 acota esa concurrencia."""
 import json
 import threading
 import time
 from unittest.mock import patch
 
 from app.models import Categoria, insertar_categorias_semilla
-from app.push.sender import enviar_push
+from app.push.sender import MAX_WORKERS_PUSH, enviar_push
 from app.services.registro import registrar_usuario
 
 SUBSCRIPTION = {
@@ -30,11 +31,13 @@ def _usuario_con_sub(db, email):
     return u
 
 
-def test_enviar_push_lanza_un_hilo_daemon_sin_limite_por_llamada(app, db):
+def test_enviar_push_acota_concurrencia_con_pool(app, db):
     """Llama a enviar_push N_SUSCRIPTORES veces seguidas (simulando el bucle
     de app/services/publicaciones.py:71 sobre suscriptores de búsquedas
-    guardadas) y mide cuántos de los hilos daemon lanzados llegan a estar
-    vivos a la vez. Si no hay límite, casi todos coinciden en el tiempo."""
+    guardadas) y mide cuántas ejecuciones de webpush llegan a estar activas
+    a la vez. Tras el Paso 2, el ThreadPoolExecutor compartido acota ese
+    pico a MAX_WORKERS_PUSH, en vez de lanzar un hilo sin límite por
+    llamada."""
     usuario = _usuario_con_sub(db, "carga@test.es")
 
     old_key = app.config.get("VAPID_PRIVATE_KEY")
@@ -45,53 +48,50 @@ def test_enviar_push_lanza_un_hilo_daemon_sin_limite_por_llamada(app, db):
     # Bajo TESTING=True (el valor real en el resto de la suite), enviar_push
     # ejecuta _send() síncronamente para que los mocks funcionen sin hilos.
     # Aquí lo desactivamos a propósito para reproducir el camino real de
-    # producción (threading.Thread(daemon=True).start()).
+    # producción (envío al ThreadPoolExecutor compartido).
     app.config["TESTING"] = False
 
     activos = 0
     pico_activos = 0
+    completados = 0
     lock = threading.Lock()
 
     def _webpush_lento(*args, **kwargs):
-        nonlocal activos, pico_activos
+        nonlocal activos, pico_activos, completados
         with lock:
             activos += 1
             pico_activos = max(pico_activos, activos)
         time.sleep(DURACION_SIMULADA_WEBPUSH)
         with lock:
             activos -= 1
+            completados += 1
 
     try:
         with patch("app.push.sender.webpush", side_effect=_webpush_lento):
-            hilos_antes = set(threading.enumerate())
-
             inicio_bucle = time.monotonic()
             for _ in range(N_SUSCRIPTORES):
                 enviar_push(usuario, "Título", "Cuerpo")
             duracion_bucle = time.monotonic() - inicio_bucle
 
-            hilos_lanzados = set(threading.enumerate()) - hilos_antes
-
             limite = time.monotonic() + 5
-            while any(h.is_alive() for h in hilos_lanzados) and time.monotonic() < limite:
+            while completados < N_SUSCRIPTORES and time.monotonic() < limite:
                 time.sleep(0.01)
     finally:
         app.config["VAPID_PRIVATE_KEY"] = old_key
         app.config["VAPID_CLAIM_EMAIL"] = old_email
         app.config["TESTING"] = old_testing
 
-    assert len(hilos_lanzados) == N_SUSCRIPTORES, (
-        "se esperaba un hilo daemon nuevo por cada llamada a enviar_push"
+    assert completados == N_SUSCRIPTORES, (
+        f"solo se completaron {completados} de {N_SUSCRIPTORES} envíos "
+        "dentro del tiempo de espera"
     )
-    # Hoy no hay ningún límite de concurrencia: en el pico, prácticamente
-    # todos los hilos lanzados coinciden en el tiempo. Tras el Paso 2 (pool
-    # acotado, p. ej. max_workers=4), este número debería bajar drásticamente.
-    assert pico_activos >= N_SUSCRIPTORES * 0.8, (
-        f"pico de hilos concurrentes = {pico_activos} de {N_SUSCRIPTORES} "
-        "lanzados -- se esperaba que casi todos coincidieran en el tiempo, "
-        "confirmando que hoy no hay límite de concurrencia"
+    # El pool acota la concurrencia a MAX_WORKERS_PUSH: nunca deberían
+    # coincidir más ejecuciones de webpush a la vez que el tamaño del pool.
+    assert pico_activos <= MAX_WORKERS_PUSH, (
+        f"pico de ejecuciones concurrentes = {pico_activos}, por encima del "
+        f"límite del pool ({MAX_WORKERS_PUSH})"
     )
-    # Lanzar un hilo no bloquea al hilo que hace el bucle (a diferencia de un
-    # pool acotado, donde llamada nº max_workers+1 esperaría). El bucle debe
-    # completarse mucho antes de que el primer hilo termine su sleep.
+    # Encolar en el pool no bloquea al hilo que hace el bucle (a diferencia
+    # de esperar a que cada hilo termine). El bucle debe completarse mucho
+    # antes de que todos los envíos simulados terminen.
     assert duracion_bucle < DURACION_SIMULADA_WEBPUSH * N_SUSCRIPTORES
