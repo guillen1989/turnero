@@ -273,10 +273,12 @@ def test_post_nuevo_junte_crea_documento_tipo_junte(db, client):
     _crear_franja_noche(db, claudia.unidad.grupo_intercambio)
     _login(client, claudia.email)
 
+    hoy = date.today()
+    lunes = hoy - timedelta(days=hoy.weekday()) + timedelta(days=7)
     resp = client.post("/documentos-cambio/nuevo", data={
         "tipo": "junte",
         "companero_id": juan.id,
-        "junte_semana": "2026-08-03",
+        "junte_semana": lunes.isoformat(),
         "junte_cadencia": "LMVD",
         "junte_noches": ["1", "2", "4", "6"],
     })
@@ -287,8 +289,8 @@ def test_post_nuevo_junte_crea_documento_tipo_junte(db, client):
     assert documento.tipo == "junte"
     assert len(documento.participantes) == 2
     claudia_fila = next(p for p in documento.participantes if p.usuario_id == claudia.id)
-    assert claudia_fila.turno_cede_fecha == date(2026, 8, 3)  # lunes cedido
-    assert claudia_fila.turno_recibe_fecha == date(2026, 8, 4)  # martes recibido
+    assert claudia_fila.turno_cede_fecha == lunes  # lunes cedido
+    assert claudia_fila.turno_recibe_fecha == lunes + timedelta(days=1)  # martes recibido
 
 
 def test_post_nuevo_junte_con_semana_pasada_da_error_sin_crear_nada(db, client):

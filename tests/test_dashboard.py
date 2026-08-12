@@ -777,8 +777,11 @@ def test_dashboard_junte_wa_mensaje_incluye_semana_y_dias(client, db):
         grupo_intercambio_id=ana.unidad.grupo_intercambio_id
     ).first()
 
-    # 2026-08-03 es lunes. LMVD: cede Vie(+4) y Dom(+6), recibe Mar(+1) y Jue(+3)
-    lunes = date(2026, 8, 3)
+    # LMVD: cede Vie(+4) y Dom(+6), recibe Mar(+1) y Jue(+3).
+    # Se usa el lunes de la semana que viene para que el junte no caduque
+    # sin importar en qué día se ejecuten los tests.
+    hoy = date.today()
+    lunes = hoy - timedelta(days=hoy.weekday()) + timedelta(days=7)
     pub = PublicacionCambio(usuario_id=ana.id, tipo="junte")
     db.session.add(pub)
     db.session.flush()
@@ -797,8 +800,8 @@ def test_dashboard_junte_wa_mensaje_incluye_semana_y_dias(client, db):
     assert "4%20noches" in html
     assert "Busco%20trabajar" in html
     assert "Busco%20librar" in html
-    # La semana del 03/08/2026 ("03%2F08%2F2026")
-    assert "03%2F08%2F2026" in html
+    semana_esperada = lunes.strftime("%d/%m/%Y").replace("/", "%2F")
+    assert semana_esperada in html
 
 
 def test_dashboard_caducada_muestra_botones_eliminar(client, db):
