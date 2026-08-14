@@ -129,6 +129,13 @@ def rechazar_match(match, usuario_id):
     """
     Rechaza el match y notifica a los demás participantes.
     Las publicaciones siguen activas: no cambian de estado.
+
+    No commitea: se usa en bucle desde `_rechazar_matches_activos_de_publicacion`
+    y `eliminar_cuenta` dentro de una transacción más amplia. Commitear aquí
+    expiraba los objetos ya cargados (p. ej. la publicación que se está
+    eliminando) entre iteraciones, y si esa fila se borraba antes de que el
+    llamador volviera a acceder a ella, el acceso relanzaba un SELECT que
+    fallaba con ObjectDeletedError. El commit es responsabilidad del llamador.
     """
     match.estado = "rechazado"
     for p in match.participaciones:
@@ -141,4 +148,3 @@ def rechazar_match(match, usuario_id):
             ))
             enviar_push_condicional(p.publicacion.usuario, "confirmacion_parcial", unidad_nombre=p.publicacion.usuario.unidad.nombre)
         registrar_evento(p.publicacion.usuario_id, "match_cancelled", match.id)
-    db.session.commit()

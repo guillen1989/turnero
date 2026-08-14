@@ -80,5 +80,6 @@ def desconfirmar(match_id):
 def rechazar(match_id):
     match = _get_match_validado(match_id)
     rechazar_match(match, current_user.id)
+    db.session.commit()
     flash(_("Has rechazado el cambio."), "info")
     return _redirect_a_dashboard()

@@ -116,3 +116,24 @@ def test_confirmar_match_registra_match_confirmed(db):
         ev = Event.query.filter_by(user_id=usuario.id, event_type="match_confirmed").first()
         assert ev is not None
         assert ev.entity_id == match.id
+
+
+def test_rechazar_match_no_commitea_deja_control_al_llamador(db, monkeypatch):
+    """rechazar_match se llama en bucle desde eliminar_publicacion/eliminar_cuenta;
+    si commitea internamente, expira el objeto publicación entre iteraciones y
+    puede lanzar ObjectDeletedError si esa fila fue borrada por otra operación
+    dentro de la misma transacción lógica (ver bug de Sentry en eliminación de
+    publicaciones con varios matches activos)."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+
+    pub_ana = _pub(ana, date(2026, 7, 1), date(2026, 7, 2))
+    pub_pedro = _pub(pedro, date(2026, 7, 2), date(2026, 7, 1))
+
+    match = crear_match_directo(pub_ana, pub_pedro)
+
+    commits = []
+    monkeypatch.setattr(db.session, "commit", lambda: commits.append(1))
+    rechazar_match(match, ana.id)
+
+    assert commits == []
