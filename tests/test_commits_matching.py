@@ -1,7 +1,11 @@
 """
-Paso 4 del plan de latencia (docs/cambio.md): las funciones de creación de
-matches no deben hacer más de un `db.session.commit()` por llamada — cada
-commit es un round-trip extra a Postgres en Railway.
+Las funciones de creación de matches se llaman en bucle (sobre candidatas,
+cadenas, sintéticas...) desde sus llamadores, así que no deben commitear
+internamente: cada commit expira los objetos ya cargados de la sesión,
+forzando SELECTs de recarga en cascada en la siguiente vuelta del bucle
+hasta agotar el timeout del worker (ver incidente Sentry de crear_cadena_3/4
+_desde_sintetica). Solo hacen flush(); el commit es responsabilidad del
+llamador, que lo hace una vez al final del bucle.
 """
 from datetime import date
 
@@ -52,7 +56,7 @@ def commit_counter(monkeypatch):
     return llamadas
 
 
-def test_crear_match_directo_hace_un_solo_commit(db, commit_counter):
+def test_crear_match_directo_no_commitea(db, commit_counter):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     gid = ana.unidad.grupo_intercambio_id
@@ -65,10 +69,10 @@ def test_crear_match_directo_hace_un_solo_commit(db, commit_counter):
     match = crear_match_directo(pub_ana, pub_pedro)
 
     assert match is not None
-    assert len(commit_counter) == 1
+    assert len(commit_counter) == 0
 
 
-def test_crear_match_cadena_3_hace_un_solo_commit(db, commit_counter):
+def test_crear_match_cadena_3_no_commitea(db, commit_counter):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     maria = _usuario("María", "maria@test.es")
@@ -86,10 +90,10 @@ def test_crear_match_cadena_3_hace_un_solo_commit(db, commit_counter):
     match = crear_match_cadena_3(pub_ana, pub_pedro, pub_maria)
 
     assert match is not None
-    assert len(commit_counter) == 1
+    assert len(commit_counter) == 0
 
 
-def test_crear_match_cadena_4_hace_un_solo_commit(db, commit_counter):
+def test_crear_match_cadena_4_no_commitea(db, commit_counter):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     maria = _usuario("María", "maria@test.es")
@@ -109,10 +113,10 @@ def test_crear_match_cadena_4_hace_un_solo_commit(db, commit_counter):
     match = crear_match_cadena_4(pub_ana, pub_pedro, pub_maria, pub_luis)
 
     assert match is not None
-    assert len(commit_counter) == 1
+    assert len(commit_counter) == 0
 
 
-def test_crear_pub_sintetica_hace_un_solo_commit(db, commit_counter):
+def test_crear_pub_sintetica_no_commitea(db, commit_counter):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
 
@@ -126,4 +130,4 @@ def test_crear_pub_sintetica_hace_un_solo_commit(db, commit_counter):
     sint = crear_pub_sintetica(pub_ana, pub_pedro)
 
     assert sint is not None
-    assert len(commit_counter) == 1
+    assert len(commit_counter) == 0

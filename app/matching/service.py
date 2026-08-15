@@ -326,14 +326,21 @@ _ROLES_HANDLER = {
 
 
 def crear_match_directo(pub_a, pub_b):
-    """Crea un MatchCambio directo (2 bandas) entre pub_a y pub_b."""
+    """
+    Crea un MatchCambio directo (2 bandas) entre pub_a y pub_b.
+
+    No commitea: se llama en bucle sobre las candidatas de una publicación
+    (ver publicar_cambio/editar/contraoferta), y commitear en cada iteración
+    expiraba los objetos ya cargados de la sesión, forzando SELECTs de
+    recarga en cascada hasta agotar el timeout del worker de gunicorn. El
+    commit es responsabilidad del llamador. Por el mismo motivo, la
+    validación se hace antes de crear el match: un rollback() a mitad de
+    bucle borraría también los matches ya flusheados en iteraciones
+    anteriores.
+    """
     handler = _ROLES_HANDLER.get((pub_a.tipo, pub_b.tipo))
     if handler is None:
         return None
-
-    match = MatchCambio(tipo="directo_2", estado="propuesto")
-    db.session.add(match)
-    db.session.flush()
 
     tc_a, ta_a, tc_b, ta_b = handler(pub_a, pub_b)
 
@@ -349,8 +356,11 @@ def crear_match_directo(pub_a, pub_b):
         kwargs_b["turno_aceptado_id"] = ta_b.id
 
     if not kwargs_a or not kwargs_b:
-        db.session.rollback()
         return None
+
+    match = MatchCambio(tipo="directo_2", estado="propuesto")
+    db.session.add(match)
+    db.session.flush()
 
     db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_a.id, **kwargs_a))
     db.session.add(MatchParticipacion(match_id=match.id, publicacion_id=pub_b.id, **kwargs_b))
@@ -369,7 +379,7 @@ def crear_match_directo(pub_a, pub_b):
 
     for pub in (pub_a, pub_b):
         registrar_evento(pub.usuario_id, "match_found", match.id)
-    db.session.commit()
+    db.session.flush()
 
     return match
 
@@ -461,6 +471,10 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
 
     Cada participación registra el turno que ese usuario cede al siguiente
     en el ciclo. Idempotente: si el trío ya tiene un match activo, devuelve None.
+
+    No commitea: mismo motivo que crear_match_directo. Toda la validación
+    ocurre antes de crear el match (nunca hace rollback tras un flush), para
+    no arrastrar matches de iteraciones anteriores del bucle del llamador.
     """
     if frozenset({pub_a.id, pub_b.id, pub_c.id}) in _cadenas_3_existentes(pub_a.id):
         return None
@@ -474,7 +488,6 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
     turno_c = _primer_cedido_que_acepta(pub_c, aceptados_a)  # C cede a A
 
     if not turno_a or not turno_b or not turno_c:
-        db.session.rollback()
         return None
 
     # Turno que cada banda recibe de la anterior en el ciclo: hace falta
@@ -484,7 +497,6 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
     ta_a = _primer_aceptado_que_cubre(pub_a, frozenset({(turno_c.fecha, turno_c.franja_horaria_id)}))
 
     if not ta_a or not ta_b or not ta_c:
-        db.session.rollback()
         return None
 
     match = MatchCambio(tipo="cadena_3", estado="propuesto")
@@ -514,7 +526,7 @@ def crear_match_cadena_3(pub_a, pub_b, pub_c):
 
     for pub in (pub_a, pub_b, pub_c):
         registrar_evento(pub.usuario_id, "match_found", match.id)
-    db.session.commit()
+    db.session.flush()
 
     return match
 
@@ -618,6 +630,8 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
 
     Cada participación registra el turno que ese usuario cede al siguiente
     en el ciclo. Idempotente: si el cuarteto ya tiene un match activo, devuelve None.
+
+    No commitea: mismo motivo que crear_match_cadena_3.
     """
     if frozenset({pub_a.id, pub_b.id, pub_c.id, pub_d.id}) in _cadenas_4_existentes(pub_a.id):
         return None
@@ -633,7 +647,6 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
     turno_d = _primer_cedido_que_acepta(pub_d, aceptados_a)  # D cede a A
 
     if not turno_a or not turno_b or not turno_c or not turno_d:
-        db.session.rollback()
         return None
 
     # Turno que cada banda recibe de la anterior en el ciclo: hace falta
@@ -644,7 +657,6 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
     ta_a = _primer_aceptado_que_cubre(pub_a, frozenset({(turno_d.fecha, turno_d.franja_horaria_id)}))
 
     if not ta_a or not ta_b or not ta_c or not ta_d:
-        db.session.rollback()
         return None
 
     match = MatchCambio(tipo="cadena_4", estado="propuesto")
@@ -679,7 +691,7 @@ def crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d):
 
     for pub in (pub_a, pub_b, pub_c, pub_d):
         registrar_evento(pub.usuario_id, "match_found", match.id)
-    db.session.commit()
+    db.session.flush()
 
     return match
 
@@ -802,6 +814,10 @@ def crear_aviso_oportunidad_4(pub_a, pub_b, pub_c):
     cerrar el ciclo). Cada destinatario referencia al siguiente en el
     ciclo.
     Idempotente: no duplica si ya existe para el mismo trío.
+
+    No commitea: se llama en bucle sobre huecos de cadena_4 detectados para
+    una publicación; el commit es responsabilidad del llamador (ver
+    crear_match_directo para el motivo).
     """
     for destinatario_id, pub_ref in (
         (pub_a.usuario_id, pub_b),
@@ -820,7 +836,7 @@ def crear_aviso_oportunidad_4(pub_a, pub_b, pub_c):
                 publicacion_id=pub_ref.id,
                 tipo="aviso_oportunidad_4",
             ))
-    db.session.commit()
+    db.session.flush()
 
     enviar_push_condicional(pub_a.usuario, "aviso_oportunidad_4")
     enviar_push_condicional(pub_b.usuario, "aviso_oportunidad_4")
@@ -870,6 +886,10 @@ def crear_pub_sintetica(pub_a, pub_b, pub_intermedio=None):
     Propietario = usuario de pub_a.
     Idempotente: si ya existe una sintética activa para este trío (mismos
     pub_a, pub_b y pub_intermedio), la devuelve sin crear otra.
+
+    No commitea: se llama en bucle sobre candidatas/huecos de una
+    publicación; el commit es responsabilidad del llamador (ver
+    crear_match_directo para el motivo).
     """
     from app.models import TurnoCedido as TC, TurnoAceptado as TA
 
@@ -919,7 +939,7 @@ def crear_pub_sintetica(pub_a, pub_b, pub_intermedio=None):
         ))
 
     notificar_busquedas_guardadas(sint, commit=False)
-    db.session.commit()
+    db.session.flush()
 
     return sint
 

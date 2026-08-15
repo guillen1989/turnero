@@ -533,6 +533,7 @@ def me_interesa(pub_id):
         eliminar_publicacion(pub_b)
         flash(_("No fue posible crear el match. Los turnos pueden haber cambiado."), "warning")
         return redirect(url_for("main.cambios"))
+    db.session.commit()
     flash(_("¡Match creado! Ve a «Mis cambios» para confirmar."), "success")
     return redirect(url_for("main.index"))
 
