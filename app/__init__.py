@@ -217,6 +217,9 @@ def _registrar_comandos(app):
                     procesar_aviso_y_sintetica(pub, candidata)
                 n_sinteticas += 1
 
+        if not dry_run:
+            db.session.commit()
+
         prefijo = "[dry-run] " if dry_run else ""
         click.echo(f"{prefijo}Matches directos nuevos:   {n_matches}")
         click.echo(f"{prefijo}Cadenas a 3 cerradas:      {n_cadenas}")

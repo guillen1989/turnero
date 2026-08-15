@@ -419,6 +419,7 @@ def editar(pub_id):
             _resolver_sintetica(pub, sint)
         for candidata in buscar_avisos_interes_para(pub, candidatas, cedidos_map, aceptados_map):
             procesar_aviso_y_sintetica(pub, candidata)
+        db.session.commit()
         flash(_("Publicación actualizada."), "success")
         return redirect(url_for("main.index"))
 
@@ -510,6 +511,7 @@ def me_interesa(pub_id):
             eliminar_publicacion(pub_nuevo)
             flash(_("No fue posible cerrar el cambio. Los turnos pueden haber cambiado."), "warning")
             return redirect(url_for("main.cambios"))
+        db.session.commit()
         if match.tipo == "cadena_4":
             flash(_("¡Cambio a 4 bandas iniciado! Ve a «Mis cambios» para confirmar."), "success")
         else:

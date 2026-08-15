@@ -981,6 +981,13 @@ def crear_cadena_3_desde_sintetica(pub_c, pub_sintetica):
     Crea un MatchCambio cadena_3 entre pub_a, pub_b y pub_c usando la
     pub_sintetica como puente para recuperar pub_a y pub_b.
     Cancela la pub_sintetica al finalizar.
+
+    No commitea: se llama en bucle sobre las sintéticas que coinciden con
+    una publicación (hasta ~225 vistas en producción), y commitear en cada
+    iteración expiraba los objetos ya cargados de la sesión, forzando un
+    SELECT de recarga por cada fila accedida en la siguiente vuelta hasta
+    agotar el timeout del worker de gunicorn. El commit es responsabilidad
+    del llamador.
     """
     pub_a = db.session.get(PublicacionCambio, pub_sintetica.sintetica_pub_a_id)
     pub_b = db.session.get(PublicacionCambio, pub_sintetica.sintetica_pub_b_id)
@@ -993,7 +1000,7 @@ def crear_cadena_3_desde_sintetica(pub_c, pub_sintetica):
     match = crear_match_cadena_3(pub_a, pub_b, pub_c)
     if match:
         pub_sintetica.estado = "cancelada"
-        db.session.commit()
+        db.session.flush()
     return match
 
 
@@ -1002,6 +1009,9 @@ def crear_cadena_4_desde_sintetica(pub_d, pub_sintetica):
     Crea un MatchCambio cadena_4 entre pub_a, pub_b (intermedio), pub_c y
     pub_d usando la pub_sintetica como puente para recuperar el trío real
     A→B→C. Cancela la pub_sintetica al finalizar.
+
+    No commitea: mismo motivo que en crear_cadena_3_desde_sintetica. El
+    commit es responsabilidad del llamador.
     """
     pub_a = db.session.get(PublicacionCambio, pub_sintetica.sintetica_pub_a_id)
     pub_b = db.session.get(PublicacionCambio, pub_sintetica.sintetica_pub_intermedio_id)
@@ -1015,5 +1025,5 @@ def crear_cadena_4_desde_sintetica(pub_d, pub_sintetica):
     match = crear_match_cadena_4(pub_a, pub_b, pub_c, pub_d)
     if match:
         pub_sintetica.estado = "cancelada"
-        db.session.commit()
+        db.session.flush()
     return match
