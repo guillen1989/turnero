@@ -804,6 +804,31 @@ def test_dashboard_junte_wa_mensaje_incluye_semana_y_dias(client, db):
     assert semana_esperada in html
 
 
+def test_dashboard_cambio_wa_mensaje_resalta_etiquetas_en_negrita(client, db):
+    """El mensaje de WhatsApp de un cambio rodea 'Quiero librar:' y
+    'Me ofrezco a trabajar:' con asteriscos para que salgan en negrita."""
+    usuario = _usuario_y_login(client)
+    franja = _franja(usuario.unidad.grupo_intercambio_id)
+    _publicacion(
+        usuario, franja,
+        fecha_cedida=date.today() + timedelta(days=30),
+        fecha_aceptada=date.today() + timedelta(days=31),
+    )
+
+    resp = client.get("/")
+    assert resp.status_code == 200
+    html = resp.data.decode()
+
+    import re
+    from urllib.parse import unquote
+
+    match_href = re.search(r'href="https://wa\.me/\?text=([^"]+)"', html)
+    assert match_href is not None
+    wa_texto = unquote(match_href.group(1))
+    assert "*Quiero librar:*" in wa_texto
+    assert "*Me ofrezco a trabajar:*" in wa_texto
+
+
 def test_dashboard_caducada_muestra_botones_eliminar(client, db):
     """GET /?estado=caducada muestra el botón Eliminar individual y Eliminar todos."""
     usuario = _usuario_y_login(client)

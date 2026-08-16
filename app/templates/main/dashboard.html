@@ -340,9 +340,9 @@
             {% set ns.wa_ofrecidos = ns.wa_ofrecidos + '\n' + t.fecha.strftime('%d/%m/%Y') + ' (' + franja + ')' %}
           {% endfor %}
           {% if ns.wa_ofrecidos %}
-            {% set wa_texto = pub.usuario.nombre + '\n' + _('Quiero librar:') + ns.wa_turnos + '\n' + _('Me ofrezco a trabajar:') + ns.wa_ofrecidos + wa_msg_extra + '\n' + pub_url %}
+            {% set wa_texto = pub.usuario.nombre + '\n*' + _('Quiero librar:') + '*' + ns.wa_turnos + '\n*' + _('Me ofrezco a trabajar:') + '*' + ns.wa_ofrecidos + wa_msg_extra + '\n' + pub_url %}
           {% else %}
-            {% set wa_texto = pub.usuario.nombre + '\n' + _('Quiero librar:') + ns.wa_turnos + wa_msg_extra + '\n' + pub_url %}
+            {% set wa_texto = pub.usuario.nombre + '\n*' + _('Quiero librar:') + '*' + ns.wa_turnos + wa_msg_extra + '\n' + pub_url %}
           {% endif %}
         {% endif %}
         <div class="pub-acciones">
