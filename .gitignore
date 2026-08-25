@@ -24,3 +24,7 @@ htmlcov/
 turnero_prod_*
 backups/
 planilla_ilog.xls
+
+# Corpus de mensajes de WhatsApp para el parser (docs/crear_parser.md) — nunca
+# se commitea, ni siquiera anonimizado.
+tests/fixtures/corpus/
