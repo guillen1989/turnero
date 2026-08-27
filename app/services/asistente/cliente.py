@@ -7,7 +7,7 @@ import anthropic
 
 from app.services.asistente.schema import PropuestaPublicacion
 
-_MODELO = "claude-opus-5"
+_MODELO = "claude-haiku-5"
 _MAX_TOKENS = 2048
 
 
