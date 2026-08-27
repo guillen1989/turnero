@@ -25,6 +25,9 @@
         <p>{{ _('El asistente leerá el mensaje y propondrá los datos, pero no publica nada por ti: revisa y corrige el formulario antes de enviarlo.') }}</p>
         <form method="post" action="{{ url_for('asistente.parsear') }}" id="form-asistente">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="button" id="btn-pegar-portapapeles" class="btn btn-secondary btn-sm" style="display:none">
+            {{ _('📋 Pegar del portapapeles') }}
+          </button>
           <textarea name="texto" id="asistente-texto" rows="6" required
                     placeholder="{{ _('Pega aquí el mensaje tal cual, con fecha y turnos...') }}"
                     style="width:100%">{{ texto_compartido or '' }}</textarea>
@@ -224,6 +227,20 @@
   var formAsistente = document.getElementById('form-asistente');
   var btnEnviarAsistente = document.getElementById('btn-enviar-asistente');
   var spinnerAsistente = document.getElementById('asistente-spinner');
+  var btnPegarPortapapeles = document.getElementById('btn-pegar-portapapeles');
+  var textoAsistenteEl = document.getElementById('asistente-texto');
+
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    btnPegarPortapapeles.style.display = '';
+    btnPegarPortapapeles.addEventListener('click', function () {
+      navigator.clipboard.readText().then(function (texto) {
+        if (texto) {
+          textoAsistenteEl.value = texto;
+          textoAsistenteEl.focus();
+        }
+      }).catch(function () {});
+    });
+  }
 
   btnAbrirAsistente.addEventListener('click', function () {
     modalAsistente.classList.remove('modal-hidden');
