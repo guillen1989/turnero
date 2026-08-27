@@ -4,6 +4,7 @@ El asistente nunca puede impedir publicar: cualquier fallo (de la API, del
 resolvedor, de datos) devuelve al usuario al formulario en blanco con un
 aviso, nunca un error 500 ni un bloqueo.
 """
+import logging
 from datetime import date, datetime, time as dtime
 
 from flask import Blueprint, flash, redirect, request, session, url_for
@@ -20,6 +21,18 @@ from app.services.unidad_usuario import unidad_activa_o_403
 bp = Blueprint("asistente", __name__, url_prefix="/asistente")
 
 LIMITE_PARSEOS_DIA = 20
+
+# Logger de auditoría del asistente: registra cada mensaje recibido y su
+# resultado (éxito, problemas de resolución o fallo de API) para poder
+# diagnosticar interpretaciones fallidas en staging/producción. Sin
+# StreamHandler propio, Gunicorn descarta el nivel INFO por defecto y los
+# mensajes no llegarían a los logs de Railway (mismo motivo que db_timing).
+logger = logging.getLogger("asistente.parser")
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(message)s"))
+    logger.addHandler(_handler)
 
 
 def _parseos_hoy(usuario_id):
@@ -81,11 +94,27 @@ def parsear():
         unidad_activa = unidad_activa_o_403(current_user, None)
         contexto = _contexto_para(unidad_activa.grupo_intercambio_id)
         propuesta = extraer_propuesta(texto, contexto)
+    except Exception as exc:
+        logger.info(
+            "asistente_parseo usuario_id=%s resultado=error_extraccion texto=%r error=%r",
+            current_user.id, texto, str(exc),
+        )
+        return _volver_al_formulario(aviso_error)
+
+    try:
         cedidos, aceptados, problemas = resolver_propuesta(propuesta, current_user, date.today())
-    except Exception:
+    except Exception as exc:
+        logger.info(
+            "asistente_parseo usuario_id=%s resultado=error_resolucion texto=%r propuesta=%r error=%r",
+            current_user.id, texto, propuesta.model_dump(), str(exc),
+        )
         return _volver_al_formulario(aviso_error)
 
     if problemas:
+        logger.info(
+            "asistente_parseo usuario_id=%s resultado=problemas texto=%r propuesta=%r problemas=%r",
+            current_user.id, texto, propuesta.model_dump(), problemas,
+        )
         return _volver_al_formulario(aviso_error)
 
     session["asistente_prefill"] = {
@@ -96,4 +125,8 @@ def parsear():
             for fecha, franja_id in aceptados
         ],
     }
+    logger.info(
+        "asistente_parseo usuario_id=%s resultado=ok texto=%r propuesta=%r cedidos=%r aceptados=%r",
+        current_user.id, texto, propuesta.model_dump(), cedidos, aceptados,
+    )
     return redirect(url_for("publicaciones.nueva"))

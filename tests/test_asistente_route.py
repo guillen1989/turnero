@@ -76,3 +76,37 @@ def test_parsear_respeta_el_limite_diario_por_usuario(client, db, app):
 
     assert resp.status_code == 200
     mock_extraer.assert_not_called()
+
+
+def test_parsear_registra_log_de_auditoria_en_caso_exitoso(client, db, caplog):
+    _login(client)
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=_propuesta_valida()):
+        with caplog.at_level("INFO", logger="asistente.parser"):
+            client.post("/asistente/parsear", data={"texto": "cambio mi mañana del 28 por tu tarde del 29"})
+
+    mensajes = [r.message for r in caplog.records]
+    assert any("resultado=ok" in m and "cambio mi mañana del 28 por tu tarde del 29" in m for m in mensajes)
+
+
+def test_parsear_registra_log_de_auditoria_cuando_hay_problemas(client, db, caplog):
+    _login(client)
+    propuesta = PropuestaPublicacion(tipo="cambio", campos_faltantes=["franja de los aceptados"])
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=propuesta):
+        with caplog.at_level("INFO", logger="asistente.parser"):
+            client.post("/asistente/parsear", data={"texto": "cambio mi turno"})
+
+    mensajes = [r.message for r in caplog.records]
+    assert any("resultado=problemas" in m and "franja de los aceptados" in m for m in mensajes)
+
+
+def test_parsear_registra_log_de_auditoria_cuando_falla_la_api(client, db, caplog):
+    _login(client)
+
+    with patch("app.routes.asistente.extraer_propuesta", side_effect=ErrorAsistente("boom")):
+        with caplog.at_level("INFO", logger="asistente.parser"):
+            client.post("/asistente/parsear", data={"texto": "cambio mi turno"})
+
+    mensajes = [r.message for r in caplog.records]
+    assert any("resultado=error_extraccion" in m and "boom" in m for m in mensajes)
