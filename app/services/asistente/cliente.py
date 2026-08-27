@@ -83,6 +83,6 @@ def extraer_propuesta(texto, contexto, client=None):
             output_format=PropuestaPublicacion,
         )
     except anthropic.AnthropicError as e:
-        raise ErrorAsistente("Error al comunicarse con la API del asistente") from e
+        raise ErrorAsistente(f"Error al comunicarse con la API del asistente: {e}") from e
 
     return respuesta.parsed_output

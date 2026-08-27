@@ -92,3 +92,16 @@ def test_el_prompt_distingue_peticion_de_cambio_y_de_regalo():
     assert "mismo día" in bloque_sistema
 
 
+
+def test_el_mensaje_de_error_incluye_el_detalle_original_para_diagnostico():
+    """El route solo loguea str(exc); si perdemos el detalle aquí, en producción
+    no hay forma de saber si un fallo fue timeout, rate limit o auth sin
+    reproducirlo a mano."""
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    excepcion = anthropic.APITimeoutError(request=request)
+    cliente = _ClienteFalso(excepcion=excepcion)
+
+    with pytest.raises(ErrorAsistente) as exc_info:
+        extraer_propuesta("texto cualquiera", _CONTEXTO, client=cliente)
+
+    assert "timed out" in str(exc_info.value).lower()
