@@ -29,6 +29,7 @@ from app.models.documento_cambio import (
 )
 from app.models.feature_flag import FeatureFlag
 from app.models.feature_flag_unidad import FeatureFlagUnidad
+from app.models.parseo_asistente import ParseoAsistente
 
 __all__ = [
     "Pais",
@@ -72,4 +73,5 @@ __all__ = [
     "MapeoTrabajadorPlanilla",
     "FeatureFlag",
     "FeatureFlagUnidad",
+    "ParseoAsistente",
 ]

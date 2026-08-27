@@ -100,6 +100,9 @@ def create_app(config_name=None):
     from app.routes.planilla_supervision import bp as planilla_supervision_bp
     app.register_blueprint(planilla_supervision_bp)
 
+    from app.routes.asistente import bp as asistente_bp
+    app.register_blueprint(asistente_bp)
+
     # Importar modelos para que SQLAlchemy los registre en los metadatos
     from . import models  # noqa: F401
 

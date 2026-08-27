@@ -1,6 +1,6 @@
 from datetime import date, datetime, time as dtime, timedelta
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 
@@ -327,10 +327,12 @@ def nueva():
         return redirect(url_for("main.index"))
 
     prefill_fecha, prefill_modo = _leer_prefill_calendario()
+    prefill_asistente = session.pop("asistente_prefill", None)
     return render_template(
         "publicaciones/publicar.html", franjas=franjas,
         franjas_json=_franjas_a_json(franjas), today=date.today().isoformat(),
         prefill_fecha=prefill_fecha, prefill_modo=prefill_modo,
+        prefill_asistente=prefill_asistente,
     )
 
 

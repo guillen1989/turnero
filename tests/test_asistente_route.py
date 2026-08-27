@@ -1,0 +1,78 @@
+"""Tests para la ruta POST /asistente/parsear."""
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from app.extensions import db as _db
+from app.models import Categoria, ParseoAsistente, insertar_categorias_semilla
+from app.services.asistente.cliente import ErrorAsistente
+from app.services.asistente.schema import PropuestaPublicacion
+from app.services.registro import registrar_usuario
+
+
+def _login(client, email="u@test.es"):
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    u = registrar_usuario("Test", email, "pass1234", "H1", "Urgencias", cat.id)
+    client.post("/auth/login", data={"email": email, "password": "pass1234"})
+    return u
+
+
+def _propuesta_valida():
+    return PropuestaPublicacion(
+        tipo="cambio",
+        cedidos=[{"fecha": "2026-08-28", "franja": "Mañana"}],
+        aceptados=[{"fecha": "2026-08-29", "franja": "Tarde"}],
+        campos_faltantes=[],
+    )
+
+
+def test_parsear_requiere_login(client, db):
+    resp = client.post("/asistente/parsear", data={"texto": "cambio turno"})
+    assert resp.status_code == 302
+    assert "/auth/login" in resp.headers["Location"]
+
+
+def test_parsear_propuesta_valida_redirige_a_publicar_con_datos(client, db):
+    _login(client)
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=_propuesta_valida()):
+        resp = client.post("/asistente/parsear", data={"texto": "cambio mi mañana del 28 por tu tarde del 29"},
+                            follow_redirects=True)
+
+    assert resp.status_code == 200
+    assert b"2026-08-28" in resp.data
+    assert b"2026-08-29" in resp.data
+
+
+def test_parsear_propuesta_con_problemas_vuelve_a_formulario_vacio_con_aviso(client, db):
+    _login(client)
+    propuesta = PropuestaPublicacion(tipo="cambio", campos_faltantes=["franja de los aceptados"])
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=propuesta):
+        resp = client.post("/asistente/parsear", data={"texto": "cambio mi turno"}, follow_redirects=True)
+
+    assert resp.status_code == 200
+    assert b"2026-08-28" not in resp.data
+
+
+def test_parsear_fallo_de_api_vuelve_a_formulario_vacio_sin_error_500(client, db):
+    _login(client)
+
+    with patch("app.routes.asistente.extraer_propuesta", side_effect=ErrorAsistente("boom")):
+        resp = client.post("/asistente/parsear", data={"texto": "cambio mi turno"}, follow_redirects=True)
+
+    assert resp.status_code == 200
+
+
+def test_parsear_respeta_el_limite_diario_por_usuario(client, db, app):
+    u = _login(client)
+    with app.app_context():
+        for _i in range(20):
+            _db.session.add(ParseoAsistente(usuario_id=u.id))
+        _db.session.commit()
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=_propuesta_valida()) as mock_extraer:
+        resp = client.post("/asistente/parsear", data={"texto": "cambio mi turno"}, follow_redirects=True)
+
+    assert resp.status_code == 200
+    mock_extraer.assert_not_called()
