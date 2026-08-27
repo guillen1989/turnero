@@ -87,24 +87,28 @@ def test_enviar_email_async_no_bloquea_fuera_de_tests(app):
     import time
 
     with app.app_context():
+        old_testing = app.config.get("TESTING")
         app.config["TESTING"] = False
         app.config["RESEND_API_KEY"] = "re_test_key"
         app.config["RESEND_FROM_EMAIL"] = "noreply@turnero.app"
 
-        liberar = threading.Event()
+        try:
+            liberar = threading.Event()
 
-        def _post_lento(*args, **kwargs):
-            liberar.wait(timeout=2)
-            return _mock_response(200)
+            def _post_lento(*args, **kwargs):
+                liberar.wait(timeout=2)
+                return _mock_response(200)
 
-        with patch("app.services.email.requests.post", side_effect=_post_lento) as mock_post:
-            from app.services.email import enviar_email_async
-            inicio = time.monotonic()
-            enviar_email_async("destino@test.es", "Asunto", "<p>Cuerpo</p>")
-            duracion = time.monotonic() - inicio
+            with patch("app.services.email.requests.post", side_effect=_post_lento) as mock_post:
+                from app.services.email import enviar_email_async
+                inicio = time.monotonic()
+                enviar_email_async("destino@test.es", "Asunto", "<p>Cuerpo</p>")
+                duracion = time.monotonic() - inicio
 
-        liberar.set()
-        time.sleep(0.1)
+            liberar.set()
+            time.sleep(0.1)
 
-        assert duracion < 1
-        mock_post.assert_called_once()
+            assert duracion < 1
+            mock_post.assert_called_once()
+        finally:
+            app.config["TESTING"] = old_testing
