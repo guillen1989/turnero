@@ -93,6 +93,18 @@ def test_el_prompt_distingue_peticion_de_cambio_y_de_regalo():
 
 
 
+def test_pide_extended_thinking_porque_haiku_4_5_no_soporta_adaptive():
+    """Haiku 4.5 solo acepta extended thinking; 'adaptive' devuelve un 400
+    ('adaptive thinking is not supported on this model')."""
+    cliente = _ClienteFalso(respuesta=SimpleNamespace(parsed_output=_propuesta_esperada()))
+
+    extraer_propuesta("texto", _CONTEXTO, client=cliente)
+
+    thinking = cliente.kwargs_recibidos["thinking"]
+    assert thinking["type"] == "enabled"
+    assert thinking["budget_tokens"] >= 1024
+
+
 def test_el_mensaje_de_error_incluye_el_detalle_original_para_diagnostico():
     """El route solo loguea str(exc); si perdemos el detalle aquí, en producción
     no hay forma de saber si un fallo fue timeout, rate limit o auth sin

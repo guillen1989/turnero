@@ -69,7 +69,7 @@ def extraer_propuesta(texto, contexto, client=None):
         respuesta = client.messages.parse(
             model=_MODELO,
             max_tokens=_MAX_TOKENS,
-            thinking={"type": "adaptive"},
+            thinking={"type": "enabled", "budget_tokens": 1024},
             system=[
                 {
                     "type": "text",
