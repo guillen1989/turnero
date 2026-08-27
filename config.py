@@ -49,6 +49,8 @@ class Config:
     # Postgres vs. el resto del tiempo de la petición. Desactivada por
     # defecto; retirar del todo tras el Paso 3 del plan.
     DB_TIMING_ENABLED = os.environ.get("DB_TIMING_ENABLED", "").lower() == "true"
+    # Parser de mensajes de WhatsApp asistido por IA (docs/crear_parser.md).
+    ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
 
 class DevelopmentConfig(Config):
