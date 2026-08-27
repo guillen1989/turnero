@@ -199,3 +199,85 @@ def test_resultado_pasa_validaciones_de_publicar_cambio(db):
     assert _validar_turnos("cambio", cedidos, aceptados, HOY) is None
     pub_falsa = PublicacionCambio(tipo="cambio")
     validar_publicacion_cambio_dia(pub_falsa)  # no lanza para tipo != cambio_dia
+
+
+def test_problema_solo_en_aceptados_no_descarta_los_cedidos_ya_resueltos(db):
+    u = _usuario()
+    franja_manana = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+
+    cedidos, aceptados, problemas = resolver_propuesta(
+        _propuesta(aceptados=[{"fecha": "2026-08-29", "franja": "Turno Fantasma"}]),
+        u,
+        HOY,
+    )
+
+    assert cedidos == [(date(2026, 8, 28), franja_manana.id)]
+    assert aceptados == []
+    assert any("Turno Fantasma" in p for p in problemas)
+
+
+def test_problema_solo_en_cedidos_no_descarta_los_aceptados_ya_resueltos(db):
+    u = _usuario()
+    franja_tarde = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Tarde"
+    ).first()
+
+    cedidos, aceptados, problemas = resolver_propuesta(
+        _propuesta(cedidos=[{"fecha": "2026-08-28", "franja": "Turno Fantasma"}]),
+        u,
+        HOY,
+    )
+
+    assert cedidos == []
+    assert aceptados == [(date(2026, 8, 29), franja_tarde.id)]
+    assert any("Turno Fantasma" in p for p in problemas)
+
+
+def test_campos_faltantes_solo_aceptados_resuelve_igualmente_los_cedidos(db):
+    u = _usuario()
+    franja_manana = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+
+    cedidos, aceptados, problemas = resolver_propuesta(
+        _propuesta(campos_faltantes=["aceptados"]),
+        u,
+        HOY,
+    )
+
+    assert cedidos == [(date(2026, 8, 28), franja_manana.id)]
+    assert aceptados == []
+    assert problemas == ["aceptados"]
+
+
+def test_campos_faltantes_solo_cedidos_resuelve_igualmente_los_aceptados(db):
+    u = _usuario()
+    franja_tarde = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Tarde"
+    ).first()
+
+    cedidos, aceptados, problemas = resolver_propuesta(
+        _propuesta(campos_faltantes=["cedidos"]),
+        u,
+        HOY,
+    )
+
+    assert cedidos == []
+    assert aceptados == [(date(2026, 8, 29), franja_tarde.id)]
+    assert problemas == ["cedidos"]
+
+
+def test_campos_faltantes_generico_sigue_sin_resolver_nada(db):
+    u = _usuario()
+
+    cedidos, aceptados, problemas = resolver_propuesta(
+        _propuesta(campos_faltantes=["franja de los aceptados"]),
+        u,
+        HOY,
+    )
+
+    assert cedidos == []
+    assert aceptados == []
+    assert problemas == ["franja de los aceptados"]

@@ -49,7 +49,7 @@
   </div>
 
   <div id="banner-prefill-asistente" class="banner-prefill" style="display:none" role="status">
-    <strong>{{ _('✓ Hemos rellenado los campos de tu cambio.') }}</strong>
+    <strong id="banner-prefill-asistente-titulo">{{ _('✓ Hemos rellenado los campos de tu cambio.') }}</strong>
     {{ _('Revisa que todo esté correcto y toca Publicar.') }}
   </div>
 
@@ -272,9 +272,14 @@
     }
   }
 
+  var TEXTO_BANNER_PARCIAL = {{ _('✓ Hemos rellenado parte de los campos.') | tojson }};
+
   if (PREFILL_ASISTENTE.tipo) {
     var radioTipo = document.getElementById('tipo-' + PREFILL_ASISTENTE.tipo.replace('_', '-'));
     if (radioTipo) radioTipo.checked = true;
+    if (PREFILL_ASISTENTE.parcial) {
+      document.getElementById('banner-prefill-asistente-titulo').textContent = TEXTO_BANNER_PARCIAL;
+    }
     document.getElementById('banner-prefill-asistente').style.display = '';
   }
 

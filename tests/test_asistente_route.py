@@ -130,3 +130,34 @@ def test_consejos_muestra_la_pantalla_de_consejos(client, db):
     assert resp.status_code == 200
     assert "Consejos".encode() in resp.data
 
+
+
+def _propuesta_aceptado_con_franja_desconocida():
+    return PropuestaPublicacion(
+        tipo="cambio",
+        cedidos=[{"fecha": "2026-08-28", "franja": "Mañana"}],
+        aceptados=[{"fecha": "2026-08-29", "franja": "Turno Fantasma"}],
+        campos_faltantes=[],
+    )
+
+
+def test_parsear_con_problema_solo_en_aceptados_prellena_los_cedidos(client, db):
+    _login(client)
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=_propuesta_aceptado_con_franja_desconocida()):
+        resp = client.post("/asistente/parsear", data={"texto": "cambio mi mañana del 28 por algo el 29"},
+                            follow_redirects=True)
+
+    assert resp.status_code == 200
+    assert b"2026-08-28" in resp.data
+
+
+def test_parsear_registra_log_de_auditoria_cuando_es_parcial(client, db, caplog):
+    _login(client)
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=_propuesta_aceptado_con_franja_desconocida()):
+        with caplog.at_level("INFO", logger="asistente.parser"):
+            client.post("/asistente/parsear", data={"texto": "cambio mi turno"})
+
+    mensajes = [r.message for r in caplog.records]
+    assert any("resultado=parcial" in m and "Turno Fantasma" in m for m in mensajes)

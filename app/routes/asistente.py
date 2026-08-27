@@ -122,7 +122,7 @@ def parsear():
         )
         return _volver_al_formulario(aviso_error)
 
-    if problemas:
+    if not cedidos and not aceptados:
         logger.info(
             "asistente_parseo usuario_id=%s resultado=problemas texto=%r propuesta=%r problemas=%r",
             current_user.id, texto, propuesta.model_dump(), problemas,
@@ -136,9 +136,20 @@ def parsear():
             [fecha.isoformat(), franja_id if franja_id is not None else 0]
             for fecha, franja_id in aceptados
         ],
+        "parcial": bool(problemas),
     }
-    logger.info(
-        "asistente_parseo usuario_id=%s resultado=ok texto=%r propuesta=%r cedidos=%r aceptados=%r",
-        current_user.id, texto, propuesta.model_dump(), cedidos, aceptados,
-    )
+    if problemas:
+        flash(
+            _("Hemos interpretado parte del mensaje. Completa lo que falta antes de publicar."),
+            "warning",
+        )
+        logger.info(
+            "asistente_parseo usuario_id=%s resultado=parcial texto=%r propuesta=%r cedidos=%r aceptados=%r problemas=%r",
+            current_user.id, texto, propuesta.model_dump(), cedidos, aceptados, problemas,
+        )
+    else:
+        logger.info(
+            "asistente_parseo usuario_id=%s resultado=ok texto=%r propuesta=%r cedidos=%r aceptados=%r",
+            current_user.id, texto, propuesta.model_dump(), cedidos, aceptados,
+        )
     return redirect(url_for("publicaciones.nueva"))

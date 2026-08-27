@@ -5495,6 +5495,14 @@ msgstr ""
 msgid "✓ Hemos rellenado los campos de tu cambio."
 msgstr ""
 
+#: app/templates/publicaciones/publicar.html
+msgid "✓ Hemos rellenado parte de los campos."
+msgstr ""
+
+#: app/routes/asistente.py
+msgid "Hemos interpretado parte del mensaje. Completa lo que falta antes de publicar."
+msgstr ""
+
 #: app/templates/publicaciones/publicar.html:45
 msgid "Revisa que todo esté correcto y toca Publicar."
 msgstr ""

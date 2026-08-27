@@ -5913,6 +5913,14 @@ msgstr "Interpretar mensaje"
 msgid "✓ Hemos rellenado los campos de tu cambio."
 msgstr "✓ Hemos rellenado los campos de tu cambio."
 
+#: app/templates/publicaciones/publicar.html
+msgid "✓ Hemos rellenado parte de los campos."
+msgstr "✓ Hemos rellenado parte de los campos."
+
+#: app/routes/asistente.py
+msgid "Hemos interpretado parte del mensaje. Completa lo que falta antes de publicar."
+msgstr "Hemos interpretado parte del mensaje. Completa lo que falta antes de publicar."
+
 #: app/templates/publicaciones/publicar.html:45
 msgid "Revisa que todo esté correcto y toca Publicar."
 msgstr "Revisa que todo esté correcto y toca Publicar."

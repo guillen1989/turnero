@@ -83,30 +83,55 @@ def _resolver_turnos(turnos, grupo_intercambio_id, hoy, permitir_cualquier_franj
     return resueltos
 
 
+_LADOS_CAMPOS_FALTANTES = {"cedidos", "aceptados"}
+
+
 def resolver_propuesta(propuesta, usuario, hoy):
     """Resuelve una PropuestaPublicacion contra la BD.
 
-    Devuelve (cedidos, aceptados, problemas). Si `problemas` no está vacío,
-    `cedidos`/`aceptados` vienen vacíos: el llamador debe mandar al usuario al
-    formulario normal, nunca publicar con datos parcialmente resueltos.
+    Devuelve (cedidos, aceptados, problemas). Si un lado (cedidos o
+    aceptados) resuelve limpio y el otro no, se devuelve resuelto el lado
+    bueno y vacío el que falló: media publicación prellenada es mejor que
+    ninguna, y el usuario completa a mano lo que falte antes de publicar
+    (`_validar_turnos` exige ambos lados en el formulario, así que nunca se
+    puede publicar con datos a medias). Solo cuando **ambos** lados fallan,
+    o `campos_faltantes` señala algo que no es un lado concreto, se
+    devuelven los dos vacíos y el llamador manda al formulario en blanco.
     """
     if propuesta.campos_faltantes:
-        return [], [], list(propuesta.campos_faltantes)
+        campos = set(propuesta.campos_faltantes)
+        if not campos <= _LADOS_CAMPOS_FALTANTES:
+            return [], [], list(propuesta.campos_faltantes)
+        grupo_id = usuario.grupo_intercambio.id
+        cedidos = [] if "cedidos" in campos else _resolver_turnos(
+            propuesta.cedidos, grupo_id, hoy, permitir_cualquier_franja=False, problemas=[]
+        )
+        aceptados = [] if "aceptados" in campos else _resolver_turnos(
+            propuesta.aceptados, grupo_id, hoy, permitir_cualquier_franja=True, problemas=[]
+        )
+        return cedidos, aceptados, list(propuesta.campos_faltantes)
 
     grupo_id = usuario.grupo_intercambio.id
-    problemas = []
 
     aceptados_con_franja_heredada = _heredar_franja_de_cedidos(propuesta.cedidos, propuesta.aceptados)
 
+    problemas_cedidos = []
     cedidos = _resolver_turnos(
-        propuesta.cedidos, grupo_id, hoy, permitir_cualquier_franja=False, problemas=problemas
+        propuesta.cedidos, grupo_id, hoy, permitir_cualquier_franja=False, problemas=problemas_cedidos
     )
+    problemas_aceptados = []
     aceptados = _resolver_turnos(
-        aceptados_con_franja_heredada, grupo_id, hoy, permitir_cualquier_franja=True, problemas=problemas
+        aceptados_con_franja_heredada, grupo_id, hoy, permitir_cualquier_franja=True, problemas=problemas_aceptados
     )
 
+    if problemas_cedidos:
+        cedidos = []
+    if problemas_aceptados:
+        aceptados = []
+
+    problemas = problemas_cedidos + problemas_aceptados
     if problemas:
-        return [], [], problemas
+        return cedidos, aceptados, problemas
 
     error = _validar_turnos(propuesta.tipo, cedidos, aceptados, hoy)
     if error:
