@@ -23,6 +23,11 @@
       <p class="modal-title">{{ _('Pegar mensaje de WhatsApp') }}</p>
       <div class="modal-body">
         <p>{{ _('El asistente leerá el mensaje y propondrá los datos, pero no publica nada por ti: revisa y corrige el formulario antes de enviarlo.') }}</p>
+        <p style="font-size:0.875rem">
+          <a href="{{ url_for('asistente.consejos') }}" target="_blank" rel="noopener">
+            {{ _('¿Cómo redactar el mensaje para que sea más fácil de interpretar?') }}
+          </a>
+        </p>
         <form method="post" action="{{ url_for('asistente.parsear') }}" id="form-asistente">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="button" id="btn-pegar-portapapeles" class="btn btn-secondary btn-sm" style="display:none">

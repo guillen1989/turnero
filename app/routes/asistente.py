@@ -7,7 +7,7 @@ aviso, nunca un error 500 ni un bloqueo.
 import logging
 from datetime import date, datetime, time as dtime
 
-from flask import Blueprint, flash, redirect, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 
@@ -73,6 +73,12 @@ def _contexto_para(grupo_id):
 def _volver_al_formulario(mensaje):
     flash(mensaje, "warning")
     return redirect(url_for("publicaciones.nueva"))
+
+
+@bp.get("/consejos")
+@login_required
+def consejos():
+    return render_template("asistente/consejos.html")
 
 
 @bp.post("/parsear")

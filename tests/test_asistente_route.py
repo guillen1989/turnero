@@ -115,3 +115,18 @@ def test_parsear_registra_log_de_auditoria_cuando_falla_la_api(client, db, caplo
     mensajes = [r.message for r in caplog.records]
     assert any("resultado=error_extraccion" in m and "boom" in m for m in mensajes)
 
+
+def test_consejos_requiere_login(client, db):
+    resp = client.get("/asistente/consejos")
+    assert resp.status_code == 302
+    assert "/auth/login" in resp.headers["Location"]
+
+
+def test_consejos_muestra_la_pantalla_de_consejos(client, db):
+    _login(client)
+
+    resp = client.get("/asistente/consejos")
+
+    assert resp.status_code == 200
+    assert "Consejos".encode() in resp.data
+
