@@ -1,35 +1,57 @@
 """Anonimiza un export de WhatsApp para usarlo como corpus del parser (docs/crear_parser.md).
 
 Sustituye el remitente de cada línea por un pseudónimo consistente ([NOMBRE1],
-[NOMBRE2]...) y enmascara teléfonos. NO sustituye nombres mencionados dentro del
-cuerpo del mensaje: eso requiere revisión manual (ver Fase 0.1 del plan).
+[NOMBRE2]...) y enmascara teléfonos. Soporta tanto el formato de export con
+guion ("dd/mm/aa, hh:mm - Remitente: mensaje") como el de corchetes
+("[dd/mm(/aa), hh:mm] Remitente: mensaje"), y mensajes reenviados que
+envuelven otra línea con cabecera propia dentro del cuerpo. NO sustituye
+nombres mencionados dentro del cuerpo del mensaje: eso requiere revisión
+manual (ver Fase 0.1 del plan).
 
 Uso: python scripts/anonimizar_corpus.py <export.txt> <destino.txt>
 """
 import argparse
 import re
 
-# Línea de export de WhatsApp: "dd/mm/aa, hh:mm - Remitente: mensaje"
+# Cabecera de export de WhatsApp, con o sin corchetes:
+# "dd/mm/aa, hh:mm - Remitente: mensaje" o "[dd/mm(/aa), hh:mm] Remitente: mensaje"
 PATRON_LINEA = re.compile(
-    r"^(?P<cabecera>\d{1,2}/\d{1,2}/\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?\s*[-–]\s*)"
-    r"(?P<remitente>[^:]+):\s*(?P<mensaje>.*)$"
+    r"^(?P<apertura>\[?)"
+    r"(?P<fecha>\d{1,2}/\d{1,2}(?:/\d{2,4})?,?\s+\d{1,2}:\d{2}(?::\d{2})?)"
+    r"(?(apertura)\]|\s*[-–])"
+    r"\s*(?P<remitente>[^:]+):\s?(?P<resto>.*)$"
 )
 PATRON_TELEFONO = re.compile(r"(\+?\d[\d\s()-]{6,}\d)")
+
+
+def _pseudonimo_de(remitente: str, pseudonimos: dict[str, str]) -> str:
+    remitente = remitente.strip()
+    if PATRON_TELEFONO.fullmatch(remitente):
+        return "[TELEFONO]"
+    if remitente not in pseudonimos:
+        pseudonimos[remitente] = f"[NOMBRE{len(pseudonimos) + 1}]"
+    return pseudonimos[remitente]
+
+
+def _anonimizar_texto(texto: str, pseudonimos: dict[str, str]) -> str:
+    """Anonimiza una línea o cabecera, incluyendo envolturas anidadas de reenvíos."""
+    m = PATRON_LINEA.match(texto)
+    if not m:
+        return PATRON_TELEFONO.sub("[TELEFONO]", texto)
+    pseudonimo = _pseudonimo_de(m.group("remitente"), pseudonimos)
+    resto = _anonimizar_texto(m.group("resto"), pseudonimos)
+    cierre = "]" if m.group("apertura") else ""
+    return f"{m.group('apertura')}{m.group('fecha')}{cierre} {pseudonimo}: {resto}"
 
 
 def anonimizar_lineas(lineas: list[str]) -> list[str]:
     pseudonimos: dict[str, str] = {}
     salida = []
     for linea in lineas:
-        m = PATRON_LINEA.match(linea.rstrip("\n"))
-        if not m:
-            salida.append(PATRON_TELEFONO.sub("[TELEFONO]", linea))
-            continue
-        remitente = m.group("remitente").strip()
-        if remitente not in pseudonimos:
-            pseudonimos[remitente] = f"[NOMBRE{len(pseudonimos) + 1}]"
-        mensaje = PATRON_TELEFONO.sub("[TELEFONO]", m.group("mensaje"))
-        salida.append(f"{m.group('cabecera')}{pseudonimos[remitente]}: {mensaje}\n")
+        sin_salto = linea.rstrip("\n")
+        tiene_salto = linea.endswith("\n")
+        procesada = _anonimizar_texto(sin_salto, pseudonimos)
+        salida.append(procesada + "\n" if tiene_salto else procesada)
     return salida
 
 
