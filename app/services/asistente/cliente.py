@@ -51,11 +51,7 @@ def _construir_prompt(contexto):
         "- Las fechas del mensaje del usuario son relativas a la fecha de hoy que "
         "él mismo indica al principio de su mensaje, nunca a este texto.\n"
         "- Si falta algún dato imprescindible para completar la propuesta, indícalo "
-        "en `campos_faltantes` en vez de inventarlo.\n"
-        "- Si un turno aceptado no especifica franja horaria, deja su `franja` en "
-        "null; no la incluyas en `campos_faltantes`. El sistema decide "
-        "automáticamente si hereda la franja de los turnos cedidos o si asume "
-        "cualquier franja."
+        "en `campos_faltantes` en vez de inventarlo."
     )
 
 
