@@ -59,7 +59,11 @@
       this.viewY = this.hoyY; this.viewM = this.hoyM;
     }
 
-    this.activeFranjaId = this.franjas.length ? this.franjas[0].id : null;
+    var franjaPreseleccion = null;
+    var primeraFechaSeleccion = Object.keys(this.selection).sort()[0];
+    if (primeraFechaSeleccion) franjaPreseleccion = this.selection[primeraFechaSeleccion][0];
+    var franjaValida = franjaPreseleccion && this.franjas.some(function (f) { return f.id === franjaPreseleccion; });
+    this.activeFranjaId = franjaValida ? franjaPreseleccion : (this.franjas.length ? this.franjas[0].id : null);
 
     this._construir();
     this.render();

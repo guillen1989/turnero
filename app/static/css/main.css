@@ -270,6 +270,17 @@ body {
 }
 .banner-prefill strong { display: block; margin-bottom: 0.15rem; }
 
+.asistente-spinner {
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-left: 6px solid #005a9c;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  color: #1e3a8a;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
 /* Invite section */
 .invite-section {
   margin-top: 2rem;
