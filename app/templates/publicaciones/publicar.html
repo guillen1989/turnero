@@ -40,6 +40,11 @@
     </div>
   </div>
 
+  <div id="banner-prefill-asistente" class="banner-prefill" style="display:none" role="status">
+    <strong>{{ _('✓ Hemos rellenado los campos de tu cambio.') }}</strong>
+    {{ _('Revisa que todo esté correcto y toca Publicar.') }}
+  </div>
+
   <form method="post" id="publicar-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -228,6 +233,7 @@
   });
   formAsistente.addEventListener('submit', function () {
     btnEnviarAsistente.disabled = true;
+    btnEnviarAsistente.textContent = '{{ _("Interpretando mensaje…") }}';
     btnCancelarAsistente.disabled = true;
     spinnerAsistente.style.display = '';
   });
@@ -235,6 +241,7 @@
   if (PREFILL_ASISTENTE.tipo) {
     var radioTipo = document.getElementById('tipo-' + PREFILL_ASISTENTE.tipo.replace('_', '-'));
     if (radioTipo) radioTipo.checked = true;
+    document.getElementById('banner-prefill-asistente').style.display = '';
   }
 
   new CalendarioTurnos(document.getElementById('cal-cedidos'), {

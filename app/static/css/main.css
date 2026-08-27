@@ -254,7 +254,21 @@ body {
 
 .btn-primary { background: #005a9c; color: #fff; }
 .btn-primary:hover { background: #004578; }
+.btn-primary:disabled,
+.btn-primary:disabled:hover { background: #94a3b8; color: #e2e8f0; cursor: not-allowed; }
 .btn-full { width: 100%; }
+
+.banner-prefill {
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  border-left: 6px solid #10b981;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin: 0 0 1.25rem;
+  color: #065f46;
+  font-size: 0.95rem;
+}
+.banner-prefill strong { display: block; margin-bottom: 0.15rem; }
 
 /* Invite section */
 .invite-section {

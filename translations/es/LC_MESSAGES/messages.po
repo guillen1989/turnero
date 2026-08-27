@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-27 18:01+0200\n"
+"POT-Creation-Date: 2026-08-27 18:54+0200\n"
 "PO-Revision-Date: 2026-06-20 11:28+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: app/routes/asistente.py:64
+#: app/routes/asistente.py:77
 #, python-format
 msgid ""
 "Has alcanzado el límite diario de %(n)s usos del asistente. Rellena el "
@@ -27,7 +27,7 @@ msgstr ""
 "Has alcanzado el límite diario de %(n)s usos del asistente. Rellena el "
 "formulario manualmente."
 
-#: app/routes/asistente.py:76
+#: app/routes/asistente.py:89
 msgid ""
 "El asistente no ha podido interpretar el mensaje. Rellena el formulario "
 "manualmente."
@@ -205,7 +205,7 @@ msgstr "Cualquiera"
 #: app/templates/main/dashboard.html:256
 #: app/templates/main/funcionalidades.html:54
 #: app/templates/publicaciones/editar.html:23
-#: app/templates/publicaciones/publicar.html:52
+#: app/templates/publicaciones/publicar.html:57
 msgid "Cambio"
 msgstr "Cambio"
 
@@ -214,7 +214,7 @@ msgstr "Cambio"
 #: app/templates/main/dashboard.html:218
 #: app/templates/main/funcionalidades.html:58
 #: app/templates/publicaciones/editar.html:28
-#: app/templates/publicaciones/publicar.html:59
+#: app/templates/publicaciones/publicar.html:64
 msgid "Regalo"
 msgstr "Regalo"
 
@@ -223,7 +223,7 @@ msgstr "Regalo"
 #: app/templates/main/dashboard.html:226
 #: app/templates/main/funcionalidades.html:62
 #: app/templates/publicaciones/editar.html:33
-#: app/templates/publicaciones/publicar.html:66
+#: app/templates/publicaciones/publicar.html:71
 msgid "Petición"
 msgstr "Petición"
 
@@ -232,7 +232,7 @@ msgstr "Petición"
 #: app/templates/main/dashboard.html:248
 #: app/templates/main/funcionalidades.html:70
 #: app/templates/publicaciones/editar.html:38
-#: app/templates/publicaciones/publicar.html:80
+#: app/templates/publicaciones/publicar.html:85
 msgid "Cambio de turno en el día"
 msgstr "Cambio de turno en el día"
 
@@ -1696,7 +1696,7 @@ msgstr "No hay categorías."
 #: app/templates/planilla_supervision/index.html:158
 #: app/templates/publicaciones/editar.html:65
 #: app/templates/publicaciones/publicar.html:35
-#: app/templates/publicaciones/publicar.html:170
+#: app/templates/publicaciones/publicar.html:175
 msgid "Cancelar"
 msgstr "Cancelar"
 
@@ -1817,18 +1817,18 @@ msgid "Grupo"
 msgstr "Grupo"
 
 #: app/templates/admin/franjas.html:13 app/templates/admin/usuarios.html:14
-#: app/templates/publicaciones/publicar.html:182
+#: app/templates/publicaciones/publicar.html:187
 #: app/templates/unidad/turnos.html:25 app/templates/unidad/turnos.html:78
 msgid "Nombre"
 msgstr "Nombre"
 
 #: app/templates/admin/franjas.html:14
-#: app/templates/publicaciones/publicar.html:186
+#: app/templates/publicaciones/publicar.html:191
 msgid "Hora inicio"
 msgstr "Hora inicio"
 
 #: app/templates/admin/franjas.html:15
-#: app/templates/publicaciones/publicar.html:190
+#: app/templates/publicaciones/publicar.html:195
 msgid "Hora fin"
 msgstr "Hora fin"
 
@@ -2779,12 +2779,12 @@ msgstr "Libras un turno y trabajas otro a cambio"
 #: app/templates/main/como_funciona.html:66
 #: app/templates/main/dashboard.html:234
 #: app/templates/main/funcionalidades.html:66
-#: app/templates/publicaciones/publicar.html:73
+#: app/templates/publicaciones/publicar.html:78
 msgid "Junte de noches"
 msgstr "Junte de noches"
 
 #: app/templates/documento_cambio/nuevo.html:41
-#: app/templates/publicaciones/publicar.html:74
+#: app/templates/publicaciones/publicar.html:79
 msgid ""
 "Reorganizas con un compañero las noches de una semana para trabajarlas "
 "seguidas"
@@ -2817,8 +2817,8 @@ msgstr "Compañero/a con quien cambias"
 #: app/templates/main/contraoferta.html:53
 #: app/templates/main/contraoferta.html:77
 #: app/templates/main/contraoferta.html:121
-#: app/templates/publicaciones/publicar.html:97
-#: app/templates/publicaciones/publicar.html:106
+#: app/templates/publicaciones/publicar.html:102
+#: app/templates/publicaciones/publicar.html:111
 msgid "— Selecciona —"
 msgstr "— Selecciona —"
 
@@ -2863,47 +2863,47 @@ msgid "cede"
 msgstr "Cede"
 
 #: app/templates/documento_cambio/nuevo.html:94
-#: app/templates/publicaciones/publicar.html:117
+#: app/templates/publicaciones/publicar.html:122
 msgid "Semana del junte"
 msgstr "Semana del junte"
 
 #: app/templates/documento_cambio/nuevo.html:96
-#: app/templates/publicaciones/publicar.html:119
+#: app/templates/publicaciones/publicar.html:124
 msgid "Puedes seleccionar cualquier día de esa semana"
 msgstr "Puedes seleccionar cualquier día de esa semana"
 
 #: app/templates/documento_cambio/nuevo.html:100
-#: app/templates/publicaciones/publicar.html:123
+#: app/templates/publicaciones/publicar.html:128
 msgid "Mi cadencia esa semana"
 msgstr "Mi cadencia esa semana"
 
 #: app/templates/documento_cambio/nuevo.html:105
-#: app/templates/publicaciones/publicar.html:128
+#: app/templates/publicaciones/publicar.html:133
 msgid "4 noches"
 msgstr "4 noches"
 
 #: app/templates/documento_cambio/nuevo.html:106
-#: app/templates/publicaciones/publicar.html:129
+#: app/templates/publicaciones/publicar.html:134
 msgid "Lun · Mié · Vie · Dom"
 msgstr "Lun · Mié · Vie · Dom"
 
 #: app/templates/documento_cambio/nuevo.html:112
-#: app/templates/publicaciones/publicar.html:135
+#: app/templates/publicaciones/publicar.html:140
 msgid "3 noches"
 msgstr "3 noches"
 
 #: app/templates/documento_cambio/nuevo.html:113
-#: app/templates/publicaciones/publicar.html:136
+#: app/templates/publicaciones/publicar.html:141
 msgid "Mar · Jue · Sáb"
 msgstr "Mar · Jue · Sáb"
 
 #: app/templates/documento_cambio/nuevo.html:120
-#: app/templates/publicaciones/publicar.html:143
+#: app/templates/publicaciones/publicar.html:148
 msgid "Noches que trabajarás tú tras el junte"
 msgstr "Noches que trabajarás tú tras el junte"
 
 #: app/templates/documento_cambio/nuevo.html:121
-#: app/templates/publicaciones/publicar.html:144
+#: app/templates/publicaciones/publicar.html:149
 msgid "Selecciona exactamente las noches que quieres trabajar."
 msgstr "Selecciona exactamente las noches que quieres trabajar."
 
@@ -2917,7 +2917,7 @@ msgstr "Tu turno que cedes"
 #: app/templates/documento_cambio/registrar_papel.html:55
 #: app/templates/documento_cambio/registrar_papel.html:74
 #: app/templates/main/cambios.html:81
-#: app/templates/publicaciones/publicar.html:90
+#: app/templates/publicaciones/publicar.html:95
 msgid "Día"
 msgstr "Día"
 
@@ -2987,27 +2987,27 @@ msgid "Crear hoja de cambio"
 msgstr "Crear hoja de cambio"
 
 #: app/templates/documento_cambio/nuevo.html:330
-#: app/templates/publicaciones/publicar.html:295
+#: app/templates/publicaciones/publicar.html:302
 msgid "Selecciona exactamente"
 msgstr "Selecciona exactamente"
 
 #: app/templates/documento_cambio/nuevo.html:330
 #: app/templates/documento_cambio/nuevo.html:403
 #: app/templates/main/cambios.html:178 app/templates/main/dashboard.html:327
-#: app/templates/publicaciones/publicar.html:295
-#: app/templates/publicaciones/publicar.html:343
+#: app/templates/publicaciones/publicar.html:302
+#: app/templates/publicaciones/publicar.html:350
 msgid "noches"
 msgstr "noches"
 
 #: app/templates/documento_cambio/nuevo.html:330
 #: app/templates/documento_cambio/nuevo.html:403
-#: app/templates/publicaciones/publicar.html:295
-#: app/templates/publicaciones/publicar.html:343
+#: app/templates/publicaciones/publicar.html:302
+#: app/templates/publicaciones/publicar.html:350
 msgid "seleccionadas"
 msgstr "seleccionadas"
 
 #: app/templates/documento_cambio/nuevo.html:403
-#: app/templates/publicaciones/publicar.html:343
+#: app/templates/publicaciones/publicar.html:350
 msgid "Debes seleccionar exactamente"
 msgstr "Debes seleccionar exactamente"
 
@@ -4354,7 +4354,7 @@ msgstr "+ Añadir otro turno que puedo trabajar"
 
 #: app/templates/main/contraoferta.html:91
 #: app/templates/publicaciones/editar.html:57
-#: app/templates/publicaciones/publicar.html:162
+#: app/templates/publicaciones/publicar.html:167
 msgid "Mensaje (opcional)"
 msgstr "Mensaje (opcional)"
 
@@ -5813,44 +5813,44 @@ msgid "Tipo de publicación"
 msgstr "Tipo de publicación"
 
 #: app/templates/publicaciones/editar.html:24
-#: app/templates/publicaciones/publicar.html:53
+#: app/templates/publicaciones/publicar.html:58
 msgid "Libras un turno y trabajas otro a cambio"
 msgstr "Libras un turno y trabajas otro a cambio"
 
 #: app/templates/publicaciones/editar.html:29
-#: app/templates/publicaciones/publicar.html:60
+#: app/templates/publicaciones/publicar.html:65
 msgid "Te ofreces a trabajar un turno sin recibir nada a cambio"
 msgstr "Te ofreces a trabajar un turno sin recibir nada a cambio"
 
 #: app/templates/publicaciones/editar.html:34
-#: app/templates/publicaciones/publicar.html:67
+#: app/templates/publicaciones/publicar.html:72
 msgid "Buscas quien trabaje un turno tuyo sin ofrecer nada a cambio"
 msgstr "Buscas quien trabaje un turno tuyo sin ofrecer nada a cambio"
 
 #: app/templates/publicaciones/editar.html:39
-#: app/templates/publicaciones/publicar.html:81
+#: app/templates/publicaciones/publicar.html:86
 msgid "Cambias tu turno de mañana a tarde (o viceversa) el mismo día"
 msgstr "Cambias tu turno de mañana a tarde (o viceversa) el mismo día"
 
 #: app/templates/publicaciones/editar.html:45
-#: app/templates/publicaciones/publicar.html:150
+#: app/templates/publicaciones/publicar.html:155
 msgid "Turnos que quiero librar"
 msgstr "Turnos que quiero librar"
 
 #: app/templates/publicaciones/editar.html:46
 #: app/templates/publicaciones/editar.html:52
-#: app/templates/publicaciones/publicar.html:151
-#: app/templates/publicaciones/publicar.html:157
+#: app/templates/publicaciones/publicar.html:156
+#: app/templates/publicaciones/publicar.html:162
 msgid "Elige el tipo de turno y toca los días para añadirlos."
 msgstr "Elige el tipo de turno y toca los días para añadirlos."
 
 #: app/templates/publicaciones/editar.html:51
-#: app/templates/publicaciones/publicar.html:156
+#: app/templates/publicaciones/publicar.html:161
 msgid "Turnos que quiero trabajar"
 msgstr "Turnos que quiero trabajar"
 
 #: app/templates/publicaciones/editar.html:59
-#: app/templates/publicaciones/publicar.html:164
+#: app/templates/publicaciones/publicar.html:169
 msgid ""
 "Escribe un mensaje para el usuario con el que hagas match (máx. 200 "
 "caracteres)"
@@ -5863,17 +5863,17 @@ msgid "Guardar cambios"
 msgstr "Guardar cambios"
 
 #: app/templates/publicaciones/editar.html:81
-#: app/templates/publicaciones/publicar.html:210
+#: app/templates/publicaciones/publicar.html:215
 msgid "turno seleccionado"
 msgstr "turno seleccionado"
 
 #: app/templates/publicaciones/editar.html:82
-#: app/templates/publicaciones/publicar.html:211
+#: app/templates/publicaciones/publicar.html:216
 msgid "turnos seleccionados"
 msgstr "turnos seleccionados"
 
 #: app/templates/publicaciones/editar.html:84
-#: app/templates/publicaciones/publicar.html:213
+#: app/templates/publicaciones/publicar.html:218
 msgid "✦ Cualquier turno de ese día"
 msgstr "✦ Cualquier turno de ese día"
 
@@ -5909,31 +5909,39 @@ msgstr "Interpretando el mensaje, puede tardar unos segundos…"
 msgid "Interpretar mensaje"
 msgstr "Interpretar mensaje"
 
-#: app/templates/publicaciones/publicar.html:47
+#: app/templates/publicaciones/publicar.html:44
+msgid "✓ Hemos rellenado los campos de tu cambio."
+msgstr "✓ Hemos rellenado los campos de tu cambio."
+
+#: app/templates/publicaciones/publicar.html:45
+msgid "Revisa que todo esté correcto y toca Publicar."
+msgstr "Revisa que todo esté correcto y toca Publicar."
+
+#: app/templates/publicaciones/publicar.html:52
 msgid "¿Qué tipo de publicación quieres hacer?"
 msgstr "¿Qué tipo de publicación quieres hacer?"
 
-#: app/templates/publicaciones/publicar.html:88
+#: app/templates/publicaciones/publicar.html:93
 msgid "¿Qué turno quieres cambiar?"
 msgstr "¿Qué turno quieres cambiar?"
 
-#: app/templates/publicaciones/publicar.html:95
+#: app/templates/publicaciones/publicar.html:100
 msgid "Mi turno actual (que cedo)"
 msgstr "Mi turno actual (que cedo)"
 
-#: app/templates/publicaciones/publicar.html:104
+#: app/templates/publicaciones/publicar.html:109
 msgid "Turno que deseo (que acepto)"
 msgstr "Turno que deseo (que acepto)"
 
-#: app/templates/publicaciones/publicar.html:169
+#: app/templates/publicaciones/publicar.html:174
 msgid "Publicar"
 msgstr "Publicar"
 
-#: app/templates/publicaciones/publicar.html:175
+#: app/templates/publicaciones/publicar.html:180
 msgid "¿No encuentras tu tipo de turno?"
 msgstr "¿No encuentras tu tipo de turno?"
 
-#: app/templates/publicaciones/publicar.html:176
+#: app/templates/publicaciones/publicar.html:181
 msgid ""
 "Añade un nuevo tipo de turno para tu unidad y estará disponible para "
 "todos tus compañeros."
@@ -5941,15 +5949,19 @@ msgstr ""
 "Añade un nuevo tipo de turno para tu unidad y estará disponible para "
 "todos tus compañeros."
 
-#: app/templates/publicaciones/publicar.html:183
+#: app/templates/publicaciones/publicar.html:188
 msgid "Ej: Guardia 24h"
 msgstr "Ej: Guardia 24h"
 
-#: app/templates/publicaciones/publicar.html:194
+#: app/templates/publicaciones/publicar.html:199
 msgid "Guardar tipo de turno"
 msgstr "Guardar tipo de turno"
 
-#: app/templates/publicaciones/publicar.html:350
+#: app/templates/publicaciones/publicar.html:236
+msgid "Interpretando mensaje…"
+msgstr "Interpretando mensaje…"
+
+#: app/templates/publicaciones/publicar.html:357
 msgid "Publicando…"
 msgstr "Publicando…"
 
