@@ -22,6 +22,12 @@ bp = Blueprint("asistente", __name__, url_prefix="/asistente")
 
 LIMITE_PARSEOS_DIA = 20
 
+# MEDIDA TEMPORAL (2026-08-27): límite diario desactivado mientras se prueba
+# en staging con mensajes reales. Reactivar (quitar este flag y la condición
+# de más abajo) antes de promocionar el asistente a producción de forma
+# permanente. Ver PROGRESS.md.
+LIMITE_PARSEOS_DIA_ACTIVO = False
+
 # Logger de auditoría del asistente: registra cada mensaje recibido y su
 # resultado (éxito, problemas de resolución o fallo de API) para poder
 # diagnosticar interpretaciones fallidas en staging/producción. Sin
@@ -69,22 +75,10 @@ def _volver_al_formulario(mensaje):
     return redirect(url_for("publicaciones.nueva"))
 
 
-@bp.get("/compartir")
-@login_required
-def compartir():
-    """Destino del share_target de la PWA: recibe el texto que el usuario
-    comparte desde WhatsApp (u otra app) y lo deja listo para que el
-    asistente lo interprete, sin publicar nada automáticamente."""
-    texto = request.args.get("text", "").strip()
-    if texto:
-        session["asistente_texto_compartido"] = texto
-    return redirect(url_for("publicaciones.nueva", abrir_asistente=1))
-
-
 @bp.post("/parsear")
 @login_required
 def parsear():
-    if _parseos_hoy(current_user.id) >= LIMITE_PARSEOS_DIA:
+    if LIMITE_PARSEOS_DIA_ACTIVO and _parseos_hoy(current_user.id) >= LIMITE_PARSEOS_DIA:
         return _volver_al_formulario(
             _("Has alcanzado el límite diario de %(n)s usos del asistente. "
               "Rellena el formulario manualmente.", n=LIMITE_PARSEOS_DIA)

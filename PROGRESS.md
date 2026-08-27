@@ -139,6 +139,11 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   usuario, no exclusiva de supervisoras.
 - Preguntas abiertas del plan de la Fase 13 (registro libre de unidades,
   abandono de unidad) siguen pendientes de confirmar.
+- **MEDIDA TEMPORAL (2026-08-27):** el límite diario de usos del asistente
+  de WhatsApp (`LIMITE_PARSEOS_DIA` = 20 en `app/routes/asistente.py`) está
+  desactivado (`LIMITE_PARSEOS_DIA_ACTIVO = False`) mientras se prueba en
+  staging con mensajes reales. Reactivar antes de promocionar el asistente
+  a producción de forma permanente.
 
 ## Mantenimiento reciente (independiente de la Fase 10 — supervisoras multiunidad)
 Implementación de `PLAN_SUPERVISORAS_MULTIUNIDAD.md`: las supervisoras podrán
