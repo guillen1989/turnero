@@ -90,3 +90,17 @@ def test_el_prompt_distingue_peticion_de_cambio_y_de_regalo():
     bloque_sistema = cliente.kwargs_recibidos["system"][0]["text"]
     assert "aceptados" in bloque_sistema and "cedidos" in bloque_sistema
     assert "mismo día" in bloque_sistema
+
+
+def test_el_prompt_no_pide_marcar_como_faltante_la_franja_no_especificada_del_aceptado():
+    """Fase 5B.3 — antes el modelo marcaba en `campos_faltantes` la franja de un
+    aceptado sin especificar (p. ej. 'Hago finde 5 y 6 x 18 y 21 tarde'), lo que
+    bloqueaba toda resolución aunque el resolvedor ya sabe inferirla (hereda la
+    franja de los cedidos si comparten una única, o asume cualquier franja)."""
+    cliente = _ClienteFalso(respuesta=SimpleNamespace(parsed_output=_propuesta_esperada()))
+
+    extraer_propuesta("texto", _CONTEXTO, client=cliente)
+
+    bloque_sistema = cliente.kwargs_recibidos["system"][0]["text"]
+    assert "franja" in bloque_sistema and "campos_faltantes" in bloque_sistema
+    assert "no la incluyas en" in bloque_sistema or "no lo incluyas en" in bloque_sistema

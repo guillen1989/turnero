@@ -103,11 +103,39 @@ def test_franja_desconocida_va_a_problemas_sin_inventar_id(db):
     assert any("Turno Fantasma" in p for p in problemas)
 
 
-def test_franja_null_en_aceptados_es_cualquier_franja(db):
+def test_franja_null_en_aceptados_hereda_la_franja_de_los_cedidos_si_es_unica(db):
+    u = _usuario()
+    franja_manana = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+
+    cedidos, aceptados, problemas = resolver_propuesta(
+        _propuesta(
+            cedidos=[
+                {"fecha": "2026-08-28", "franja": "Mañana"},
+                {"fecha": "2026-08-30", "franja": "Mañana"},
+            ],
+            aceptados=[{"fecha": "2026-08-29", "franja": None}],
+        ),
+        u,
+        HOY,
+    )
+
+    assert problemas == []
+    assert aceptados == [(date(2026, 8, 29), franja_manana.id)]
+
+
+def test_franja_null_en_aceptados_es_cualquier_franja_si_cedidos_no_comparten_franja(db):
     u = _usuario()
 
     cedidos, aceptados, problemas = resolver_propuesta(
-        _propuesta(aceptados=[{"fecha": "2026-08-29", "franja": None}]),
+        _propuesta(
+            cedidos=[
+                {"fecha": "2026-08-28", "franja": "Mañana"},
+                {"fecha": "2026-08-30", "franja": "Tarde"},
+            ],
+            aceptados=[{"fecha": "2026-08-29", "franja": None}],
+        ),
         u,
         HOY,
     )

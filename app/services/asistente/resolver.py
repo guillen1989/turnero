@@ -43,6 +43,23 @@ def _resolver_franja_id(nombre_franja, grupo_intercambio_id):
     return None
 
 
+def _heredar_franja_de_cedidos(cedidos, aceptados):
+    """Si un aceptado no indica franja, hereda la de los cedidos cuando todos
+    comparten una única franja. Si los cedidos tienen franjas distintas entre
+    sí, no hay franja que heredar y el aceptado se deja como 'cualquier
+    franja' (franja=None), que el resolvedor ya sabe interpretar.
+    """
+    franjas_cedidos = {turno.franja for turno in cedidos if turno.franja is not None}
+    if len(franjas_cedidos) != 1:
+        return aceptados
+
+    franja_heredada = next(iter(franjas_cedidos))
+    return [
+        turno if turno.franja is not None else turno.model_copy(update={"franja": franja_heredada})
+        for turno in aceptados
+    ]
+
+
 def _resolver_turnos(turnos, grupo_intercambio_id, hoy, permitir_cualquier_franja, problemas):
     resueltos = []
     for turno in turnos:
@@ -79,11 +96,13 @@ def resolver_propuesta(propuesta, usuario, hoy):
     grupo_id = usuario.grupo_intercambio.id
     problemas = []
 
+    aceptados_con_franja_heredada = _heredar_franja_de_cedidos(propuesta.cedidos, propuesta.aceptados)
+
     cedidos = _resolver_turnos(
         propuesta.cedidos, grupo_id, hoy, permitir_cualquier_franja=False, problemas=problemas
     )
     aceptados = _resolver_turnos(
-        propuesta.aceptados, grupo_id, hoy, permitir_cualquier_franja=True, problemas=problemas
+        aceptados_con_franja_heredada, grupo_id, hoy, permitir_cualquier_franja=True, problemas=problemas
     )
 
     if problemas:
