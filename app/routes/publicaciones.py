@@ -328,14 +328,13 @@ def nueva():
 
     prefill_fecha, prefill_modo = _leer_prefill_calendario()
     prefill_asistente = session.pop("asistente_prefill", None)
-    texto_compartido = session.pop("asistente_texto_compartido", None)
-    abrir_asistente = bool(texto_compartido) or request.args.get("abrir_asistente") == "1"
+    abrir_asistente = request.args.get("abrir_asistente") == "1"
     return render_template(
         "publicaciones/publicar.html", franjas=franjas,
         franjas_json=_franjas_a_json(franjas), today=date.today().isoformat(),
         prefill_fecha=prefill_fecha, prefill_modo=prefill_modo,
         prefill_asistente=prefill_asistente,
-        texto_compartido=texto_compartido, abrir_asistente=abrir_asistente,
+        abrir_asistente=abrir_asistente,
     )
 
 

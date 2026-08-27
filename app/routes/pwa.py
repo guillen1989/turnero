@@ -22,15 +22,6 @@ def manifest():
         "theme_color": "#2563eb",
         "lang": "es",
         "prefer_related_applications": False,
-        "share_target": {
-            "action": "/asistente/compartir",
-            "method": "GET",
-            "params": {
-                "title": "title",
-                "text": "text",
-                "url": "url",
-            },
-        },
         "icons": [
             # "any maskable" en una sola entrada evita duplicados que rompen Chrome antiguo en Android 5/6/7
             {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},

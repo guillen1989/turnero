@@ -87,13 +87,3 @@ def test_offline_page_disponible(client, db):
 def test_service_worker_precachea_pagina_offline(client, db):
     resp = client.get("/sw.js")
     assert b"/offline" in resp.data
-
-
-def test_manifest_incluye_share_target_para_compartir_desde_whatsapp(client, db):
-    """Permite compartir un mensaje de WhatsApp directamente a la app desde el share sheet del móvil."""
-    data = json.loads(client.get("/manifest.json").data)
-    share_target = data.get("share_target")
-    assert share_target is not None
-    assert share_target["action"] == "/asistente/compartir"
-    assert share_target["method"] == "GET"
-    assert share_target["params"]["text"] == "text"
