@@ -76,3 +76,17 @@ def test_el_prompt_de_sistema_no_incluye_la_fecha_de_hoy():
     bloque_sistema = cliente.kwargs_recibidos["system"][0]["text"]
     assert "2026" not in bloque_sistema
     assert bloque_sistema.count("Mañana") >= 1
+
+
+def test_el_prompt_distingue_peticion_de_cambio_y_de_regalo():
+    """Fase 5B — el fallo dominante del dev set (20/60) era confundir tipos que
+    el prompt nunca definía, solo los nombraba. Sin esta distinción, el modelo
+    no puede diferenciar 'me cambian X por Y' (cambio) de 'que me cubran X, ya
+    veremos' (peticion, sin aceptados concretos)."""
+    cliente = _ClienteFalso(respuesta=SimpleNamespace(parsed_output=_propuesta_esperada()))
+
+    extraer_propuesta("texto", _CONTEXTO, client=cliente)
+
+    bloque_sistema = cliente.kwargs_recibidos["system"][0]["text"]
+    assert "aceptados" in bloque_sistema and "cedidos" in bloque_sistema
+    assert "mismo día" in bloque_sistema

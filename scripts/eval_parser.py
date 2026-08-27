@@ -13,6 +13,8 @@ import argparse
 import json
 from datetime import date
 
+from dotenv import load_dotenv
+
 from app.services.asistente.cliente import extraer_propuesta
 
 _FRANJAS_CORPUS = [
@@ -94,8 +96,13 @@ def evaluar_corpus(entradas: list[dict], contexto_base: dict, extraer) -> dict:
 
     for entrada in entradas:
         contexto = {**contexto_base, "hoy": date.fromisoformat(entrada["fecha_mensaje"])}
-        propuesta = extraer(entrada["texto"], contexto, entrada["id"])
         esperado = entrada["esperado"]
+
+        try:
+            propuesta = extraer(entrada["texto"], contexto, entrada["id"])
+        except Exception:
+            histograma_fallos["fallo_extraccion"] = histograma_fallos.get("fallo_extraccion", 0) + 1
+            continue
 
         if comparar_exacto(propuesta, esperado):
             exact_match += 1
@@ -116,19 +123,66 @@ def evaluar_corpus(entradas: list[dict], contexto_base: dict, extraer) -> dict:
     }
 
 
+def detallar_fallos(entradas: list[dict], contexto_base: dict, extraer) -> list[dict]:
+    """Como `evaluar_corpus`, pero devuelve el detalle crudo de cada entrada que falla
+    (o que revienta al extraer), para el diagnóstico manual de la Fase 5B — nunca hay
+    que tocar el prompt sin haber mirado antes casos concretos.
+    """
+    detalles = []
+    for entrada in entradas:
+        contexto = {**contexto_base, "hoy": date.fromisoformat(entrada["fecha_mensaje"])}
+        esperado = entrada["esperado"]
+
+        try:
+            propuesta = extraer(entrada["texto"], contexto, entrada["id"])
+        except Exception as e:
+            detalles.append({"id": entrada["id"], "texto": entrada["texto"], "error": str(e)})
+            continue
+
+        if comparar_exacto(propuesta, esperado):
+            continue
+
+        detalles.append(
+            {
+                "id": entrada["id"],
+                "texto": entrada["texto"],
+                "esperado": esperado,
+                "obtenido": {
+                    "tipo": propuesta.tipo,
+                    "cedidos": _turnos_a_tuplas(propuesta.cedidos),
+                    "aceptados": _turnos_a_tuplas(propuesta.aceptados),
+                    "campos_faltantes": propuesta.campos_faltantes,
+                },
+                "fallos": diagnosticar(propuesta, esperado),
+            }
+        )
+    return detalles
+
+
 def main():
+    load_dotenv()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("corpus", help="dev.jsonl o test.jsonl")
+    parser.add_argument(
+        "--detalle",
+        metavar="SALIDA.jsonl",
+        help="Vuelca el diagnóstico crudo de cada entrada que falla (Fase 5B.1)",
+    )
     args = parser.parse_args()
 
     entradas = cargar_corpus(args.corpus)
     contexto_base = {"franjas": _FRANJAS_CORPUS, "tipos_validos": _TIPOS_VALIDOS}
+    extraer = lambda texto, contexto, id_entrada: extraer_propuesta(texto, contexto)
 
-    resultado = evaluar_corpus(
-        entradas,
-        contexto_base,
-        extraer=lambda texto, contexto, id_entrada: extraer_propuesta(texto, contexto),
-    )
+    if args.detalle:
+        detalles = detallar_fallos(entradas, contexto_base, extraer)
+        with open(args.detalle, "w", encoding="utf-8") as f:
+            for detalle in detalles:
+                f.write(json.dumps(detalle, ensure_ascii=False, default=str) + "\n")
+        print(f"{len(detalles)} fallos volcados -> {args.detalle}")
+        return
+
+    resultado = evaluar_corpus(entradas, contexto_base, extraer)
 
     print(f"Total anotadas: {resultado['total']}")
     print(f"Exact match: {resultado['exact_match']} ({resultado['exact_match_rate']:.1%})")

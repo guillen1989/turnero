@@ -152,3 +152,90 @@ class TestEvaluarCorpus:
         assert resultado["error_silencioso"] == 1
         assert resultado["error_silencioso_rate"] == pytest.approx(0.5)
         assert resultado["histograma_fallos"] == {"cedido_de_mas": 1, "cedido_de_menos": 1}
+
+    def test_una_excepcion_al_extraer_no_interrumpe_la_evaluacion(self):
+        entradas = [
+            {
+                "id": "w001",
+                "texto": "texto invalido",
+                "fecha_mensaje": "2026-08-01",
+                "esperado": _esperado(cedidos=[["2026-09-11", "Tarde"]]),
+            },
+            {
+                "id": "w002",
+                "texto": "texto2",
+                "fecha_mensaje": "2026-08-01",
+                "esperado": _esperado(cedidos=[["2026-09-11", "Tarde"]]),
+            },
+        ]
+
+        def extraer_falso(texto, contexto, id_entrada):
+            if id_entrada == "w001":
+                raise ValueError("fecha '' no tiene formato ISO")
+            return _propuesta(cedidos=[("2026-09-11", "Tarde")])
+
+        resultado = eval_parser.evaluar_corpus(
+            entradas,
+            contexto_base={"franjas": [], "tipos_validos": ["cambio"]},
+            extraer=extraer_falso,
+        )
+
+        assert resultado["total"] == 2
+        assert resultado["exact_match"] == 1
+        assert resultado["error_silencioso"] == 0
+        assert resultado["histograma_fallos"] == {"fallo_extraccion": 1}
+
+
+class TestDetallarFallos:
+    def test_solo_incluye_las_entradas_que_fallan(self):
+        entradas = [
+            {
+                "id": "w001",
+                "texto": "texto acertado",
+                "fecha_mensaje": "2026-08-01",
+                "esperado": _esperado(cedidos=[["2026-09-11", "Tarde"]]),
+            },
+            {
+                "id": "w002",
+                "texto": "texto fallido",
+                "fecha_mensaje": "2026-08-01",
+                "esperado": _esperado(tipo="cambio", cedidos=[["2026-09-11", "Tarde"]]),
+            },
+        ]
+        respuestas = {
+            "w001": _propuesta(cedidos=[("2026-09-11", "Tarde")]),
+            "w002": _propuesta(tipo="peticion", cedidos=[]),
+        }
+
+        detalles = eval_parser.detallar_fallos(
+            entradas,
+            contexto_base={"franjas": [], "tipos_validos": ["cambio", "peticion"]},
+            extraer=lambda texto, contexto, id_entrada: respuestas[id_entrada],
+        )
+
+        assert len(detalles) == 1
+        assert detalles[0]["id"] == "w002"
+        assert detalles[0]["texto"] == "texto fallido"
+        assert "tipo" in detalles[0]["fallos"]
+        assert detalles[0]["obtenido"]["tipo"] == "peticion"
+
+    def test_registra_las_excepciones_de_extraccion(self):
+        entradas = [
+            {
+                "id": "w001",
+                "texto": "texto raro",
+                "fecha_mensaje": "2026-08-01",
+                "esperado": _esperado(cedidos=[["2026-09-11", "Tarde"]]),
+            }
+        ]
+
+        def extraer_falso(texto, contexto, id_entrada):
+            raise ValueError("fecha '' no tiene formato ISO")
+
+        detalles = eval_parser.detallar_fallos(
+            entradas, contexto_base={"franjas": [], "tipos_validos": ["cambio"]}, extraer=extraer_falso
+        )
+
+        assert len(detalles) == 1
+        assert detalles[0]["id"] == "w001"
+        assert "fecha '' no tiene formato ISO" in detalles[0]["error"]
