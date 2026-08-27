@@ -882,3 +882,15 @@ def test_dashboard_activos_no_muestra_botones_eliminar_confirmadas(client, db):
     html = resp.data.decode()
 
     assert "/publicaciones/eliminar-confirmadas" not in html
+
+
+def test_dashboard_muestra_cta_prominente_para_publicar_por_whatsapp(client, db):
+    """La entrada al asistente de WhatsApp debe ser visible desde la pantalla
+    principal, no solo dentro del formulario de publicar (reduce fricción)."""
+    _usuario_y_login(client)
+
+    resp = client.get("/")
+    html = resp.data.decode()
+
+    assert "cta-asistente-whatsapp" in html
+    assert "/publicar?abrir_asistente=1" in html

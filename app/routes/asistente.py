@@ -69,6 +69,18 @@ def _volver_al_formulario(mensaje):
     return redirect(url_for("publicaciones.nueva"))
 
 
+@bp.get("/compartir")
+@login_required
+def compartir():
+    """Destino del share_target de la PWA: recibe el texto que el usuario
+    comparte desde WhatsApp (u otra app) y lo deja listo para que el
+    asistente lo interprete, sin publicar nada automáticamente."""
+    texto = request.args.get("text", "").strip()
+    if texto:
+        session["asistente_texto_compartido"] = texto
+    return redirect(url_for("publicaciones.nueva", abrir_asistente=1))
+
+
 @bp.post("/parsear")
 @login_required
 def parsear():
