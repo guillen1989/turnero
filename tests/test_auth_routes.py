@@ -569,18 +569,21 @@ def test_registro_ya_autenticado_redirige_a_calendario(client, db):
     assert resp.headers["Location"].endswith("/calendario/")
 
 
-# --- Login con cuenta demo ---
+# --- Login con cuenta demo (botón visible en /auth/login y en la portada "/") ---
 
-def test_login_no_muestra_boton_demo_si_no_configurado(client, db):
-    resp = client.get("/auth/login")
-    assert "Probar con una cuenta demo".encode() not in resp.data
+def test_boton_demo_no_se_muestra_si_no_configurado(client, db):
+    for ruta in ("/auth/login", "/"):
+        resp = client.get(ruta)
+        assert "Probar con una cuenta demo".encode() not in resp.data
 
 
-def test_login_muestra_boton_demo_si_configurado(client, db, app, monkeypatch):
+def test_boton_demo_se_muestra_si_configurado(client, db, app, monkeypatch):
     monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
     monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
-    resp = client.get("/auth/login")
-    assert "Probar con una cuenta demo".encode() in resp.data
+    for ruta in ("/auth/login", "/"):
+        resp = client.get(ruta)
+        assert "Probar con una cuenta demo".encode() in resp.data
+        assert "Supervisora".encode() not in resp.data
 
 
 def test_login_demo_deshabilitado_devuelve_404(client, db):
@@ -588,28 +591,15 @@ def test_login_demo_deshabilitado_devuelve_404(client, db):
     assert resp.status_code == 404
 
 
-# --- Botón demo en la portada (junto a "Crear cuenta"/"Entrar") ---
-
-def test_portada_no_muestra_boton_demo_si_no_configurado(client, db):
-    resp = client.get("/")
-    assert "Probar con una cuenta demo".encode() not in resp.data
-
-
-def test_portada_muestra_boton_demo_si_configurado(client, db, app, monkeypatch):
-    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
-    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
-    resp = client.get("/")
-    assert "Probar con una cuenta demo".encode() in resp.data
-
-
-def test_portada_ofrece_eleccion_trabajador_supervisora_si_ambas_configuradas(client, db, app, monkeypatch):
+def test_eleccion_trabajador_supervisora_se_muestra_si_ambas_configuradas(client, db, app, monkeypatch):
     monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
     monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
     monkeypatch.setitem(app.config, "DEMO_SUPERVISORA_LOGIN_EMAIL", "sup.garcia@test.es")
     monkeypatch.setitem(app.config, "DEMO_SUPERVISORA_LOGIN_PASSWORD", "Staging2026!")
-    resp = client.get("/")
-    assert "trabajador".encode() in resp.data.lower()
-    assert "supervisora".encode() in resp.data.lower()
+    for ruta in ("/auth/login", "/"):
+        resp = client.get(ruta)
+        assert "trabajador".encode() in resp.data.lower()
+        assert "supervisora".encode() in resp.data.lower()
 
 
 def test_login_demo_exitoso_redirige(client, db, app, monkeypatch):
@@ -702,21 +692,6 @@ def _configurar_ambas_cuentas_demo(app, monkeypatch):
     monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
     monkeypatch.setitem(app.config, "DEMO_SUPERVISORA_LOGIN_EMAIL", "sup.garcia@test.es")
     monkeypatch.setitem(app.config, "DEMO_SUPERVISORA_LOGIN_PASSWORD", "Staging2026!")
-
-
-def test_login_no_ofrece_eleccion_supervisora_si_no_esta_configurada(client, db, app, monkeypatch):
-    monkeypatch.setitem(app.config, "DEMO_LOGIN_EMAIL", "ana.garcia@test.es")
-    monkeypatch.setitem(app.config, "DEMO_LOGIN_PASSWORD", "Staging2026!")
-    resp = client.get("/auth/login")
-    assert "Probar con una cuenta demo".encode() in resp.data
-    assert "Supervisora".encode() not in resp.data
-
-
-def test_login_ofrece_eleccion_trabajador_supervisora_si_ambas_configuradas(client, db, app, monkeypatch):
-    _configurar_ambas_cuentas_demo(app, monkeypatch)
-    resp = client.get("/auth/login")
-    assert "Trabajador".encode() in resp.data
-    assert "Supervisora".encode() in resp.data
 
 
 def test_login_demo_tipo_supervisora_inicia_sesion_con_esa_cuenta(client, db, app, monkeypatch):
@@ -1047,6 +1022,8 @@ def test_perfil_servicios_sin_flag_no_muestra_pestaña_servicios(client, db):
 
 
 def test_registro_con_flag_inactivo_ignora_segunda_unidad(client, db):
+    """POST con campos de segundo servicio pero flag desactivado: se
+    registra sin error, con una sola unidad y sin mostrar el bloque extra."""
     from app.services.feature_flags import desactivar_global
     from app.services.unidad_usuario import unidades_de
     desactivar_global("multi_unidad")
@@ -1056,6 +1033,7 @@ def test_registro_con_flag_inactivo_ignora_segunda_unidad(client, db):
         follow_redirects=True,
     )
     assert resp.status_code == 200
+    assert b"Segundo servicio" not in resp.data
     usuario = Usuario.query.filter_by(email="ana@test.es").one()
     assert len(unidades_de(usuario)) == 1
 
@@ -1066,17 +1044,3 @@ def test_get_registro_con_flag_inactivo_no_muestra_bloque_extra(client, db):
     resp = client.get("/auth/registro")
     assert resp.status_code == 200
     assert "Segundo servicio".encode() not in resp.data
-
-
-def test_registro_con_flag_inactivo_no_crea_unidad_extra_ni_error(client, db):
-    """POST con campos de segundo servicio pero flag desactivado:
-    el usuario se registra sin error y con una sola unidad."""
-    from app.services.feature_flags import desactivar_global
-    desactivar_global("multi_unidad")
-    resp = client.post(
-        "/auth/registro",
-        data=_datos_registro_con_segunda_unidad(db),
-        follow_redirects=True,
-    )
-    assert resp.status_code == 200
-    assert b"Segundo servicio" not in resp.data

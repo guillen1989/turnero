@@ -43,12 +43,12 @@ detectado es alto y la exhaustividad sigue aportando valor.
 ---
 
 ## 1. Autenticación, cuentas y usuarios
-- [ ] tests/test_auth_routes.py (86 tests) — Notas: Revisado bajo el enfoque anterior (solo
-  diagnóstico, sin reducir); pendiente de revisitar con el enfoque actual para consolidar
-  candidatos ya identificados (p. ej. las variantes de login demo trabajador/supervisora, los
-  tests de flag `multi_unidad` desactivado, y el solape entre
-  `test_registro_con_flag_inactivo_ignora_segunda_unidad` y
-  `test_registro_con_flag_inactivo_no_crea_unidad_extra_ni_error`).
+- [x] tests/test_auth_routes.py (86→81 tests) — Notas: fusionadas las variantes de botón de
+  login demo repetidas en `/auth/login` y `/` (antes 5 tests separados por ruta, ahora 3 que
+  iteran ambas rutas), eliminados 2 tests de elección trabajador/supervisora redundantes con
+  los anteriores, y fusionados `test_registro_con_flag_inactivo_ignora_segunda_unidad` +
+  `test_registro_con_flag_inactivo_no_crea_unidad_extra_ni_error` en un solo test. Suite
+  verificada en verde (81 passed).
 - [ ] tests/test_recuperar_contrasena.py (13 tests) — Notas:
 - [ ] tests/test_password_reset_service.py (8 tests) — Notas:
 - [ ] tests/test_invitacion.py (8 tests) — Notas:
