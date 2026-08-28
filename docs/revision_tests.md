@@ -49,7 +49,11 @@ detectado es alto y la exhaustividad sigue aportando valor.
   los anteriores, y fusionados `test_registro_con_flag_inactivo_ignora_segunda_unidad` +
   `test_registro_con_flag_inactivo_no_crea_unidad_extra_ni_error` en un solo test. Suite
   verificada en verde (81 passed).
-- [ ] tests/test_recuperar_contrasena.py (13 tests) — Notas:
+- [x] tests/test_recuperar_contrasena.py (13→11 tests) — Notas: fusionados los 3 tests que
+  comprobaban distintos aspectos de la misma petición POST con email existente (envío de email,
+  enlace con token, redirección al login) en un único test con varios asserts; fusionadas las 2
+  variantes de contraseña inválida al restablecer (distintas / demasiado corta) en un test
+  parametrizado. Suite verificada en verde (11 passed).
 - [ ] tests/test_password_reset_service.py (8 tests) — Notas:
 - [ ] tests/test_invitacion.py (8 tests) — Notas:
 - [ ] tests/test_eliminar_cuenta.py (13 tests) — Notas:

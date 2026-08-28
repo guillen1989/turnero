@@ -1,6 +1,8 @@
 """Tests de la recuperación de contraseña self-service (auth blueprint)."""
 from unittest.mock import patch
 
+import pytest
+
 from app.extensions import db as _db
 from app.models import Categoria, PasswordResetToken, insertar_categorias_semilla
 from app.services.registro import registrar_usuario
@@ -22,7 +24,7 @@ def test_get_recuperar_contrasena_devuelve_200(client, db):
 
 # --- POST /auth/recuperar-contrasena ---
 
-def test_post_recuperar_contrasena_email_existente_envia_email(client, db):
+def test_post_recuperar_contrasena_email_existente_envia_email_con_enlace_y_redirige(client, db):
     _usuario()
 
     with patch("app.routes.auth.enviar_email_async", return_value=True) as mock_enviar:
@@ -30,18 +32,11 @@ def test_post_recuperar_contrasena_email_existente_envia_email(client, db):
                             follow_redirects=False)
 
     assert resp.status_code == 302
+    assert "/auth/login" in resp.headers["Location"]
     mock_enviar.assert_called_once()
     destinatario = mock_enviar.call_args[0][0]
     assert destinatario == "victima@test.es"
     assert PasswordResetToken.query.count() == 1
-
-
-def test_post_recuperar_contrasena_email_incluye_enlace_con_token(client, db):
-    _usuario()
-
-    with patch("app.routes.auth.enviar_email_async", return_value=True) as mock_enviar:
-        client.post("/auth/recuperar-contrasena", data={"email": "victima@test.es"})
-
     cuerpo_html = mock_enviar.call_args[0][2]
     assert "/auth/restablecer-contrasena/" in cuerpo_html
 
@@ -71,15 +66,6 @@ def test_post_recuperar_contrasena_email_inexistente_no_envia_ni_filtra(client, 
     mock_enviar.assert_not_called()
     # mismo mensaje genérico que si el email sí existiera (anti-enumeración)
     assert "Si ese email está registrado".encode() in resp.data or "enlace".encode() in resp.data
-
-
-def test_post_recuperar_contrasena_redirige_al_login(client, db):
-    _usuario()
-    with patch("app.routes.auth.enviar_email_async", return_value=True):
-        resp = client.post("/auth/recuperar-contrasena", data={"email": "victima@test.es"},
-                            follow_redirects=False)
-    assert resp.status_code == 302
-    assert "/auth/login" in resp.headers["Location"]
 
 
 # --- GET /auth/restablecer-contrasena/<token> ---
@@ -128,26 +114,17 @@ def test_post_restablecer_invalida_el_token_tras_usarlo(client, db):
     assert "/auth/recuperar-contrasena" in resp.headers["Location"]
 
 
-def test_post_restablecer_con_contrasenas_distintas_no_cambia_password(client, db):
+@pytest.mark.parametrize("password, password2", [
+    ("nueva_password_123", "otra_distinta_456"),  # contraseñas distintas
+    ("corta", "corta"),  # contraseña demasiado corta
+])
+def test_post_restablecer_con_password_invalida_no_cambia_password(client, db, password, password2):
     usuario = _usuario()
     token = generar_token_reset(usuario)
 
     client.post(f"/auth/restablecer-contrasena/{token}", data={
-        "password": "nueva_password_123",
-        "password2": "otra_distinta_456",
-    })
-
-    _db.session.refresh(usuario)
-    assert usuario.check_password("pass_original")
-
-
-def test_post_restablecer_con_contrasena_corta_no_cambia_password(client, db):
-    usuario = _usuario()
-    token = generar_token_reset(usuario)
-
-    client.post(f"/auth/restablecer-contrasena/{token}", data={
-        "password": "corta",
-        "password2": "corta",
+        "password": password,
+        "password2": password2,
     })
 
     _db.session.refresh(usuario)
