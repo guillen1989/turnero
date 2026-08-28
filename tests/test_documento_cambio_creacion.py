@@ -257,6 +257,12 @@ def test_post_nuevo_cambio_en_el_dia_misma_fecha_distinta_franja(db, client):
     assert fechas == {date(2026, 7, 7)}
 
 
+def _proximo_lunes():
+    hoy = date.today()
+    dias = (7 - hoy.weekday()) % 7 or 7
+    return hoy + timedelta(days=dias)
+
+
 def _crear_franja_noche(db, grupo):
     noche = FranjaHoraria(
         nombre="Noche", hora_inicio=time(22, 0), hora_fin=time(7, 0), grupo_intercambio=grupo,
@@ -272,11 +278,12 @@ def test_post_nuevo_junte_crea_documento_tipo_junte(db, client):
     juan = crear_usuario("Juan Rodríguez", "juanjunte1@h.es")
     _crear_franja_noche(db, claudia.unidad.grupo_intercambio)
     _login(client, claudia.email)
+    lunes = _proximo_lunes()
 
     resp = client.post("/documentos-cambio/nuevo", data={
         "tipo": "junte",
         "companero_id": juan.id,
-        "junte_semana": "2026-08-03",
+        "junte_semana": lunes.isoformat(),
         "junte_cadencia": "LMVD",
         "junte_noches": ["1", "2", "4", "6"],
     })
@@ -287,8 +294,8 @@ def test_post_nuevo_junte_crea_documento_tipo_junte(db, client):
     assert documento.tipo == "junte"
     assert len(documento.participantes) == 2
     claudia_fila = next(p for p in documento.participantes if p.usuario_id == claudia.id)
-    assert claudia_fila.turno_cede_fecha == date(2026, 8, 3)  # lunes cedido
-    assert claudia_fila.turno_recibe_fecha == date(2026, 8, 4)  # martes recibido
+    assert claudia_fila.turno_cede_fecha == lunes  # lunes cedido
+    assert claudia_fila.turno_recibe_fecha == lunes + timedelta(days=1)  # martes recibido
 
 
 def test_post_nuevo_junte_con_semana_pasada_da_error_sin_crear_nada(db, client):

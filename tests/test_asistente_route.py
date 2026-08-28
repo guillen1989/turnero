@@ -52,7 +52,7 @@ def test_parsear_propuesta_con_problemas_vuelve_a_formulario_vacio_con_aviso(cli
         resp = client.post("/asistente/parsear", data={"texto": "cambio mi turno"}, follow_redirects=True)
 
     assert resp.status_code == 200
-    assert b"2026-08-28" not in resp.data
+    assert b'id="prefill-asistente-data">{}</script>' in resp.data
 
 
 def test_parsear_fallo_de_api_vuelve_a_formulario_vacio_sin_error_500(client, db):

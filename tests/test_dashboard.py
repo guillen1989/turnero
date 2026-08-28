@@ -21,6 +21,12 @@ FIRMA_VALIDA = (
 )
 
 
+def _proximo_lunes():
+    hoy = date.today()
+    dias = (7 - hoy.weekday()) % 7 or 7
+    return hoy + timedelta(days=dias)
+
+
 def _usuario_y_login(client, email="test@test.es"):
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
@@ -777,8 +783,8 @@ def test_dashboard_junte_wa_mensaje_incluye_semana_y_dias(client, db):
         grupo_intercambio_id=ana.unidad.grupo_intercambio_id
     ).first()
 
-    # 2026-08-03 es lunes. LMVD: cede Vie(+4) y Dom(+6), recibe Mar(+1) y Jue(+3)
-    lunes = date(2026, 8, 3)
+    # LMVD: cede Vie(+4) y Dom(+6), recibe Mar(+1) y Jue(+3)
+    lunes = _proximo_lunes()
     pub = PublicacionCambio(usuario_id=ana.id, tipo="junte")
     db.session.add(pub)
     db.session.flush()
@@ -797,8 +803,8 @@ def test_dashboard_junte_wa_mensaje_incluye_semana_y_dias(client, db):
     assert "4%20noches" in html
     assert "Busco%20trabajar" in html
     assert "Busco%20librar" in html
-    # La semana del 03/08/2026 ("03%2F08%2F2026")
-    assert "03%2F08%2F2026" in html
+    # La semana del lunes calculado, URL-encoded (p. ej. "03%2F08%2F2026")
+    assert lunes.strftime("%d%%2F%m%%2F%Y") in html
 
 
 def test_dashboard_cambio_wa_mensaje_resalta_etiquetas_en_negrita(client, db):
