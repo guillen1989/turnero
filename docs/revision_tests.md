@@ -111,9 +111,27 @@ detectado es alto y la exhaustividad sigue aportando valor.
   membresía, constraint de duplicado).
 
 ## 2. Administración
-- [ ] tests/test_admin.py (45 tests) — Notas:
-- [ ] tests/test_admin_analytics.py (25 tests) — Notas:
-- [ ] tests/test_admin_feature_flags.py (6 tests) — Notas:
+- [x] tests/test_admin.py (45→44 tests) — Notas: eliminado
+  `test_admin_eliminar_unidad_con_membresia_secundaria_no_crash` (solo comprobaba
+  `status_code != 500`, un test de reproducción de bug "Paso 1") por estar completamente
+  subsumido por `test_admin_no_elimina_unidad_con_membresia_secundaria`, añadido después, que
+  comprueba el comportamiento final completo (la unidad no se borra y se muestra el mensaje
+  correcto). Limpiado también un comentario de sección "# Unidades" duplicado. El resto de los 44
+  tests restantes son regresiones específicas de una FK o un flujo de negocio distinto
+  (eliminaciones en cascada de usuarios/hospitales/unidades/publicaciones, cada una documentada
+  con su propio bug de producción); dada su naturaleza de regresión puntual sobre integridad de
+  datos, se mantienen sin fusionar. Suite verificada en verde.
+- [x] tests/test_admin_analytics.py (25→20 tests) — Notas: fusionados los 6 tests que solo
+  comprobaban la presencia de una clave en el JSON de `/admin/analytics/data` (`estructura_json`,
+  `incluye_totals`, `incluye_me_interesa_en_datasets`, `incluye_activas_en_datasets`,
+  `incluye_eliminadas_en_datasets`, `incluye_planillas_publicadas_en_datasets`) en un único test
+  que valida el esquema completo de `datasets` y `totals` de una sola vez. El resto de tests
+  verifica comportamiento numérico/funcional distinto (filtrado por unidad, exclusión de
+  sintéticas canceladas, acumulados de activas, conteo de eventos) y se mantiene separado. Suite
+  verificada en verde.
+- [x] tests/test_admin_feature_flags.py (6 tests) — Notas: OK, sin cambios. Cada test cubre un
+  comportamiento distinto (permisos, listado, activar/desactivar global, sincronizar unidades,
+  caso especial de flag global sin selector) sin solape.
 
 ## 3. Planillas / hojas de turno
 - [ ] tests/test_compatibilidad_planilla.py (22 tests) — Notas:

@@ -49,15 +49,21 @@ def test_analytics_403_para_usuario_normal(client, db):
     assert resp.status_code == 403
 
 
-def test_analytics_data_estructura_json(client, db):
+def test_analytics_data_estructura_json_completa(client, db):
     _setup_admin(client)
     resp = client.get("/admin/analytics/data?granularity=day")
     assert resp.status_code == 200
     data = json.loads(resp.data)
     assert "labels" in data
     assert "datasets" in data
-    for key in ("usuarios", "publicaciones", "matches", "confirmados"):
+    for key in ("usuarios", "publicaciones", "matches", "confirmados",
+                "me_interesa", "activas", "eliminadas", "planillas_publicadas"):
         assert key in data["datasets"]
+    for key in ("usuarios", "hospitales", "unidades", "categorias",
+                "publicaciones", "oportunidades_3", "oportunidades_4",
+                "matches", "confirmados", "eliminadas", "me_interesa",
+                "planillas_publicadas"):
+        assert key in data["totals"]
 
 
 def test_analytics_data_refleja_usuarios(client, db):
@@ -116,17 +122,6 @@ def test_analytics_data_no_cuenta_sinteticas(client, db):
     resp = client.get("/admin/analytics/data?granularity=month")
     data = json.loads(resp.data)
     assert sum(data["datasets"]["publicaciones"]) == 1
-
-
-def test_analytics_data_incluye_totals(client, db):
-    _setup_admin(client)
-    resp = client.get("/admin/analytics/data?granularity=day")
-    data = json.loads(resp.data)
-    assert "totals" in data
-    for key in ("usuarios", "hospitales", "unidades", "categorias",
-                "publicaciones", "oportunidades_3", "oportunidades_4",
-                "matches", "confirmados", "eliminadas"):
-        assert key in data["totals"]
 
 
 def test_analytics_data_totals_distingue_oportunidades_3_y_4(client, db):
@@ -222,14 +217,6 @@ def test_analytics_data_totals_filtrados_por_unidad(client, db):
 # me_interesa events
 # ---------------------------------------------------------------------------
 
-def test_analytics_data_incluye_me_interesa_en_datasets(client, db):
-    _setup_admin(client)
-    resp = client.get("/admin/analytics/data?granularity=day")
-    data = json.loads(resp.data)
-    assert "me_interesa" in data["datasets"]
-    assert "me_interesa" in data["totals"]
-
-
 def test_me_interesa_click_registra_evento(client, db):
     """POST a /cambios/<id>/me-interesa registra un Event de tipo me_interesa."""
     from app.models import Event, FranjaHoraria, PublicacionCambio, TurnoCedido, TurnoAceptado
@@ -279,20 +266,6 @@ def test_analytics_totals_cuenta_me_interesa(client, db):
 # activas acumuladas en datasets
 # ---------------------------------------------------------------------------
 
-def test_analytics_data_incluye_activas_en_datasets(client, db):
-    _setup_admin(client)
-    resp = client.get("/admin/analytics/data?granularity=day")
-    data = json.loads(resp.data)
-    assert "activas" in data["datasets"]
-
-
-def test_analytics_data_incluye_eliminadas_en_datasets(client, db):
-    _setup_admin(client)
-    resp = client.get("/admin/analytics/data?granularity=day")
-    data = json.loads(resp.data)
-    assert "eliminadas" in data["datasets"]
-
-
 def test_analytics_eliminadas_dataset_cuenta_eliminaciones(client, db):
     from app.models import PublicacionCambio
     from app.services.publicaciones import eliminar_publicacion
@@ -305,14 +278,6 @@ def test_analytics_eliminadas_dataset_cuenta_eliminaciones(client, db):
     resp = client.get("/admin/analytics/data?granularity=month")
     data = json.loads(resp.data)
     assert sum(data["datasets"]["eliminadas"]) == 1
-
-
-def test_analytics_data_incluye_planillas_publicadas_en_datasets(client, db):
-    _setup_admin(client)
-    resp = client.get("/admin/analytics/data?granularity=day")
-    data = json.loads(resp.data)
-    assert "planillas_publicadas" in data["datasets"]
-    assert "planillas_publicadas" in data["totals"]
 
 
 def test_analytics_planillas_publicadas_dataset_cuenta_eventos(client, db):
