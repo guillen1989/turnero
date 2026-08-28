@@ -10,6 +10,7 @@ from datetime import date, datetime, time as dtime
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
+from markupsafe import Markup
 
 from app.extensions import db
 from app.models import FranjaHoraria, ParseoAsistente
@@ -97,10 +98,12 @@ def parsear():
     db.session.add(ParseoAsistente(usuario_id=current_user.id))
     db.session.commit()
 
-    aviso_error = _(
-        "El asistente no ha podido interpretar el mensaje. "
-        "Rellena el formulario manualmente."
-    )
+    aviso_error = Markup(_(
+        "El asistente no ha podido interpretar el mensaje. Rellena el "
+        "formulario manualmente o consulta <a href=\"%(url)s\" target=\"_blank\" "
+        "rel=\"noopener\">cómo redactar el mensaje</a>.",
+        url=url_for("asistente.consejos"),
+    ))
 
     try:
         unidad_activa = unidad_activa_o_403(current_user, None)
