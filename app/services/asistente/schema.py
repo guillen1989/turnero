@@ -8,12 +8,14 @@ _PATRON_FECHA = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 class TurnoPropuesto(BaseModel):
-    fecha: str
+    fecha: str | None = None
     franja: str | None = None
 
     @field_validator("fecha")
     @classmethod
     def _fecha_iso(cls, valor):
+        if valor is None:
+            return valor
         if not _PATRON_FECHA.match(valor):
             raise ValueError(f"fecha '{valor}' no tiene formato ISO (YYYY-MM-DD)")
         return valor

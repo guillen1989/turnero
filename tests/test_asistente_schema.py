@@ -47,3 +47,11 @@ def test_campos_faltantes_por_defecto_vacio():
     propuesta = PropuestaPublicacion(**_propuesta_valida(campos_faltantes=[]))
 
     assert propuesta.campos_faltantes == []
+
+
+def test_acepta_fecha_null_cuando_el_modelo_no_la_conoce():
+    propuesta = PropuestaPublicacion(**_propuesta_valida(
+        cedidos=[{"fecha": None, "franja": None}]
+    ))
+
+    assert propuesta.cedidos[0].fecha is None

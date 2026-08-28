@@ -29,6 +29,14 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] fix: el parser del asistente de WhatsApp lanzaba `ErrorAsistente`
+  (descartando toda la propuesta) cuando el modelo devolvía `fecha: null`
+  en un turno por no tener datos suficientes (p. ej. "Cambio T24 por T28
+  porfi", sin fecha). `TurnoPropuesto.fecha` ahora acepta `None`;
+  `resolver_propuesta` trata un turno sin fecha como un problema de ese
+  turno concreto (mensaje "Falta la fecha de un turno") sin descartar el
+  resto de la propuesta, igual que ya hacía con franjas desconocidas.
+  Tests en `test_asistente_schema.py` y `test_asistente_resolver.py`.
 - [x] fix: elimina el problema N+1 de commits en las rutas batch de
   planilla (`rango/aplicar`, `multiples/aplicar`, `vacios/aplicar`), que
   hacían un `db.session.commit()` por cada día procesado. `añadir_turno` y

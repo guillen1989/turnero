@@ -63,6 +63,10 @@ def _heredar_franja_de_cedidos(cedidos, aceptados):
 def _resolver_turnos(turnos, grupo_intercambio_id, hoy, permitir_cualquier_franja, problemas):
     resueltos = []
     for turno in turnos:
+        if turno.fecha is None:
+            problemas.append("Falta la fecha de un turno")
+            continue
+
         fecha = date.fromisoformat(turno.fecha)
         if fecha < hoy:
             problemas.append(f"Fecha en el pasado: {turno.fecha}")

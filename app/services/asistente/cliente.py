@@ -77,8 +77,8 @@ _INSTRUCCION_JSON = (
     "\n\nResponde ÚNICAMENTE con un objeto JSON con esta forma exacta, sin "
     "texto adicional ni bloques de código:\n"
     '{"tipo": "cambio|peticion|regalo|cambio_dia|junte", '
-    '"cedidos": [{"fecha": "YYYY-MM-DD", "franja": "nombre o null"}], '
-    '"aceptados": [{"fecha": "YYYY-MM-DD", "franja": "nombre o null"}], '
+    '"cedidos": [{"fecha": "YYYY-MM-DD o null si no se conoce", "franja": "nombre o null"}], '
+    '"aceptados": [{"fecha": "YYYY-MM-DD o null si no se conoce", "franja": "nombre o null"}], '
     '"campos_faltantes": ["..."]}'
 )
 
