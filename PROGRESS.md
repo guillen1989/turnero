@@ -144,6 +144,14 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   desactivado (`LIMITE_PARSEOS_DIA_ACTIVO = False`) mientras se prueba en
   staging con mensajes reales. Reactivar antes de promocionar el asistente
   a producción de forma permanente.
+- **2026-08-28:** el motor del asistente de parseo de WhatsApp cambió de
+  Anthropic (Claude Haiku 4.5) a Groq (Llama 3.1 8B) — más barato y más
+  rápido. La lógica de Anthropic se conserva desactivada (sin invocarse) en
+  `app/services/asistente/cliente.py::_extraer_propuesta_anthropic`, por si
+  se recupera más adelante. Requiere `GROQ_API_KEY` en el entorno (ver
+  `.env.example`); `ANTHROPIC_API_KEY` deja de ser necesaria mientras el
+  motor de Anthropic esté desactivado. Detalle en `docs/crear_parser.md`
+  (vive en el repo `turnero`, rama `main`, fuera de este worktree).
 
 ## Mantenimiento reciente (independiente de la Fase 10 — supervisoras multiunidad)
 Implementación de `PLAN_SUPERVISORAS_MULTIUNIDAD.md`: las supervisoras podrán

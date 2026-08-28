@@ -1,25 +1,31 @@
-"""Cliente de la API de Anthropic: convierte un mensaje libre en una PropuestaPublicacion.
+"""Cliente del asistente: convierte un mensaje libre en una PropuestaPublicacion.
 
-Aísla el resto de la app de la librería `anthropic` — solo este módulo importa
-o captura sus excepciones.
+Aísla el resto de la app de la librería del proveedor de IA — solo este
+módulo importa o captura sus excepciones.
+
+Motor activo: Groq (Llama 3.1 8B) — más barato y más rápido que Claude Haiku.
+La lógica original con Anthropic se conserva desactivada al final del
+archivo (ver decisión 2026-08-28 en docs/crear_parser.md); nada la invoca.
 """
 import anthropic
+import groq
+from pydantic import ValidationError
 
 from app.services.asistente.schema import PropuestaPublicacion
 
-_MODELO = "claude-haiku-4-5"
+_MODELO = "llama-3.1-8b-instant"
 _MAX_TOKENS = 2048
 
 
 class ErrorAsistente(Exception):
-    """La API del asistente no ha podido resolver la propuesta (red, timeout, etc.)."""
+    """La API del asistente no ha podido resolver la propuesta (red, timeout, formato, etc.)."""
 
 
 def _construir_prompt(contexto):
     """Prompt de sistema: solo contenido estático por grupo, cacheable entre llamadas.
 
     No debe incluir la fecha de hoy ni nada variable: invalidaría la caché de
-    prompt de Anthropic, que se activa sobre el bloque `system` completo.
+    prompt del proveedor, que se activa sobre el bloque de sistema completo.
     """
     franjas = "\n".join(
         f"- {f['nombre']}: {f['hora_inicio']}–{f['hora_fin']}"
@@ -61,14 +67,70 @@ def _construir_mensaje_usuario(texto, hoy):
     return f"Hoy es {dia} {hoy.isoformat()}.\n\n{texto}"
 
 
+_INSTRUCCION_JSON = (
+    "\n\nResponde ÚNICAMENTE con un objeto JSON con esta forma exacta, sin "
+    "texto adicional ni bloques de código:\n"
+    '{"tipo": "cambio|peticion|regalo|cambio_dia|junte", '
+    '"cedidos": [{"fecha": "YYYY-MM-DD", "franja": "nombre o null"}], '
+    '"aceptados": [{"fecha": "YYYY-MM-DD", "franja": "nombre o null"}], '
+    '"campos_faltantes": ["..."]}'
+)
+
+
 def extraer_propuesta(texto, contexto, client=None):
+    """Motor activo: Groq (Llama 3.1 8B)."""
+    if client is None:
+        client = groq.Groq()
+
+    try:
+        respuesta = client.chat.completions.create(
+            model=_MODELO,
+            max_completion_tokens=_MAX_TOKENS,
+            temperature=0,
+            response_format={"type": "json_object"},
+            messages=[
+                {
+                    "role": "system",
+                    "content": _construir_prompt(contexto) + _INSTRUCCION_JSON,
+                },
+                {
+                    "role": "user",
+                    "content": _construir_mensaje_usuario(texto, contexto["hoy"]),
+                },
+            ],
+        )
+    except groq.GroqError as e:
+        raise ErrorAsistente(f"Error al comunicarse con la API del asistente: {e}") from e
+
+    contenido = respuesta.choices[0].message.content
+    try:
+        return PropuestaPublicacion.model_validate_json(contenido)
+    except ValidationError as e:
+        raise ErrorAsistente(
+            f"La respuesta del asistente no tiene el formato esperado: {e}"
+        ) from e
+
+
+# ============================================================================
+# DESACTIVADO (2026-08-28) — motor original con Anthropic Claude Haiku 4.5.
+#
+# Se sustituye por Groq/Llama 3.1 8B (más barato y más rápido, ver decisión
+# en docs/crear_parser.md). Nada en la app invoca esta función; se conserva
+# tal cual por si se quiere recuperar como motor más adelante.
+# ============================================================================
+
+_MODELO_ANTHROPIC = "claude-haiku-4-5"
+_MAX_TOKENS_ANTHROPIC = 2048
+
+
+def _extraer_propuesta_anthropic(texto, contexto, client=None):
     if client is None:
         client = anthropic.Anthropic()
 
     try:
         respuesta = client.messages.parse(
-            model=_MODELO,
-            max_tokens=_MAX_TOKENS,
+            model=_MODELO_ANTHROPIC,
+            max_tokens=_MAX_TOKENS_ANTHROPIC,
             thinking={"type": "enabled", "budget_tokens": 1024},
             system=[
                 {
