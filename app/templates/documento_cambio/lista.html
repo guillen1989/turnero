@@ -6,12 +6,6 @@
 <div class="form-container">
   <h1>{{ _('Mis hojas de cambio') }}</h1>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for cat, msg in messages %}
-    <div class="alert alert--{{ cat }}">{{ msg }}</div>
-    {% endfor %}
-  {% endwith %}
-
   <a href="{{ url_for('documento_cambio.nueva') }}" class="btn btn-primary">{{ _('Nueva hoja de cambio') }}</a>
 
   {% if documentos %}

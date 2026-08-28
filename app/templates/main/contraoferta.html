@@ -6,12 +6,6 @@
 <div class="form-container">
   <h1>{{ _('Hacer contraoferta') }}</h1>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for cat, msg in messages %}
-    <div class="alert alert--{{ cat }}">{{ msg }}</div>
-    {% endfor %}
-  {% endwith %}
-
   <div class="contraoferta-original">
     <h2>{{ _('Publicación de') }} {{ pub.usuario.nombre }}</h2>
     <div class="pub-original-detalle">

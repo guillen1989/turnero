@@ -7,12 +7,6 @@
   <h1>{{ _('¿Has olvidado tu contraseña?') }}</h1>
   <p class="form-hint">{{ _('Escribe tu email y, si está registrado, te enviaremos un enlace para elegir una contraseña nueva.') }}</p>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for cat, msg in messages %}
-    <div class="alert alert--{{ cat }}">{{ msg }}</div>
-    {% endfor %}
-  {% endwith %}
-
   <form method="POST" novalidate>
     {{ form.hidden_tag() }}
 

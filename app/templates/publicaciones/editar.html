@@ -6,12 +6,6 @@
 <div class="form-container">
   <h1>{{ _('Editar cambio de turno') }}</h1>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for cat, msg in messages %}
-    <div class="alert alert--{{ cat }}">{{ msg }}</div>
-    {% endfor %}
-  {% endwith %}
-
   <form method="post" id="editar-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 

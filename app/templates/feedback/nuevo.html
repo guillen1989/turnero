@@ -7,12 +7,6 @@
   <h1>{{ _('Contacto') }}</h1>
   <p class="form-hint">{{ _('¿Has encontrado un error o tienes una sugerencia? Cuéntanos.') }}</p>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for cat, msg in messages %}
-    <div class="alert alert--{{ cat }}">{{ msg }}</div>
-    {% endfor %}
-  {% endwith %}
-
   <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 

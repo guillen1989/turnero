@@ -6,12 +6,6 @@
 <div class="card">
   <h1>{{ _('Elige una nueva contraseña') }}</h1>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for cat, msg in messages %}
-    <div class="alert alert--{{ cat }}">{{ msg }}</div>
-    {% endfor %}
-  {% endwith %}
-
   <form method="POST" novalidate>
     {{ form.hidden_tag() }}
 
