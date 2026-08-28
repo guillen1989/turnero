@@ -143,6 +143,19 @@ def test_el_prompt_distingue_peticion_de_cambio_y_de_regalo():
     assert "mismo día" in bloque_sistema
 
 
+def test_el_prompt_infiere_franja_de_fechas_ofrecidas_sin_franja_propia():
+    """Bug real (2026-08-28): 'Necesito librar las T del 9 y 11...\nPuedo
+    hacer: 31 agosto, 1, 4 u 8 septiembre' — sin esta regla el modelo trataba
+    las fechas ofrecidas como si aceptara cualquier franja, en vez de asumir
+    la misma franja (Tarde) que se cede."""
+    cliente = _ClienteGroqFalso(contenido=_propuesta_esperada_json())
+
+    extraer_propuesta("texto", _CONTEXTO, client=cliente)
+
+    bloque_sistema = cliente.kwargs_recibidos["messages"][0]["content"]
+    assert "esas fechas ofrecidas son de esa misma franja cedida" in bloque_sistema
+
+
 def test_pide_el_mensaje_del_usuario_con_la_fecha_de_hoy_antepuesta():
     cliente = _ClienteGroqFalso(contenido=_propuesta_esperada_json())
 

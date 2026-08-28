@@ -65,6 +65,10 @@ def _construir_prompt(contexto):
         "- Si un turno indica el día del mes pero no el mes (p. ej. 'T24', 'la N "
         "del 10'), y ningún otro turno del mismo mensaje aclara el mes, asume el "
         "mes en curso; si ese día ya pasó respecto a hoy, asume el mes siguiente.\n"
+        "- Si el mensaje cede turnos de una única franja y después ofrece una lista "
+        "de fechas sueltas sin volver a indicar franja en cada una (p. ej. tras "
+        "'Puedo hacer:'), esas fechas ofrecidas son de esa misma franja cedida: no "
+        "las dejes sin franja ni las trates como si aceptara cualquier franja.\n"
         "- Si falta algún dato imprescindible para completar la propuesta, indícalo "
         "en `campos_faltantes` en vez de inventarlo."
     )
