@@ -6,6 +6,7 @@ from app.extensions import db as _db
 from app.models import Categoria, ParseoAsistente, insertar_categorias_semilla
 from app.services.asistente.cliente import ErrorAsistente
 from app.services.asistente.schema import PropuestaPublicacion
+from app.services.feature_flags import desactivar_global
 from app.services.registro import registrar_usuario
 
 
@@ -30,6 +31,24 @@ def test_parsear_requiere_login(client, db):
     resp = client.post("/asistente/parsear", data={"texto": "cambio turno"})
     assert resp.status_code == 302
     assert "/auth/login" in resp.headers["Location"]
+
+
+def test_parsear_devuelve_404_si_flag_desactivado(client, db):
+    _login(client)
+    desactivar_global("asistente_parser")
+
+    resp = client.post("/asistente/parsear", data={"texto": "cambio turno"})
+
+    assert resp.status_code == 404
+
+
+def test_consejos_devuelve_404_si_flag_desactivado(client, db):
+    _login(client)
+    desactivar_global("asistente_parser")
+
+    resp = client.get("/asistente/consejos")
+
+    assert resp.status_code == 404
 
 
 def test_parsear_propuesta_valida_redirige_a_publicar_con_datos(client, db):

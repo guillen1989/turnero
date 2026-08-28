@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.eventos import registrar_evento
+from app.services.feature_flags import feature_activa_para_usuario_actual
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default, asignar_color_franja
 from app.services.compat_planilla_persistente import calcular_y_guardar_compatibilidad
@@ -335,6 +336,7 @@ def nueva():
         prefill_fecha=prefill_fecha, prefill_modo=prefill_modo,
         prefill_asistente=prefill_asistente,
         abrir_asistente=abrir_asistente,
+        asistente_activo=feature_activa_para_usuario_actual("asistente_parser"),
     )
 
 

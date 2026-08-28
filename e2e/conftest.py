@@ -39,6 +39,7 @@ def _activar_feature_flags_de_test():
         "cambios_encadenados",
         "cambios_a_3",
         "cambios_a_4",
+        "asistente_parser",
     ):
         try:
             crear_flag(clave)

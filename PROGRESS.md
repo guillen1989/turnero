@@ -29,6 +29,24 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] test: la suite se ejecuta en paralelo en CI (`pytest -n auto`). El
+  aislamiento de BD por checkout (`tests/conftest.py`) ahora también aísla
+  por worker de xdist (sufijo `PYTEST_XDIST_WORKER` en el nombre de la BD),
+  para que los `TRUNCATE`/`create_all` concurrentes de distintos workers no
+  se pisen entre sí. `pytest-xdist==3.6.1` añadido a `requirements.txt`.
+  Validado localmente: suite completa (~1600 tests) en verde con `-n 4`.
+- [x] feat: el asistente de parseo de WhatsApp queda empaquetado detrás de
+  un flag `asistente_parser` (`activo_global=False` por defecto, migración
+  `d836f60ead28`), en preparación para su promoción a producción de forma
+  controlada. Rutas `/asistente/parsear` y `/asistente/consejos` decoradas
+  con `@requiere_feature`; CTA del dashboard y botón+modal de
+  `publicar.html` ocultos con `{% if asistente_activo %}`; JS del modal
+  guardado con `if (modalAsistente && btnAbrirAsistente)` para no fallar si
+  el flag está desactivado. Tests en `test_asistente_route.py`,
+  `test_publicar.py` y `test_dashboard.py` (2 tests cada uno: flag
+  activo/desactivado). Flag añadido a las listas de activación de
+  `tests/conftest.py` y `e2e/conftest.py`. Suite completa en verde tras
+  aplicar el cambio en paralelo con `-n auto` (ver paso anterior).
 - [x] fix: el asistente ya infiere el mes cuando un turno solo trae el día
   (p. ej. "T24"/"T28" sin mes en ningún punto del mensaje) — regla añadida
   al prompt de `_construir_prompt`: mes en curso, o el siguiente si ese día

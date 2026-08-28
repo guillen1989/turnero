@@ -17,6 +17,7 @@ from app.models import FranjaHoraria, ParseoAsistente
 from app.models.publicacion import TIPOS_PUBLICACION
 from app.services.asistente.cliente import extraer_propuesta
 from app.services.asistente.resolver import resolver_propuesta
+from app.services.feature_flags import requiere_feature
 from app.services.unidad_usuario import unidad_activa_o_403
 
 bp = Blueprint("asistente", __name__, url_prefix="/asistente")
@@ -78,12 +79,14 @@ def _volver_al_formulario(mensaje):
 
 @bp.get("/consejos")
 @login_required
+@requiere_feature("asistente_parser")
 def consejos():
     return render_template("asistente/consejos.html")
 
 
 @bp.post("/parsear")
 @login_required
+@requiere_feature("asistente_parser")
 def parsear():
     if LIMITE_PARSEOS_DIA_ACTIVO and _parseos_hoy(current_user.id) >= LIMITE_PARSEOS_DIA:
         return _volver_al_formulario(

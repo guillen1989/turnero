@@ -12,6 +12,7 @@
     {% endfor %}
   {% endwith %}
 
+  {% if asistente_activo %}
   <div class="asistente-cta">
     <button type="button" id="btn-abrir-asistente" class="btn btn-whatsapp btn-sm">
       {{ _('✨ Rellenar a partir de un mensaje de WhatsApp') }}
@@ -50,6 +51,7 @@
     <strong id="banner-prefill-asistente-titulo">{{ _('✓ Hemos rellenado los campos de tu cambio.') }}</strong>
     {{ _('Revisa que todo esté correcto y toca Publicar.') }}
   </div>
+  {% endif %}
 
   <form method="post" id="publicar-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -226,33 +228,36 @@
 
   var modalAsistente = document.getElementById('modal-asistente');
   var btnAbrirAsistente = document.getElementById('btn-abrir-asistente');
-  var btnCancelarAsistente = document.getElementById('btn-cancelar-asistente');
-  var formAsistente = document.getElementById('form-asistente');
-  var btnEnviarAsistente = document.getElementById('btn-enviar-asistente');
-  var spinnerAsistente = document.getElementById('asistente-spinner');
 
-  btnAbrirAsistente.addEventListener('click', function () {
-    modalAsistente.classList.remove('modal-hidden');
-    document.getElementById('asistente-texto').focus();
-  });
-  btnCancelarAsistente.addEventListener('click', function () {
-    modalAsistente.classList.add('modal-hidden');
-  });
-  formAsistente.addEventListener('submit', function () {
-    btnEnviarAsistente.disabled = true;
-    btnEnviarAsistente.textContent = '{{ _("Interpretando mensaje…") }}';
-    btnCancelarAsistente.disabled = true;
-    spinnerAsistente.style.display = '';
-  });
+  if (modalAsistente && btnAbrirAsistente) {
+    var btnCancelarAsistente = document.getElementById('btn-cancelar-asistente');
+    var formAsistente = document.getElementById('form-asistente');
+    var btnEnviarAsistente = document.getElementById('btn-enviar-asistente');
+    var spinnerAsistente = document.getElementById('asistente-spinner');
 
-  if (ABRIR_ASISTENTE) {
-    modalAsistente.classList.remove('modal-hidden');
-    var textoAsistente = document.getElementById('asistente-texto');
-    if (textoAsistente.value) {
-      textoAsistente.focus();
-      textoAsistente.setSelectionRange(textoAsistente.value.length, textoAsistente.value.length);
-    } else {
-      textoAsistente.focus();
+    btnAbrirAsistente.addEventListener('click', function () {
+      modalAsistente.classList.remove('modal-hidden');
+      document.getElementById('asistente-texto').focus();
+    });
+    btnCancelarAsistente.addEventListener('click', function () {
+      modalAsistente.classList.add('modal-hidden');
+    });
+    formAsistente.addEventListener('submit', function () {
+      btnEnviarAsistente.disabled = true;
+      btnEnviarAsistente.textContent = '{{ _("Interpretando mensaje…") }}';
+      btnCancelarAsistente.disabled = true;
+      spinnerAsistente.style.display = '';
+    });
+
+    if (ABRIR_ASISTENTE) {
+      modalAsistente.classList.remove('modal-hidden');
+      var textoAsistente = document.getElementById('asistente-texto');
+      if (textoAsistente.value) {
+        textoAsistente.focus();
+        textoAsistente.setSelectionRange(textoAsistente.value.length, textoAsistente.value.length);
+      } else {
+        textoAsistente.focus();
+      }
     }
   }
 
