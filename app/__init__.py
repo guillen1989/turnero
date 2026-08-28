@@ -1,5 +1,7 @@
 import os
-from flask import Flask, request
+from flask import Flask, flash, redirect, request, url_for
+from flask_babel import gettext as _
+from flask_wtf.csrf import CSRFError
 from config import config
 from app.extensions import db, migrate, babel, login_manager, csrf
 
@@ -132,6 +134,26 @@ def create_app(config_name=None):
         except Exception:
             pass
         return {"avisos_no_leidos": 0}
+
+    @app.errorhandler(CSRFError)
+    def _csrf_invalido(error):
+        # Un formulario puede quedar abierto mucho tiempo (composición de
+        # mensajes, PWA en segundo plano en móvil) y el token CSRF puede
+        # dejar de ser válido (p. ej. tras cerrar sesión y volver a entrar
+        # con otro usuario). Nunca debe verse un 400 crudo: se devuelve al
+        # usuario a la página desde la que venía con un aviso.
+        flash(
+            _("La página llevaba abierta demasiado tiempo y la acción no se "
+              "pudo confirmar. Vuelve a intentarlo."),
+            "warning",
+        )
+        from urllib.parse import urlparse
+        referrer = request.referrer
+        if referrer and urlparse(referrer).netloc == request.host:
+            destino = referrer
+        else:
+            destino = url_for("main.index")
+        return redirect(destino)
 
     _registrar_comandos(app)
 

@@ -23,6 +23,12 @@ class Config:
     # de cerrar sesión es la acción explícita del usuario (auth.logout).
     SESSION_COOKIE_SAMESITE = "Lax"
     REMEMBER_COOKIE_SAMESITE = "Lax"
+    # Sin límite de tiempo: por defecto Flask-WTF caduca el token CSRF a la
+    # hora de haberse generado, pero formularios como el del asistente (o
+    # cualquier PWA en segundo plano en móvil) pueden quedar abiertos mucho
+    # más tiempo antes de enviarse. El propio error_handler de CSRFError
+    # cubre la seguridad real (sesión de login, que sí puede caducar).
+    WTF_CSRF_TIME_LIMIT = None
     VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "")
     VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
     VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "")
