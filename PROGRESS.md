@@ -29,6 +29,15 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] feat: los logs de auditoría del parser del asistente (`asistente.parser`)
+  ahora incluyen unidad, hospital, ciudad y provincia del usuario (además de
+  `usuario_id`), en las cinco ramas de log (`error_extraccion`,
+  `error_resolucion`, `problemas`, `parcial`, `ok`). Objetivo: poder detectar
+  si el parser necesita reglas distintas según la ubicación. Fuente de datos:
+  `current_user.unidad` (siempre no nulo), resuelto de forma defensiva porque
+  `Hospital.ciudad`/`Ciudad.provincia` son opcionales en el alta. Tests en
+  `tests/test_asistente_route.py`. Rama `worktree-parser-logs-ubicacion`, PR
+  contra `staging`.
 - [x] test: la suite se ejecuta en paralelo en CI (`pytest -n auto`). El
   aislamiento de BD por checkout (`tests/conftest.py`) ahora también aísla
   por worker de xdist (sufijo `PYTEST_XDIST_WORKER` en el nombre de la BD),

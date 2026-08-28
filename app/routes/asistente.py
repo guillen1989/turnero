@@ -72,6 +72,21 @@ def _contexto_para(grupo_id):
     }
 
 
+def _campos_ubicacion(unidad):
+    """Extrae unidad/hospital/ciudad/provincia para el log de auditoría, sin
+    asumir que la cadena geográfica esté completa (ciudad/provincia son
+    opcionales en el alta)."""
+    hospital = unidad.hospital
+    ciudad = hospital.ciudad if hospital else None
+    provincia = ciudad.provincia if ciudad else None
+    return (
+        unidad.nombre,
+        hospital.nombre if hospital else None,
+        ciudad.nombre if ciudad else None,
+        provincia.nombre if provincia else None,
+    )
+
+
 def _volver_al_formulario(mensaje):
     flash(mensaje, "warning")
     return redirect(url_for("publicaciones.nueva"))
@@ -101,6 +116,10 @@ def parsear():
     db.session.add(ParseoAsistente(usuario_id=current_user.id))
     db.session.commit()
 
+    unidad_nombre, hospital_nombre, ciudad_nombre, provincia_nombre = (
+        _campos_ubicacion(current_user.unidad)
+    )
+
     aviso_error = Markup(_(
         "El asistente no ha podido interpretar el mensaje. Rellena el "
         "formulario manualmente o consulta <a href=\"%(url)s\" target=\"_blank\" "
@@ -114,8 +133,10 @@ def parsear():
         propuesta = extraer_propuesta(texto, contexto)
     except Exception as exc:
         logger.info(
-            "asistente_parseo usuario_id=%s resultado=error_extraccion texto=%r error=%r",
-            current_user.id, texto, str(exc),
+            "asistente_parseo usuario_id=%s unidad=%r hospital=%r ciudad=%r provincia=%r "
+            "resultado=error_extraccion texto=%r error=%r",
+            current_user.id, unidad_nombre, hospital_nombre, ciudad_nombre, provincia_nombre,
+            texto, str(exc),
         )
         return _volver_al_formulario(aviso_error)
 
@@ -123,15 +144,19 @@ def parsear():
         cedidos, aceptados, problemas = resolver_propuesta(propuesta, current_user, date.today())
     except Exception as exc:
         logger.info(
-            "asistente_parseo usuario_id=%s resultado=error_resolucion texto=%r propuesta=%r error=%r",
-            current_user.id, texto, propuesta.model_dump(), str(exc),
+            "asistente_parseo usuario_id=%s unidad=%r hospital=%r ciudad=%r provincia=%r "
+            "resultado=error_resolucion texto=%r propuesta=%r error=%r",
+            current_user.id, unidad_nombre, hospital_nombre, ciudad_nombre, provincia_nombre,
+            texto, propuesta.model_dump(), str(exc),
         )
         return _volver_al_formulario(aviso_error)
 
     if not cedidos and not aceptados:
         logger.info(
-            "asistente_parseo usuario_id=%s resultado=problemas texto=%r propuesta=%r problemas=%r",
-            current_user.id, texto, propuesta.model_dump(), problemas,
+            "asistente_parseo usuario_id=%s unidad=%r hospital=%r ciudad=%r provincia=%r "
+            "resultado=problemas texto=%r propuesta=%r problemas=%r",
+            current_user.id, unidad_nombre, hospital_nombre, ciudad_nombre, provincia_nombre,
+            texto, propuesta.model_dump(), problemas,
         )
         return _volver_al_formulario(aviso_error)
 
@@ -155,12 +180,16 @@ def parsear():
             "warning",
         )
         logger.info(
-            "asistente_parseo usuario_id=%s resultado=parcial texto=%r propuesta=%r cedidos=%r aceptados=%r problemas=%r",
-            current_user.id, texto, propuesta.model_dump(), cedidos, aceptados, problemas,
+            "asistente_parseo usuario_id=%s unidad=%r hospital=%r ciudad=%r provincia=%r "
+            "resultado=parcial texto=%r propuesta=%r cedidos=%r aceptados=%r problemas=%r",
+            current_user.id, unidad_nombre, hospital_nombre, ciudad_nombre, provincia_nombre,
+            texto, propuesta.model_dump(), cedidos, aceptados, problemas,
         )
     else:
         logger.info(
-            "asistente_parseo usuario_id=%s resultado=ok texto=%r propuesta=%r cedidos=%r aceptados=%r",
-            current_user.id, texto, propuesta.model_dump(), cedidos, aceptados,
+            "asistente_parseo usuario_id=%s unidad=%r hospital=%r ciudad=%r provincia=%r "
+            "resultado=ok texto=%r propuesta=%r cedidos=%r aceptados=%r",
+            current_user.id, unidad_nombre, hospital_nombre, ciudad_nombre, provincia_nombre,
+            texto, propuesta.model_dump(), cedidos, aceptados,
         )
     return redirect(url_for("publicaciones.nueva"))

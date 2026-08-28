@@ -18,6 +18,17 @@ def _login(client, email="u@test.es"):
     return u
 
 
+def _login_con_geografia(client, email="u@test.es"):
+    insertar_categorias_semilla()
+    cat = Categoria.query.filter_by(nombre="Enfermería").first()
+    u = registrar_usuario(
+        "Test", email, "pass1234", "H1", "Urgencias", cat.id,
+        pais_nombre="España", provincia_nombre="Madrid", ciudad_nombre="Madrid",
+    )
+    client.post("/auth/login", data={"email": email, "password": "pass1234"})
+    return u
+
+
 def _propuesta_valida():
     return PropuestaPublicacion(
         tipo="cambio",
@@ -110,6 +121,34 @@ def test_parsear_registra_log_de_auditoria_en_caso_exitoso(client, db, caplog):
 
     mensajes = [r.message for r in caplog.records]
     assert any("resultado=ok" in m and "cambio mi mañana del 28 por tu tarde del 29" in m for m in mensajes)
+    assert any("unidad='Urgencias'" in m and "hospital='H1'" in m for m in mensajes)
+
+
+def test_parsear_registra_log_de_auditoria_incluye_ubicacion_completa(client, db, caplog):
+    _login_con_geografia(client)
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=_propuesta_valida()):
+        with caplog.at_level("INFO", logger="asistente.parser"):
+            client.post("/asistente/parsear", data={"texto": "cambio mi turno"})
+
+    mensajes = [r.message for r in caplog.records]
+    assert any(
+        "unidad='Urgencias'" in m and "hospital='H1'" in m
+        and "ciudad='Madrid'" in m and "provincia='Madrid'" in m
+        for m in mensajes
+    )
+
+
+def test_parsear_registra_log_de_auditoria_sin_geografia_no_falla(client, db, caplog):
+    _login(client)
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=_propuesta_valida()):
+        with caplog.at_level("INFO", logger="asistente.parser"):
+            resp = client.post("/asistente/parsear", data={"texto": "cambio mi turno"})
+
+    assert resp.status_code == 302
+    mensajes = [r.message for r in caplog.records]
+    assert any("ciudad=None" in m and "provincia=None" in m for m in mensajes)
 
 
 def test_parsear_registra_log_de_auditoria_cuando_hay_problemas(client, db, caplog):
