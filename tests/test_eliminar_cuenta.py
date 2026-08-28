@@ -1,6 +1,8 @@
 """Tests para la funcionalidad de eliminar cuenta (anonimización)."""
 from datetime import date
 
+import pytest
+
 from app.extensions import db as _db
 from app.models import (
     Categoria,
@@ -57,17 +59,12 @@ def _crear_match_entre(ana, pedro, estado="propuesto"):
 
 # --- Servicio puro ---
 
-def test_eliminar_cuenta_anonimiza_nombre_y_email(db):
+def test_eliminar_cuenta_anonimiza_datos_y_bloquea_login(db):
     ana = _crear_usuario("Ana García", "ana@test.es", db)
     eliminar_cuenta(ana)
     assert ana.nombre == "Usuario eliminado"
     assert ana.email.startswith("eliminado_")
     assert ana.email.endswith("@eliminado.invalid")
-
-
-def test_eliminar_cuenta_bloquea_login(db):
-    ana = _crear_usuario("Ana García", "ana@test.es", db)
-    eliminar_cuenta(ana)
     assert not ana.check_password("password123")
 
 
@@ -87,37 +84,25 @@ def test_eliminar_cuenta_cancela_publicaciones_activas(db):
     assert pub.estado == "cancelada"
 
 
-def test_eliminar_cuenta_rechaza_matches_propuestos(db):
+@pytest.mark.parametrize(
+    "estado_inicial, estado_esperado",
+    [
+        ("propuesto", "rechazado"),
+        ("confirmado_parcial", "rechazado"),
+        ("confirmado_total", "confirmado_total"),
+    ],
+)
+def test_eliminar_cuenta_rechaza_matches_abiertos_y_respeta_los_cerrados(
+    db, estado_inicial, estado_esperado
+):
     ana = _crear_usuario("Ana García", "ana@test.es", db)
     pedro = _crear_usuario("Pedro", "pedro@test.es", db)
-    match = _crear_match_entre(ana, pedro, estado="propuesto")
+    match = _crear_match_entre(ana, pedro, estado=estado_inicial)
 
     eliminar_cuenta(ana)
 
     _db.session.refresh(match)
-    assert match.estado == "rechazado"
-
-
-def test_eliminar_cuenta_rechaza_matches_confirmados_parcialmente(db):
-    ana = _crear_usuario("Ana García", "ana@test.es", db)
-    pedro = _crear_usuario("Pedro", "pedro@test.es", db)
-    match = _crear_match_entre(ana, pedro, estado="confirmado_parcial")
-
-    eliminar_cuenta(ana)
-
-    _db.session.refresh(match)
-    assert match.estado == "rechazado"
-
-
-def test_eliminar_cuenta_no_toca_matches_ya_cerrados(db):
-    ana = _crear_usuario("Ana García", "ana@test.es", db)
-    pedro = _crear_usuario("Pedro", "pedro@test.es", db)
-    match = _crear_match_entre(ana, pedro, estado="confirmado_total")
-
-    eliminar_cuenta(ana)
-
-    _db.session.refresh(match)
-    assert match.estado == "confirmado_total"
+    assert match.estado == estado_esperado
 
 
 def test_eliminar_cuenta_borra_busquedas_guardadas(db):
@@ -130,25 +115,16 @@ def test_eliminar_cuenta_borra_busquedas_guardadas(db):
     assert BusquedaGuardada.query.filter_by(usuario_id=ana.id).count() == 0
 
 
-def test_eliminar_cuenta_borra_suscripciones_como_suscriptor(db):
+def test_eliminar_cuenta_borra_suscripciones_como_suscriptor_y_como_publicador(db):
     ana = _crear_usuario("Ana García", "ana@test.es", db)
     pedro = _crear_usuario("Pedro", "pedro@test.es", db)
     _db.session.add(SuscripcionPublicaciones(suscriptor_id=ana.id, publicador_id=pedro.id))
-    _db.session.commit()
-
-    eliminar_cuenta(ana)
-
-    assert SuscripcionPublicaciones.query.filter_by(suscriptor_id=ana.id).count() == 0
-
-
-def test_eliminar_cuenta_borra_suscripciones_como_publicador(db):
-    ana = _crear_usuario("Ana García", "ana@test.es", db)
-    pedro = _crear_usuario("Pedro", "pedro@test.es", db)
     _db.session.add(SuscripcionPublicaciones(suscriptor_id=pedro.id, publicador_id=ana.id))
     _db.session.commit()
 
     eliminar_cuenta(ana)
 
+    assert SuscripcionPublicaciones.query.filter_by(suscriptor_id=ana.id).count() == 0
     assert SuscripcionPublicaciones.query.filter_by(publicador_id=ana.id).count() == 0
 
 

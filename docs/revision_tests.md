@@ -70,7 +70,17 @@ detectado es alto y la exhaustividad sigue aportando valor.
   `data-selected-hospital` y `data-selected-unidad` en la misma petición GET a `/registro` en uno
   solo. Los casos de país preseleccionado, sin invitación y con `inv_hospital` inexistente se
   mantienen separados por cubrir escenarios distintos. Suite verificada en verde (5 passed).
-- [ ] tests/test_eliminar_cuenta.py (13 tests) — Notas:
+- [x] tests/test_eliminar_cuenta.py (13→9 tests) — Notas: fusionados
+  `test_eliminar_cuenta_anonimiza_nombre_y_email` + `test_eliminar_cuenta_bloquea_login` en un
+  solo test (misma llamada a `eliminar_cuenta()`, varios asserts); convertidos los 3 tests de
+  estado de match (`rechaza_matches_propuestos`, `rechaza_matches_confirmados_parcialmente`,
+  `no_toca_matches_ya_cerrados`) en un único test parametrizado con los 3 pares
+  estado-inicial/estado-esperado (se mantiene la granularidad de casos, solo se concentra la
+  función); fusionados `borra_suscripciones_como_suscriptor` + `borra_suscripciones_como_publicador`
+  en un test que crea ambas suscripciones y comprueba las dos. Los tests de la ruta HTTP
+  (autenticación requerida, password incorrecta, éxito, login bloqueado tras eliminar) cubren
+  comportamientos distintos y se mantienen separados. Suite verificada en verde (11 tests, 13
+  casos con la parametrización).
 - [ ] tests/test_unidad_usuario.py (7 tests) — Notas:
 - [ ] tests/test_servicio_unidad_usuario.py (17 tests) — Notas:
 - [ ] tests/test_servicio_registro.py (16 tests) — Notas:
