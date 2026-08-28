@@ -29,6 +29,20 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] fix: el asistente ya infiere el mes cuando un turno solo trae el día
+  (p. ej. "T24"/"T28" sin mes en ningún punto del mensaje) — regla añadida
+  al prompt de `_construir_prompt`: mes en curso, o el siguiente si ese día
+  ya pasó respecto a "hoy". Confirmado con el corpus real
+  (`~/desarrollo/turnero/mensajes_cambios`, 461 líneas) y logs de staging:
+  la notación M/T/N+día ya funcionaba bien siempre que el mensaje mencionara
+  el mes en algún punto; el caso sin mes en absoluto era el hueco. Probado
+  en vivo contra la API de Groq (varios "hoy" distintos, incluido fin de
+  mes). De paso, la prueba destapó un bug latente: un `cedidos` con
+  `franja: None` (posible desde el fix anterior de `fecha: null`, antes
+  quedaba oculto porque la propuesta ya fallaba en `fecha`) crasheaba
+  `resolver_propuesta` con `AttributeError` en `_normalizar(None)`; ahora
+  se trata como problema puntual ("Falta la franja de un turno") igual que
+  una franja desconocida. Test en `test_asistente_resolver.py`.
 - [x] fix: el parser del asistente de WhatsApp lanzaba `ErrorAsistente`
   (descartando toda la propuesta) cuando el modelo devolvía `fecha: null`
   en un turno por no tener datos suficientes (p. ej. "Cambio T24 por T28

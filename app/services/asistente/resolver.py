@@ -72,8 +72,12 @@ def _resolver_turnos(turnos, grupo_intercambio_id, hoy, permitir_cualquier_franj
             problemas.append(f"Fecha en el pasado: {turno.fecha}")
             continue
 
-        if turno.franja is None and permitir_cualquier_franja:
-            franja_id = None
+        if turno.franja is None:
+            if permitir_cualquier_franja:
+                franja_id = None
+            else:
+                problemas.append(f"Falta la franja de un turno el {turno.fecha}")
+                continue
         else:
             franja_id = _resolver_franja_id(turno.franja, grupo_intercambio_id)
             if franja_id is None:

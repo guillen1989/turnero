@@ -62,6 +62,9 @@ def _construir_prompt(contexto):
         "traduciendo apodos o sinónimos que use el mensaje al nombre canónico.\n"
         "- Las fechas del mensaje del usuario son relativas a la fecha de hoy que "
         "él mismo indica al principio de su mensaje, nunca a este texto.\n"
+        "- Si un turno indica el día del mes pero no el mes (p. ej. 'T24', 'la N "
+        "del 10'), y ningún otro turno del mismo mensaje aclara el mes, asume el "
+        "mes en curso; si ese día ya pasó respecto a hoy, asume el mes siguiente.\n"
         "- Si falta algún dato imprescindible para completar la propuesta, indícalo "
         "en `campos_faltantes` en vez de inventarlo."
     )

@@ -292,6 +292,23 @@ def test_fecha_null_va_a_problemas_sin_crashear(db):
     assert any("fecha" in p.lower() for p in problemas)
 
 
+def test_franja_null_en_cedidos_va_a_problemas_sin_crashear(db):
+    u = _usuario()
+    franja_tarde = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Tarde"
+    ).first()
+
+    cedidos, aceptados, problemas = resolver_propuesta(
+        _propuesta(cedidos=[{"fecha": "2026-08-28", "franja": None}]),
+        u,
+        HOY,
+    )
+
+    assert cedidos == []
+    assert aceptados == [(date(2026, 8, 29), franja_tarde.id)]
+    assert any("franja" in p.lower() for p in problemas)
+
+
 def test_campos_faltantes_generico_con_lado_vacio_resuelve_el_otro_lado(db):
     u = _usuario()
     franja_manana = FranjaHoraria.query.filter_by(
