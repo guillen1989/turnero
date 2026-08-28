@@ -1,4 +1,7 @@
 from datetime import date, time
+
+import pytest
+
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria,
     Usuario, TurnoPlanilla, PlanillaMes,
@@ -36,16 +39,12 @@ def _setup(db, email="u@test.es"):
     return usuario, franja_m, franja_t
 
 
-def test_añadir_turno_crea_registro(db):
+def test_añadir_turno_crea_registro_y_planilla_mes_borrador(db):
     usuario, franja_m, _ = _setup(db)
     turno = añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
     assert turno.id is not None
     assert turno.fecha == date(2026, 7, 1)
 
-
-def test_añadir_turno_crea_planilla_mes_borrador(db):
-    usuario, franja_m, _ = _setup(db, "mes@test.es")
-    añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
     planilla = PlanillaMes.query.filter_by(usuario_id=usuario.id, anyo=2026, mes=7).first()
     assert planilla is not None
     assert not planilla.publicada
@@ -66,29 +65,20 @@ def test_añadir_turno_doblaje(db):
     assert TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 1)).count() == 2
 
 
-def test_eliminar_turno_existente(db):
+def test_eliminar_turno_existente_o_inexistente(db):
     usuario, franja_m, _ = _setup(db, "del@test.es")
+    assert eliminar_turno(usuario, date(2026, 7, 1), franja_m.id) is False
+
     añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
-    resultado = eliminar_turno(usuario, date(2026, 7, 1), franja_m.id)
-    assert resultado is True
+    assert eliminar_turno(usuario, date(2026, 7, 1), franja_m.id) is True
     assert TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 1)).count() == 0
 
 
-def test_eliminar_turno_inexistente_devuelve_false(db):
-    usuario, franja_m, _ = _setup(db, "nodel@test.es")
-    resultado = eliminar_turno(usuario, date(2026, 7, 1), franja_m.id)
-    assert resultado is False
-
-
-def test_publicar_mes(db):
-    usuario, franja_m, _ = _setup(db, "pub@test.es")
-    añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
-    planilla = publicar_mes(usuario, 2026, 7)
-    assert planilla.publicada
-
-
-def test_publicar_mes_sin_turnos_previos(db):
-    usuario, _, _ = _setup(db, "pubsin@test.es")
+@pytest.mark.parametrize("con_turno_previo", [False, True], ids=["sin_turnos_previos", "con_turnos_previos"])
+def test_publicar_mes(db, con_turno_previo):
+    usuario, franja_m, _ = _setup(db, f"pub{con_turno_previo}@test.es")
+    if con_turno_previo:
+        añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
     planilla = publicar_mes(usuario, 2026, 7)
     assert planilla.publicada
 
@@ -100,21 +90,17 @@ def test_despublicar_mes(db):
     assert not planilla.publicada
 
 
-def test_tiene_mes_publicado_true(db):
-    usuario, _, _ = _setup(db, "tiene@test.es")
-    publicar_mes(usuario, 2026, 7)
-    assert tiene_mes_publicado(usuario, date(2026, 7, 15))
+def test_tiene_mes_publicado(db):
+    usuario_sin, _, _ = _setup(db, "notiene@test.es")
+    assert not tiene_mes_publicado(usuario_sin, date(2026, 7, 15))
 
+    usuario_borrador, franja_m, _ = _setup(db, "borra@test.es")
+    añadir_turno(usuario_borrador, date(2026, 7, 1), franja_m.id)
+    assert not tiene_mes_publicado(usuario_borrador, date(2026, 7, 15))
 
-def test_tiene_mes_publicado_false_sin_registro(db):
-    usuario, _, _ = _setup(db, "notiene@test.es")
-    assert not tiene_mes_publicado(usuario, date(2026, 7, 15))
-
-
-def test_tiene_mes_publicado_false_borrador(db):
-    usuario, franja_m, _ = _setup(db, "borra@test.es")
-    añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
-    assert not tiene_mes_publicado(usuario, date(2026, 7, 15))
+    usuario_publicado, _, _ = _setup(db, "tiene@test.es")
+    publicar_mes(usuario_publicado, 2026, 7)
+    assert tiene_mes_publicado(usuario_publicado, date(2026, 7, 15))
 
 
 def test_get_turnos_mes(db):
@@ -129,7 +115,7 @@ def test_get_turnos_mes(db):
     assert turnos[1].fecha == date(2026, 7, 3)
 
 
-def test_franjas_trabajadas_en_fecha_devuelve_las_franjas_del_dia(db):
+def test_franjas_trabajadas_en_fecha(db):
     usuario, franja_m, franja_t = _setup(db, "franjas@test.es")
     añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
     añadir_turno(usuario, date(2026, 7, 1), franja_t.id)  # doblaje
@@ -138,20 +124,21 @@ def test_franjas_trabajadas_en_fecha_devuelve_las_franjas_del_dia(db):
     franjas = franjas_trabajadas_en_fecha(usuario, date(2026, 7, 1))
     assert {f.id for f in franjas} == {franja_m.id, franja_t.id}
 
-
-def test_franjas_trabajadas_en_fecha_vacio_si_no_trabaja(db):
-    usuario, _, _ = _setup(db, "libre@test.es")
-    establecer_estado_dia(usuario, date(2026, 7, 1), "libre")
-
-    assert franjas_trabajadas_en_fecha(usuario, date(2026, 7, 1)) == []
+    usuario_libre, _, _ = _setup(db, "libre@test.es")
+    establecer_estado_dia(usuario_libre, date(2026, 7, 1), "libre")
+    assert franjas_trabajadas_en_fecha(usuario_libre, date(2026, 7, 1)) == []
 
 
 # ── Tests de estados de día ───────────────────────────────────────────────────
 
-def test_establecer_estado_libre(db):
+def test_establecer_estado_libre_y_tipo_invalido(db):
+    import pytest
     usuario, franja_m, _ = _setup(db, "libre@test.es")
     estado = establecer_estado_dia(usuario, date(2026, 7, 5), "libre")
     assert estado.tipo == "libre"
+
+    with pytest.raises(ValueError):
+        establecer_estado_dia(usuario, date(2026, 7, 6), "tipo_inventado")
 
 
 def test_establecer_estado_elimina_turnos_previos(db):
@@ -178,14 +165,6 @@ def test_limpiar_dia_elimina_todo(db):
     establecer_estado_dia(usuario, date(2026, 7, 5), "libre")
     limpiar_dia(usuario, date(2026, 7, 5))
     assert EstadoDiaPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 5)).first() is None
-
-
-def test_estado_invalido_lanza_error(db):
-    import pytest
-    from app.services.planilla import establecer_estado_dia
-    usuario, _, _ = _setup(db, "inv@test.es")
-    with pytest.raises(ValueError):
-        establecer_estado_dia(usuario, date(2026, 7, 5), "tipo_inventado")
 
 
 # ── Tests de SalienteDia ──────────────────────────────────────────────────────
