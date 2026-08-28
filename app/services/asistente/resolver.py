@@ -83,34 +83,22 @@ def _resolver_turnos(turnos, grupo_intercambio_id, hoy, permitir_cualquier_franj
     return resueltos
 
 
-_LADOS_CAMPOS_FALTANTES = {"cedidos", "aceptados"}
-
-
 def resolver_propuesta(propuesta, usuario, hoy):
     """Resuelve una PropuestaPublicacion contra la BD.
 
-    Devuelve (cedidos, aceptados, problemas). Si un lado (cedidos o
-    aceptados) resuelve limpio y el otro no, se devuelve resuelto el lado
-    bueno y vacío el que falló: media publicación prellenada es mejor que
-    ninguna, y el usuario completa a mano lo que falte antes de publicar
-    (`_validar_turnos` exige ambos lados en el formulario, así que nunca se
-    puede publicar con datos a medias). Solo cuando **ambos** lados fallan,
-    o `campos_faltantes` señala algo que no es un lado concreto, se
-    devuelven los dos vacíos y el llamador manda al formulario en blanco.
+    Devuelve (cedidos, aceptados, problemas). Se resuelve siempre contra la
+    BD cualquier turno que la propuesta traiga, sin importar lo que diga
+    `campos_faltantes`: el modelo casi nunca usa exactamente los literales
+    "cedidos"/"aceptados" ahí, sino descripciones libres ("fecha del turno
+    aceptado", etc.), así que ese campo se trata solo como texto informativo
+    que se añade a `problemas`, nunca como señal para descartar un lado que
+    sí se resolvió. Si un lado resuelve limpio y el otro no (o directamente
+    no vino en la propuesta), se devuelve resuelto el lado bueno y vacío el
+    otro: media publicación prellenada es mejor que ninguna, y el usuario
+    completa a mano lo que falte antes de publicar (`_validar_turnos` exige
+    ambos lados en el formulario, así que nunca se puede publicar con datos
+    a medias).
     """
-    if propuesta.campos_faltantes:
-        campos = set(propuesta.campos_faltantes)
-        if not campos <= _LADOS_CAMPOS_FALTANTES:
-            return [], [], list(propuesta.campos_faltantes)
-        grupo_id = usuario.grupo_intercambio.id
-        cedidos = [] if "cedidos" in campos else _resolver_turnos(
-            propuesta.cedidos, grupo_id, hoy, permitir_cualquier_franja=False, problemas=[]
-        )
-        aceptados = [] if "aceptados" in campos else _resolver_turnos(
-            propuesta.aceptados, grupo_id, hoy, permitir_cualquier_franja=True, problemas=[]
-        )
-        return cedidos, aceptados, list(propuesta.campos_faltantes)
-
     grupo_id = usuario.grupo_intercambio.id
 
     aceptados_con_franja_heredada = _heredar_franja_de_cedidos(propuesta.cedidos, propuesta.aceptados)
@@ -129,7 +117,7 @@ def resolver_propuesta(propuesta, usuario, hoy):
     if problemas_aceptados:
         aceptados = []
 
-    problemas = problemas_cedidos + problemas_aceptados
+    problemas = list(propuesta.campos_faltantes) + problemas_cedidos + problemas_aceptados
     if problemas:
         return cedidos, aceptados, problemas
 

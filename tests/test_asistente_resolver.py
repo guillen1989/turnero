@@ -172,8 +172,14 @@ def test_turnos_duplicados_van_a_problemas(db):
     assert problemas != []
 
 
-def test_propuesta_con_campos_faltantes_no_se_resuelve(db):
+def test_campos_faltantes_generico_no_descarta_datos_presentes(db):
     u = _usuario()
+    franja_manana = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
+    franja_tarde = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Tarde"
+    ).first()
 
     cedidos, aceptados, problemas = resolver_propuesta(
         _propuesta(campos_faltantes=["fecha del turno cedido"]),
@@ -181,8 +187,8 @@ def test_propuesta_con_campos_faltantes_no_se_resuelve(db):
         HOY,
     )
 
-    assert cedidos == []
-    assert aceptados == []
+    assert cedidos == [(date(2026, 8, 28), franja_manana.id)]
+    assert aceptados == [(date(2026, 8, 29), franja_tarde.id)]
     assert problemas == ["fecha del turno cedido"]
 
 
@@ -242,7 +248,7 @@ def test_campos_faltantes_solo_aceptados_resuelve_igualmente_los_cedidos(db):
     ).first()
 
     cedidos, aceptados, problemas = resolver_propuesta(
-        _propuesta(campos_faltantes=["aceptados"]),
+        _propuesta(aceptados=[], campos_faltantes=["aceptados"]),
         u,
         HOY,
     )
@@ -259,7 +265,7 @@ def test_campos_faltantes_solo_cedidos_resuelve_igualmente_los_aceptados(db):
     ).first()
 
     cedidos, aceptados, problemas = resolver_propuesta(
-        _propuesta(campos_faltantes=["cedidos"]),
+        _propuesta(cedidos=[], campos_faltantes=["cedidos"]),
         u,
         HOY,
     )
@@ -269,15 +275,18 @@ def test_campos_faltantes_solo_cedidos_resuelve_igualmente_los_aceptados(db):
     assert problemas == ["cedidos"]
 
 
-def test_campos_faltantes_generico_sigue_sin_resolver_nada(db):
+def test_campos_faltantes_generico_con_lado_vacio_resuelve_el_otro_lado(db):
     u = _usuario()
+    franja_manana = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u.unidad.grupo_intercambio_id, nombre="Mañana"
+    ).first()
 
     cedidos, aceptados, problemas = resolver_propuesta(
-        _propuesta(campos_faltantes=["franja de los aceptados"]),
+        _propuesta(aceptados=[], campos_faltantes=["franja de los aceptados"]),
         u,
         HOY,
     )
 
-    assert cedidos == []
+    assert cedidos == [(date(2026, 8, 28), franja_manana.id)]
     assert aceptados == []
     assert problemas == ["franja de los aceptados"]
