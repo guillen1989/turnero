@@ -33,3 +33,39 @@ def test_token_csrf_invalido_redirige_con_aviso(client, db, csrf_activo):
     )
     assert resp.status_code == 200
     assert b"demasiado tiempo" in resp.data.lower()
+
+
+def test_token_csrf_invalido_se_envia_a_sentry(client, db, csrf_activo, monkeypatch):
+    llamadas = []
+    monkeypatch.setattr(
+        "app.sentry_sdk.capture_message",
+        lambda mensaje, level=None: llamadas.append((mensaje, level)),
+    )
+    client.post(
+        "/auth/login",
+        data={"email": "x@test.es", "password": "x", "csrf_token": "token-invalido"},
+    )
+    assert len(llamadas) == 1
+    assert "auth.login" in llamadas[0][0]
+
+
+def test_405_inesperado_se_envia_a_sentry(client, db, monkeypatch):
+    llamadas = []
+    monkeypatch.setattr(
+        "app.sentry_sdk.capture_message",
+        lambda mensaje, level=None: llamadas.append((mensaje, level)),
+    )
+    resp = client.get("/auth/login/demo")
+    assert resp.status_code == 405
+    assert len(llamadas) == 1
+
+
+def test_404_no_se_envia_a_sentry(client, db, monkeypatch):
+    llamadas = []
+    monkeypatch.setattr(
+        "app.sentry_sdk.capture_message",
+        lambda mensaje, level=None: llamadas.append((mensaje, level)),
+    )
+    resp = client.get("/ruta-que-no-existe")
+    assert resp.status_code == 404
+    assert llamadas == []

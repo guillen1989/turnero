@@ -1,4 +1,5 @@
 import os
+import sentry_sdk
 from flask import Flask, flash, redirect, request, url_for
 from flask_babel import gettext as _
 from flask_wtf.csrf import CSRFError
@@ -142,6 +143,15 @@ def create_app(config_name=None):
         # dejar de ser válido (p. ej. tras cerrar sesión y volver a entrar
         # con otro usuario). Nunca debe verse un 400 crudo: se devuelve al
         # usuario a la página desde la que venía con un aviso.
+        #
+        # Al degradar con gracia, la respuesta deja de ser un 400 y por
+        # tanto ya no la vería el hook de _alertar_4xx_inesperado de más
+        # abajo: se manda explícitamente a Sentry para no perder visibilidad
+        # de que está ocurriendo (así se detectó tarde este mismo bug).
+        sentry_sdk.capture_message(
+            f"CSRF inválido/caducado en {request.endpoint}",
+            level="warning",
+        )
         flash(
             _("La página llevaba abierta demasiado tiempo y la acción no se "
               "pudo confirmar. Vuelve a intentarlo."),
@@ -154,6 +164,24 @@ def create_app(config_name=None):
         else:
             destino = url_for("main.index")
         return redirect(destino)
+
+    # Códigos que en esta app siempre indican un fallo (de la app o de
+    # infraestructura, p. ej. CSRF, método equivocado, cuerpo malformado),
+    # nunca un flujo de negocio esperado como sí lo son 401/403/404/409
+    # (permisos, recursos inexistentes o conflictos ya gestionados con su
+    # propio mensaje al usuario). Sin este aviso, un 400 "silencioso" como
+    # el del CSRF caducado solo se detecta si alguien lo prueba a mano.
+    _CODIGOS_4XX_ALERTABLES = {400, 405, 411, 413, 414, 415, 431}
+
+    @app.after_request
+    def _alertar_4xx_inesperado(response):
+        if response.status_code in _CODIGOS_4XX_ALERTABLES:
+            sentry_sdk.capture_message(
+                f"{response.status_code} inesperado en "
+                f"{request.method} {request.path}",
+                level="warning",
+            )
+        return response
 
     _registrar_comandos(app)
 
