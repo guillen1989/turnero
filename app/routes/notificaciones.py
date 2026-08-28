@@ -32,6 +32,7 @@ _TIPOS_AVISOS = (
     "documento_cambio_denegado",
     "confirmado_total",
     "rechazo",
+    "anuncio_sistema",
 )
 
 _TIPOS_AVISOS_CON_MATCH = ("confirmado_total", "rechazo")

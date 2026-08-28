@@ -16,9 +16,13 @@
   <ul class="avisos-list">
     {% for aviso in avisos %}
     <li class="aviso-row{% if not aviso.leida %} aviso-row--nueva{% endif %}">
-      {% if aviso.tipo == 'contrasena_restablecida' %}
+      {% if aviso.tipo in ('contrasena_restablecida', 'anuncio_sistema') %}
         <div class="aviso-info">
+          {% if aviso.tipo == 'anuncio_sistema' %}
+          <span class="aviso-tipo tipo-badge tipo-badge--admin">{{ _('Novedad') }}</span>
+          {% else %}
           <span class="aviso-tipo tipo-badge tipo-badge--admin">{{ _('Cuenta') }}</span>
+          {% endif %}
           {% if aviso.unidad_id and current_user.unidades|length > 1 and aviso.unidad %}
           <span class="aviso-unidad">{{ aviso.unidad.nombre }}</span>
           {% endif %}

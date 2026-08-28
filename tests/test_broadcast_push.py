@@ -44,3 +44,24 @@ def test_broadcast_push_usa_titulo_y_cuerpo_dados(app):
         runner.invoke(args=["broadcast-push", "Turnero", "Mensaje de prueba"])
 
     mock_enviar.assert_called_once_with(ana, "Turnero", "Mensaje de prueba", url="/avisos")
+
+
+def test_broadcast_push_crea_notificacion_en_avisos_para_todos_los_usuarios(app):
+    from app.models import Notificacion
+
+    ana = _usuario("Ana", "ana3@broadcast.es")
+    pedro = _usuario("Pedro", "pedro3@broadcast.es", con_suscripcion=False)
+    lucia = _usuario("Lucía", "lucia3@broadcast.es", push_activo=False)
+
+    runner = app.test_cli_runner()
+    with patch("app.push.sender.enviar_push"):
+        result = runner.invoke(args=["broadcast-push", "Turnero", "Novedad importante"])
+
+    assert result.exit_code == 0, result.output
+
+    notifs = Notificacion.query.filter_by(tipo="anuncio_sistema").all()
+    usuario_ids = {n.usuario_id for n in notifs}
+    assert usuario_ids == {ana.id, pedro.id, lucia.id}
+    for n in notifs:
+        assert n.mensaje == "Novedad importante"
+        assert n.leida is False

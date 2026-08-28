@@ -124,6 +124,7 @@ def create_app(config_name=None):
                         "documento_cambio_completo",
                         "documento_cambio_autorizado",
                         "documento_cambio_denegado",
+                        "anuncio_sistema",
                     ]),
                     Notificacion.leida.is_(False),
                 ).count()
@@ -311,19 +312,28 @@ def _registrar_comandos(app):
     @click.argument("titulo")
     @click.argument("cuerpo")
     def broadcast_push(titulo, cuerpo):
-        """Envía una notificación push a todos los usuarios suscritos con push activo."""
-        from app.models import Usuario
+        """Envía push + notificación en Avisos a todos los usuarios."""
+        from app.models import Notificacion, Usuario
         from app.push.sender import enviar_push
 
-        usuarios = Usuario.query.filter(
-            Usuario.push_subscription.isnot(None),
-            Usuario.push_activo.is_(True),
-        ).all()
+        todos = Usuario.query.all()
+        for usuario in todos:
+            db.session.add(Notificacion(
+                usuario_id=usuario.id,
+                unidad_id=usuario.unidad_id,
+                tipo="anuncio_sistema",
+                mensaje=cuerpo,
+            ))
+        db.session.commit()
 
-        for usuario in usuarios:
+        suscritos = [
+            u for u in todos
+            if u.push_subscription and u.push_activo
+        ]
+        for usuario in suscritos:
             enviar_push(usuario, titulo, cuerpo, url="/avisos")
 
-        click.echo(f"Notificaciones enviadas: {len(usuarios)}")
+        click.echo(f"Notificaciones enviadas: {len(suscritos)}")
 
 
 def _get_locale():
