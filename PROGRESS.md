@@ -145,13 +145,19 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   staging con mensajes reales. Reactivar antes de promocionar el asistente
   a producción de forma permanente.
 - **2026-08-28:** el motor del asistente de parseo de WhatsApp cambió de
-  Anthropic (Claude Haiku 4.5) a Groq (Llama 3.1 8B) — más barato y más
-  rápido. La lógica de Anthropic se conserva desactivada (sin invocarse) en
+  Anthropic (Claude Haiku 4.5) a Groq — más barato y más rápido. La lógica
+  de Anthropic se conserva desactivada (sin invocarse) en
   `app/services/asistente/cliente.py::_extraer_propuesta_anthropic`, por si
   se recupera más adelante. Requiere `GROQ_API_KEY` en el entorno (ver
   `.env.example`); `ANTHROPIC_API_KEY` deja de ser necesaria mientras el
   motor de Anthropic esté desactivado. Detalle en `docs/crear_parser.md`
   (vive en el repo `turnero`, rama `main`, fuera de este worktree).
+  Modelo inicial `llama-3.1-8b-instant` falló en el primer test real en
+  staging (404 model_not_found: Groq lo pasó a nivel Enterprise en su ola de
+  deprecaciones de junio 2026). Cambiado a `llama-3.3-70b-versatile` el
+  mismo día. Si este también falla, la alternativa recomendada por Groq
+  para free/dev-tier es `openai/gpt-oss-20b` — pendiente de confirmar en
+  staging con mensajes reales.
 
 ## Mantenimiento reciente (independiente de la Fase 10 — supervisoras multiunidad)
 Implementación de `PLAN_SUPERVISORAS_MULTIUNIDAD.md`: las supervisoras podrán

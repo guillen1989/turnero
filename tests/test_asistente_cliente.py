@@ -80,12 +80,14 @@ def test_extraer_propuesta_con_cliente_falso_devuelve_la_propuesta_parseada():
     assert resultado == _propuesta_esperada()
 
 
-def test_usa_el_modelo_llama_3_1_8b_instant_via_groq():
+def test_usa_el_modelo_llama_3_3_70b_versatile_via_groq():
+    """llama-3.1-8b-instant devolvía 404 model_not_found en producción: Groq lo
+    pasó a nivel Enterprise en su ola de deprecaciones de junio 2026."""
     cliente = _ClienteGroqFalso(contenido=_propuesta_esperada_json())
 
     extraer_propuesta("texto", _CONTEXTO, client=cliente)
 
-    assert cliente.kwargs_recibidos["model"] == "llama-3.1-8b-instant"
+    assert cliente.kwargs_recibidos["model"] == "llama-3.3-70b-versatile"
 
 
 def test_error_de_la_api_lanza_excepcion_controlada_del_dominio():
