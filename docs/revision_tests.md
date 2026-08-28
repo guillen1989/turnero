@@ -64,7 +64,12 @@ detectado es alto y la exhaustividad sigue aportando valor.
   `test_generar_token_reset_crea_fila_en_bd` y `test_generar_token_reset_no_guarda_el_token_en_claro`
   (mismo `generar_token_reset()`, dos asserts sobre la misma fila) en un único test. Suite
   verificada en verde (7 passed).
-- [ ] tests/test_invitacion.py (8 tests) — Notas:
+- [x] tests/test_invitacion.py (8→5 tests) — Notas: fusionados los 3 tests que comprobaban
+  distintos aspectos del mismo enlace de invitación en `/auth/perfil/cuenta` (wa.me, URL de
+  registro, IDs de hospital/unidad/categoría) en uno solo; fusionados los 2 tests que comprobaban
+  `data-selected-hospital` y `data-selected-unidad` en la misma petición GET a `/registro` en uno
+  solo. Los casos de país preseleccionado, sin invitación y con `inv_hospital` inexistente se
+  mantienen separados por cubrir escenarios distintos. Suite verificada en verde (5 passed).
 - [ ] tests/test_eliminar_cuenta.py (13 tests) — Notas:
 - [ ] tests/test_unidad_usuario.py (7 tests) — Notas:
 - [ ] tests/test_servicio_unidad_usuario.py (17 tests) — Notas:

@@ -19,35 +19,18 @@ def _login(client, email="ana@test.es", password="password123"):
 
 # --- perfil/cuenta muestra la sección de invitación ---
 
-def test_perfil_cuenta_contiene_enlace_whatsapp(client, db):
-    """La página Mi perfil > Cuenta incluye un enlace wa.me de invitación."""
-    _usuario()
+def test_perfil_cuenta_contiene_enlace_whatsapp_con_ids_del_usuario(client, db):
+    """Mi perfil > Cuenta incluye un enlace wa.me al registro con los IDs del usuario."""
+    usuario = _usuario()
     _login(client)
     resp = client.get("/auth/perfil/cuenta")
     assert resp.status_code == 200
     html = resp.data.decode()
-    assert "wa.me" in html
-
-
-def test_perfil_cuenta_enlace_contiene_url_registro(client, db):
-    """El enlace de invitación apunta al formulario de registro."""
-    _usuario()
-    _login(client)
-    resp = client.get("/auth/perfil/cuenta")
-    html = resp.data.decode()
-    assert "registro" in html
-    assert "inv_hospital" in html
-
-
-def test_perfil_cuenta_enlace_incluye_hospital_y_unidad(client, db):
-    """El enlace contiene los IDs del hospital y la unidad del usuario."""
-    usuario = _usuario()
-    _login(client)
-    resp = client.get("/auth/perfil/cuenta")
-    html = resp.data.decode()
     hospital_id = str(usuario.unidad.hospital.id)
     unidad_id = str(usuario.unidad_id)
     categoria_id = str(usuario.categoria_id)
+    assert "wa.me" in html
+    assert "registro" in html
     assert f"inv_hospital={hospital_id}" in html
     assert f"inv_unidad={unidad_id}" in html
     assert f"inv_categoria={categoria_id}" in html
@@ -55,21 +38,14 @@ def test_perfil_cuenta_enlace_incluye_hospital_y_unidad(client, db):
 
 # --- /registro acepta params de invitación ---
 
-def test_registro_con_invitacion_incluye_data_selected_hospital(client, db):
-    """GET /registro?inv_hospital=X incluye data-selected-hospital en el HTML."""
+def test_registro_con_invitacion_incluye_data_selected_hospital_y_unidad(client, db):
+    """GET /registro con inv_hospital/inv_unidad incluye ambos data-selected en el HTML."""
     usuario = _usuario()
     hospital_id = usuario.unidad.hospital.id
     resp = client.get(f"/auth/registro?inv_hospital={hospital_id}&inv_unidad={usuario.unidad_id}&inv_categoria={usuario.categoria_id}")
     assert resp.status_code == 200
     html = resp.data.decode()
     assert f'data-selected-hospital="{hospital_id}"' in html
-
-
-def test_registro_con_invitacion_incluye_data_selected_unidad(client, db):
-    """GET /registro con inv_unidad incluye data-selected-unidad."""
-    usuario = _usuario()
-    resp = client.get(f"/auth/registro?inv_hospital={usuario.unidad.hospital.id}&inv_unidad={usuario.unidad_id}&inv_categoria={usuario.categoria_id}")
-    html = resp.data.decode()
     assert f'data-selected-unidad="{usuario.unidad_id}"' in html
 
 
