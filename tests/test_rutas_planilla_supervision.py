@@ -2,6 +2,8 @@ import json
 import re
 from datetime import date, time
 
+import pytest
+
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria, Usuario,
     DocumentoCambio, ParticipanteDocumentoCambio, AjustePlanillaSupervisora,
@@ -147,39 +149,53 @@ def test_index_enlaza_a_documento_de_cambio_autorizado(db, client):
     assert f"/documentos-cambio/{documento.id}" in resp.data.decode("utf-8")
 
 
-# ── ajustar ────────────────────────────────────────────────────────────────────
+# ── permisos comunes a ajustar / turno-eliminar / turno-editar ─────────────────
 
-def test_ajustar_requiere_login(client):
-    resp = client.post("/planilla/supervision/ajustar", data={})
+RUTAS_SUPERVISION = [
+    ("/planilla/supervision/ajustar", lambda franja_m: {"seleccion": "libre"}),
+    ("/planilla/supervision/turno/eliminar", lambda franja_m: {"franja_id": franja_m.id}),
+    ("/planilla/supervision/turno/editar",
+     lambda franja_m: {"franja_actual_id": franja_m.id, "franja_nueva_id": franja_m.id}),
+]
+RUTAS_SUPERVISION_IDS = ["ajustar", "turno_eliminar", "turno_editar"]
+
+
+@pytest.mark.parametrize("url,payload_fn", RUTAS_SUPERVISION, ids=RUTAS_SUPERVISION_IDS)
+def test_ruta_supervision_requiere_login(client, url, payload_fn):
+    resp = client.post(url, data={})
     assert resp.status_code == 302
 
 
-def test_ajustar_prohibido_si_no_es_supervisora(db, client):
+@pytest.mark.parametrize("url,payload_fn", RUTAS_SUPERVISION, ids=RUTAS_SUPERVISION_IDS)
+def test_ruta_supervision_prohibido_si_no_es_supervisora(db, client, url, payload_fn):
     crear_usuario, unidad, _, franja_m = _setup(db, "f")
     normal = crear_usuario("Normal", "normal_f@h.es")
     ana = crear_usuario("Ana", "ana_f@h.es")
     _login(client, normal.email)
 
-    resp = client.post("/planilla/supervision/ajustar", data={
+    resp = client.post(url, data={
         "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
-        "seleccion": "libre",
+        **payload_fn(franja_m),
     })
     assert resp.status_code == 403
 
 
-def test_ajustar_prohibido_si_trabajador_de_otra_unidad(db, client):
+@pytest.mark.parametrize("url,payload_fn", RUTAS_SUPERVISION, ids=RUTAS_SUPERVISION_IDS)
+def test_ruta_supervision_prohibido_si_trabajador_de_otra_unidad(db, client, url, payload_fn):
     crear_usuario, unidad, otra_unidad, franja_m = _setup(db, "g")
     supervisora = crear_usuario("Super", "super_g@h.es", supervisora=True)
     cris = crear_usuario("Cris", "cris_g@h.es", u=otra_unidad)
     _login(client, supervisora.email)
 
-    resp = client.post("/planilla/supervision/ajustar", data={
+    resp = client.post(url, data={
         "usuario_id": cris.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
-        "seleccion": "libre",
+        **payload_fn(franja_m),
     })
     assert resp.status_code == 403
     assert AjustePlanillaSupervisora.query.count() == 0
 
+
+# ── ajustar ────────────────────────────────────────────────────────────────────
 
 def test_ajustar_asigna_estado(db, client):
     crear_usuario, unidad, _, franja_m = _setup(db, "h")
@@ -290,38 +306,6 @@ def test_ajustar_franja_de_otro_grupo_rechazada(db, client):
 
 # ── turno/eliminar ────────────────────────────────────────────────────────────
 
-def test_turno_eliminar_requiere_login(client):
-    resp = client.post("/planilla/supervision/turno/eliminar", data={})
-    assert resp.status_code == 302
-
-
-def test_turno_eliminar_prohibido_si_no_es_supervisora(db, client):
-    crear_usuario, unidad, _, franja_m = _setup(db, "o")
-    normal = crear_usuario("Normal", "normal_o@h.es")
-    ana = crear_usuario("Ana", "ana_o@h.es")
-    _login(client, normal.email)
-
-    resp = client.post("/planilla/supervision/turno/eliminar", data={
-        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
-        "franja_id": franja_m.id,
-    })
-    assert resp.status_code == 403
-
-
-def test_turno_eliminar_prohibido_si_trabajador_de_otra_unidad(db, client):
-    crear_usuario, unidad, otra_unidad, franja_m = _setup(db, "p")
-    supervisora = crear_usuario("Super", "super_p@h.es", supervisora=True)
-    cris = crear_usuario("Cris", "cris_p@h.es", u=otra_unidad)
-    _login(client, supervisora.email)
-
-    resp = client.post("/planilla/supervision/turno/eliminar", data={
-        "usuario_id": cris.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
-        "franja_id": franja_m.id,
-    })
-    assert resp.status_code == 403
-    assert AjustePlanillaSupervisora.query.count() == 0
-
-
 def test_turno_eliminar_franja_de_otro_grupo_rechazada(db, client):
     crear_usuario, unidad, _, _ = _setup(db, "q")
     _, _, _, franja_otro_grupo = _setup(db, "r")
@@ -368,38 +352,6 @@ def test_turno_eliminar_quita_solo_esa_franja_de_un_doblaje(db, client):
 
 
 # ── turno/editar ─────────────────────────────────────────────────────────────
-
-def test_turno_editar_requiere_login(client):
-    resp = client.post("/planilla/supervision/turno/editar", data={})
-    assert resp.status_code == 302
-
-
-def test_turno_editar_prohibido_si_no_es_supervisora(db, client):
-    crear_usuario, unidad, _, franja_m = _setup(db, "t")
-    normal = crear_usuario("Normal", "normal_t@h.es")
-    ana = crear_usuario("Ana", "ana_t@h.es")
-    _login(client, normal.email)
-
-    resp = client.post("/planilla/supervision/turno/editar", data={
-        "usuario_id": ana.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
-        "franja_actual_id": franja_m.id, "franja_nueva_id": franja_m.id,
-    })
-    assert resp.status_code == 403
-
-
-def test_turno_editar_prohibido_si_trabajador_de_otra_unidad(db, client):
-    crear_usuario, unidad, otra_unidad, franja_m = _setup(db, "u")
-    supervisora = crear_usuario("Super", "super_u@h.es", supervisora=True)
-    cris = crear_usuario("Cris", "cris_u@h.es", u=otra_unidad)
-    _login(client, supervisora.email)
-
-    resp = client.post("/planilla/supervision/turno/editar", data={
-        "usuario_id": cris.id, "fecha": "2026-07-01", "anyo": 2026, "mes": 7,
-        "franja_actual_id": franja_m.id, "franja_nueva_id": franja_m.id,
-    })
-    assert resp.status_code == 403
-    assert AjustePlanillaSupervisora.query.count() == 0
-
 
 def test_turno_editar_franja_de_otro_grupo_rechazada(db, client):
     crear_usuario, unidad, _, franja_m = _setup(db, "v")
