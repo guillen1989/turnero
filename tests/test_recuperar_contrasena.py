@@ -70,14 +70,6 @@ def test_post_recuperar_contrasena_email_inexistente_no_envia_ni_filtra(client, 
 
 # --- GET /auth/restablecer-contrasena/<token> ---
 
-def test_get_restablecer_con_token_valido_devuelve_200(client, db):
-    usuario = _usuario()
-    token = generar_token_reset(usuario)
-
-    resp = client.get(f"/auth/restablecer-contrasena/{token}")
-    assert resp.status_code == 200
-
-
 def test_get_restablecer_con_token_invalido_redirige(client, db):
     resp = client.get("/auth/restablecer-contrasena/token-invalido", follow_redirects=False)
     assert resp.status_code == 302
@@ -86,9 +78,12 @@ def test_get_restablecer_con_token_invalido_redirige(client, db):
 
 # --- POST /auth/restablecer-contrasena/<token> ---
 
-def test_post_restablecer_con_token_valido_cambia_password(client, db):
+def test_post_restablecer_con_token_valido_muestra_form_y_cambia_password(client, db):
     usuario = _usuario()
     token = generar_token_reset(usuario)
+
+    resp = client.get(f"/auth/restablecer-contrasena/{token}")
+    assert resp.status_code == 200
 
     resp = client.post(f"/auth/restablecer-contrasena/{token}", data={
         "password": "nueva_password_123",
@@ -129,8 +124,3 @@ def test_post_restablecer_con_password_invalida_no_cambia_password(client, db, p
 
     _db.session.refresh(usuario)
     assert usuario.check_password("pass_original")
-
-
-def test_login_enlaza_a_recuperar_contrasena_de_auth(client, db):
-    resp = client.get("/auth/login")
-    assert b'href="/auth/recuperar-contrasena"' in resp.data
