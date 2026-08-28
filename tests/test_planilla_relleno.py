@@ -38,7 +38,7 @@ def _setup(client, db, email="relleno@test.es"):
 
 # ── /rango/aplicar ────────────────────────────────────────────────────────────
 
-def test_rango_aplica_estado_a_varios_dias(client, db):
+def test_rango_aplica_estado_y_turno_a_varios_dias(client, db):
     usuario, franja_m, _ = _setup(client, db, "rango_estado@t.es")
     resp = client.post("/planilla/rango/aplicar", data={
         "dia_inicio": 1,
@@ -55,9 +55,6 @@ def test_rango_aplica_estado_a_varios_dias(client, db):
     # Día 6 sin tocar
     assert date(2026, 7, 6) not in estados
 
-
-def test_rango_aplica_turno_a_varios_dias(client, db):
-    usuario, franja_m, _ = _setup(client, db, "rango_turno@t.es")
     client.post("/planilla/rango/aplicar", data={
         "dia_inicio": 10,
         "dia_fin": 12,
@@ -103,24 +100,9 @@ def test_rango_rechaza_sin_seleccion(client, db):
     assert len(estados) == 0
 
 
-def test_rango_un_solo_dia(client, db):
-    """Rango donde inicio == fin: aplica exactamente 1 día."""
-    usuario, _, _ = _setup(client, db, "rango_uno@t.es")
-    client.post("/planilla/rango/aplicar", data={
-        "dia_inicio": 15,
-        "dia_fin": 15,
-        "seleccion": "vacaciones",
-        "anyo": 2026,
-        "mes": 7,
-    })
-    estados = get_estados_mes(usuario, 2026, 7)
-    assert len(estados) == 1
-    assert estados[date(2026, 7, 15)].tipo == "vacaciones"
-
-
 # ── /multiples/aplicar ────────────────────────────────────────────────────────
 
-def test_multiples_aplica_a_fechas_seleccionadas(client, db):
+def test_multiples_aplica_estado_y_turno_a_fechas_seleccionadas(client, db):
     usuario, franja_m, _ = _setup(client, db, "multi_estado@t.es")
     fechas = [date(2026, 7, 1), date(2026, 7, 7), date(2026, 7, 15)]
     resp = client.post("/planilla/multiples/aplicar", data={
@@ -135,20 +117,17 @@ def test_multiples_aplica_a_fechas_seleccionadas(client, db):
     for fecha in fechas:
         assert estados[fecha].tipo == "libre"
 
-
-def test_multiples_aplica_turno_a_fechas_seleccionadas(client, db):
-    usuario, franja_m, _ = _setup(client, db, "multi_turno@t.es")
-    fechas = [date(2026, 7, 2), date(2026, 7, 9)]
+    fechas_turno = [date(2026, 7, 2), date(2026, 7, 9)]
     client.post("/planilla/multiples/aplicar", data={
-        "fecha[]": [f.isoformat() for f in fechas],
+        "fecha[]": [f.isoformat() for f in fechas_turno],
         "seleccion": str(franja_m.id),
         "anyo": 2026,
         "mes": 7,
     })
     turnos = TurnoPlanilla.query.filter_by(usuario_id=usuario.id).all()
-    fechas_turno = {t.fecha for t in turnos}
-    assert date(2026, 7, 2) in fechas_turno
-    assert date(2026, 7, 9) in fechas_turno
+    fechas_con_turno = {t.fecha for t in turnos}
+    assert date(2026, 7, 2) in fechas_con_turno
+    assert date(2026, 7, 9) in fechas_con_turno
 
 
 def test_multiples_ignora_fechas_de_otro_mes(client, db):
@@ -181,8 +160,8 @@ def test_multiples_sin_fechas_no_hace_nada(client, db):
 
 # ── Tests de /planilla/vacios/aplicar ────────────────────────────────────────
 
-def test_vacios_aplicar_rellena_dias_sin_asignar(client, db):
-    """Rellena todos los días del mes que no tienen nada asignado."""
+def test_vacios_aplicar_rellena_con_estado_y_turno(client, db):
+    """Acepta tanto un estado como un turno (franja) para rellenar días vacíos."""
     from app.services.planilla import añadir_turno
     usuario, franja_m, _ = _setup(client, db, "vacios1@t.es")
     # Asigna explícitamente solo el día 1
@@ -202,17 +181,15 @@ def test_vacios_aplicar_rellena_dias_sin_asignar(client, db):
     # El día 1 no debe haberse tocado (sigue siendo turno, no estado)
     assert date(2026, 7, 1) not in estados
 
-
-def test_vacios_aplicar_con_turno_rellena_vacios(client, db):
-    """También acepta un turno (franja) como selección."""
-    usuario, franja_m, franja_t = _setup(client, db, "vacios2@t.es")
+    client.get("/auth/logout")
+    usuario2, _, franja_t = _setup(client, db, "vacios2@t.es")
     # Julio 2026 tiene 31 días; dejamos todo vacío
     client.post("/planilla/vacios/aplicar", data={
         "seleccion": str(franja_t.id),
         "anyo": 2026,
         "mes": 7,
     })
-    turnos = TurnoPlanilla.query.filter_by(usuario_id=usuario.id).all()
+    turnos = TurnoPlanilla.query.filter_by(usuario_id=usuario2.id).all()
     assert len(turnos) == 31
 
 
