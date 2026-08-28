@@ -1,39 +1,54 @@
 # Plan de revisión de la suite de tests
 
 ## Objetivo
-La suite tiene 131 archivos de test (~1600+ casos, contando parametrizaciones). El objetivo es
-revisar cada archivo para confirmar que:
-- Los tests siguen siendo necesarios (no cubren código muerto ni comportamiento obsoleto).
-- No hay duplicación evidente entre archivos (mismo escenario cubierto dos veces).
-- Los tests aportan valor real: prueban comportamiento, no implementación de detalle.
-- Los tests son legibles y sus nombres describen honestamente qué comportamiento verifican.
+La suite tiene 131 archivos de test (~1600+ casos, contando parametrizaciones). Muchos de estos
+tests se escribieron como parte del ciclo TDD (rojo-verde-refactor) que exige `CLAUDE.md`, lo que
+produce cobertura fina de variantes intermedias que fueron útiles para *diseñar* el comportamiento
+pero que no aportan valor como **suite de regresión** una vez el comportamiento está consolidado.
 
-**No es un objetivo de este plan** arreglar los tests que se encuentren mal — solo identificarlos.
-Cada hallazgo se anota en la columna "Notas" de la tabla correspondiente y, si hace falta acción
-(borrar, fusionar, reescribir), se abre un TODO aparte o se actúa en un paso de trabajo separado
-para no mezclar "revisar" con "modificar" en el mismo commit.
+El objetivo de este plan es revisar cada archivo y **reducir su número de tests** dejando solo los
+que sirven como regresión, comprobando en cada uno:
+- Que el test sigue siendo necesario (no cubre código muerto ni comportamiento obsoleto).
+- Que no hay duplicación evidente entre archivos (mismo escenario cubierto dos veces).
+- Que el test aporta valor real: prueba comportamiento, no implementación de detalle.
+- Que, si varios tests cubren variantes finas del mismo flujo (p. ej. combinaciones de flags,
+  errores de validación equivalentes), pueden consolidarse en menos tests sin perder cobertura del
+  camino feliz y de los bordes que realmente importan.
+- Que los tests que sobreviven son legibles y su nombre describe honestamente qué comportamiento
+  verifican.
+
+Para lógica de negocio crítica (motor de matching, reglas de confirmación, resolución parcial,
+visibilidad por categoría/grupo) prioriza mantener la granularidad: ahí el coste de un bug no
+detectado es alto y la exhaustividad sigue aportando valor.
 
 ## Cómo trabajar este plan
-- Cada fila de las tablas de abajo es **un paso independiente**: revisar un solo archivo de test.
-- Al terminar un archivo, marca su casilla `[x]` y rellena la columna "Notas" con el veredicto
-  (ej. "OK", "2 tests duplican X", "candidato a borrar: prueba código eliminado en commit Y").
-- Haz commit de este archivo actualizado tras cada archivo revisado (o cada pocos, si son triviales),
-  para no perder progreso entre sesiones. Mensaje sugerido: `chore: revisa tests/test_x.py (plan revisión tests)`.
-- Si una revisión concluye que hay que actuar (borrar/fusionar/reescribir tests), no lo hagas en el
-  mismo paso: anótalo en "Notas" y decide con el usuario si se aborda ahora o se deja para después.
+- Cada fila de las tablas de abajo es **un paso independiente**: revisar y reducir un solo archivo
+  de test.
+- El paso sigue el ciclo TDD/commit atómico habitual (`CLAUDE.md`): con todos los tests en verde,
+  elimina o fusiona los tests redundantes, comprueba que la suite del archivo sigue pasando y que
+  la cobertura del comportamiento relevante se mantiene, y deja constancia del resultado.
+- Al terminar un archivo, marca su casilla `[x]` y rellena la columna "Notas" con el veredicto y el
+  recuento antes/después (ej. "18→11 tests: fusionadas 4 variantes de validación de email",
+  "OK, sin cambios: cada test cubre un escenario distinto sin solape").
+- Haz commit del código de test modificado junto con este archivo actualizado, tras cada archivo
+  revisado (o cada pocos, si son triviales), para no perder progreso entre sesiones. Mensaje
+  sugerido: `test: reduce tests/test_x.py a los necesarios para regresión (plan revisión tests)`.
+- Si una reducción es dudosa (no está claro si un escenario sigue aportando valor), anótalo en
+  "Notas" en vez de borrar, y decide con el usuario si se aborda ahora o se deja para después.
 - El recuento de "Nº tests" es el número de funciones `def test_*` en el archivo (incluye tests
-  parametrizados como una sola función). Sirve solo de referencia para priorizar/estimar tiempo.
+  parametrizados como una sola función) **antes** de empezar este plan. Sirve solo de referencia
+  para priorizar/estimar tiempo.
 - Progreso total: cuenta las casillas marcadas frente al total (131 archivos).
 
 ---
 
 ## 1. Autenticación, cuentas y usuarios
-- [x] tests/test_auth_routes.py (86 tests) — Notas: OK. Tests de integración HTTP bien organizados por
-  sección (registro, login, API unidades, perfil, cuenta, firma, sesión persistente, login demo,
-  gestión multi-unidad, feature flags), prueban comportamiento observable y nombres honestos. Sin
-  duplicación relevante; leve solape entre `test_registro_con_flag_inactivo_ignora_segunda_unidad` y
-  `test_registro_con_flag_inactivo_no_crea_unidad_extra_ni_error` (mismo escenario, aserciones
-  distintas: datos vs UI) — no amerita acción.
+- [ ] tests/test_auth_routes.py (86 tests) — Notas: Revisado bajo el enfoque anterior (solo
+  diagnóstico, sin reducir); pendiente de revisitar con el enfoque actual para consolidar
+  candidatos ya identificados (p. ej. las variantes de login demo trabajador/supervisora, los
+  tests de flag `multi_unidad` desactivado, y el solape entre
+  `test_registro_con_flag_inactivo_ignora_segunda_unidad` y
+  `test_registro_con_flag_inactivo_no_crea_unidad_extra_ni_error`).
 - [ ] tests/test_recuperar_contrasena.py (13 tests) — Notas:
 - [ ] tests/test_password_reset_service.py (8 tests) — Notas:
 - [ ] tests/test_invitacion.py (8 tests) — Notas:
