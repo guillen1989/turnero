@@ -1,4 +1,5 @@
 import hashlib
+import os
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -25,15 +26,21 @@ from app.extensions import db as _db
 
 
 def _uri_aislada_por_checkout(uri):
-    """Deriva una URI con un nombre de BD único por checkout (worktree/clon),
-    a partir del path absoluto del proyecto. Sin esto, dos agentes trabajando
-    en checkouts distintos del mismo repo pero apuntando al mismo Postgres
-    local acaban compartiendo la BD de test: sus TRUNCATE/create_all/drop_all
-    concurrentes se pisan entre sí (deadlocks, tablas que desaparecen a
-    mitad de test)."""
+    """Deriva una URI con un nombre de BD único por checkout (worktree/clon)
+    y por worker de pytest-xdist, a partir del path absoluto del proyecto.
+    Sin el aislamiento por checkout, dos agentes trabajando en checkouts
+    distintos del mismo repo pero apuntando al mismo Postgres local acaban
+    compartiendo la BD de test: sus TRUNCATE/create_all/drop_all concurrentes
+    se pisan entre sí (deadlocks, tablas que desaparecen a mitad de test).
+    Sin el aislamiento por worker, correr con `-n auto` tendría el mismo
+    problema entre los procesos de un mismo checkout: el TRUNCATE de un
+    worker borraría filas que otro worker está usando a mitad de su test."""
     sufijo = hashlib.sha1(
         str(Path(__file__).resolve().parent.parent).encode()
     ).hexdigest()[:8]
+    worker = os.environ.get("PYTEST_XDIST_WORKER")
+    if worker:
+        sufijo = f"{sufijo}_{worker}"
     partes = urlsplit(uri)
     nombre_bd = f"{partes.path.lstrip('/')}_{sufijo}"
     return f"{partes.scheme}://{partes.netloc}/{nombre_bd}", nombre_bd
