@@ -22,25 +22,16 @@ def test_crea_hospital_si_no_existe(db):
     assert Hospital.query.filter_by(nombre="Hospital La Paz").count() == 1
 
 
-def test_reutiliza_hospital_existente(db):
+@pytest.mark.parametrize("nombre_buscado", ["Hospital La Paz", "hospital la paz"])
+def test_reutiliza_hospital_existente_ignorando_mayusculas(db, nombre_buscado):
     db.session.add(Hospital(nombre="Hospital La Paz"))
     db.session.commit()
 
-    hospital = encontrar_o_crear_hospital("Hospital La Paz")
-    db.session.commit()
-
-    assert Hospital.query.filter_by(nombre="Hospital La Paz").count() == 1
-    assert hospital.id is not None
-
-
-def test_hospital_coincide_ignorando_mayusculas(db):
-    db.session.add(Hospital(nombre="Hospital La Paz"))
-    db.session.commit()
-
-    hospital = encontrar_o_crear_hospital("hospital la paz")
+    hospital = encontrar_o_crear_hospital(nombre_buscado)
     db.session.commit()
 
     assert Hospital.query.count() == 1
+    assert hospital.id is not None
     assert hospital.nombre == "Hospital La Paz"
 
 

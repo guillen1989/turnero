@@ -81,33 +81,46 @@ def _crear_publicacion(db, usuario, tipo, franja_nombre="Mañana"):
     return pub
 
 
+RUTAS_CON_SELECTOR_DE_UNIDAD = [
+    "calendario.index",
+    "main.cambios",
+    "planilla.index",
+]
+
+
+@pytest.mark.parametrize("endpoint", RUTAS_CON_SELECTOR_DE_UNIDAD)
+def test_sin_unidad_id_usa_la_principal(client, db, endpoint):
+    usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
+
+    resp = client.get(url_for(endpoint))
+    assert resp.status_code == 200
+
+
+@pytest.mark.parametrize("endpoint", RUTAS_CON_SELECTOR_DE_UNIDAD)
+def test_con_unidad_id_valido_cambia_contexto(client, db, endpoint):
+    usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
+
+    resp = client.get(url_for(endpoint, unidad_id=urgencias.id))
+    assert resp.status_code == 200
+
+
+@pytest.mark.parametrize("endpoint", RUTAS_CON_SELECTOR_DE_UNIDAD)
+def test_con_unidad_id_ajena_devuelve_403(client, db, endpoint):
+    usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
+
+    hospital = Hospital(nombre="H-Ajeno")
+    grupo = GrupoIntercambio()
+    db.session.add_all([hospital, grupo])
+    db.session.commit()
+    unidad_ajena = Unidad(nombre="Cardiología", hospital=hospital, grupo_intercambio=grupo)
+    db.session.add(unidad_ajena)
+    db.session.commit()
+
+    resp = client.get(url_for(endpoint, unidad_id=unidad_ajena.id))
+    assert resp.status_code == 403
+
+
 class TestCalendarioUnidadActiva:
-    def test_sin_unidad_id_usa_la_principal(self, client, db):
-        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
-
-        resp = client.get(url_for("calendario.index"))
-        assert resp.status_code == 200
-
-    def test_con_unidad_id_valido_cambia_contexto(self, client, db):
-        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
-
-        resp = client.get(url_for("calendario.index", unidad_id=urgencias.id))
-        assert resp.status_code == 200
-
-    def test_con_unidad_id_ajena_devuelve_403(self, client, db):
-        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
-
-        hospital = Hospital(nombre="H-Ajeno")
-        grupo = GrupoIntercambio()
-        db.session.add_all([hospital, grupo])
-        db.session.commit()
-        unidad_ajena = Unidad(nombre="Cardiología", hospital=hospital, grupo_intercambio=grupo)
-        db.session.add(unidad_ajena)
-        db.session.commit()
-
-        resp = client.get(url_for("calendario.index", unidad_id=unidad_ajena.id))
-        assert resp.status_code == 403
-
     def test_solo_muestra_publicaciones_de_la_unidad_activa(self, client, db):
         """Con 2 unidades en grupos distintos, el calendario muestra solo las
         publicaciones del grupo de la unidad activa."""
@@ -133,32 +146,6 @@ class TestCalendarioUnidadActiva:
 
 
 class TestCambiosUnidadActiva:
-    def test_sin_unidad_id_usa_la_principal(self, client, db):
-        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
-
-        resp = client.get(url_for("main.cambios"))
-        assert resp.status_code == 200
-
-    def test_con_unidad_id_valido_cambia_contexto(self, client, db):
-        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
-
-        resp = client.get(url_for("main.cambios", unidad_id=urgencias.id))
-        assert resp.status_code == 200
-
-    def test_con_unidad_id_ajena_devuelve_403(self, client, db):
-        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
-
-        hospital = Hospital(nombre="H-Ajeno2")
-        grupo = GrupoIntercambio()
-        db.session.add_all([hospital, grupo])
-        db.session.commit()
-        unidad_ajena = Unidad(nombre="Cardiología", hospital=hospital, grupo_intercambio=grupo)
-        db.session.add(unidad_ajena)
-        db.session.commit()
-
-        resp = client.get(url_for("main.cambios", unidad_id=unidad_ajena.id))
-        assert resp.status_code == 403
-
     def test_filtra_por_categoria_de_la_unidad_activa(self, client, db):
         """La búsqueda de cambios filtra por la categoría en la unidad activa, no la global."""
         usuario, uci, urgencias, cat_enf, cat_aux = _crear_usuario_con_dos_unidades(client, db)
@@ -182,32 +169,6 @@ class TestCambiosUnidadActiva:
 
 
 class TestPlanillaUnidadActiva:
-    def test_sin_unidad_id_usa_la_principal(self, client, db):
-        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
-
-        resp = client.get(url_for("planilla.index"))
-        assert resp.status_code == 200
-
-    def test_con_unidad_id_valido_cambia_contexto(self, client, db):
-        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
-
-        resp = client.get(url_for("planilla.index", unidad_id=urgencias.id))
-        assert resp.status_code == 200
-
-    def test_con_unidad_id_ajena_devuelve_403(self, client, db):
-        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
-
-        hospital = Hospital(nombre="H-Ajeno3")
-        grupo = GrupoIntercambio()
-        db.session.add_all([hospital, grupo])
-        db.session.commit()
-        unidad_ajena = Unidad(nombre="Cardiología", hospital=hospital, grupo_intercambio=grupo)
-        db.session.add(unidad_ajena)
-        db.session.commit()
-
-        resp = client.get(url_for("planilla.index", unidad_id=unidad_ajena.id))
-        assert resp.status_code == 403
-
     def test_franjas_de_planilla_son_las_de_la_unidad_activa(self, client, db):
         """Las franjas mostradas en la planilla son las de la unidad activa."""
         usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)

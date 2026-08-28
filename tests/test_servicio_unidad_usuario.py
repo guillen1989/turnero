@@ -81,30 +81,20 @@ def test_unidades_de_incluye_siempre_la_unidad_principal(db):
 
 # --- pertenece_a ---
 
-def test_pertenece_a_true_para_la_principal_y_las_membresias(db):
-    usuario, unidad_uci, unidad_urgencias, _, _, _ = _crear_contexto(db)
+def test_pertenece_a_true_para_membresias_y_false_para_unidad_ajena(db):
+    usuario, unidad_uci, unidad_urgencias, unidad_ajena, _, _ = _crear_contexto(db)
 
     assert pertenece_a(usuario, unidad_uci) is True
     assert pertenece_a(usuario, unidad_urgencias) is True
-
-
-def test_pertenece_a_false_para_unidad_ajena(db):
-    usuario, _, _, unidad_ajena, _, _ = _crear_contexto(db)
-
     assert pertenece_a(usuario, unidad_ajena) is False
 
 
 # --- categoria_en_unidad ---
 
-def test_categoria_en_unidad_principal_devuelve_la_categoria_global(db):
-    usuario, unidad_uci, _, _, cat_enfermeria, _ = _crear_contexto(db)
+def test_categoria_en_unidad_devuelve_la_categoria_especifica_de_cada_membresia(db):
+    usuario, unidad_uci, unidad_urgencias, _, cat_enfermeria, cat_auxiliar = _crear_contexto(db)
 
     assert categoria_en_unidad(usuario, unidad_uci) == cat_enfermeria
-
-
-def test_categoria_en_unidad_extra_devuelve_la_de_esa_membresia(db):
-    usuario, _, unidad_urgencias, _, _, cat_auxiliar = _crear_contexto(db)
-
     assert categoria_en_unidad(usuario, unidad_urgencias) == cat_auxiliar
 
 
@@ -148,16 +138,11 @@ def test_unidad_activa_o_403_con_unidad_id_valido_devuelve_la_unidad(db):
     assert unidad_activa_o_403(usuario, unidad_urgencias.id) == unidad_urgencias
 
 
-def test_unidad_activa_o_403_con_unidad_ajena_aborta(db):
+def test_unidad_activa_o_403_con_unidad_ajena_o_inexistente_aborta(db):
     usuario, _, _, unidad_ajena, _, _ = _crear_contexto(db)
 
     with pytest.raises(Forbidden):
         unidad_activa_o_403(usuario, unidad_ajena.id)
-
-
-def test_unidad_activa_o_403_con_unidad_inexistente_aborta(db):
-    usuario, _, _, _, _, _ = _crear_contexto(db)
-
     with pytest.raises(Forbidden):
         unidad_activa_o_403(usuario, 999999)
 

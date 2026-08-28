@@ -81,12 +81,34 @@ detectado es alto y la exhaustividad sigue aportando valor.
   (autenticación requerida, password incorrecta, éxito, login bloqueado tras eliminar) cubren
   comportamientos distintos y se mantienen separados. Suite verificada en verde (11 tests, 13
   casos con la parametrización).
-- [ ] tests/test_unidad_usuario.py (7 tests) — Notas:
-- [ ] tests/test_servicio_unidad_usuario.py (17 tests) — Notas:
-- [ ] tests/test_servicio_registro.py (16 tests) — Notas:
-- [ ] tests/test_unidad_activa_rutas.py (16 tests) — Notas:
-- [ ] tests/test_models_usuario.py (7 tests) — Notas:
-- [ ] tests/test_models_usuario_unidad.py (4 tests) — Notas:
+- [x] tests/test_unidad_usuario.py (7 tests) — Notas: OK, sin cambios. Cada test cubre una
+  combinación distinta de flag/contexto (flag activo/inactivo, `unidad_id` explícito vs sesión vs
+  ninguno, regresión de `pertenece_a`) sin solape.
+- [x] tests/test_servicio_unidad_usuario.py (17→14 tests) — Notas: fusionados
+  `pertenece_a_true_para_la_principal_y_las_membresias` + `pertenece_a_false_para_unidad_ajena` en
+  un test; fusionados los 2 tests de `categoria_en_unidad` (principal/extra) en uno; fusionados
+  `con_unidad_ajena_aborta` + `con_unidad_inexistente_aborta` de `unidad_activa_o_403` en un solo
+  test (mismo `pytest.raises(Forbidden)`, dos disparadores). El resto de casos de
+  `unidad_activa_o_403` y los 4 de `sincronizar_unidades` cubren comportamiento crítico distinto
+  (prioridad query/sesión, invariantes de membresía) y se mantienen separados. Suite verificada en
+  verde.
+- [x] tests/test_servicio_registro.py (16→15 tests) — Notas: fusionados
+  `test_reutiliza_hospital_existente` + `test_hospital_coincide_ignorando_mayusculas` en un test
+  parametrizado (misma reutilización, dos variantes de casing). El resto de tests cubre casos
+  distintos de find-or-create (unidad, categoría, registro completo, multi-unidad) sin solape.
+  Suite verificada en verde.
+- [x] tests/test_unidad_activa_rutas.py (16→10 tests) — Notas: el patrón "sin unidad_id usa la
+  principal" / "con unidad_id válido cambia contexto" / "con unidad_id ajena → 403" estaba
+  duplicado literalmente 3 veces (una por cada ruta: calendario, cambios, planilla). Convertidos
+  en 3 tests parametrizados por endpoint (`RUTAS_CON_SELECTOR_DE_UNIDAD`), manteniendo la cobertura
+  de las 3 rutas pero sin repetir el cuerpo del test. Los tests específicos de cada ruta (filtrado
+  por categoría, franjas activas, sesión) se mantienen intactos. Suite verificada en verde.
+- [x] tests/test_models_usuario.py (7 tests) — Notas: OK, sin cambios. Cada test cubre un
+  comportamiento de modelo distinto (password hasheado, unicidad de email, flask-login,
+  eliminación, firma) sin solape.
+- [x] tests/test_models_usuario_unidad.py (4 tests) — Notas: OK, sin cambios. Cada test cubre un
+  aspecto distinto de la relación usuario-unidad-categoría (ambas direcciones, categoría por
+  membresía, constraint de duplicado).
 
 ## 2. Administración
 - [ ] tests/test_admin.py (45 tests) — Notas:
