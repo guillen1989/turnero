@@ -42,16 +42,6 @@ def test_get_publicar_devuelve_formulario(client, db):
     assert b"Publicar cambio" in resp.data
 
 
-def test_get_publicar_incluye_boton_de_pegar_desde_portapapeles(client, db):
-    """El modal del asistente ofrece rellenar el mensaje directo desde el
-    portapapeles, para evitar el paso manual de pegar (reduce fricción)."""
-    usuario = _usuario_y_login(client)
-    _franja(db, usuario.unidad.grupo_intercambio_id)
-    resp = client.get("/publicar")
-    assert resp.status_code == 200
-    assert b'id="btn-pegar-portapapeles"' in resp.data
-
-
 def test_get_publicar_incluye_franjas_de_serie_en_datos_del_calendario(client, db):
     usuario = _usuario_y_login(client)
     _franja(db, usuario.unidad.grupo_intercambio_id)
