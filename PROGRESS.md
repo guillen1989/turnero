@@ -154,10 +154,11 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   (vive en el repo `turnero`, rama `main`, fuera de este worktree).
   Modelo inicial `llama-3.1-8b-instant` falló en el primer test real en
   staging (404 model_not_found: Groq lo pasó a nivel Enterprise en su ola de
-  deprecaciones de junio 2026). Cambiado a `llama-3.3-70b-versatile` el
-  mismo día. Si este también falla, la alternativa recomendada por Groq
-  para free/dev-tier es `openai/gpt-oss-20b` — pendiente de confirmar en
-  staging con mensajes reales.
+  deprecaciones de junio 2026). Probado `llama-3.3-70b-versatile` (también
+  Enterprise, sin confirmar en staging) y finalmente fijado a
+  `openai/gpt-oss-120b` — el modelo de mayor capacidad que sigue disponible
+  en el tier free/dev — pendiente de confirmar en staging con mensajes
+  reales.
 
 ## Mantenimiento reciente (independiente de la Fase 10 — supervisoras multiunidad)
 Implementación de `PLAN_SUPERVISORAS_MULTIUNIDAD.md`: las supervisoras podrán

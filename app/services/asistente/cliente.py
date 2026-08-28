@@ -3,16 +3,15 @@
 Aísla el resto de la app de la librería del proveedor de IA — solo este
 módulo importa o captura sus excepciones.
 
-Motor activo: Groq (Llama 3.3 70B Versatile) — más barato y más rápido que
-Claude Haiku. La lógica original con Anthropic se conserva desactivada al
-final del archivo (ver decisión 2026-08-28 en docs/crear_parser.md); nada
-la invoca.
+Motor activo: Groq (GPT-OSS 120B) — más barato y más rápido que Claude
+Haiku. La lógica original con Anthropic se conserva desactivada al final
+del archivo (ver decisión 2026-08-28 en docs/crear_parser.md); nada la
+invoca.
 
-Nota: llama-3.1-8b-instant (el modelo inicialmente elegido) devuelve 404
-model_not_found en producción — Groq lo pasó a nivel Enterprise en su ola
-de deprecaciones de junio 2026. Se usa llama-3.3-70b-versatile en su lugar;
-si también da problemas, la alternativa recomendada por Groq para
-free/dev-tier es openai/gpt-oss-20b.
+Nota: llama-3.1-8b-instant y llama-3.3-70b-versatile (probados antes)
+devuelven 404 model_not_found en producción — Groq los pasó a nivel
+Enterprise en su ola de deprecaciones de junio 2026. openai/gpt-oss-120b
+es el modelo de mayor capacidad que sigue disponible en el tier free/dev.
 """
 import anthropic
 import groq
@@ -20,7 +19,7 @@ from pydantic import ValidationError
 
 from app.services.asistente.schema import PropuestaPublicacion
 
-_MODELO = "llama-3.3-70b-versatile"
+_MODELO = "openai/gpt-oss-120b"
 _MAX_TOKENS = 2048
 
 
@@ -85,7 +84,7 @@ _INSTRUCCION_JSON = (
 
 
 def extraer_propuesta(texto, contexto, client=None):
-    """Motor activo: Groq (Llama 3.3 70B Versatile)."""
+    """Motor activo: Groq (GPT-OSS 120B)."""
     if client is None:
         client = groq.Groq()
 
