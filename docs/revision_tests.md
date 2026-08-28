@@ -134,17 +134,17 @@ detectado es alto y la exhaustividad sigue aportando valor.
   caso especial de flag global sin selector) sin solape.
 
 ## 3. Planillas / hojas de turno
-- [ ] tests/test_compatibilidad_planilla.py (22 tests) — Notas:
+- [x] tests/test_compatibilidad_planilla.py (22 → 13 funciones, 22 casos) — Notas: parametriza los 8 tests puros de `turnos_solapan` en uno solo con `@pytest.mark.parametrize` (mismo número de casos ejecutados, una sola función que mantener); une `test_companero_vacaciones_no_aparece` + `test_companero_no_disponible_no_aparece` en `test_companero_con_estado_no_disponible_no_aparece` parametrizado por `estado`; une `test_saliente_excluido_para_manyana` + `test_saliente_excluido_para_diurno` en `test_saliente_excluido_para_franja_diurna` parametrizado por franja horaria. El resto (tests de integración de `compatibilidad_para_cedido`) se mantiene igual por cubrir combinaciones de negocio distintas.
 - [ ] tests/test_servicio_planilla.py (27 tests) — Notas:
 - [ ] tests/test_servicio_planilla_supervision.py (31 tests) — Notas:
 - [ ] tests/test_servicio_planilla_matching.py (20 tests) — Notas:
-- [ ] tests/test_rutas_planilla_supervision.py (40 tests) — Notas:
+- [x] tests/test_rutas_planilla_supervision.py (40 → 34 funciones, 40 casos) — Notas: las 9 comprobaciones de permisos repetidas 3 veces (login/no-supervisora/otra-unidad) en `/ajustar`, `/turno/eliminar` y `/turno/editar` se consolidan en 3 funciones parametrizadas por ruta+payload (`test_ruta_supervision_requiere_login`, `_prohibido_si_no_es_supervisora`, `_prohibido_si_trabajador_de_otra_unidad`), manteniendo los mismos 9 casos. El resto de tests (asignar estado/turno, doblajes, contadores de presencia, multiunidad) son distintos entre sí y se mantienen.
 - [ ] tests/test_planilla_relleno.py (19 tests) — Notas:
 - [ ] tests/test_planilla_multi_unidad.py (15 tests) — Notas:
-- [ ] tests/test_planilla_rutas.py (11 tests) — Notas:
+- [x] tests/test_planilla_rutas.py (11 → 10 tests) — Notas: elimina `test_publicar_mes_via_ruta`, duplicado exacto (mismo setup y aserciones) de `test_publicar_mes_aceptado_con_mes_completo`, que además comprueba el código de estado 200.
 - [ ] tests/test_planilla_import.py (6 tests) — Notas:
 - [ ] tests/test_planilla_modelo.py (6 tests) — Notas:
-- [ ] tests/test_compat_planilla_persistente.py (9 tests) — Notas:
+- [x] tests/test_compat_planilla_persistente.py (9 → 6 tests) — Notas: une los 3 tests de `dias_sin_cumplimentar_mes_*` (vacío/parcial/completo) en `test_dias_sin_cumplimentar_segun_dias_cumplimentados` parametrizado; une `test_guardar_compatibilidad_compañero_libre` + `_compañero_compatible` en `test_guardar_compatibilidad_segun_disponibilidad_companero` parametrizado. El resto (cuenta turnos y estados, sin compañeros, idempotencia, recalculo al publicar) se mantiene por ser casos distintos.
 - [ ] tests/test_importar_planilla.py (4 tests) — Notas:
 - [ ] tests/test_rutas_importar_planilla.py (20 tests) — Notas:
 - [ ] tests/test_feature_flag_importacion_planilla.py (4 tests) — Notas:

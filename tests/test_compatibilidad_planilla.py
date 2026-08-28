@@ -1,4 +1,7 @@
 from datetime import date, time
+
+import pytest
+
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria,
     Usuario, TurnoPlanilla, PlanillaMes,
@@ -11,31 +14,21 @@ from app.services.compatibilidad_planilla import (
 
 # ── Tests puros de turnos_solapan ─────────────────────────────────────────────
 
-def test_solapan_totalmente():
-    assert turnos_solapan(time(8), time(15), time(8), time(15))
-
-def test_solapan_parcialmente_inicio():
-    assert turnos_solapan(time(8), time(15), time(6), time(10))
-
-def test_solapan_parcialmente_fin():
-    assert turnos_solapan(time(8), time(15), time(12), time(20))
-
-def test_solapan_uno_dentro_de_otro():
-    assert turnos_solapan(time(8), time(20), time(10), time(14))
-
-def test_no_solapan_consecutivos():
-    # 8-15 y 15-22: comparten el extremo pero no se solapan
-    assert not turnos_solapan(time(8), time(15), time(15), time(22))
-
-def test_no_solapan_separados():
-    assert not turnos_solapan(time(8), time(15), time(16), time(22))
-
-def test_no_solapan_orden_inverso():
-    assert not turnos_solapan(time(15), time(22), time(8), time(15))
-
-def test_solapan_12h_diurno_con_manyana():
-    # 12h diurno 8-20 solapa con mañana 8-15
-    assert turnos_solapan(time(8), time(15), time(8), time(20))
+@pytest.mark.parametrize("inicio1,fin1,inicio2,fin2,esperado", [
+    (time(8), time(15), time(8), time(15), True),   # totalmente
+    (time(8), time(15), time(6), time(10), True),   # parcial al inicio
+    (time(8), time(15), time(12), time(20), True),  # parcial al fin
+    (time(8), time(20), time(10), time(14), True),  # uno dentro de otro
+    (time(8), time(15), time(15), time(22), False), # consecutivos: comparten extremo, no solapan
+    (time(8), time(15), time(16), time(22), False), # separados
+    (time(15), time(22), time(8), time(15), False), # orden inverso
+    (time(8), time(15), time(8), time(20), True),   # 12h diurno solapa con mañana
+], ids=[
+    "totalmente", "parcial_inicio", "parcial_fin", "uno_dentro_de_otro",
+    "consecutivos", "separados", "orden_inverso", "12h_diurno_con_manyana",
+])
+def test_turnos_solapan(inicio1, fin1, inicio2, fin2, esperado):
+    assert turnos_solapan(inicio1, fin1, inicio2, fin2) is esperado
 
 
 # ── Tests de integración de compatibilidad_para_cedido ───────────────────────
@@ -193,28 +186,15 @@ def test_companero_libre_explicito_aparece_en_libres(db):
     assert companero in resultado.libres
 
 
-def test_companero_vacaciones_no_aparece(db):
+@pytest.mark.parametrize("estado", ["vacaciones", "no_disponible"])
+def test_companero_con_estado_no_disponible_no_aparece(db, estado):
     from app.services.planilla import establecer_estado_dia
-    unidad, cat, franja_m, crear = _setup_base_2(db, "vac")
-    solicitante = crear("sol_vac@t.es")
-    companero   = crear("comp_vac@t.es")
+    unidad, cat, franja_m, crear = _setup_base_2(db, estado[:3])
+    solicitante = crear(f"sol_{estado}@t.es")
+    companero   = crear(f"comp_{estado}@t.es")
     publicar_mes(solicitante, 2026, 7)
     publicar_mes(companero, 2026, 7)
-    establecer_estado_dia(companero, date(2026, 7, 1), "vacaciones")
-
-    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(15))
-    assert companero not in resultado.libres
-    assert companero not in resultado.compatibles
-
-
-def test_companero_no_disponible_no_aparece(db):
-    from app.services.planilla import establecer_estado_dia
-    unidad, cat, franja_m, crear = _setup_base_2(db, "nod")
-    solicitante = crear("sol_nod@t.es")
-    companero   = crear("comp_nod@t.es")
-    publicar_mes(solicitante, 2026, 7)
-    publicar_mes(companero, 2026, 7)
-    establecer_estado_dia(companero, date(2026, 7, 1), "no_disponible")
+    establecer_estado_dia(companero, date(2026, 7, 1), estado)
 
     resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(15))
     assert companero not in resultado.libres
@@ -244,30 +224,20 @@ def _setup_base_saliente(db, suffix):
     return unidad, categoria, franja_m, franja_d, franja_t, crear
 
 
-def test_saliente_excluido_para_manyana(db):
+@pytest.mark.parametrize("sufijo,h_inicio,h_fin", [
+    ("sm", time(8), time(15)),   # mañana
+    ("sd", time(8), time(20)),   # diurno
+])
+def test_saliente_excluido_para_franja_diurna(db, sufijo, h_inicio, h_fin):
     from app.services.planilla import marcar_saliente
-    _, _, franja_m, _, _, crear = _setup_base_saliente(db, "sm")
-    solicitante = crear("sol_sm@t.es")
-    companero   = crear("comp_sm@t.es")
+    _, _, _, _, _, crear = _setup_base_saliente(db, sufijo)
+    solicitante = crear(f"sol_{sufijo}@t.es")
+    companero   = crear(f"comp_{sufijo}@t.es")
     publicar_mes(solicitante, 2026, 7)
     publicar_mes(companero, 2026, 7)
     marcar_saliente(companero, date(2026, 7, 1))
 
-    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(15))
-    assert companero not in resultado.libres
-    assert companero not in resultado.compatibles
-
-
-def test_saliente_excluido_para_diurno(db):
-    from app.services.planilla import marcar_saliente
-    _, _, _, franja_d, _, crear = _setup_base_saliente(db, "sd")
-    solicitante = crear("sol_sd@t.es")
-    companero   = crear("comp_sd@t.es")
-    publicar_mes(solicitante, 2026, 7)
-    publicar_mes(companero, 2026, 7)
-    marcar_saliente(companero, date(2026, 7, 1))
-
-    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), time(8), time(20))
+    resultado = compatibilidad_para_cedido(solicitante, date(2026, 7, 1), h_inicio, h_fin)
     assert companero not in resultado.libres
     assert companero not in resultado.compatibles
 
