@@ -1,6 +1,6 @@
 from datetime import date, datetime, time as dtime, timedelta
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 from flask_babel import _
 from flask_login import current_user, login_required
 
@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models import FranjaHoraria, GrupoIntercambio, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Usuario
 from app.services.eventos import registrar_evento
+from app.services.feature_flags import feature_activa_para_usuario_actual
 from app.services.publicaciones import cancelar_publicacion, editar_publicacion, eliminar_publicacion, publicar_cambio
 from app.services.registro import crear_franjas_default, asignar_color_franja
 from app.services.compat_planilla_persistente import calcular_y_guardar_compatibilidad
@@ -327,10 +328,15 @@ def nueva():
         return redirect(url_for("main.index"))
 
     prefill_fecha, prefill_modo = _leer_prefill_calendario()
+    prefill_asistente = session.pop("asistente_prefill", None)
+    abrir_asistente = request.args.get("abrir_asistente") == "1"
     return render_template(
         "publicaciones/publicar.html", franjas=franjas,
         franjas_json=_franjas_a_json(franjas), today=date.today().isoformat(),
         prefill_fecha=prefill_fecha, prefill_modo=prefill_modo,
+        prefill_asistente=prefill_asistente,
+        abrir_asistente=abrir_asistente,
+        asistente_activo=feature_activa_para_usuario_actual("asistente_parser"),
     )
 
 

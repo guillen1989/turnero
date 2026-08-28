@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Consejos para el mensaje de WhatsApp') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1>{{ _('Consejos para el mensaje de WhatsApp') }}</h1>
+  <p>
+    {{ _('No hace falta que pegues un mensaje de WhatsApp: también puedes escribir tú mismo el cambio que quieres, como se lo contarías a un compañero.') }}
+  </p>
+  <p>
+    {{ _('El asistente interpreta mejor tu mensaje cuanta más de esta información incluya:') }}
+  </p>
+
+  <ul style="margin:1rem 0 1.5rem 1.25rem;line-height:1.9">
+    <li>
+      <strong>{{ _('Fecha completa') }}</strong> —
+      {{ _('di el día y, si puedes, el mes ("el 16 de septiembre" en vez de solo "el 16").') }}
+    </li>
+    <li>
+      <strong>{{ _('Turno concreto') }}</strong> —
+      {{ _('nombra el turno (mañana, tarde, noche...) en vez de solo "mi turno".') }}
+    </li>
+    <li>
+      <strong>{{ _('Qué cedes y qué pides') }}</strong> —
+      {{ _('deja claro qué turno das y cuál quieres a cambio, o si no pides nada a cambio.') }}
+    </li>
+    <li>
+      <strong>{{ _('Un cambio con un mismo compañero por mensaje') }}</strong> —
+      {{ _('un cambio puede incluir varios turnos o varias opciones, pero si tienes acuerdos distintos con compañeros distintos, interprétalos uno a uno en vez de mezclarlos en el mismo mensaje.') }}
+    </li>
+    <li>
+      <strong>{{ _('Sin capturas de pantalla') }}</strong> —
+      {{ _('pega el texto del mensaje, no una foto ni una captura: el asistente solo lee texto.') }}
+    </li>
+  </ul>
+
+  <div class="onboarding-step">
+    <div class="onboarding-step-body">
+      <h2>{{ _('Ejemplos') }}</h2>
+      <p>
+        <strong style="color:#16a34a">{{ _('✓ Fácil de interpretar:') }}</strong><br>
+        {{ _('"Cambio mi mañana del 16 de septiembre por una tarde tuya esa misma semana"') }}
+      </p>
+      <p>
+        <strong style="color:#dc2626">{{ _('✗ Difícil de interpretar:') }}</strong><br>
+        {{ _('"el 16 te cambio, tú ya sabes"') }}
+      </p>
+    </div>
+  </div>
+
+  <p style="margin-top:1.5rem">
+    {{ _('Aunque el mensaje no sea perfecto, siempre puedes revisar y corregir los campos antes de publicar.') }}
+  </p>
+
+  <div style="text-align:center;margin-top:2rem">
+    <a href="{{ url_for('publicaciones.nueva') }}" class="btn btn-primary">
+      {{ _('Volver a publicar') }}
+    </a>
+  </div>
+</div>
+{% endblock %}

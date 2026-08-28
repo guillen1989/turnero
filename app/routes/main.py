@@ -8,6 +8,7 @@ from sqlalchemy.orm import contains_eager, joinedload, selectinload
 from app.extensions import db
 from app.models import BusquedaGuardada, CompatibilidadPlanilla, FranjaHoraria, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
 from app.services.caducidad import caducar_publicaciones_expiradas
+from app.services.feature_flags import feature_activa_para_usuario_actual
 from app.services.junte_semanal import calcular_distribucion, resumen_textual
 from app.services.matches import calcular_trabajas
 from app.services.unidad_usuario import categoria_en_unidad, unidad_activa_o_403, unidades_de
@@ -377,6 +378,7 @@ def index():
             compat_por_pub=compat_por_pub,
             mostrar_nombres_por_pub=mostrar_nombres_por_pub,
             unidades=user_unidades,
+            asistente_activo=feature_activa_para_usuario_actual("asistente_parser"),
         ))
         # Página dinámica y personal (estado de confirmaciones de matches):
         # nunca debe servirse desde caché del navegador ni de un proxy

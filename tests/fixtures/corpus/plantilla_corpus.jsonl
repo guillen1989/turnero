@@ -1,0 +1,301 @@
+{"id": "w001", "texto": "[26/8, 10:58] [NOMBRE2]: Xfiii alguien m puede hacer la tarde del 11 de septiembre???\nOfrezco \nTardes: 15,17,20,23,27,28\nMañana: 19,20,26,27 \n🙏", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-11", "Tarde"]], "aceptados": [["2026-09-15", "Tarde"], ["2026-09-17", "Tarde"], ["2026-09-20", "Tarde"], ["2026-09-23", "Tarde"], ["2026-09-27", "Tarde"], ["2026-09-28", "Tarde"], ["2026-09-19", "Mañana"], ["2026-09-20", "Mañana"], ["2026-09-26", "Mañana"], ["2026-09-27", "Mañana"]]}}
+{"id": "w002", "texto": "Alguien me puede hacer la T del 18 de septiembre y vemos día  a convenir 🙏🏻", "esperado": {"tipo": "peticion", "cedidos": [["2026-09-18", "Tarde"]], "aceptados": []}}
+{"id": "w003", "texto": "Alguien puede hacerme la N de 18 de septiembre por otra de esa semana?", "esperado": {"tipo": "peticion", "cedidos": [["2026-09-18", "Noche"]], "aceptados": []}}
+{"id": "w004", "texto": "Alguien me hace la noche del 5 de septiembre por otra noche ?", "esperado": {"tipo": "peticion", "cedidos": [["2026-09-05", "Noche"]], "aceptados": []}}
+{"id": "w005", "texto": "Alguien me puede hacer la N10 septiembre por N25, 26 o 27?", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-10", "Noche"]], "aceptados": [["2026-09-25", "Noche"], ["2026-09-26", "Noche"], ["2026-09-27", "Noche"]]}}
+{"id": "w006", "texto": "Alguien me hace el 28 de tarde por la mañana o tarde del 27?", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-28", "Tarde"]], "aceptados": [["2026-09-27", "Mañana"], ["2026-09-27", "Tarde"]]}}
+{"id": "w007", "texto": "Necesito librar la T12 de septiembre.\n  \nPuedo hacer: \n- ⁠M1, M/T/N2, M3, M5, M6, T14, M17, M25, M28, M29 y M30 de septiembre.", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-12", "Tarde"]], "aceptados": [["2026-09-01", "Mañana"], ["2026-09-02", "Mañana"], ["2026-09-02", "Tarde"], ["2026-09-02", "Noche"], ["2026-09-03", "Mañana"], ["2026-09-05", "Mañana"], ["2026-09-06", "Mañana"], ["2026-09-14", "Tarde"], ["2026-09-17", "Mañana"], ["2026-09-25", "Mañana"], ["2026-09-28", "Mañana"], ["2026-09-29", "Mañana"], ["2026-09-30", "Mañana"]]}}
+{"id": "w008", "texto": "Cambio mi N15 de sept por N3 de sept o T9-10", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-15", "Noche"]], "aceptados": [["2026-09-03", "Noche"], ["2026-09-09", "Tarde"], ["2026-09-10", "Tarde"]]}}
+{"id": "w009", "texto": "Hola! Necesito quitarme la T del 18 de Septiembre, hago M, T u N a convenir🥺🩷", "esperado": {"tipo": "peticion", "cedidos": [["2026-09-18", "Tarde"]], "aceptados": []}}
+{"id": "w010", "texto": "Alguien puede hacer la T del 10 de septiembre por su mañana ? Porfi es importante 😊", "esperado": {"tipo": "cambio_dia", "cedidos": [["2026-09-10", "Tarde"]], "aceptados": [["2026-09-10", "Mañana"]]}}
+{"id": "w011", "texto": "Alguien me cambia el 2 a la mañana por favor 🙏", "esperado": {"tipo": "cambio_dia", "cedidos": [["2026-09-02", null]], "aceptados": [["2026-09-02", "Mañana"]]}}
+{"id": "w012", "texto": "Necesito quitarme la T del 21 de septiembre por fisssssss", "esperado": {"tipo": "peticion", "cedidos": [["2026-09-21", "Tarde"]], "aceptados": []}}
+{"id": "w013", "texto": "Alguien me puede hacer la N10 septiembre por N25, 26 o 27?", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-10", "Noche"]], "aceptados": [["2026-09-25", "Noche"], ["2026-09-26", "Noche"], ["2026-09-27", "Noche"]]}}
+{"id": "w014", "texto": "Alguien me hace mi mañana de mañana o de este viernes  por la mañana de este domingo ?", "esperado": null}
+{"id": "w015", "texto": "Hago la M o T del 25 de septiembre (VIERNES) por mi T del 23 de septiembre!!", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-23", "Tarde"]], "aceptados": [["2026-09-25", "Mañana"], ["2026-09-25", "Tarde"]]}}
+{"id": "w016", "texto": "Alguien cambia la noche del 1 de septiembre por la del 4? Hacer yo la del 4", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-01", "Noche"]], "aceptados": [["2026-09-04", "Noche"]]}}
+{"id": "w017", "texto": "Alguien me hace la noche del 18 de septiembre por otra a convenir?", "esperado": {"tipo": "peticion", "cedidos": [["2026-09-18", "Noche"]], "aceptados": []}}
+{"id": "w018", "texto": "Cambio la mañana del 28 por día a convenir", "esperado": {"tipo": "peticion", "cedidos": [["2026-09-28", "Mañana"]], "aceptados": []}}
+{"id": "w019", "texto": "Cambio el turno el 31, hacer yo la tarde", "esperado": {"tipo": "cambio_dia", "cedidos": [["2026-08-31", null]], "aceptados": [["2026-08-31", "Tarde"]]}}
+{"id": "w020", "texto": "🌸🌸🌸🌸Hago la tarde del 30 por la T del 27 🌸🌸🌸🌸", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-27", "Tarde"]], "aceptados": [["2026-09-30", "Tarde"]]}}
+{"id": "w021", "texto": "Hola! Hago N del domingo 27 de septiembre por la del lunes 21", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-21", "Noche"]], "aceptados": [["2026-09-27", "Noche"]]}}
+{"id": "w022", "texto": "alguien mi mañana del 17 de septiembre por la del 14 o 15?? 🙏🏼", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-17", "Mañana"]], "aceptados": [["2026-09-14", "Mañana"], ["2026-09-15", "Mañana"]]}}
+{"id": "w023", "texto": "también puedo hacer la mañana del 9 o 10", "esperado": null}
+{"id": "w024", "texto": "todo de sept", "esperado": null}
+{"id": "w025", "texto": "Alguien hace el 18 tarde x el 6? Hacer yo 6", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-18", "Tarde"]], "aceptados": [["2026-09-06", "Tarde"]]}}
+{"id": "w026", "texto": "Hago M31 por T9 de sept", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-09", "Tarde"]], "aceptados": [["2026-08-31", "Mañana"]]}}
+{"id": "w027", "texto": "alguien me cambia la mañana del domingo 20 por la mañana del domingo 27?", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-20", "Mañana"]], "aceptados": [["2026-09-27", "Mañana"]]}}
+{"id": "w028", "texto": "de septiembre", "esperado": null}
+{"id": "w029", "texto": "Necesito quitarme la tarde del 15 de septiembre vemos dia", "esperado": {"tipo": "peticion", "cedidos": [["2026-09-15", "Tarde"]], "aceptados": []}}
+{"id": "w030", "texto": "Hago la tarde de [TELEFONO] sep a cambio de mi tarde del 18 de sep", "esperado": null}
+{"id": "w031", "texto": "Alguien puede hacerme la mañana de mañana?", "esperado": null}
+{"id": "w032", "texto": "Cambio la N del 1 de septiembre por la N del 4, 7,10", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-01", "Noche"]], "aceptados": [["2026-09-04", "Noche"], ["2026-09-07", "Noche"], ["2026-09-10", "Noche"]]}}
+{"id": "w033", "texto": "Cambio la\nMañana del 12 de sep x la tarde. Hacer yo la tarde.", "esperado": {"tipo": "cambio_dia", "cedidos": [["2026-09-12", "Mañana"]], "aceptados": [["2026-09-12", "Tarde"]]}}
+{"id": "w034", "texto": "Alguien quiere que le haga la M del 21 de septiembre por otra M?", "esperado": {"tipo": "cambio", "cedidos": [], "aceptados": [["2026-09-21", "Mañana"]], "campos_faltantes": ["cedidos"]}}
+{"id": "w035", "texto": "Hago el 18 m o t x el 18", "esperado": null}
+{"id": "w036", "texto": "Hago finde 5 y 6 x 18 y 21 tarde", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-18", "Tarde"], ["2026-08-21", "Tarde"]], "aceptados": [["2026-08-05", null], ["2026-08-06", null]]}}
+{"id": "w037", "texto": "O el 5 x 18", "esperado": null}
+{"id": "w038", "texto": "O el 6 x el 21", "esperado": null}
+{"id": "w039", "texto": "Hago 26 o 27 x 18 o 21", "esperado": null}
+{"id": "w040", "texto": "Alguien que pueda hacer la tarde del día 10 por su mañana porfi ?", "esperado": {"tipo": "cambio_dia", "cedidos": [["2026-09-10", "Tarde"]], "aceptados": [["2026-09-10", "Mañana"]]}}
+{"id": "w041", "texto": "[5/8, 16:13] [NOMBRE25]: Hago el 1 de sept de mañana por la mañana del 3 de sept", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-03", "Mañana"]], "aceptados": [["2026-09-01", "Mañana"]]}}
+{"id": "w042", "texto": "Alguien me puede hacer la N27 agosto por algo a convenir por favor ? 🥹", "esperado": {"tipo": "peticion", "cedidos": [["2026-08-27", "Noche"]], "aceptados": []}}
+{"id": "w043", "texto": "Hago M/T/N de 21,22,23 Sept por mañanas de 1 y 11 septiembre:)", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-01", "Mañana"], ["2026-09-11", "Mañana"]], "aceptados": [["2026-09-21", "Mañana"], ["2026-09-21", "Tarde"], ["2026-09-21", "Noche"], ["2026-09-22", "Mañana"], ["2026-09-22", "Tarde"], ["2026-09-22", "Noche"], ["2026-09-23", "Mañana"], ["2026-09-23", "Tarde"], ["2026-09-23", "Noche"]]}}
+{"id": "w044", "texto": "Hola! Necesito cambiar 16x15 de septiembre. Hacer yo el 15. Todo de M 🙃", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-16", "Mañana"]], "aceptados": [["2026-09-15", "Mañana"]]}}
+{"id": "w045", "texto": "Alguien puede hacerme el 12 de agosto de mañana por otro día ????", "esperado": {"tipo": "peticion", "cedidos": [["2026-08-12", "Mañana"]], "aceptados": []}}
+{"id": "w046", "texto": "Alguien me puede hacer el 12 de agosto de mañana por el viernes 14 de agosto de mañana o el 24 de agosto de M o T ? \n\nSino podemos hacer un cambio a 3 si alguien puede hacer la tarde del 20 o 21 de agosto o la mañana del 28 de agosto!!‼️‼️🫶🏻", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-12", "Mañana"]], "aceptados": [["2026-08-14", "Mañana"], ["2026-08-24", "Mañana"], ["2026-08-24", "Tarde"]]}}
+{"id": "w047", "texto": "Hago la mañ de mañ 6 \nPor quitarme algo de esto agosto:\n\nT domingo 9\nT lunes 10 \nM sab 29 \nT dom 30 \nM lunes 31", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-09", "Tarde"], ["2026-08-10", "Tarde"], ["2026-08-29", "Mañana"], ["2026-08-30", "Tarde"], ["2026-08-31", "Mañana"]], "aceptados": [["2026-08-06", "Mañana"]]}}
+{"id": "w048", "texto": "Alguien me hace este viernes de T por otra M o T a cuadrar?🫠", "esperado": null}
+{"id": "w049", "texto": "Alguien puede hacer la M del 11 de Agosto por día a convenir en septiembre?", "esperado": {"tipo": "peticion", "cedidos": [["2026-08-11", "Mañana"]], "aceptados": []}}
+{"id": "w050", "texto": "Cambio tarde de 11 septiembre por tarde de 25 septiembre", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-11", "Tarde"]], "aceptados": [["2026-09-25", "Tarde"]]}}
+{"id": "w051", "texto": "Hago el 15 de agosto por el 27 de mañana el28 de tarde o el 29 de mañana!", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-27", "Mañana"], ["2026-08-28", "Tarde"], ["2026-08-29", "Mañana"]], "aceptados": [["2026-08-15", null]]}}
+{"id": "w052", "texto": "Cambio el turno de mañana el lunes por favor", "esperado": null}
+{"id": "w053", "texto": "Quiere hoy alguien sala 1 por sala 3  de M?  Ir yo a sala 3 \n🤣🤣🤣🤣\n\nPor cierto llego justa 🥲", "esperado": null}
+{"id": "w054", "texto": "Porfi cambio mi M del 26 de agosto por la M del 25 o 31 de agosto", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-26", "Mañana"]], "aceptados": [["2026-08-25", "Mañana"], ["2026-08-31", "Mañana"]]}}
+{"id": "w055", "texto": "Alguien puede hacer la M del 24 de septiembre? Puedo hacer la M del 20 y 21", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-24", "Mañana"]], "aceptados": [["2026-09-20", "Mañana"], ["2026-09-21", "Mañana"]]}}
+{"id": "w056", "texto": "🌸Alguien puede hacer la M del 18 de septiembre? X la del 25🌸", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-18", "Mañana"]], "aceptados": [["2026-09-25", "Mañana"]]}}
+{"id": "w057", "texto": "Alguien me puede hacer la T 11 agosto? Por alguna mañana del 12,13 o 14 porfii ✨✨", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-11", "Tarde"]], "aceptados": [["2026-08-12", "Mañana"], ["2026-08-13", "Mañana"], ["2026-08-14", "Mañana"]]}}
+{"id": "w058", "texto": "Holi, hago el finde del 19 y 20 (M o T) de septiembre por mi finde de M del 12 y 13, o días a convenir en septiembre 🙏🏽", "esperado": null}
+{"id": "w059", "texto": "Cambio mi mañana del domingo 13 de septiembre a la tatde", "esperado": {"tipo": "cambio_dia", "cedidos": [["2026-09-13", "Mañana"]], "aceptados": [["2026-09-13", "Tarde"]]}}
+{"id": "w060", "texto": "necesito cambiar mi sábado noche por viernes noche u otro día", "esperado": null}
+{"id": "w061", "texto": "y cambio 20 21T por días a convenir", "esperado": null}
+{"id": "w062", "texto": "Hago N2 de sept por las T 28, 29 de sept", "esperado": null}
+{"id": "w063", "texto": "Si alguien quiere ir mañana de M por otro día a convenir que me diga", "esperado": null}
+{"id": "w064", "texto": "Alguien me puede hacer el nocturno de mañana porfa???", "esperado": null}
+{"id": "w065", "texto": "Hago N3 de sept por T9,10 de sept", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-09", "Tarde"], ["2026-09-10", "Tarde"]], "aceptados": [["2026-09-03", "Noche"]]}}
+{"id": "w066", "texto": "Alguien me puede hacer 19-20 de agosto de t por días a convenir?\nPorfa... 🥹🥺🐥", "esperado": null}
+{"id": "w067", "texto": "Alguien puede hacerme la N 11 de sept por noche o día a convenir? 🙏🏼", "esperado": null}
+{"id": "w068", "texto": "Hago mañana del 1 de sept por la mañana del 10 de sept", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-10", "Mañana"]], "aceptados": [["2026-09-01", "Mañana"]]}}
+{"id": "w069", "texto": "Alguien puede hacer N8 agosto para un cambio a 3? Porfi 😊", "esperado": null}
+{"id": "w070", "texto": "Hago la tarde del 9 y noche del 9 por M del 10 y noche del 16 todo de sept", "esperado": null}
+{"id": "w071", "texto": "Cambio mi 12M  librar yo \nPor hacer yo el 16 M", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-12", "Mañana"]], "aceptados": [["2026-08-16", "Mañana"]]}}
+{"id": "w072", "texto": "Hola necesito cambiar el 19 de agosto de T a la mañana o que alguien me la haga por alguna M del 20 al 25 de agosto. Porfa, es importante. \nO vemos otro dia a convenir", "esperado": null}
+{"id": "w073", "texto": "Necesito cambiar el turno el lunes a la tarde por favor 🙏", "esperado": null}
+{"id": "w074", "texto": "Alguien que pueda cambiar la M del 13 de agosto por la tarde del 12", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-13", "Mañana"]], "aceptados": [["2026-08-12", "Tarde"]]}}
+{"id": "w075", "texto": "Hacer yo el 12", "esperado": null}
+{"id": "w076", "texto": "Alguien quiere mi tarde mañana?", "esperado": null}
+{"id": "w077", "texto": "Alguien puede hacerme la M de este sábado? Por otra que necesite🙏🏽🙏🏽🙏🏽🙏🏽", "esperado": null}
+{"id": "w078", "texto": "[4/8, 16:30] [NOMBRE31]: Alguien me cambia el turno el viernes 7", "esperado": null}
+{"id": "w079", "texto": "Hacer yo la M 🙏🙏🙏", "esperado": null}
+{"id": "w080", "texto": "Alguien me puede cambiar la M del 27 de agosto a la T? Hacer yo la tarde", "esperado": {"tipo": "cambio_dia", "cedidos": [["2026-08-27", "Mañana"]], "aceptados": [["2026-08-27", "Tarde"]]}}
+{"id": "w081", "texto": "Cambio 6x8 M \nHacer yo el dia 6 M\nAgosto", "esperado": null}
+{"id": "w082", "texto": "Hago 6M por 10T \nHacer yo 6M", "esperado": null}
+{"id": "w083", "texto": "Alguien puede hacer el sábado de M, el domingo de M o el 30 de Agosto? Para un cambio a 3 por favor!!!!", "esperado": null}
+{"id": "w084", "texto": "Cambio la T 28 de agosto a la mañana! Hacer yo la mañana porfi 🙏 ✨ o sino también puedo hacer la T 19 o 21 de agosto", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-28", "Tarde"]], "aceptados": [["2026-08-28", "Mañana"], ["2026-08-19", "Tarde"], ["2026-08-21", "Tarde"]]}}
+{"id": "w085", "texto": "Lguien me puede hacer el 7 de agosto nocturno puedo devolver en sept 5,6,28,29", "esperado": null}
+{"id": "w086", "texto": "Puedo hacer 6agosto de M \nPor quitarme: 10t o 29 M agosto", "esperado": null}
+{"id": "w087", "texto": "Cambio el turno de mañana del 10 de agosto", "esperado": null}
+{"id": "w088", "texto": "Alguien me puede cambiar la M del 27 de agosto a la T? Hacer yo la tarde", "esperado": null}
+{"id": "w089", "texto": "Alguien me puede hacer 19-20 de agosto de t por días a convenir?\nPorfa... 🥹🥺🐥", "esperado": null}
+{"id": "w090", "texto": "Alguien me puede hacer T 11 agosto porfa 🙏", "esperado": null}
+{"id": "w091", "texto": "Hago la N del 13 de agosto por mi T del 14 de agosto", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-14", "Tarde"]], "aceptados": [["2026-08-13", "Noche"]]}}
+{"id": "w092", "texto": "Y cambio mi M del 27 o 26 de agosto por la M del 25,31 o T del 24 todo agosto", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-26", "Mañana"], ["2026-08-27", "Mañana"]], "aceptados": [["2026-08-25", "Mañana"], ["2026-08-31", "Mañana"], ["2026-08-24", "Tarde"]]}}
+{"id": "w093", "texto": "Yo necesito cambiar mi 12 T de Agosto por otro día!", "esperado": {"tipo": "peticion", "cedidos": [["2026-08-12", "Tarde"]], "aceptados": []}}
+{"id": "w094", "texto": "Necesito cambiar la T del 26/08 x la M! Porfi!!!!", "esperado": {"tipo": "cambio_dia", "cedidos": [["2026-08-26", "Tarde"]], "aceptados": [["2026-08-26", "Mañana"]]}}
+{"id": "w095", "texto": "Alguien me hace la T 20 agosto por lo que sea?😢😢😢😢", "esperado": null}
+{"id": "w096", "texto": "Cambio mis M15 y M18 de septiembre por M2 agosto,  M8, M28 o M/T del 27 de septiembre", "esperado": {"tipo": "cambio", "cedidos": [["2026-09-15", "Mañana"], ["2026-09-18", "Mañana"]], "aceptados": [["2026-08-02", "Mañana"], ["2026-08-08", "Mañana"], ["2026-08-28", "Mañana"], ["2026-09-27", "Mañana"], ["2026-09-27", "Tarde"]]}}
+{"id": "w097", "texto": "Hago M o T de 11 de agosto por mi T de 20 o 21 de agosto", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-20", "Tarde"], ["2026-08-21", "Tarde"]], "aceptados": [["2026-08-11", "Mañana"], ["2026-08-11", "Tarde"]]}}
+{"id": "w098", "texto": "[1/8, 13:46] [NOMBRE14]: Alguien me cambia la tarde del 7 por la del 5? Trabajar yo el 5", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-07", "Tarde"]], "aceptados": [["2026-08-05", "Tarde"]]}}
+{"id": "w099", "texto": "Alguien me cambia la M6 de agosto o me cambia el turno porfa", "esperado": null}
+{"id": "w100", "texto": "Necesito librar la T del 13 agosto, me ofrezco a trabajar M, T o N del 11 y M o T del 12 agosto ✨✨✨✨", "esperado": null}
+{"id": "w101", "texto": "Hago tarde del lunes 17 agosto por la de 7 o 10/13 de agosto", "esperado": null}
+{"id": "w102", "texto": "Alguien me puede hacer la T 5 agosto porfa 🙏", "esperado": null}
+{"id": "w103", "texto": "Necesito quitarme la tarde del 7 de agosto, vemos día a devolver", "esperado": null}
+{"id": "w104", "texto": "Yo necesito quitarme la M o la T del 7 de agosto porfi, vemos día a devolver porfi", "esperado": null}
+{"id": "w105", "texto": "Necesito librar la T del 13 agosto, me ofrezco a trabajar M, T o N del 11 y M o T del 12 agosto ✨✨✨✨", "esperado": null}
+{"id": "w106", "texto": "hago la noche del 4 de agosto por la del 16!!!!!", "esperado": null}
+{"id": "w107", "texto": "hago alguna noche 3-4-5 agosto por 8-9 agosto", "esperado": null}
+{"id": "w108", "texto": "Cambio mi M del 28 de agosto por día a convenir porfa!! Gracias", "esperado": null}
+{"id": "w109", "texto": "Alguien me cambia las tardes del 5/6/7 de agosto a la mañana?", "esperado": null}
+{"id": "w110", "texto": "Alguien quiere mañana ir de mañana en vez de tarde????? 🥺🥺\n(Soy nueva, y me toca sala 3)", "esperado": null}
+{"id": "w111", "texto": "Cambio mi T del 10/8 \nPor M 11, M15, T11, T15 agosto", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-10", "Tarde"]], "aceptados": [["2026-08-11", "Mañana"], ["2026-08-15", "Mañana"], ["2026-08-11", "Tarde"], ["2026-08-15", "Tarde"]]}}
+{"id": "w112", "texto": "Alguien que pueda hacerme la noche del 21/8?????? \nPor otra cosa a convenir", "esperado": null}
+{"id": "w113", "texto": "Alguien me hace la mañana del 7 por la tarde del 6?", "esperado": null}
+{"id": "w114", "texto": "Cambio la tarde del 31 de agosto por 1 o 2 de septiembre de M o N", "esperado": null}
+{"id": "w115", "texto": "Cambio mi M del 28 de agosto por día a convenir porfa!! Gracias", "esperado": null}
+{"id": "w116", "texto": "Alguien que pueda hacerme el 21 AGOSTO NOCHE por otra cosa a convenir???", "esperado": null}
+{"id": "w117", "texto": "Chicos porfa necesito urgente cambiar el turno el 13 de agosto, ir yo de tarde! (Estoy de mañana)", "esperado": null}
+{"id": "w118", "texto": "Hago M 7 de agosto por la M 13 agosto!", "esperado": {"tipo": "cambio", "cedidos": [["2026-08-13", "Mañana"]], "aceptados": [["2026-08-07", "Mañana"]]}}
+{"id": "w119", "texto": "Alguien puede hacer N27 de agosto por otra cosa a convenir? Porfi 🥹", "esperado": null}
+{"id": "w120", "texto": "Alguien me hace la T del 15 por su M del 16 agosto?", "esperado": null}
+{"id": "w121", "texto": "Cambio mi M del 28 de agosto por día a convenir porfa!! Gracias", "esperado": null}
+{"id": "w122", "texto": "Hago lunes 17 de agosto de T x 7,10 o 13 de agosto de t", "esperado": null}
+{"id": "w123", "texto": "Hago el sábado 15 de agosto mañana o tarde, por mi mañana del 29", "esperado": null}
+{"id": "w124", "texto": "Cambio M 13 agosto por la M 7 agosto (hacer yo 7)", "esperado": null}
+{"id": "w125", "texto": "Hago M 30 agosto por la T del 29💫💫", "esperado": null}
+{"id": "w126", "texto": "Cambio mi M del 28 de agosto por día a convenir en cualquier turno porfa!! Gracias", "esperado": null}
+{"id": "w127", "texto": "Hago la tarde del 23 de septiembre por la del 30 de septiembre", "esperado": null}
+{"id": "w128", "texto": "Cambios mis M15 y M18 de septiembre por M8, M28 o M/T del 27 de septiembre", "esperado": null}
+{"id": "w129", "texto": "Cambio mi mañana del 26 de agosto por la del 25", "esperado": null}
+{"id": "w130", "texto": "Cambio M14 septiembre por M30 septiembre porfiii", "esperado": null}
+{"id": "w131", "texto": "Alguien me cambia mi T del 12 de agosto por M/T del 11 de agosto o cambio de turno el mismo 12?", "esperado": null}
+{"id": "w132", "texto": "Alguien me puede hacer la Tarde del 10 de agosto? Puedo hacer Mañana o Tarde del 5 o 6 de agosto!", "esperado": null}
+{"id": "w133", "texto": "Alguien me puede hacer la N de este domingooooo?", "esperado": null}
+{"id": "w134", "texto": "Alguien me puede hacer la mañanas del 19 y del 21 de agosto por alguna tarde del 8 al 12 de agosto??", "esperado": null}
+{"id": "w135", "texto": "[3/8, 17:50] [NOMBRE54]: Alguien puede hacer la M del lunes 10 para un cambio a 3???", "esperado": null}
+{"id": "w136", "texto": "Alguien me hace M 11 y 20 de agosto por alguna M del 16 al 19 agosto?", "esperado": null}
+{"id": "w137", "texto": "Hago sábado 15 de agosto M/T por 29 M", "esperado": null}
+{"id": "w138", "texto": "🌟🌟🌟Alguien puede hacer el finde de 5y6 de septiembre de T? Puedo hacer el de 19 y 20 de septiembre 🌟🌟🌟", "esperado": null}
+{"id": "w139", "texto": "Cambio mi M del 28 de agosto por día a convenir porfa!! Gracias", "esperado": null}
+{"id": "w140", "texto": "Hola! Necesito librar T12 y T13 de septiembre o cambio de turno. \n  \nPuedo hacer:\n- ⁠M1, M/T/N2, M3, M5, M6, T14, M17, M/T/N18, M19, M21, M22, M23 de septiembre.", "esperado": null}
+{"id": "w141", "texto": "Cambio M del 26 o 27 de agosto por la M del 25, 31 de agosto o día a convenir en sep", "esperado": null}
+{"id": "w142", "texto": "Alguien puede hacer la M del 10 de agosto para un cambio a 3? Es importante porfa 🙏🏼", "esperado": null}
+{"id": "w143", "texto": "Cambio el turno de mañana del 10 de agosto a la tarde por favor", "esperado": null}
+{"id": "w144", "texto": "Cambio la Mañana del 21 agosto por otra Mañana en septiembre!", "esperado": null}
+{"id": "w145", "texto": "Cambio mi M del 28 de agosto por día a convenir, es importante porfa!! Gracias", "esperado": null}
+{"id": "w146", "texto": "Hago noche del 24 o 26 de agosto por noche del 27!", "esperado": null}
+{"id": "w147", "texto": "Alguien me puede hacer 19-20 de agosto de t por días a convenir?\nPorfa... 🥹🥺🐥", "esperado": null}
+{"id": "w148", "texto": "Alguien me puede hacer la M del 24 de septiembre?? Puedo hacer 22", "esperado": null}
+{"id": "w149", "texto": "Hago la T del 21 *agosto* (viernes) por la mía del 20 jueves🙏🏽🙏🏽🙏🏽🙏🏽🙏🏽🙏🏽🙏🏽🙏🏽🙏🏽", "esperado": null}
+{"id": "w150", "texto": "Alguien me hace la noche del 2 de Septiembre por otra a cuadrar?", "esperado": null}
+{"id": "w151", "texto": "Cambio mi M del 28 de agosto por día a convenir, es importante porfa!! Puedo hacer tardes del 20 al 23 de agosto y cualquier turno en septiembre!!", "esperado": null}
+{"id": "w152", "texto": "Cambio mi turno de mañana el lunes 10 a la tarde", "esperado": null}
+{"id": "w153", "texto": "Chicos! Alguien me cambia mi T del 12 por día a convenir?", "esperado": null}
+{"id": "w154", "texto": "[20/7, 9:36] [NOMBRE46]: Hago la M, T o N del 11 agosto a cambio de alguna noche:\nJulio 30, 31 \nAgosto 1, 3, 5, 9, 10\n\nO tardes: \n5, 8, 13 agosto\n31 agosto MT", "esperado": null}
+{"id": "w155", "texto": "Cambio 9T agosto por el 15T o 16T agosto! Hacer yo el 15 o 16T", "esperado": null}
+{"id": "w156", "texto": "Cambio agosto 15 y 16 cualquier turno por 22 y 23 de tarde", "esperado": null}
+{"id": "w157", "texto": "Cambio T12 de agosto por 19 M/T", "esperado": null}
+{"id": "w158", "texto": "Hago noche 15 o 16 de agosto x noche de 21 de agosto", "esperado": null}
+{"id": "w159", "texto": "Alguien me hace la T hoy? Por algo a convenir", "esperado": null}
+{"id": "w160", "texto": "Alguien me cambia la noche del 23 de julio por la del 22? Porfa 🙏🏻🙏🏻", "esperado": null}
+{"id": "w161", "texto": "Hago la noche del viernes por mi noche de hoy", "esperado": null}
+{"id": "w162", "texto": "Hago la N de hoy por N1 agosto", "esperado": null}
+{"id": "w163", "texto": "Alguien me puede hacer el 25T de septiembre??🙏🏻🙏🏻🙏🏻🙏🏻", "esperado": null}
+{"id": "w164", "texto": "Hago la T del jueves por la mía de mañana 🙏🏽", "esperado": null}
+{"id": "w165", "texto": "Cambio la noche del 22 de julio por la del lunes 27 de julio!!!!!!!!!!!!", "esperado": null}
+{"id": "w166", "texto": "Cambio la noche del 23 de julio por la del 22", "esperado": null}
+{"id": "w167", "texto": "alguien me hace la tarde de mañana por lo que sea?", "esperado": null}
+{"id": "w168", "texto": "Alguien me hace la noche de este miercoles por otra a cuadrar??", "esperado": null}
+{"id": "w169", "texto": "Hago la M, T o N del 11 agosto a cambio de alguna noche:\nJulio 30, 31 \nAgosto 1, 3, 5, 9, 10\n\nO tardes: \n5, 8, 13 agosto\n31 agosto MT\nPorfiiii", "esperado": null}
+{"id": "w170", "texto": "Necesito librar 23M o T, este jueves😬🫶🏻", "esperado": null}
+{"id": "w171", "texto": "cambio la noche del miercoles 22 de juliobpor el lunes 27!!!! yo hacer lunes 27!!!!!!❤️🥲", "esperado": null}
+{"id": "w172", "texto": "Alguien cambia este viernes TxM? \nIr yo de mañana 🥺", "esperado": null}
+{"id": "w173", "texto": "Alguien puede hacer la Noche del 8 de agosto puedo hacer 24-25 de agosto o negociamos Noche", "esperado": null}
+{"id": "w174", "texto": "Cambio la M del 27 y 28 de agosto por días a convenir!!", "esperado": null}
+{"id": "w175", "texto": "Ofrezco currar mañana 22 por la mañana a cambio del sábado 25 por la mañana!", "esperado": null}
+{"id": "w176", "texto": "Necesito quitarme la T del 2 de Agosto para un cambio a 3 por:\n \nAgosto :4 M o T \n7 M o T \n8 M o T \n18 T\n19 M\n22 M o T\n\nSeptiembre:\n12 T \n13 M o T", "esperado": null}
+{"id": "w177", "texto": "Necesito quitarme la T del 20 septiembre! Porfi🙏🏽", "esperado": null}
+{"id": "w178", "texto": "Alguien quiere ir mañana de tarde ?", "esperado": null}
+{"id": "w179", "texto": "Cambio mi T 6 agosto por el 3", "esperado": null}
+{"id": "w180", "texto": "Hago la M, T o N del 11 agosto a cambio de alguna noche:\nJulio 30, 31 \nAgosto 1, 3, 5, 9, 10\n\nO tardes: \n5, 8, 13 agosto\n31 agosto MT\nPorfiiii", "esperado": null}
+{"id": "w181", "texto": "Hola! Cambio mi tarde del 18 de agosto por 15 de agosto d tarde", "esperado": null}
+{"id": "w182", "texto": "Alguien me hace N29 Julio por N28 o N29 septiembre? xfi 🥹", "esperado": null}
+{"id": "w183", "texto": "Alguien puede hacer la M del 27 de julio x la M del 28? 🙏🏻", "esperado": null}
+{"id": "w184", "texto": "Alguien me hace la M del 10 de agosto por la T del 21?🙏🏽🙏🏽", "esperado": null}
+{"id": "w185", "texto": "Cambio la T31 de agosto x la M1, MN2, MTN 3 septiembre 🥹🥺🫶🏼", "esperado": null}
+{"id": "w186", "texto": "Alguien puede hacer la N de mañana?? Vemos otro día a cambio", "esperado": null}
+{"id": "w187", "texto": "cambio la noche del 12 de agosto por la del 4, yo hacer 4 de agosto!!!!", "esperado": null}
+{"id": "w188", "texto": "Chicos por favor, alguien me cambia mi N del 3 de Agosto por otra a convenir!!! \n\nQue me gustaría poder ver a mis padres unos diitas jeje", "esperado": null}
+{"id": "w189", "texto": "Hago la T 3 agosto por la T 18 agosto!", "esperado": null}
+{"id": "w190", "texto": "🚑🚑🚑🚑🚑Necesito librar 26,27 M de agosto please!!! 🚨🚨🚨🚨", "esperado": null}
+{"id": "w191", "texto": "Puedo ofrecer agosto: \n5,6 M\n9T\n10T\n10N\n11M \n15 M\n15N\n16M\n16N", "esperado": null}
+{"id": "w192", "texto": "Cambio mi T del 7 de agosto por: \n- M 3,5,14,25,29,30,31 agosto \n- ⁠T 4,24,27,30 agosto \n- ⁠N 4,24,29,30 agosto \n- ⁠o día a convenir", "esperado": null}
+{"id": "w193", "texto": "Cambio M 20 agosto por M [TELEFONO] agosto", "esperado": null}
+{"id": "w194", "texto": "Alguien me hace la noche de hoy por otra de septiembre que necesite?", "esperado": null}
+{"id": "w195", "texto": "Alguien me hace el 20 de agosto?", "esperado": null}
+{"id": "w196", "texto": "De T", "esperado": null}
+{"id": "w197", "texto": "csmbio la noche del domingo 16 por la del 4 todo ahostoooooo", "esperado": null}
+{"id": "w198", "texto": "Hago la M del 2 x T de3, 5 o 6, todo agosto", "esperado": null}
+{"id": "w199", "texto": "Alguien mi 10 agosto de M por algo que necesite ? 🙏🏻🙏🏻🙏🏻", "esperado": null}
+{"id": "w200", "texto": "Hago la noche del 15 o 16 agosto \nA cambio de mi noche del 22/8 please", "esperado": null}
+{"id": "w201", "texto": "Alguien me cambia el mievoles 5 de noche por el 4 ?", "esperado": null}
+{"id": "w202", "texto": "Hacer yo el 4 ?", "esperado": null}
+{"id": "w203", "texto": "Es importante please", "esperado": null}
+{"id": "w204", "texto": "Hago la T del viernes 21 por la mía del 20! Todo agosto🙏🏽🙏🏽", "esperado": null}
+{"id": "w205", "texto": "Necesito cambiar mi T del 7 de agosto por favor 🙏🏻 puedo hacer\n- T del 4,30 agosto \n- ⁠M 29,30,31 agosto \n- ⁠o día a convenir", "esperado": null}
+{"id": "w206", "texto": "Hago la mañana del 6 de agosto por la mía del 5", "esperado": null}
+{"id": "w207", "texto": "Cambio mi M del 12 de agosto por M del 5,6, 18,19 🔆", "esperado": null}
+{"id": "w208", "texto": "Holi lo pido por aquí otra vez si alguien pudiera hacerme la noche de este sábado!! vendo mi alma al diablo puedo hacer:\nlunes M/T\nMartes M/T\ny noche de lunes y martes también :) gracias!!", "esperado": null}
+{"id": "w209", "texto": "Cambio la N del 6 de agosto por lo del 4,29 o 30 de agosto", "esperado": null}
+{"id": "w210", "texto": "Necesito librar la N del 22/8 \nPuedo hacer \n15,16/8 noche \n10,11/9 Noche", "esperado": null}
+{"id": "w211", "texto": "Lo se soy hiper pesada:\n\nNecesito librar la N del 22/8 \nPuedo hacer \n15,16/8 noche \n10,11/9 Noche\n\nO algo a convenir", "esperado": null}
+{"id": "w212", "texto": "Necesito librar la N del 22/8 \n\nPuedo hacer \n15,16/ AGOSTO noche \n5,6/ SEPT N\n10,11,12 SEPT Noche\n\nO algo a convenir", "esperado": null}
+{"id": "w213", "texto": "Hago la mañana del 6 por la mañana o la tarde del 5", "esperado": null}
+{"id": "w214", "texto": "Alguien me puede hacer la M o T del 7 de agosto???", "esperado": null}
+{"id": "w215", "texto": "Hago noche del \n15,16 agosto \nO 5,6,10,11,12 septiembre \n\nPor quitarme noche del 19 agosto \n\n\nPara cambio a tres! Ajajajajaja", "esperado": null}
+{"id": "w216", "texto": "Cambio mi mañana del 5 de agosto por el sábado 15 mañana o tarde hacer yo el sábado", "esperado": null}
+{"id": "w217", "texto": "Alguien me haría la noche de hoy porfiiii!?!? La regaloooo 😭❤️", "esperado": null}
+{"id": "w218", "texto": "Alguien me cambia mi 10 agosto de M por algo que necesite porfa?? 🙏🏻🙏🏻🙏🏻", "esperado": null}
+{"id": "w219", "texto": "Cambio mi T del 10 de septiembre por la del 9 porfiii!!! yo hacer el 9🙏🏽🙏🏽", "esperado": null}
+{"id": "w220", "texto": "Cambio mi M 20 agosto por M [TELEFONO] agosto", "esperado": null}
+{"id": "w221", "texto": "Alguien puede hacer la N12h del 9 de agosto? Por la M, T de ese día o algún otro turno a convenirrrr", "esperado": null}
+{"id": "w222", "texto": "Alguien quiere q la haga la mañana de mañana a cambio de la del 20 de septiembre?", "esperado": null}
+{"id": "w223", "texto": "Hago la noche del 21 de agosto viernes por la noche del 19", "esperado": null}
+{"id": "w224", "texto": "Alguien me puede hacer la T 5 agosto porfiiii🙏", "esperado": null}
+{"id": "w225", "texto": "Alguien me cambia mi noche del 14 de agosto por la suya del 15 de agosto??? 🙏🏻🙏🏻", "esperado": null}
+{"id": "w226", "texto": "Alguien me cambia el turno el 12 de agosto a la mañana? O por la mañana o tarde del 11 de agosto?", "esperado": null}
+{"id": "w227", "texto": "[31/7, 20:05] [NOMBRE10]: Alguien porfa me puede hacer la N del 4 de Agosto😢🥺😭", "esperado": null}
+{"id": "w228", "texto": "por la del 16…..", "esperado": null}
+{"id": "w229", "texto": "Si alguien puede hacer la N del 8 de agosto 🙋🏼‍♀️🙋🏼‍♀️🙋🏼‍♀️", "esperado": null}
+{"id": "w230", "texto": "Cambio mi N de mañana 1 de agosto por la N del 2 de agosto", "esperado": null}
+{"id": "w231", "texto": "Alguien me puede hacer 19-20 de agosto de t por días a convenir?\nCambio 5-6 de septiembre de t para doblar o por otro finde a ver.... \nPorfa... 🥹🥺🐥", "esperado": null}
+{"id": "w232", "texto": "Cambio mi N de hoy 1 pro la N de mañana 2. Hacer yo el 2", "esperado": null}
+{"id": "w233", "texto": "por favor alguien la mañana de mañana súper urgente ‼️", "esperado": null}
+{"id": "w234", "texto": "por lo q quiera", "esperado": null}
+{"id": "w235", "texto": "puedo hacer M, T y N del 7, M, T y N del 8, M o T del 15 de agosto", "esperado": null}
+{"id": "w236", "texto": "lo que sea 🙏🏼🙏🏼", "esperado": null}
+{"id": "w237", "texto": "Alguien me cambia el turno el 7sept? Para hacer yo la T", "esperado": null}
+{"id": "w238", "texto": "[13/7, 10:35] [NOMBRE72]: Alguien me puede hacer la T 30 julio por M/T a convenir en septiembre?", "esperado": null}
+{"id": "w239", "texto": "Alguien puede hacer T del 27 para cambio a 3 por favor ?", "esperado": null}
+{"id": "w240", "texto": "- cambio la N25 de julio por la N26 de julio\n- ⁠cambio N4 agosto por N26 de agosto", "esperado": null}
+{"id": "w241", "texto": "Nadie me hace la tarde de mañana 🥺🥺😢🙏?? Vemos días a convenir", "esperado": null}
+{"id": "w242", "texto": "Necesito librar el 1 o 2 de Agosto de T, por dia a convenir🙏🏼", "esperado": null}
+{"id": "w243", "texto": "Alguien quiere hacer mi noche el miércoles y yo hago 2 turnos de M o T?", "esperado": null}
+{"id": "w244", "texto": "Alguien puede cambiarme mi M del 11 o del 12 de Agosto por la T del 3?", "esperado": null}
+{"id": "w245", "texto": "Holaaa! Alguien me puede hacer la T 15 Julio? Puedo devolver M 16 Julio, M o T 28, 29 Julio", "esperado": null}
+{"id": "w246", "texto": "Alguien me puede hacer la T del 28 de agosto porfiii?? 🔆", "esperado": null}
+{"id": "w247", "texto": "Cambio mi T de mañana🥹🥹🥹🥹🥹🥹🥹🥹🥹🥹🥹", "esperado": null}
+{"id": "w248", "texto": "- cambio la N25 de julio por la N26 de julio\n- ⁠cambio N4 agosto por N26 de agosto", "esperado": null}
+{"id": "w249", "texto": "Alguien me puede hacer la tarde del 19 de julio porfiiiiiii por la tarde del 26 de julio! Porfi porfi 🥺", "esperado": null}
+{"id": "w250", "texto": "Alguien me puede hacer la N del 18 de julio porfaaaa vemos día a devolver🙏🙏🙏🙏🙏", "esperado": null}
+{"id": "w251", "texto": "Alguien que me pueda hacer la M del 10 septiembre  porfii", "esperado": null}
+{"id": "w252", "texto": "Alguien que me pueda hacer el 25T de septiembre?🙏🏻", "esperado": null}
+{"id": "w253", "texto": "Nadie de última hora que quiera ir mañana de tarde????? 🙄🙄🙄", "esperado": null}
+{"id": "w254", "texto": "Hago la noche del viernes por la de mañana 🙂", "esperado": null}
+{"id": "w255", "texto": "Alguien puede hacer T del 19 de julio pprfaaavor es para un cambio a 3🙏🙏🙏🙏🙏🙏🙏", "esperado": null}
+{"id": "w256", "texto": "Alguien m cambia la mañana del 3 por la tarde del 4? Yo hacer tarde el martes", "esperado": null}
+{"id": "w257", "texto": "Alguien me podría cambiar la M del 18 de julio el sabadooo 🙏🙏🙏", "esperado": null}
+{"id": "w258", "texto": "Hago la tarde del 20 de julio por otro día!", "esperado": null}
+{"id": "w259", "texto": "Alguien puede hacer noche de 10 u 11 de agosto por otra que necesite?", "esperado": null}
+{"id": "w260", "texto": "Cambio mi T de hoy por la de mañana", "esperado": null}
+{"id": "w261", "texto": "Hago noche del 5 y 6 de agosto por la del 10, 11 o 13", "esperado": null}
+{"id": "w262", "texto": "¿Alguien me hace la T del 20 de julio? Vemos día a devolver!", "esperado": null}
+{"id": "w263", "texto": "Cambio mi N del 10 agosto por la del 11 porfiiii✨✨✨", "esperado": null}
+{"id": "w264", "texto": "cambio tarde de 3 o 5 o 6 por hacer yo [TELEFONO] y/o 20 de agosto", "esperado": null}
+{"id": "w265", "texto": "Hola, hago la tarde del 4 de agosto o la mañana del 28 de septiembre por la mañana del 27 de agosto!gracias!", "esperado": null}
+{"id": "w266", "texto": "Necesito quitarme doblajes porque m han rechazado cambios🙏 necesitaría quitarme mañana o tarde del día 20 y podría hacer a cambio, 22M23M24M26T,27MT,28M,30MT,31M", "esperado": null}
+{"id": "w267", "texto": "Hola! Alguien me puede cambiar el turno el domingo 19 de julio? Hacer yo la mañana porfi! O vemos días! Podría hacer \n-mañana 18 de julio\n-tarde/ noche 26 de julio\n-tarde 31 de julio\n-tarde 2 de agosto! \n\nPorfiiiiiiiiii", "esperado": null}
+{"id": "w268", "texto": "Hola necesito quitarme la maña del 16 de septiembre , puedo hacer el 15 y el  18 de mañana", "esperado": null}
+{"id": "w269", "texto": "cambio la t del 30 de julio por la del 5 de agosto! yo hacer 5", "esperado": null}
+{"id": "w270", "texto": "Alguien me hace la T del 19 domingo porfi?????? Hago lo que sea \nM T o N de 14,15,16 agosto\nT 17,22 , 23 agosto\nM o T del 5 o 6 de septiembre", "esperado": null}
+{"id": "w271", "texto": "[15/7, 7:43] [NOMBRE16]: 🌺🌺Alguien puede hacer la M del 27 de Julio x la M del 28? 🌺🌺", "esperado": null}
+{"id": "w272", "texto": "Alguien me podría hacer la T de hoy?", "esperado": null}
+{"id": "w273", "texto": "Hola!!\nNecesito cambiar:\nLunes 3/08  T.M.\nJueves 27/08 T.M.\nPuedo hacer:\nM/T  Dom. 02/08\nN del 1-2 /08\nM/T Sáb. 08/08\nM/T Dom. 09/08\nN del 8-9/08\nN del 9-10/08\nM/T  15/08\nN del 15-16/08\nM/T 22/08\nT 30/08\nTODO AGOSTO.\nGracias. 😊", "esperado": null}
+{"id": "w274", "texto": "Hago la noche de este sábado 18 por la del 11 de agosto! 🙏🏽", "esperado": null}
+{"id": "w275", "texto": "Alguien me puede hacer la M del 11 de agosto o T del 12 de agosto para un cambio a 3 porfaaaaa \nVemos día a devolver", "esperado": null}
+{"id": "w276", "texto": "Porfiiii alguien me hace la T30 julio por día a convenir en septiembre?? 🙏🏽🙏🏽", "esperado": null}
+{"id": "w277", "texto": "Necesito cambiar la T del 8 y 9 de agosto. Hago:\n- M del 25,26,30,31 de agosto \n- ⁠T del 27, 30 de agosto\n- ⁠N del 29,30 \n- ⁠o cambio a convenir", "esperado": null}
+{"id": "w278", "texto": "Trabajo el fin de semana del 15 , 16 agosto por el 22,23por favor 🙏", "esperado": null}
+{"id": "w279", "texto": "Hola!Alguien me podría cambiar la mañana del 22 de septiembre por la del 23 (yo trabajar la del 22)?\nGracias!", "esperado": null}
+{"id": "w280", "texto": "Si hay alguien que la semana que viene quiera hacer N los días 20,22 y 24…. Yo les hago las M del [TELEFONO]", "esperado": null}
+{"id": "w281", "texto": "Alguien me hace la N del lunes por otra a cuadrar?", "esperado": null}
+{"id": "w282", "texto": "*Cambio Tarde del 16 Agosto por tarde del 23 Agosto!!👏🏼*", "esperado": null}
+{"id": "w283", "texto": "Alguien me hace mi mañana del 17 de septiembre jueves por la tarde del miércoles 16???", "esperado": null}
+{"id": "w284", "texto": "Alguien me cambia la noche del 23 de julio por la del 22? Yo hacer 22 🙏🏻😘", "esperado": null}
+{"id": "w285", "texto": "Necesito librar la noche 27 de agosto por otra a convenir", "esperado": null}
+{"id": "w286", "texto": "Hago la N del 6 agosto por la T de ese mismo día🙏🏽🙏🏽🙏🏽🙏🏽", "esperado": null}
+{"id": "w287", "texto": "Hago la noche del 4 de agosto o la del 31 por el 27N", "esperado": null}
+{"id": "w288", "texto": "cambio la Tarde del 30 de julio por la tarde del 28 de julio\nmañana del3-4-5-7 de agosto\ntarde del 5 de agosto!!!!!!!! PORFIIIIII❤️❤️❤️❤️", "esperado": null}
+{"id": "w289", "texto": "Alguien me hace 23M y 24M pro la N del 23 de julio??🙏🏽 hacer yo el 23N", "esperado": null}
+{"id": "w290", "texto": "Alquien me hace la T del 27 de julio para un cambio a 3?? Porfiiii", "esperado": null}
+{"id": "w291", "texto": "Por favor necesito mucho cambiar la noche del domingo 2 de agosto. Cambiarlo a tarde o día a convenir", "esperado": null}
+{"id": "w292", "texto": "Alguien puede hacer la T del 8 agosto y le hago la N del 11 agosto?", "esperado": null}
+{"id": "w293", "texto": "Necesito urgentemente la tarde del 27 por favor. Cambio a convenir", "esperado": null}
+{"id": "w294", "texto": "Hago N21julio por mi N22julio\nHago M y T26 julio por mi N26julio", "esperado": null}
+{"id": "w295", "texto": "Hola!Alguien me podría cambiar la mañana del 22 de septiembre por la del 23 (yo trabajar la del 22)?\nGracias!", "esperado": null}
+{"id": "w296", "texto": "Hago la M, T o N del 11 agosto a cambio de alguna noche:\nJulio 30, 31 \nAgosto 1, 3, 5, 9, 10\n\nO tardes: \n5, 8, 13 agosto\n31 agosto MT", "esperado": null}
+{"id": "w297", "texto": "cambio la Tarde del 30 de julio por la tarde del 28 de julio\nmañana del3-4-5-7 de agosto\ntarde del 5 de agosto!!!!!!!! PORFIIIIII❤️❤️❤️❤️", "esperado": null}
+{"id": "w298", "texto": "Porfa alguien me cambia la noche del 23 de julio por la del 22? Yo hacer 22 🥹🙏🏻", "esperado": null}
+{"id": "w299", "texto": "Alguien quiere q le haga el 15 o 16 de agosto de noche x la noche del 21?", "esperado": null}
+{"id": "w300", "texto": "Alguien puede hacer las mañanas del 27 o 28 de agosto por cambio a convenir ?", "esperado": null}
+{"id": "w301", "texto": "Cambio 23M y 24M por el 23N 🙏🏽", "esperado": null}

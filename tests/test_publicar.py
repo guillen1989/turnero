@@ -9,6 +9,7 @@ from app.models import (
     TurnoAceptado,
     insertar_categorias_semilla,
 )
+from app.services.feature_flags import desactivar_global
 from app.services.registro import registrar_usuario
 
 
@@ -40,6 +41,23 @@ def test_get_publicar_devuelve_formulario(client, db):
     resp = client.get("/publicar")
     assert resp.status_code == 200
     assert b"Publicar cambio" in resp.data
+
+
+def test_get_publicar_muestra_cta_asistente_con_flag_activo(client, db):
+    usuario = _usuario_y_login(client)
+    _franja(db, usuario.unidad.grupo_intercambio_id)
+    resp = client.get("/publicar")
+    assert b'id="btn-abrir-asistente"' in resp.data
+
+
+def test_get_publicar_oculta_cta_asistente_con_flag_desactivado(client, db):
+    usuario = _usuario_y_login(client)
+    _franja(db, usuario.unidad.grupo_intercambio_id)
+    desactivar_global("asistente_parser")
+
+    resp = client.get("/publicar")
+
+    assert b'id="btn-abrir-asistente"' not in resp.data
 
 
 def test_get_publicar_incluye_franjas_de_serie_en_datos_del_calendario(client, db):

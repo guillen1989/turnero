@@ -12,6 +12,47 @@
     {% endfor %}
   {% endwith %}
 
+  {% if asistente_activo %}
+  <div class="asistente-cta">
+    <button type="button" id="btn-abrir-asistente" class="btn btn-whatsapp btn-sm">
+      {{ _('✨ Rellenar a partir de un mensaje de WhatsApp') }}
+    </button>
+  </div>
+
+  <div id="modal-asistente" class="modal-overlay modal-hidden" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <p class="modal-title">{{ _('Pegar mensaje de WhatsApp') }}</p>
+      <div class="modal-body">
+        <p>{{ _('El asistente leerá el mensaje y propondrá los datos, pero no publica nada por ti: revisa y corrige el formulario antes de enviarlo.') }}</p>
+        <p>{{ _('No hace falta que sea un mensaje pegado de WhatsApp: también puedes escribir tú mismo el cambio que quieres, como se lo contarías a un compañero.') }}</p>
+        <p style="font-size:0.875rem">
+          <a href="{{ url_for('asistente.consejos') }}" target="_blank" rel="noopener">
+            {{ _('¿Cómo redactar el mensaje para que sea más fácil de interpretar?') }}
+          </a>
+        </p>
+        <form method="post" action="{{ url_for('asistente.parsear') }}" id="form-asistente">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <textarea name="texto" id="asistente-texto" rows="6" required
+                    placeholder="{{ _('Pega aquí el mensaje tal cual, con fecha y turnos...') }}"
+                    style="width:100%"></textarea>
+          <p id="asistente-spinner" class="asistente-spinner" style="display:none">
+            {{ _('Interpretando el mensaje, puede tardar unos segundos…') }}
+          </p>
+          <div class="modal-actions">
+            <button type="button" id="btn-cancelar-asistente" class="btn btn-secondary">{{ _('Cancelar') }}</button>
+            <button type="submit" id="btn-enviar-asistente" class="btn btn-primary">{{ _('Interpretar mensaje') }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="banner-prefill-asistente" class="banner-prefill" style="display:none" role="status">
+    <strong id="banner-prefill-asistente-titulo">{{ _('✓ Hemos rellenado los campos de tu cambio.') }}</strong>
+    {{ _('Revisa que todo esté correcto y toca Publicar.') }}
+  </div>
+  {% endif %}
+
   <form method="post" id="publicar-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -169,6 +210,7 @@
 </div>
 
 <script type="application/json" id="franjas-data">{{ franjas_json | tojson }}</script>
+<script type="application/json" id="prefill-asistente-data">{{ (prefill_asistente or {}) | tojson }}</script>
 <script src="{{ url_for('static', filename='js/calendario-turnos.js') }}"></script>
 <script>
 (function () {
@@ -176,11 +218,59 @@
   var TODAY = "{{ today }}";
   var PREFILL_FECHA = "{{ prefill_fecha or '' }}";
   var PREFILL_MODO = "{{ prefill_modo or '' }}";
+  var PREFILL_ASISTENTE = JSON.parse(document.getElementById('prefill-asistente-data').textContent);
+  var ABRIR_ASISTENTE = {{ 'true' if abrir_asistente else 'false' }};
   var TEXTOS_CALENDARIO = {
     turnoSing: {{ _('turno seleccionado') | tojson }},
     turnoPlur: {{ _('turnos seleccionados') | tojson }},
   };
   var TEXTO_CUALQUIERA = {{ _('✦ Cualquier turno de ese día') | tojson }};
+
+  var modalAsistente = document.getElementById('modal-asistente');
+  var btnAbrirAsistente = document.getElementById('btn-abrir-asistente');
+
+  if (modalAsistente && btnAbrirAsistente) {
+    var btnCancelarAsistente = document.getElementById('btn-cancelar-asistente');
+    var formAsistente = document.getElementById('form-asistente');
+    var btnEnviarAsistente = document.getElementById('btn-enviar-asistente');
+    var spinnerAsistente = document.getElementById('asistente-spinner');
+
+    btnAbrirAsistente.addEventListener('click', function () {
+      modalAsistente.classList.remove('modal-hidden');
+      document.getElementById('asistente-texto').focus();
+    });
+    btnCancelarAsistente.addEventListener('click', function () {
+      modalAsistente.classList.add('modal-hidden');
+    });
+    formAsistente.addEventListener('submit', function () {
+      btnEnviarAsistente.disabled = true;
+      btnEnviarAsistente.textContent = '{{ _("Interpretando mensaje…") }}';
+      btnCancelarAsistente.disabled = true;
+      spinnerAsistente.style.display = '';
+    });
+
+    if (ABRIR_ASISTENTE) {
+      modalAsistente.classList.remove('modal-hidden');
+      var textoAsistente = document.getElementById('asistente-texto');
+      if (textoAsistente.value) {
+        textoAsistente.focus();
+        textoAsistente.setSelectionRange(textoAsistente.value.length, textoAsistente.value.length);
+      } else {
+        textoAsistente.focus();
+      }
+    }
+  }
+
+  var TEXTO_BANNER_PARCIAL = {{ _('✓ Hemos rellenado parte de los campos.') | tojson }};
+
+  if (PREFILL_ASISTENTE.tipo) {
+    var radioTipo = document.getElementById('tipo-' + PREFILL_ASISTENTE.tipo.replace('_', '-'));
+    if (radioTipo) radioTipo.checked = true;
+    if (PREFILL_ASISTENTE.parcial) {
+      document.getElementById('banner-prefill-asistente-titulo').textContent = TEXTO_BANNER_PARCIAL;
+    }
+    document.getElementById('banner-prefill-asistente').style.display = '';
+  }
 
   new CalendarioTurnos(document.getElementById('cal-cedidos'), {
     prefix: 'cedida',
@@ -188,6 +278,7 @@
     incluirCualquiera: false,
     today: TODAY,
     prefillFecha: PREFILL_MODO === 'peticiones' ? PREFILL_FECHA : null,
+    seleccionInicial: PREFILL_ASISTENTE.cedidos || null,
     textos: TEXTOS_CALENDARIO,
   });
   new CalendarioTurnos(document.getElementById('cal-aceptados'), {
@@ -197,6 +288,7 @@
     textoCualquiera: TEXTO_CUALQUIERA,
     today: TODAY,
     prefillFecha: PREFILL_MODO === 'ofertas' ? PREFILL_FECHA : null,
+    seleccionInicial: PREFILL_ASISTENTE.aceptados || null,
     textos: TEXTOS_CALENDARIO,
   });
 

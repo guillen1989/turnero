@@ -6146,6 +6146,209 @@ msgstr "← Volver al perfil"
 msgid "Ir al inicio"
 msgstr "Ir al inicio"
 
+#: app/routes/asistente.py:108
+msgid ""
+"Has alcanzado el límite diario de %(n)s usos del asistente. Rellena el "
+"formulario manualmente."
+msgstr ""
+"Has alcanzado el límite diario de %(n)s usos del asistente. Rellena el "
+"formulario manualmente."
+
+#: app/routes/asistente.py:124
+msgid ""
+"El asistente no ha podido interpretar el mensaje. Rellena el formulario "
+"manualmente o consulta <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noopener\">cómo redactar el mensaje</a>."
+msgstr ""
+"El asistente no ha podido interpretar el mensaje. Rellena el formulario "
+"manualmente o consulta <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noopener\">cómo redactar el mensaje</a>."
+
+#: app/routes/asistente.py:175
+msgid ""
+"Hemos interpretado parte del mensaje. Completa lo que falta antes de "
+"publicar o consulta <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noopener\">cómo redactar el mensaje</a>."
+msgstr ""
+"Hemos interpretado parte del mensaje. Completa lo que falta antes de "
+"publicar o consulta <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noopener\">cómo redactar el mensaje</a>."
+
+#: app/templates/asistente/consejos.html:3
+#: app/templates/asistente/consejos.html:7
+msgid "Consejos para el mensaje de WhatsApp"
+msgstr "Consejos para el mensaje de WhatsApp"
+
+#: app/templates/asistente/consejos.html:9
+msgid ""
+"No hace falta que pegues un mensaje de WhatsApp: también puedes escribir tú "
+"mismo el cambio que quieres, como se lo contarías a un compañero."
+msgstr ""
+"No hace falta que pegues un mensaje de WhatsApp: también puedes escribir tú "
+"mismo el cambio que quieres, como se lo contarías a un compañero."
+
+#: app/templates/asistente/consejos.html:12
+msgid ""
+"El asistente interpreta mejor tu mensaje cuanta más de esta información "
+"incluya:"
+msgstr ""
+"El asistente interpreta mejor tu mensaje cuanta más de esta información "
+"incluya:"
+
+#: app/templates/asistente/consejos.html:17
+msgid "Fecha completa"
+msgstr "Fecha completa"
+
+#: app/templates/asistente/consejos.html:18
+msgid ""
+"di el día y, si puedes, el mes (\"el 16 de septiembre\" en vez de solo \"el "
+"16\")."
+msgstr ""
+"di el día y, si puedes, el mes (\"el 16 de septiembre\" en vez de solo \"el "
+"16\")."
+
+#: app/templates/asistente/consejos.html:21
+msgid "Turno concreto"
+msgstr "Turno concreto"
+
+#: app/templates/asistente/consejos.html:22
+msgid "nombra el turno (mañana, tarde, noche...) en vez de solo \"mi turno\"."
+msgstr "nombra el turno (mañana, tarde, noche...) en vez de solo \"mi turno\"."
+
+#: app/templates/asistente/consejos.html:25
+msgid "Qué cedes y qué pides"
+msgstr "Qué cedes y qué pides"
+
+#: app/templates/asistente/consejos.html:26
+msgid ""
+"deja claro qué turno das y cuál quieres a cambio, o si no pides nada a "
+"cambio."
+msgstr ""
+"deja claro qué turno das y cuál quieres a cambio, o si no pides nada a "
+"cambio."
+
+#: app/templates/asistente/consejos.html:29
+msgid "Un cambio con un mismo compañero por mensaje"
+msgstr "Un cambio con un mismo compañero por mensaje"
+
+#: app/templates/asistente/consejos.html:30
+msgid ""
+"un cambio puede incluir varios turnos o varias opciones, pero si tienes "
+"acuerdos distintos con compañeros distintos, interprétalos uno a uno en vez "
+"de mezclarlos en el mismo mensaje."
+msgstr ""
+"un cambio puede incluir varios turnos o varias opciones, pero si tienes "
+"acuerdos distintos con compañeros distintos, interprétalos uno a uno en vez "
+"de mezclarlos en el mismo mensaje."
+
+#: app/templates/asistente/consejos.html:33
+msgid "Sin capturas de pantalla"
+msgstr "Sin capturas de pantalla"
+
+#: app/templates/asistente/consejos.html:34
+msgid ""
+"pega el texto del mensaje, no una foto ni una captura: el asistente solo lee"
+" texto."
+msgstr ""
+"pega el texto del mensaje, no una foto ni una captura: el asistente solo lee"
+" texto."
+
+#: app/templates/asistente/consejos.html:40
+msgid "Ejemplos"
+msgstr "Ejemplos"
+
+#: app/templates/asistente/consejos.html:42
+msgid "✓ Fácil de interpretar:"
+msgstr "✓ Fácil de interpretar:"
+
+#: app/templates/asistente/consejos.html:43
+msgid ""
+"\"Cambio mi mañana del 16 de septiembre por una tarde tuya esa misma "
+"semana\""
+msgstr ""
+"\"Cambio mi mañana del 16 de septiembre por una tarde tuya esa misma "
+"semana\""
+
+#: app/templates/asistente/consejos.html:46
+msgid "✗ Difícil de interpretar:"
+msgstr "✗ Difícil de interpretar:"
+
+#: app/templates/asistente/consejos.html:47
+msgid "\"el 16 te cambio, tú ya sabes\""
+msgstr "\"el 16 te cambio, tú ya sabes\""
+
+#: app/templates/asistente/consejos.html:53
+msgid ""
+"Aunque el mensaje no sea perfecto, siempre puedes revisar y corregir los "
+"campos antes de publicar."
+msgstr ""
+"Aunque el mensaje no sea perfecto, siempre puedes revisar y corregir los "
+"campos antes de publicar."
+
+#: app/templates/asistente/consejos.html:58
+msgid "Volver a publicar"
+msgstr "Volver a publicar"
+
+#: app/templates/main/dashboard.html:10
+msgid "✨ Pegar cambio de WhatsApp"
+msgstr "✨ Pegar cambio de WhatsApp"
+
+#: app/templates/publicaciones/publicar.html:18
+msgid "✨ Rellenar a partir de un mensaje de WhatsApp"
+msgstr "✨ Rellenar a partir de un mensaje de WhatsApp"
+
+#: app/templates/publicaciones/publicar.html:24
+msgid "Pegar mensaje de WhatsApp"
+msgstr "Pegar mensaje de WhatsApp"
+
+#: app/templates/publicaciones/publicar.html:26
+msgid ""
+"El asistente leerá el mensaje y propondrá los datos, pero no publica nada "
+"por ti: revisa y corrige el formulario antes de enviarlo."
+msgstr ""
+"El asistente leerá el mensaje y propondrá los datos, pero no publica nada "
+"por ti: revisa y corrige el formulario antes de enviarlo."
+
+#: app/templates/publicaciones/publicar.html:27
+msgid ""
+"No hace falta que sea un mensaje pegado de WhatsApp: también puedes escribir"
+" tú mismo el cambio que quieres, como se lo contarías a un compañero."
+msgstr ""
+"No hace falta que sea un mensaje pegado de WhatsApp: también puedes escribir"
+" tú mismo el cambio que quieres, como se lo contarías a un compañero."
+
+#: app/templates/publicaciones/publicar.html:30
+msgid "¿Cómo redactar el mensaje para que sea más fácil de interpretar?"
+msgstr "¿Cómo redactar el mensaje para que sea más fácil de interpretar?"
+
+#: app/templates/publicaciones/publicar.html:36
+msgid "Pega aquí el mensaje tal cual, con fecha y turnos..."
+msgstr "Pega aquí el mensaje tal cual, con fecha y turnos..."
+
+#: app/templates/publicaciones/publicar.html:39
+msgid "Interpretando el mensaje, puede tardar unos segundos…"
+msgstr "Interpretando el mensaje, puede tardar unos segundos…"
+
+#: app/templates/publicaciones/publicar.html:43
+msgid "Interpretar mensaje"
+msgstr "Interpretar mensaje"
+
+#: app/templates/publicaciones/publicar.html:51
+msgid "✓ Hemos rellenado los campos de tu cambio."
+msgstr "✓ Hemos rellenado los campos de tu cambio."
+
+#: app/templates/publicaciones/publicar.html:52
+msgid "Revisa que todo esté correcto y toca Publicar."
+msgstr "Revisa que todo esté correcto y toca Publicar."
+
+#: app/templates/publicaciones/publicar.html:247
+msgid "Interpretando mensaje…"
+msgstr "Interpretando mensaje…"
+
+#: app/templates/publicaciones/publicar.html:264
+msgid "✓ Hemos rellenado parte de los campos."
+msgstr "✓ Hemos rellenado parte de los campos."
+
 #~ msgid ""
 #~ "Hola %(nombre)s,\n"
 #~ "\n"
