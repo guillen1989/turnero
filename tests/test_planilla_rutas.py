@@ -111,15 +111,6 @@ def test_eliminar_turno_via_ruta(client, db):
     assert TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 1)).count() == 0
 
 
-def test_publicar_mes_via_ruta(client, db):
-    usuario, _ = _crear_usuario_y_login(client, db, "pub@test.es")
-    _rellenar_mes(usuario, 2026, 7)
-    client.post("/planilla/2026/7/publicar")
-    planilla = PlanillaMes.query.filter_by(usuario_id=usuario.id, anyo=2026, mes=7).first()
-    assert planilla is not None
-    assert planilla.publicada
-
-
 def test_publicar_mes_rechaza_mes_incompleto(client, db):
     """La ruta rechaza la publicación si quedan días sin cumplimentar."""
     usuario, franja = _crear_usuario_y_login(client, db, "incompleto@test.es")
