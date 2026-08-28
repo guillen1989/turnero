@@ -307,6 +307,24 @@ def _registrar_comandos(app):
         reset_demo()
         click.echo("Unidad demo creada/regenerada correctamente.")
 
+    @app.cli.command("broadcast-push")
+    @click.argument("titulo")
+    @click.argument("cuerpo")
+    def broadcast_push(titulo, cuerpo):
+        """Envía una notificación push a todos los usuarios suscritos con push activo."""
+        from app.models import Usuario
+        from app.push.sender import enviar_push
+
+        usuarios = Usuario.query.filter(
+            Usuario.push_subscription.isnot(None),
+            Usuario.push_activo.is_(True),
+        ).all()
+
+        for usuario in usuarios:
+            enviar_push(usuario, titulo, cuerpo, url="/avisos")
+
+        click.echo(f"Notificaciones enviadas: {len(usuarios)}")
+
 
 def _get_locale():
     from flask_login import current_user
