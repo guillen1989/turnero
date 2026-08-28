@@ -143,7 +143,12 @@ def parsear():
     }
     if problemas:
         flash(
-            _("Hemos interpretado parte del mensaje. Completa lo que falta antes de publicar."),
+            Markup(_(
+                "Hemos interpretado parte del mensaje. Completa lo que falta antes "
+                "de publicar o consulta <a href=\"%(url)s\" target=\"_blank\" "
+                "rel=\"noopener\">cómo redactar el mensaje</a>.",
+                url=url_for("asistente.consejos"),
+            )),
             "warning",
         )
         logger.info(

@@ -152,6 +152,17 @@ def test_parsear_con_problema_solo_en_aceptados_prellena_los_cedidos(client, db)
     assert b"2026-08-28" in resp.data
 
 
+def test_parsear_parcial_incluye_enlace_a_consejos_de_redaccion(client, db):
+    _login(client)
+
+    with patch("app.routes.asistente.extraer_propuesta", return_value=_propuesta_aceptado_con_franja_desconocida()):
+        resp = client.post("/asistente/parsear", data={"texto": "cambio mi turno"}, follow_redirects=True)
+
+    assert resp.status_code == 200
+    assert b"/asistente/consejos" in resp.data
+    assert "cómo redactar el mensaje".encode() in resp.data
+
+
 def test_parsear_registra_log_de_auditoria_cuando_es_parcial(client, db, caplog):
     _login(client)
 
