@@ -17,20 +17,13 @@ def _usuario(email="u@test.es"):
     return registrar_usuario("Test", email, "pass_original", "H", "U", cat.id)
 
 
-def test_generar_token_reset_crea_fila_en_bd(db):
+def test_generar_token_reset_crea_fila_en_bd_sin_guardar_token_en_claro(db):
     usuario = _usuario()
 
     token = generar_token_reset(usuario)
 
     assert isinstance(token, str) and len(token) > 20
     assert PasswordResetToken.query.filter_by(usuario_id=usuario.id).count() == 1
-
-
-def test_generar_token_reset_no_guarda_el_token_en_claro(db):
-    usuario = _usuario()
-
-    token = generar_token_reset(usuario)
-
     fila = PasswordResetToken.query.filter_by(usuario_id=usuario.id).first()
     assert fila.token_hash != token
 

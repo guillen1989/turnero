@@ -58,7 +58,12 @@ detectado es alto y la exhaustividad sigue aportando valor.
   `test_login_enlaza_a_recuperar_contrasena_de_auth` por probar un detalle de plantilla (href en
   `/auth/login`) ajeno al comportamiento del propio flujo de recuperación. Suite verificada en
   verde (9 passed).
-- [ ] tests/test_password_reset_service.py (8 tests) — Notas:
+- [x] tests/test_password_reset_service.py (8→7 tests) — Notas: casi todos los tests cubren un
+  escenario distinto de seguridad del token (expirado, usado, inexistente, invalidación de tokens
+  previos) y se mantienen separados por criticidad. Solo se fusionaron
+  `test_generar_token_reset_crea_fila_en_bd` y `test_generar_token_reset_no_guarda_el_token_en_claro`
+  (mismo `generar_token_reset()`, dos asserts sobre la misma fila) en un único test. Suite
+  verificada en verde (7 passed).
 - [ ] tests/test_invitacion.py (8 tests) — Notas:
 - [ ] tests/test_eliminar_cuenta.py (13 tests) — Notas:
 - [ ] tests/test_unidad_usuario.py (7 tests) — Notas:
