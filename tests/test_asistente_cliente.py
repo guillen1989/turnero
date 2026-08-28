@@ -143,6 +143,20 @@ def test_el_prompt_distingue_peticion_de_cambio_y_de_regalo():
     assert "mismo día" in bloque_sistema
 
 
+def test_el_prompt_aclara_que_hago_por_invierte_la_direccion_de_cambio_por():
+    """Bug real (2026-08-28): 'Hago M2,3 sept por M 9 sept' se interpretaba
+    igual que 'Cambio M2,3 sept por M 9 sept', cuando es al revés: en 'Hago X
+    por Y' quien escribe se ofrece a trabajar X (aceptados) a cambio de que
+    le cubran Y (cedidos)."""
+    cliente = _ClienteGroqFalso(contenido=_propuesta_esperada_json())
+
+    extraer_propuesta("texto", _CONTEXTO, client=cliente)
+
+    bloque_sistema = cliente.kwargs_recibidos["messages"][0]["content"]
+    assert "Hago" in bloque_sistema
+    assert "al revés" in bloque_sistema
+
+
 def test_el_prompt_infiere_franja_de_fechas_ofrecidas_sin_franja_propia():
     """Bug real (2026-08-28): 'Necesito librar las T del 9 y 11...\nPuedo
     hacer: 31 agosto, 1, 4 u 8 septiembre' — sin esta regla el modelo trataba
