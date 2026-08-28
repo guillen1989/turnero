@@ -261,15 +261,12 @@
     }
   }
 
-  var TEXTO_BANNER_PARCIAL = {{ _('✓ Hemos rellenado parte de los campos.') | tojson }};
-
   if (PREFILL_ASISTENTE.tipo) {
     var radioTipo = document.getElementById('tipo-' + PREFILL_ASISTENTE.tipo.replace('_', '-'));
     if (radioTipo) radioTipo.checked = true;
-    if (PREFILL_ASISTENTE.parcial) {
-      document.getElementById('banner-prefill-asistente-titulo').textContent = TEXTO_BANNER_PARCIAL;
+    if (!PREFILL_ASISTENTE.parcial) {
+      document.getElementById('banner-prefill-asistente').style.display = '';
     }
-    document.getElementById('banner-prefill-asistente').style.display = '';
   }
 
   new CalendarioTurnos(document.getElementById('cal-cedidos'), {
