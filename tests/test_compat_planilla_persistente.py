@@ -5,6 +5,9 @@ Tests para el servicio de compatibilidad persistente:
 - dias_sin_cumplimentar
 """
 from datetime import date, time, timedelta
+
+import pytest
+
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria,
     Usuario, CompatibilidadPlanilla,
@@ -50,30 +53,18 @@ def _setup(db, suffix="A"):
 
 # ── dias_sin_cumplimentar ─────────────────────────────────────────────────────
 
-def test_dias_sin_cumplimentar_mes_vacio(db):
-    _, _, franja_m, _, crear = _setup(db, "vacio")
-    u = crear("vacio@t.es")
-    vacios = dias_sin_cumplimentar(u, 2026, 7)
-    assert len(vacios) == 31  # julio tiene 31 días
-
-
-def test_dias_sin_cumplimentar_mes_parcial(db):
-    _, _, franja_m, _, crear = _setup(db, "parcial")
-    u = crear("parcial@t.es")
-    # Marcar los primeros 10 días
-    for d in range(1, 11):
+@pytest.mark.parametrize("dias_llenos,esperado_vacios", [
+    (0, 31),   # mes vacío: julio tiene 31 días
+    (10, 21),  # mes parcial: primeros 10 días cumplimentados
+    (31, 0),   # mes completo
+], ids=["vacio", "parcial", "completo"])
+def test_dias_sin_cumplimentar_segun_dias_cumplimentados(db, dias_llenos, esperado_vacios):
+    _, _, franja_m, _, crear = _setup(db, f"d{dias_llenos}")
+    u = crear(f"u{dias_llenos}@t.es")
+    for d in range(1, dias_llenos + 1):
         establecer_estado_dia(u, date(2026, 7, d), "libre")
     vacios = dias_sin_cumplimentar(u, 2026, 7)
-    assert len(vacios) == 21
-
-
-def test_dias_sin_cumplimentar_mes_completo(db):
-    _, _, franja_m, _, crear = _setup(db, "completo")
-    u = crear("completo@t.es")
-    for d in range(1, 32):
-        establecer_estado_dia(u, date(2026, 7, d), "libre")
-    vacios = dias_sin_cumplimentar(u, 2026, 7)
-    assert len(vacios) == 0
+    assert len(vacios) == esperado_vacios
 
 
 def test_dias_sin_cumplimentar_cuenta_turnos_y_estados(db):
@@ -93,14 +84,20 @@ def _fecha_futura(days=30):
     return date.today() + timedelta(days=days)
 
 
-def test_guardar_compatibilidad_compañero_libre(db):
-    _, _, franja_m, franja_t, crear = _setup(db, "libre")
-    solicitante = crear("sol_libre@t.es")
-    companero   = crear("comp_libre@t.es")
+@pytest.mark.parametrize("con_turno_companero,tipo_esperado", [
+    (False, "libre"),
+    (True, "compatible"),
+], ids=["companero_libre", "companero_compatible"])
+def test_guardar_compatibilidad_segun_disponibilidad_companero(db, con_turno_companero, tipo_esperado):
+    _, _, franja_m, franja_t, crear = _setup(db, tipo_esperado)
+    solicitante = crear(f"sol_{tipo_esperado}@t.es")
+    companero   = crear(f"comp_{tipo_esperado}@t.es")
 
     fecha = _fecha_futura()
     publicar_mes(companero, fecha.year, fecha.month)
     publicar_mes(solicitante, fecha.year, fecha.month)
+    if con_turno_companero:
+        añadir_turno(companero, fecha, franja_t.id)  # turno tarde, no solapa con mañana
 
     pub = publicar_cambio(
         solicitante.id,
@@ -111,30 +108,9 @@ def test_guardar_compatibilidad_compañero_libre(db):
 
     entries = CompatibilidadPlanilla.query.filter_by(publicacion_id=pub.id).all()
     assert len(entries) == 1
-    assert entries[0].usuario_id == companero.id
-    assert entries[0].tipo == "libre"
-
-
-def test_guardar_compatibilidad_compañero_compatible(db):
-    _, _, franja_m, franja_t, crear = _setup(db, "compat")
-    solicitante = crear("sol_compat@t.es")
-    companero   = crear("comp_compat@t.es")
-
-    fecha = _fecha_futura()
-    publicar_mes(companero, fecha.year, fecha.month)
-    publicar_mes(solicitante, fecha.year, fecha.month)
-    añadir_turno(companero, fecha, franja_t.id)  # turno tarde, no solapa con mañana
-
-    pub = publicar_cambio(
-        solicitante.id,
-        [(fecha, franja_m.id)],
-        [(fecha, franja_t.id)],
-    )
-    calcular_y_guardar_compatibilidad(pub)
-
-    entries = CompatibilidadPlanilla.query.filter_by(publicacion_id=pub.id).all()
-    assert len(entries) == 1
-    assert entries[0].tipo == "compatible"
+    assert entries[0].tipo == tipo_esperado
+    if not con_turno_companero:
+        assert entries[0].usuario_id == companero.id
 
 
 def test_guardar_compatibilidad_sin_compañeros(db):
