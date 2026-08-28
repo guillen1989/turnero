@@ -28,7 +28,12 @@ para no mezclar "revisar" con "modificar" en el mismo commit.
 ---
 
 ## 1. Autenticación, cuentas y usuarios
-- [ ] tests/test_auth_routes.py (86 tests) — Notas:
+- [x] tests/test_auth_routes.py (86 tests) — Notas: OK. Tests de integración HTTP bien organizados por
+  sección (registro, login, API unidades, perfil, cuenta, firma, sesión persistente, login demo,
+  gestión multi-unidad, feature flags), prueban comportamiento observable y nombres honestos. Sin
+  duplicación relevante; leve solape entre `test_registro_con_flag_inactivo_ignora_segunda_unidad` y
+  `test_registro_con_flag_inactivo_no_crea_unidad_extra_ni_error` (mismo escenario, aserciones
+  distintas: datos vs UI) — no amerita acción.
 - [ ] tests/test_recuperar_contrasena.py (13 tests) — Notas:
 - [ ] tests/test_password_reset_service.py (8 tests) — Notas:
 - [ ] tests/test_invitacion.py (8 tests) — Notas:
