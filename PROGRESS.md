@@ -29,6 +29,18 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] feat: incorpora el asistente de parseo de mensajes de WhatsApp
+  (desarrollado y probado en `staging`) mediante cherry-pick selectivo,
+  dado que `main` y `staging` llevaban tiempo divergidos y un merge
+  completo habría arrastrado cambios no relacionados. Incluye rutas
+  `/asistente/parsear` y `/asistente/consejos`, cliente Groq/Anthropic,
+  resolvedor contra franjas, modelo `ParseoAsistente` (rate limit),
+  migraciones `17ccced54ffc`/`d836f60ead28` (tabla + seed del flag
+  `asistente_parser`, `activo_global=False` por defecto — activar desde
+  `/admin/feature-flags`, global o por unidad), UI en `publicar.html`/
+  `dashboard.html` tras `{% if asistente_activo %}`, catálogo i18n
+  actualizado. Tests portados y en verde (112 tests entre
+  `test_asistente_*`, `test_dashboard.py`, `test_publicar.py`).
 - [x] fix: elimina el problema N+1 de commits en las rutas batch de
   planilla (`rango/aplicar`, `multiples/aplicar`, `vacios/aplicar`), que
   hacían un `db.session.commit()` por cada día procesado. `añadir_turno` y

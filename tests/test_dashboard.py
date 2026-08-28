@@ -12,6 +12,7 @@ from app.models import (
     insertar_categorias_semilla,
 )
 from app.extensions import db
+from app.services.feature_flags import desactivar_global
 from app.services.registro import registrar_usuario
 
 # PNG 1x1 transparente válido, usado como firma de prueba.
@@ -60,6 +61,21 @@ def test_index_autenticado_muestra_dashboard(client, db):
     resp = client.get("/")
     assert resp.status_code == 200
     assert "Mis cambios publicados".encode() in resp.data
+
+
+def test_dashboard_muestra_cta_asistente_con_flag_activo(client, db):
+    _usuario_y_login(client)
+    resp = client.get("/")
+    assert b"cta-asistente-whatsapp" in resp.data
+
+
+def test_dashboard_oculta_cta_asistente_con_flag_desactivado(client, db):
+    _usuario_y_login(client)
+    desactivar_global("asistente_parser")
+
+    resp = client.get("/")
+
+    assert b"cta-asistente-whatsapp" not in resp.data
 
 
 def test_dashboard_sin_publicaciones_muestra_estado_vacio(client, db):

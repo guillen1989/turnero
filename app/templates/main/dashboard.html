@@ -4,6 +4,13 @@
 
 {% block content %}
 <div class="dashboard">
+  {% if asistente_activo %}
+  <a href="{{ url_for('publicaciones.nueva', abrir_asistente=1) }}"
+     class="btn btn-whatsapp cta-asistente-whatsapp">
+    {{ _('✨ Pegar cambio de WhatsApp') }}
+  </a>
+  {% endif %}
+
   <div class="dashboard-header">
     <h1>{{ _('Mis cambios publicados') }}</h1>
     <div class="dashboard-header-actions">

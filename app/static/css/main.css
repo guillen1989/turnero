@@ -256,6 +256,29 @@ body {
 .btn-primary:hover { background: #004578; }
 .btn-full { width: 100%; }
 
+.banner-prefill {
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  border-left: 6px solid #10b981;
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin: 0 0 1.25rem;
+  color: #065f46;
+  font-size: 0.95rem;
+}
+.banner-prefill strong { display: block; margin-bottom: 0.15rem; }
+
+.asistente-spinner {
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  border-left: 6px solid #005a9c;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  color: #1e3a8a;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
 /* Invite section */
 .invite-section {
   margin-top: 2rem;
@@ -586,6 +609,8 @@ body {
 .estado--caducada              { background: #fee2e2; color: #b91c1c; }
 
 .turnos-cedidos, .turnos-aceptados { font-size: 0.9rem; margin-bottom: 0.4rem; }
+
+.cta-asistente-whatsapp { display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; padding: 0.9rem 1rem; margin-bottom: 1rem; font-size: 1.05rem; font-weight: 600; text-align: center; border-radius: 0.6rem; text-decoration: none; }
 
 .dashboard-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1.5px solid #e5e7eb; }
 .dashboard-header h1 { margin-bottom: 0; }
