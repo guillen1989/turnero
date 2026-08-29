@@ -73,6 +73,10 @@ def _construir_prompt(contexto):
         "de fechas sueltas sin volver a indicar franja en cada una (p. ej. tras "
         "'Puedo hacer:'), esas fechas ofrecidas son de esa misma franja cedida: no "
         "las dejes sin franja ni las trates como si aceptara cualquier franja.\n"
+        "- Si una lista de turnos separados por comas lleva la letra o nombre de "
+        "franja pegado a cada número (p. ej. 'T7, T14,T15'), esa letra es la franja "
+        "de ESE turno individual, aunque el espaciado tras las comas sea irregular: "
+        "no dejes `franja: null` en ninguno de ellos por eso.\n"
         "- Si falta algún dato imprescindible para completar la propuesta, indícalo "
         "en `campos_faltantes` en vez de inventarlo."
     )
