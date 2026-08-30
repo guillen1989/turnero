@@ -51,6 +51,26 @@ el parser se desplegó sin superar esa puerta. El objetivo de este documento es
 seguir iterando con mensajes reales hasta alcanzarlo de verdad, no dar por
 bueno el número del día ni bajar el umbral para que cuadre con lo que hay.
 
+## Notas
+
+- **Fechas de solo-día cerca de fin de mes.** Algunas entradas anotadas
+  (`w006`, `w020`, `w027`, `w036`) mencionan un día sin mes explícito cerca
+  del cambio de mes, donde la regla genérica del prompt ("si el día ya pasó,
+  asumir el mes siguiente") no basta por sí sola para determinar la
+  intención real: el parser solo recibe el mensaje aislado, sin el hilo de
+  conversación de WhatsApp que a veces es la única fuente real de esa
+  información (`w006`/`w020`), o donde el nombre del día de la semana
+  desambigua mejor que la regla genérica (`w027`). Se optó por la **opción
+  1**: mantener en el corpus la interpretación verdadera/informada por
+  contexto en vez de la que produciría la regla genérica a ciegas, aceptando
+  que algunos de estos casos son estructuralmente irresolubles con solo el
+  mensaje aislado (el modelo no tiene forma de acertar sin ese contexto).
+  Si esto da resultados pobres o inconsistentes en la práctica, la
+  **alternativa pendiente (opción 2)** es re-anotar estos casos para que
+  coincidan con la heurística estricta "el día ya pasó → mes siguiente" sin
+  contexto de hilo, de forma que el eval mida cumplimiento de la regla en
+  vez de acierto de la intención real.
+
 ## Historial de medición (dev set)
 
 | Fecha | Anotadas | Exact match | Error silencioso | Nota |
@@ -60,3 +80,5 @@ bueno el número del día ni bajar el umbral para que cuadre con lo que hay.
 | 2026-08-30 | 66 | 53.0% (35/66) | 30.3% (20/66) | + 2 reglas de dirección en el prompt (patrón "Alguien hace A por B" y dirección en `cambio_dia`); mejora exact match pero empeora error_silencioso, en su mayoría por ruido de franja/tipo no relacionado con las reglas nuevas |
 | 2026-08-30 | 66 | 71.2% (47/66) | 21.2% (14/66) | + 5 ejemplos few-shot (turnos de conversación reales, no reglas en prosa) cubriendo peticion-vs-cambio con oferta vaga, dirección en cambio_dia, e inversión de "Hago". Mejora ambas métricas a la vez; probado también `reasoning_effort="high"` en gpt-oss-120b, descartado por provocar fallos de validación JSON. Histograma restante: aceptado_de_mas 10, cedido_de_menos 10, tipo 8, cedido_de_mas 7, aceptado_de_menos 6 |
 | 2026-08-30 | 66 | 78.8% (52/66) | 12.1% (8/66) | Comparación de motor con el mismo prompt (reglas + few-shot): `qwen/qwen3.8-27b` supera a `openai/gpt-oss-120b` (71.2%/21.2%) en ambas métricas. Se adopta `qwen/qwen3.8-27b` como motor activo. No se prueban `qwen/qwen3.6-27b` ni `groq/compound-mini` (decisión del usuario: quedarse con qwen). Histograma: tipo 4, aceptado_de_mas 8, cedido_de_mas 7, cedido_de_menos 7, aceptado_de_menos 7, fallo_extraccion 3 |
+| 2026-08-30 | 202 | 83.2% (168/202) | 11.9% (24/202) | Baseline honesto tras: (1) anotar 207 mensajes reales más del corpus sin usar (`tests/fixtures/corpus/test.jsonl`, descargados en la Fase 5 pero nunca anotados), (2) repartir 75/25 aleatorio (semilla 42) entre `dev.jsonl`/`test.jsonl`, (3) arreglar la fuga de datos original: `w008`/`w010`/`w011` ya no cuentan como evaluación en `dev.jsonl` (siguen en el archivo como fuente de few-shot, pero con `esperado: null`), (4) arreglar un bug del arnés (`_turnos_a_tuplas` no ordenaba turnos con `fecha: null` mezclada con fechas concretas). Histograma: tipo 17, aceptado_de_mas 21, cedido_de_mas 13, cedido_de_menos 14, aceptado_de_menos 13 |
+| 2026-08-30 | 202 | 82.2% (166/202) | 15.8% (32/202) | **Probado y descartado.** + 1 regla de prosa ("cambio a 3" es jerga de favor a plazo, no una fecha literal) + 2 ejemplos few-shot (rollover de mes en fecha-sin-mes con dos turnos; "cambio a 3" como petición). Empeora ambas métricas respecto al baseline anterior (exact match -1.0pp, error_silencioso +3.9pp) en vez de mejorarlas. Histograma: tipo 19, aceptado_de_mas 16, cedido_de_mas 15, cedido_de_menos 15, aceptado_de_menos 16. No se investigó a fondo el porqué de la regresión (más ejemplos few-shot pueden diluir la atención del modelo sobre las reglas existentes); revertido íntegramente en `cliente.py`, se mantiene la versión anterior (83.2%/11.9%) como estado activo. Pendiente: si se reintenta este patrón, probar los dos cambios por separado en vez de juntos, para aislar cuál de los dos causa la regresión. |

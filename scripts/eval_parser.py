@@ -11,6 +11,8 @@ Uso: python scripts/eval_parser.py <dev.jsonl|test.jsonl>
 """
 import argparse
 import json
+import re
+import time
 from datetime import date
 
 from dotenv import load_dotenv
@@ -52,7 +54,7 @@ def _turnos_a_tuplas(turnos) -> list[tuple]:
         else:
             fecha, franja = turno.fecha, turno.franja
         resultado.append((fecha, franja.lower() if franja else franja))
-    return sorted(resultado)
+    return sorted(resultado, key=lambda t: (t[0] or "", t[1] or ""))
 
 
 def comparar_exacto(propuesta, esperado: dict) -> bool:
@@ -99,10 +101,11 @@ def evaluar_corpus(entradas: list[dict], contexto_base: dict, extraer) -> dict:
     error_silencioso = 0
     histograma_fallos: dict[str, int] = {}
 
-    for entrada in entradas:
+    for i, entrada in enumerate(entradas, start=1):
         contexto = {**contexto_base, "hoy": date.fromisoformat(entrada["fecha_mensaje"])}
         esperado = entrada["esperado"]
 
+        print(f"[{i}/{total}] {entrada['id']}", flush=True)
         try:
             propuesta = extraer(entrada["texto"], contexto, entrada["id"])
         except Exception:
@@ -164,6 +167,33 @@ def detallar_fallos(entradas: list[dict], contexto_base: dict, extraer) -> list[
     return detalles
 
 
+def _con_reintento_rate_limit(extraer, intentos_max: int = 5):
+    """Envuelve `extraer` reintentando ante 429 de Groq (TPM compartido entre entradas).
+
+    `ErrorAsistente` no conserva el tipo de excepción original de Groq, así que
+    se detecta el rate limit por el mensaje. Espera el tiempo sugerido por la
+    API (o 15s si no lo indica) antes de reintentar.
+    """
+
+    def envoltura(texto, contexto, id_entrada):
+        for intento in range(intentos_max):
+            try:
+                return extraer(texto, contexto, id_entrada)
+            except Exception as e:
+                mensaje = str(e)
+                if "rate_limit" not in mensaje and "429" not in mensaje:
+                    raise
+                if intento == intentos_max - 1:
+                    raise
+                coincidencia = re.search(r"try again in ([\d.]+)s", mensaje)
+                espera = float(coincidencia.group(1)) + 1 if coincidencia else 15.0
+                print(f"  rate limit, esperando {espera:.0f}s...", flush=True)
+                time.sleep(espera)
+        raise AssertionError("inalcanzable")
+
+    return envoltura
+
+
 def main():
     load_dotenv()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -177,7 +207,9 @@ def main():
 
     entradas = cargar_corpus(args.corpus)
     contexto_base = {"franjas": _FRANJAS_CORPUS, "tipos_validos": _TIPOS_VALIDOS}
-    extraer = lambda texto, contexto, id_entrada: extraer_propuesta(texto, contexto)
+    extraer = _con_reintento_rate_limit(
+        lambda texto, contexto, id_entrada: extraer_propuesta(texto, contexto)
+    )
 
     if args.detalle:
         detalles = detallar_fallos(entradas, contexto_base, extraer)
