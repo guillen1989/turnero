@@ -80,15 +80,16 @@ def test_extraer_propuesta_con_cliente_falso_devuelve_la_propuesta_parseada():
     assert resultado == _propuesta_esperada()
 
 
-def test_usa_el_modelo_gpt_oss_120b_via_groq():
+def test_usa_el_modelo_qwen3_8_27b_via_groq():
     """llama-3.1-8b-instant y llama-3.3-70b-versatile devolvían 404
     model_not_found en producción: Groq los pasó a nivel Enterprise en su
-    ola de deprecaciones de junio 2026."""
+    ola de deprecaciones de junio 2026. qwen/qwen3.8-27b superó a
+    openai/gpt-oss-120b en la comparación de 2026-08-30 (ver docs/pulir_parser.md)."""
     cliente = _ClienteGroqFalso(contenido=_propuesta_esperada_json())
 
     extraer_propuesta("texto", _CONTEXTO, client=cliente)
 
-    assert cliente.kwargs_recibidos["model"] == "openai/gpt-oss-120b"
+    assert cliente.kwargs_recibidos["model"] == "qwen/qwen3.8-27b"
 
 
 def test_error_de_la_api_lanza_excepcion_controlada_del_dominio():
@@ -175,7 +176,7 @@ def test_pide_el_mensaje_del_usuario_con_la_fecha_de_hoy_antepuesta():
 
     extraer_propuesta("cambio mi mañana", _CONTEXTO, client=cliente)
 
-    mensaje_usuario = cliente.kwargs_recibidos["messages"][1]["content"]
+    mensaje_usuario = cliente.kwargs_recibidos["messages"][-1]["content"]
     assert mensaje_usuario.startswith("Hoy es")
     assert "cambio mi mañana" in mensaje_usuario
 
