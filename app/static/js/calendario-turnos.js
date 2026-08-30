@@ -60,6 +60,9 @@
     }
 
     this.activeFranjaId = this.franjas.length ? this.franjas[0].id : null;
+    if (fechaVista && this.selection[fechaVista] && this.selection[fechaVista].length) {
+      this.activeFranjaId = this.selection[fechaVista][0];
+    }
 
     this._construir();
     this.render();
