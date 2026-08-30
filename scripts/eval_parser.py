@@ -39,14 +39,19 @@ def cargar_corpus(ruta) -> list[dict]:
 
 
 def _turnos_a_tuplas(turnos) -> list[tuple]:
-    """Normaliza cedidos/aceptados (de TurnoPropuesto o de pares [fecha, franja]) a tuplas."""
+    """Normaliza cedidos/aceptados (de TurnoPropuesto o de pares [fecha, franja]) a tuplas.
+
+    La franja se compara en minúsculas: el nombre de franja no debería importar
+    para la corrección semántica de la propuesta, solo la app-cliente lo usa
+    para mostrarlo formateado.
+    """
     resultado = []
     for turno in turnos:
         if isinstance(turno, (list, tuple)):
             fecha, franja = turno
         else:
             fecha, franja = turno.fecha, turno.franja
-        resultado.append((fecha, franja))
+        resultado.append((fecha, franja.lower() if franja else franja))
     return sorted(resultado)
 
 

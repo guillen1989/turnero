@@ -66,6 +66,16 @@ def _construir_prompt(contexto):
         "escribe cede A y pide B a cambio, pero en 'Hago' quien escribe se ofrece a "
         "trabajar A (va en `aceptados`) a cambio de que alguien le cubra B (va en "
         "`cedidos`).\n"
+        "- 'Alguien (puede) hacer/me hace/me cambia <A> por/x <B>': aquí el sujeto que "
+        "trabajaría A es un tercero ('alguien'), no quien escribe, así que A va en "
+        "`cedidos` (quien escribe cede A) y B en `aceptados` (lo que ofrece a cambio). No "
+        "apliques aquí la inversión de la regla de 'Hago': esa solo aplica cuando el "
+        "sujeto que trabaja el turno ofrecido es quien escribe ('yo').\n"
+        "- En `cambio_dia` (mismo día, cambia de franja), la franja nombrada explícitamente "
+        "como la que la persona quiere trabajar en su lugar (p. ej. 'hacer yo la tarde', "
+        "'cambia el día X a la mañana', 'por su mañana') va siempre en `aceptados`; si la "
+        "franja que cede no se menciona explícitamente, deja `franja: null` en el turno "
+        "cedido en vez de inventarla o repetir la franja aceptada.\n"
         "- Si un turno indica el día del mes pero no el mes (p. ej. 'T24', 'la N "
         "del 10'), y ningún otro turno del mismo mensaje aclara el mes, asume el "
         "mes en curso; si ese día ya pasó respecto a hoy, asume el mes siguiente.\n"
@@ -97,6 +107,45 @@ _INSTRUCCION_JSON = (
     '"campos_faltantes": ["..."]}'
 )
 
+# Ejemplos concretos como turnos de conversación reales (no descripciones en
+# prosa): atacan los patrones de fallo dominantes del corpus (peticion vs.
+# cambio cuando lo ofrecido es vago, dirección en cambio_dia, listas de varios
+# turnos aceptados). "Hoy" fijo a un lunes arbitrario para que sean estáticos
+# y cacheables junto al resto del prompt de sistema.
+_EJEMPLOS_FEW_SHOT = [
+    (
+        "Hoy es lunes 2026-08-31.\n\n"
+        "Alguien me puede hacer la T del 18 de septiembre y vemos día a "
+        "convenir 🙏🏻",
+        '{"tipo": "peticion", "cedidos": [{"fecha": "2026-09-18", "franja": "Tarde"}], '
+        '"aceptados": [], "campos_faltantes": []}',
+    ),
+    (
+        "Hoy es lunes 2026-08-31.\n\nCambio mi N15 de sept por N3 de sept o T9-10",
+        '{"tipo": "cambio", "cedidos": [{"fecha": "2026-09-15", "franja": "Noche"}], '
+        '"aceptados": [{"fecha": "2026-09-03", "franja": "Noche"}, '
+        '{"fecha": "2026-09-09", "franja": "Tarde"}, {"fecha": "2026-09-10", "franja": "Tarde"}], '
+        '"campos_faltantes": []}',
+    ),
+    (
+        "Hoy es lunes 2026-08-31.\n\n"
+        "Alguien puede hacer la T del 10 de septiembre por su mañana ? Porfi "
+        "es importante 😊",
+        '{"tipo": "cambio_dia", "cedidos": [{"fecha": "2026-09-10", "franja": "Tarde"}], '
+        '"aceptados": [{"fecha": "2026-09-10", "franja": "Mañana"}], "campos_faltantes": []}',
+    ),
+    (
+        "Hoy es lunes 2026-08-31.\n\nAlguien me cambia el 2 a la mañana por favor 🙏",
+        '{"tipo": "cambio_dia", "cedidos": [{"fecha": "2026-09-02", "franja": null}], '
+        '"aceptados": [{"fecha": "2026-09-02", "franja": "Mañana"}], "campos_faltantes": []}',
+    ),
+    (
+        "Hoy es lunes 2026-08-31.\n\nHago la M12 de septiembre por la T15 de septiembre",
+        '{"tipo": "cambio", "cedidos": [{"fecha": "2026-09-15", "franja": "Tarde"}], '
+        '"aceptados": [{"fecha": "2026-09-12", "franja": "Mañana"}], "campos_faltantes": []}',
+    ),
+]
+
 
 def extraer_propuesta(texto, contexto, client=None):
     """Motor activo: Groq (GPT-OSS 120B)."""
@@ -114,6 +163,14 @@ def extraer_propuesta(texto, contexto, client=None):
                     "role": "system",
                     "content": _construir_prompt(contexto) + _INSTRUCCION_JSON,
                 },
+                *[
+                    mensaje
+                    for texto_ejemplo, json_ejemplo in _EJEMPLOS_FEW_SHOT
+                    for mensaje in (
+                        {"role": "user", "content": texto_ejemplo},
+                        {"role": "assistant", "content": json_ejemplo},
+                    )
+                ],
                 {
                     "role": "user",
                     "content": _construir_mensaje_usuario(texto, contexto["hoy"]),
