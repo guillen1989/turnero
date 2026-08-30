@@ -89,26 +89,9 @@ def index():
     }
 
     pub_ids = {pid for franjas_dia in calendario_mes.values() for ids in franjas_dia.values() for pid in ids}
-    tipo_labels = {
-        "cambio": _("Cambio"),
-        "regalo": _("Regalo"),
-        "peticion": _("Petición"),
-        "cambio_dia": _("Cambio de turno en el día"),
-    }
-    etiqueta_oportunidad_3 = _("Oportunidad a 3")
-    etiqueta_oportunidad_4 = _("Oportunidad a 4")
-
-    def _tipo_label(p):
-        if p["es_sintetica"]:
-            return etiqueta_oportunidad_4 if p["es_sintetica_4"] else etiqueta_oportunidad_3
-        return tipo_labels.get(p["tipo"], p["tipo"])
-
     datos_publicaciones = {
-        str(p["id"]): {
-            "usuario_nombre": p["usuario_nombre"],
-            "tipo_label": _tipo_label(p),
-        }
-        for p in resumen_publicaciones(pub_ids)
+        str(p["id"]): {"usuario_nombre": p["usuario_nombre"], "contraoferta": p["contraoferta"]}
+        for p in resumen_publicaciones(pub_ids, modo)
     }
 
     return render_template(

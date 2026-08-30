@@ -299,7 +299,7 @@
     ids.forEach(function (id) {
       var pub = datosPubs[id] || {};
       html += '<li><a class="calendario-lista-item" href="' + _urlPublicacion(fechaIso, clave, pub) + '">' +
-        (pub.usuario_nombre || '?') + ' — ' + (pub.tipo_label || '') + '</a></li>';
+        (pub.contraoferta || '') + '</a></li>';
     });
     html += '</ul>';
     mostrarVista(html, !!esRaiz);

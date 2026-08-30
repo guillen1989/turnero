@@ -9,6 +9,7 @@ por fecha y franja, para pintarlos en un grid mensual.
 import calendar
 from datetime import date, timedelta
 
+from flask_babel import gettext as _
 from sqlalchemy.orm import joinedload
 
 from app.models import PublicacionCambio, TurnoAceptado, TurnoCedido, Unidad, Usuario
@@ -238,18 +239,60 @@ def preparar_celdas_mes(dias, calendario_mes, franjas):
     return celdas
 
 
-def resumen_publicaciones(pub_ids):
-    """Datos mínimos de cada publicación (autor + tipo + si es sintética) para
-    el drill-down. es_sintetica permite etiquetarla como "Oportunidad a 3"
-    en vez de con la etiqueta genérica de su tipo; es_sintetica_4 distingue
-    dentro de las sintéticas las que representan un hueco de cadena_4 (con
-    banda intermedia) para etiquetarlas como "Oportunidad a 4"."""
+def _describir_turnos(turnos):
+    """"03/07 — Mañana, 05/07 — Cualquiera" para una lista de turnos abiertos,
+    ordenados por fecha."""
+    partes = []
+    for turno in sorted(turnos, key=lambda t: t.fecha):
+        nombre_franja = "Cualquiera" if getattr(turno, "cualquier_franja", False) else turno.franja_horaria.nombre
+        partes.append(f"{turno.fecha.strftime('%d/%m')} — {nombre_franja}")
+    return ", ".join(partes)
+
+
+def _texto_contraoferta(pub, modo):
+    """Lo que la publicación pide u ofrece a cambio del turno mostrado en la
+    celda del calendario.
+
+    En modo 'ofertas' se muestra el día trabajado (turno_aceptado de una
+    publicación normal, o turno_cedido de una sintética — ver la inversión
+    documentada en construir_calendario_mes), así que la contraoferta es el
+    campo contrario: lo que se pide librar. En modo 'peticiones' es al
+    revés: lo que se ofrece trabajar a cambio.
+    """
+    if modo == "ofertas":
+        turnos_contrario = pub.turnos_cedidos if not pub.es_sintetica else pub.turnos_aceptados
+        plantilla_con_datos = _("Pide librar: %(turnos)s")
+        texto_vacio = _("No pide nada a cambio")
+    else:
+        turnos_contrario = pub.turnos_aceptados if not pub.es_sintetica else pub.turnos_cedidos
+        plantilla_con_datos = _("Ofrece trabajar: %(turnos)s")
+        texto_vacio = _("No ofrece nada a cambio")
+
+    abiertos = [t for t in turnos_contrario if t.estado == "abierto"]
+    texto = plantilla_con_datos % {"turnos": _describir_turnos(abiertos)} if abiertos else texto_vacio
+
+    if pub.es_sintetica:
+        sufijo = _(" (Cambio a 4)") if pub.sintetica_pub_intermedio_id is not None else _(" (Cambio a 3)")
+        texto += sufijo
+
+    return texto
+
+
+def resumen_publicaciones(pub_ids, modo):
+    """Datos mínimos de cada publicación (autor + tipo + si es sintética +
+    contraoferta) para el drill-down. es_sintetica/es_sintetica_4 identifican
+    las oportunidades de cadena_3/cadena_4. contraoferta es el texto de lo
+    que se pide u ofrece a cambio del turno mostrado (ver _texto_contraoferta)."""
     if not pub_ids:
         return []
     pubs = (
         PublicacionCambio.query
         .filter(PublicacionCambio.id.in_(pub_ids))
-        .options(joinedload(PublicacionCambio.usuario))
+        .options(
+            joinedload(PublicacionCambio.usuario),
+            joinedload(PublicacionCambio.turnos_cedidos).joinedload(TurnoCedido.franja_horaria),
+            joinedload(PublicacionCambio.turnos_aceptados).joinedload(TurnoAceptado.franja_horaria),
+        )
         .all()
     )
     return [
@@ -259,6 +302,7 @@ def resumen_publicaciones(pub_ids):
             "tipo": p.tipo,
             "es_sintetica": p.es_sintetica,
             "es_sintetica_4": p.sintetica_pub_intermedio_id is not None,
+            "contraoferta": _texto_contraoferta(p, modo),
         }
         for p in pubs
     ]

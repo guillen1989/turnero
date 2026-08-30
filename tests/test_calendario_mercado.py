@@ -521,11 +521,12 @@ def test_resumen_publicaciones_devuelve_usuario_y_tipo(db):
     pub = _pub(pedro, "regalo", aceptados=[(date(2026, 7, 3), manana)])
 
     from app.services.calendario_mercado import resumen_publicaciones
-    resumen = resumen_publicaciones([pub.id])
+    resumen = resumen_publicaciones([pub.id], "ofertas")
 
     assert resumen == [{
         "id": pub.id, "usuario_nombre": "Pedro", "tipo": "regalo",
         "es_sintetica": False, "es_sintetica_4": False,
+        "contraoferta": "No pide nada a cambio",
     }]
 
 
@@ -536,11 +537,12 @@ def test_resumen_publicaciones_indica_si_es_sintetica(db):
     pub = _pub(pedro, "cambio", aceptados=[(date(2026, 7, 3), manana)], es_sintetica=True)
 
     from app.services.calendario_mercado import resumen_publicaciones
-    resumen = resumen_publicaciones([pub.id])
+    resumen = resumen_publicaciones([pub.id], "peticiones")
 
     assert resumen == [{
         "id": pub.id, "usuario_nombre": "Pedro", "tipo": "cambio",
         "es_sintetica": True, "es_sintetica_4": False,
+        "contraoferta": "No ofrece nada a cambio (Cambio a 3)",
     }]
 
 
@@ -556,14 +558,111 @@ def test_resumen_publicaciones_indica_si_es_sintetica_de_cadena_4(db):
     db.session.commit()
 
     from app.services.calendario_mercado import resumen_publicaciones
-    resumen = resumen_publicaciones([pub.id])
+    resumen = resumen_publicaciones([pub.id], "peticiones")
 
     assert resumen == [{
         "id": pub.id, "usuario_nombre": "Pedro", "tipo": "cambio",
         "es_sintetica": True, "es_sintetica_4": True,
+        "contraoferta": "No ofrece nada a cambio (Cambio a 4)",
     }]
 
 
 def test_resumen_publicaciones_lista_vacia_sin_ids(db):
     from app.services.calendario_mercado import resumen_publicaciones
-    assert resumen_publicaciones([]) == []
+    assert resumen_publicaciones([], "ofertas") == []
+
+
+# --- contraoferta: lo que se pide/ofrece a cambio del turno mostrado ---
+
+def test_contraoferta_en_ofertas_muestra_lo_que_pide_librar(db):
+    """En modo ofertas se muestra el día trabajado; la contraoferta es lo
+    que la publicación pide librar a cambio (su turno cedido)."""
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+    pub = _pub(
+        pedro, "cambio",
+        cedidos=[(date(2026, 7, 1), tarde)],
+        aceptados=[(date(2026, 7, 3), manana)],
+    )
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([pub.id], "ofertas")[0]
+
+    assert resumen["contraoferta"] == "Pide librar: 01/07 — Tarde"
+
+
+def test_contraoferta_en_peticiones_muestra_lo_que_ofrece_trabajar(db):
+    """En modo peticiones se muestra el día a librar; la contraoferta es lo
+    que la publicación ofrece trabajar a cambio (su turno aceptado)."""
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+    pub = _pub(
+        pedro, "cambio",
+        cedidos=[(date(2026, 7, 1), tarde)],
+        aceptados=[(date(2026, 7, 3), manana)],
+    )
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([pub.id], "peticiones")[0]
+
+    assert resumen["contraoferta"] == "Ofrece trabajar: 03/07 — Mañana"
+
+
+def test_contraoferta_cualquier_franja(db):
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    tarde = _franja(gid, "Tarde")
+    pub = _pub(
+        pedro, "cambio",
+        cedidos=[(date(2026, 7, 1), tarde)],
+        aceptados=[(date(2026, 7, 3), None, True)],
+    )
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([pub.id], "peticiones")[0]
+
+    assert resumen["contraoferta"] == "Ofrece trabajar: 03/07 — Cualquiera"
+
+
+def test_contraoferta_ignora_turnos_ya_resueltos(db):
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+    pub = _pub(
+        pedro, "cambio",
+        cedidos=[(date(2026, 7, 1), tarde)],
+        aceptados=[(date(2026, 7, 3), manana)],
+    )
+    pub.turnos_cedidos[0].estado = "resuelto"
+    db.session.commit()
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([pub.id], "ofertas")[0]
+
+    assert resumen["contraoferta"] == "No pide nada a cambio"
+
+
+def test_contraoferta_sintetica_ofertas_pide_lo_que_su_turno_aceptado_representa(db):
+    """Para una sintética, en modo ofertas se muestra su turno_cedido (ver
+    inversión en construir_calendario_mes); la contraoferta viene entonces
+    de su turno_aceptado, y se marca como "Cambio a 3"."""
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+    sint = _pub(
+        pedro, "cambio",
+        cedidos=[(date(2026, 7, 3), manana)],
+        aceptados=[(date(2026, 7, 5), tarde)],
+        es_sintetica=True,
+    )
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([sint.id], "ofertas")[0]
+
+    assert resumen["contraoferta"] == "Pide librar: 05/07 — Tarde (Cambio a 3)"

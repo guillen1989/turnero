@@ -197,7 +197,7 @@ def test_calendario_embebe_datos_para_drilldown(client, db):
 
     assert datos_mes["2026-07-03"][str(manana.id)] == [pub.id]
     assert datos_pubs[str(pub.id)]["usuario_nombre"] == "Pedro"
-    assert datos_pubs[str(pub.id)]["tipo_label"]
+    assert datos_pubs[str(pub.id)]["contraoferta"] == "No pide nada a cambio"
 
 
 def test_calendario_muestra_boton_publicar_cambio_fijo(client, db):
@@ -237,8 +237,10 @@ def test_calendario_muestra_oportunidad_a_3_para_sintetica(client, db):
     db.session.add(sint)
     db.session.flush()
     # Para una sintética, 'ofertas' se alimenta de turno_cedido (ver
-    # crear_pub_sintetica: su cedido copia el aceptado real de pub_a).
+    # crear_pub_sintetica: su cedido copia el aceptado real de pub_a) y la
+    # contraoferta viene entonces de su turno_aceptado.
     db.session.add(TurnoCedido(publicacion_id=sint.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
+    db.session.add(TurnoAceptado(publicacion_id=sint.id, fecha=date(2026, 7, 5), franja_horaria_id=manana.id))
     db.session.commit()
 
     _login(client, ana.email)
@@ -250,7 +252,7 @@ def test_calendario_muestra_oportunidad_a_3_para_sintetica(client, db):
         r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
     )
     datos_pubs = json.loads(m_pubs.group(1))
-    assert datos_pubs[str(sint.id)]["tipo_label"] == "Oportunidad a 3"
+    assert datos_pubs[str(sint.id)]["contraoferta"] == "Pide librar: 05/07 — Mañana (Cambio a 3)"
 
 
 def test_calendario_muestra_oportunidad_a_4_para_sintetica_con_intermedio(client, db):
@@ -276,6 +278,7 @@ def test_calendario_muestra_oportunidad_a_4_para_sintetica_con_intermedio(client
     db.session.add(sint)
     db.session.flush()
     db.session.add(TurnoCedido(publicacion_id=sint.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
+    db.session.add(TurnoAceptado(publicacion_id=sint.id, fecha=date(2026, 7, 5), franja_horaria_id=manana.id))
     db.session.commit()
 
     _login(client, ana.email)
@@ -287,7 +290,7 @@ def test_calendario_muestra_oportunidad_a_4_para_sintetica_con_intermedio(client
         r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
     )
     datos_pubs = json.loads(m_pubs.group(1))
-    assert datos_pubs[str(sint.id)]["tipo_label"] == "Oportunidad a 4"
+    assert datos_pubs[str(sint.id)]["contraoferta"] == "Pide librar: 05/07 — Mañana (Cambio a 4)"
 
 
 def test_calendario_respeta_preferencia_mostrar_oportunidad_3(client, db):
