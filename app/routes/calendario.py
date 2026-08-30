@@ -9,6 +9,7 @@ from app.extensions import db
 from app.models.franja_horaria import FranjaHoraria
 from app.services.calendario_mercado import (
     CUALQUIER_FRANJA,
+    colores_por_clave,
     construir_calendario_mes,
     construir_semanas_juntes,
     preparar_celdas_mes,
@@ -82,6 +83,7 @@ def index():
         str(clave): (_("Cualquiera") if clave == CUALQUIER_FRANJA else nombre_franja_por_id.get(clave, "?"))
         for clave in claves_usadas
     }
+    color_franja_por_clave = colores_por_clave(claves_usadas, franjas)
 
     datos_mes = {
         dia.isoformat(): {str(clave): ids for clave, ids in franjas_dia.items()}
@@ -99,6 +101,7 @@ def index():
         dias=dias,
         celdas=celdas,
         nombre_franja_por_clave=nombre_franja_por_clave,
+        color_franja_por_clave=color_franja_por_clave,
         datos_mes=datos_mes,
         datos_publicaciones=datos_publicaciones,
         **contexto,

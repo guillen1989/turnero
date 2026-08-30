@@ -155,6 +155,18 @@ def _info_clave(clave, franjas_por_id):
     return franja.color or "#3B82F6", franja.color_texto, franja.nombre
 
 
+def colores_por_clave(claves, franjas):
+    """{clave: {"color": ..., "color_texto": ...}} para las claves dadas, con
+    los mismos colores que usan las bandas de las celdas del calendario (así
+    el encabezado del panel de drill-down usa el color de "su" franja)."""
+    franjas_por_id = {f.id: f for f in franjas}
+    resultado = {}
+    for clave in claves:
+        color, color_texto, _nombre = _info_clave(clave, franjas_por_id)
+        resultado[str(clave)] = {"color": color, "color_texto": color_texto}
+    return resultado
+
+
 def _ordenar_claves(claves, franjas):
     """Ordena claves cronológicamente por hora_inicio de la franja
     (CUALQUIER_FRANJA y franjas desconocidas van al final)."""

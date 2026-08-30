@@ -689,3 +689,23 @@ def test_contraoferta_con_varios_turnos_usa_formato_compacto(db):
     resumen = resumen_publicaciones([pub.id], "ofertas")[0]
 
     assert resumen["contraoferta"] == "Pide librar a cambio: 5 ago. T, 10 ago. T, 4 sep. T"
+
+
+def test_colores_por_clave_usa_el_color_propio_de_cada_franja(db):
+    """El encabezado del panel de drill-down debe usar el mismo color que ya
+    se usa para pintar la franja en las bandas de las celdas del calendario,
+    no un color fijo (Ronda 4)."""
+    from app.services.calendario_mercado import CUALQUIER_FRANJA, colores_por_clave
+
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+    franjas = [manana, tarde]
+
+    resultado = colores_por_clave([manana.id, tarde.id, CUALQUIER_FRANJA], franjas)
+
+    assert resultado[str(manana.id)] == {"color": manana.color, "color_texto": manana.color_texto}
+    assert resultado[str(tarde.id)] == {"color": tarde.color, "color_texto": tarde.color_texto}
+    assert resultado[str(manana.id)]["color"] != resultado[str(tarde.id)]["color"]
+    assert resultado[CUALQUIER_FRANJA]["color"] == "#9333ea"

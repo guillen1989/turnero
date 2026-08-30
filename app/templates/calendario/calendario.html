@@ -226,12 +226,14 @@
 <script type="application/json" id="calendario-datos-mes">{{ datos_mes | tojson }}</script>
 <script type="application/json" id="calendario-datos-publicaciones">{{ datos_publicaciones | tojson }}</script>
 <script type="application/json" id="calendario-datos-franjas">{{ nombre_franja_por_clave | tojson }}</script>
+<script type="application/json" id="calendario-datos-colores-franjas">{{ color_franja_por_clave | tojson }}</script>
 
 <script>
 (function () {
   var datosMes = JSON.parse(document.getElementById('calendario-datos-mes').textContent);
   var datosPubs = JSON.parse(document.getElementById('calendario-datos-publicaciones').textContent);
   var nombreFranja = JSON.parse(document.getElementById('calendario-datos-franjas').textContent);
+  var colorFranja = JSON.parse(document.getElementById('calendario-datos-colores-franjas').textContent);
   var MODO = {{ modo | tojson }};
   var CAMBIOS_URL = {{ url_for('main.cambios') | tojson }};
   var PUBLICAR_URL = {{ url_for('publicaciones.nueva') | tojson }};
@@ -310,7 +312,11 @@
   window.calendarioAbrirFranja = function (fechaIso, clave, esRaiz) {
     var ids = (datosMes[fechaIso] || {})[clave] || [];
     pila.push({ tipo: 'franja', fecha: fechaIso, clave: clave });
-    var html = '<p class="calendario-panel-encabezado">' +
+    var color = colorFranja[clave] || {};
+    var estiloEncabezado = color.color
+      ? ' style="background:' + color.color + '; color:' + (color.color_texto || '#fff') + ';"'
+      : '';
+    var html = '<p class="calendario-panel-encabezado"' + estiloEncabezado + '>' +
       (nombreFranja[clave] || clave) + ' · ' + _fechaCorta(fechaIso) + '</p>';
     html += '<ul class="calendario-lista">';
     ids.forEach(function (id) {

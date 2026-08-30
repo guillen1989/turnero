@@ -237,6 +237,30 @@ def test_calendario_lista_de_franja_incluye_encabezado_dia_y_franja(client, db):
     assert "_fechaCorta" in html
 
 
+def test_calendario_encabezado_de_franja_usa_el_color_propio_de_la_franja(client, db):
+    """Ronda 4: el encabezado del panel de drill-down debe pintarse del mismo
+    color que ya tiene esa franja en las bandas del calendario (p.ej. tardes
+    naranjas, mañanas azul claro), no de un color fijo."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    pub = PublicacionCambio(usuario_id=pedro.id, tipo="regalo")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
+    db.session.commit()
+
+    _login(client, ana.email)
+    resp = client.get("/calendario/?anyo=2026&mes=7")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert "calendario-datos-colores-franjas" in html
+    assert manana.color in html
+    assert "colorFranja" in html
+
+
 def test_calendario_titulo_corto_y_boton_ayuda(client, db):
     """Ronda 2, Paso 4: título corto + icono ⓘ con banner de ayuda inline."""
     u = _usuario("Ana", "ana@test.es")
