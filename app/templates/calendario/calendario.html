@@ -296,12 +296,16 @@
 
     var html = '';
     if (claves.length > 0) {
-      html += '<ul class="calendario-lista">';
+      html += '<div class="calendario-franja-tabs">';
       claves.forEach(function (clave) {
-        html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirFranja(\'' + fechaIso + '\',\'' + clave + '\')">' +
-          (nombreFranja[clave] || clave) + ' (' + franjasDia[clave].length + ')</button></li>';
+        var color = colorFranja[clave] || {};
+        var estilo = color.color
+          ? ' style="--tab-color:' + color.color + '; --tab-color-texto:' + (color.color_texto || '#fff') + ';"'
+          : '';
+        html += '<button type="button" class="calendario-franja-tab"' + estilo + ' onclick="calendarioAbrirFranja(\'' + fechaIso + '\',\'' + clave + '\')">' +
+          (nombreFranja[clave] || clave) + ' (' + franjasDia[clave].length + ')</button>';
       });
-      html += '</ul>';
+      html += '</div>';
     } else {
       html += '<p class="calendario-panel-vacio">' + TEXTO_SIN_OFERTAS + '</p>';
     }

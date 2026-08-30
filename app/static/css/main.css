@@ -969,6 +969,9 @@ body {
 .calendario-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.65rem; }
 .calendario-lista-item { width: 100%; text-align: left; padding: 0.75rem 0.9rem; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 8px; background: #f9fafb; font-size: 0.95rem; line-height: 1.45; cursor: pointer; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); }
 .calendario-lista-item:hover { background: #f1f5f9; }
+.calendario-franja-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 0.75rem; }
+.calendario-franja-tab { --tab-color: #94a3b8; --tab-color-texto: #ffffff; padding: 0.5rem 0.9rem; border: none; border-radius: 999px; background: var(--tab-color); color: var(--tab-color-texto); font-size: 0.88rem; font-weight: 700; cursor: pointer; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.15); }
+.calendario-franja-tab:hover { filter: brightness(0.95); }
 
 /* ── Juntes de noches: filas-semana + tira desplegable trabaja/libra ── */
 .juntes-leyenda { display: flex; gap: 1.1rem; flex-wrap: wrap; align-items: center; font-size: 0.78rem; color: #4b5563; margin: 0 0 0.85rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.55rem 0.85rem; }
