@@ -218,6 +218,25 @@
       <div id="calendario-panel-cuerpo"></div>
     </div>
   </div>
+
+  {# ── Modal "Me interesa" para publicaciones abiertas desde el panel ── #}
+  <div id="modal-me-interesa" class="modal-overlay modal-hidden" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <p class="modal-title" id="mmi-title"></p>
+      <div id="mmi-desc" class="modal-body"></div>
+      <form id="mmi-form" method="post" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" id="mmi-tc" name="turno_cedido_id" value="">
+        <input type="hidden" id="mmi-ta" name="turno_aceptado_id" value="">
+        <input type="hidden" id="mmi-fb" name="franja_b" value="">
+        <div id="mmi-selects" class="mmi-selects"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarMeInteresa()">{{ _('Cancelar') }}</button>
+          <button type="submit" class="btn btn-primary btn-sm">{{ _('Aceptar') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
   {% endif %}
 
 </div>
@@ -235,12 +254,13 @@
   var nombreFranja = JSON.parse(document.getElementById('calendario-datos-franjas').textContent);
   var colorFranja = JSON.parse(document.getElementById('calendario-datos-colores-franjas').textContent);
   var MODO = {{ modo | tojson }};
-  var CAMBIOS_URL = {{ url_for('main.cambios') | tojson }};
   var PUBLICAR_URL = {{ url_for('publicaciones.nueva') | tojson }};
+  var PANEL_PUBLICACION_URL_BASE = {{ url_for('calendario.panel_publicacion', pub_id=0) | tojson }};
   var TEXTO_SIN_OFERTAS = {{ _('Nadie ha publicado nada este día todavía.') | tojson }};
   var TEXTO_PUBLICAR_DIA = {{ _('Publicar un cambio para este día') | tojson }};
   var TEXTO_AMPLIAR = {{ _('Ampliar') | tojson }};
   var TEXTO_ENCOGER = {{ _('Encoger') | tojson }};
+  var TEXTO_ERROR_PUBLICACION = {{ _('No se pudo cargar la publicación.') | tojson }};
   var MESES_ABREV = {{ MESES_ABREV | tojson }};
   var pila = [];
 
@@ -259,25 +279,6 @@
     document.getElementById('calendario-panel-cuerpo').innerHTML = html;
     document.getElementById('calendario-panel-volver').hidden = !!esRaiz;
     document.getElementById('calendario-panel').hidden = false;
-  }
-
-  // Enlace a la publicación completa en Buscar cambios: ahí ya existen la
-  // tarjeta completa (cede/acepta/mensaje) y las acciones "Me interesa" /
-  // "Contraoferta" — no se duplican aquí.
-  function _urlPublicacion(fechaIso, clave, pub) {
-    var partes = fechaIso.split('-');
-    var mes = parseInt(partes[1], 10);
-    var dia = parseInt(partes[2], 10);
-    // 'juntes' no tiene sentido direccional (una noche puede ser cedida o
-    // aceptada dentro del mismo junte), así que no se fija tipo_fecha: /cambios
-    // ya localiza la publicación por día+franja+usuario buscando en ambos.
-    var params = 'mes=' + mes + '&dia=' + dia +
-      '&usuario=' + encodeURIComponent(pub.usuario_nombre || '');
-    if (MODO !== 'juntes') {
-      params += '&tipo_fecha=' + ((MODO === 'ofertas') ? 'aceptado' : 'cedido');
-    }
-    if (clave !== 'cualquiera') { params += '&franja=' + clave; }
-    return CAMBIOS_URL + '?' + params;
   }
 
   window.calendarioAbrirDia = function (fechaIso) {
@@ -311,7 +312,7 @@
 
   window.calendarioAbrirFranja = function (fechaIso, clave, esRaiz) {
     var ids = (datosMes[fechaIso] || {})[clave] || [];
-    pila.push({ tipo: 'franja', fecha: fechaIso, clave: clave });
+    pila.push({ tipo: 'franja', fecha: fechaIso, clave: clave, esRaiz: !!esRaiz });
     var color = colorFranja[clave] || {};
     var estiloEncabezado = color.color
       ? ' style="background:' + color.color + '; color:' + (color.color_texto || '#fff') + ';"'
@@ -321,18 +322,44 @@
     html += '<ul class="calendario-lista">';
     ids.forEach(function (id) {
       var pub = datosPubs[id] || {};
-      html += '<li><a class="calendario-lista-item" href="' + _urlPublicacion(fechaIso, clave, pub) + '">' +
-        (pub.contraoferta || '') + '</a></li>';
+      html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirPublicacion(' + id + ')">' +
+        (pub.contraoferta || '') + '</button></li>';
     });
     html += '</ul>';
     mostrarVista(html, !!esRaiz);
+  };
+
+  // Muestra el detalle completo de una publicación dentro del propio panel
+  // (en vez de saltar a Buscar cambios), con "Me interesa"/"Contraoferta"
+  // ya funcionales, para no confundir al usuario con el buscador completo.
+  window.calendarioAbrirPublicacion = function (pubId) {
+    pila.push({ tipo: 'pub', pubId: pubId });
+    fetch(PANEL_PUBLICACION_URL_BASE.replace(/\/0$/, '/' + pubId))
+      .then(function (resp) {
+        if (!resp.ok) throw new Error('http ' + resp.status);
+        return resp.text();
+      })
+      .then(function (html) {
+        mostrarVista(html, false);
+        var datosFranjas = document.getElementById('calendario-panel-franjas');
+        _franjas = datosFranjas ? JSON.parse(datosFranjas.textContent) : [];
+      })
+      .catch(function () {
+        mostrarVista('<p class="calendario-panel-vacio">' + TEXTO_ERROR_PUBLICACION + '</p>', false);
+      });
   };
 
   window.calendarioVolver = function () {
     pila.pop();
     var actual = pila[pila.length - 1];
     if (!actual) { calendarioCerrarPanel(); return; }
-    if (actual.tipo === 'dia') { pila.pop(); window.calendarioAbrirDia(actual.fecha); }
+    if (actual.tipo === 'dia') {
+      pila.pop();
+      window.calendarioAbrirDia(actual.fecha);
+    } else if (actual.tipo === 'franja') {
+      pila.pop();
+      window.calendarioAbrirFranja(actual.fecha, actual.clave, actual.esRaiz);
+    }
   };
 
   window.calendarioCerrarPanel = function () {
@@ -346,6 +373,136 @@
     var contenido = document.getElementById('calendario-panel-contenido');
     var expandido = contenido.classList.toggle('calendario-panel-contenido--expandido');
     document.getElementById('calendario-panel-expandir').innerHTML = expandido ? ('&#10531; ' + TEXTO_ENCOGER) : ('&#10530; ' + TEXTO_AMPLIAR);
+  };
+
+  /* ── Modal "Me interesa" (misma lógica que en Buscar cambios / Feed de
+     cambios, pero los datos de la publicación llegan en data-pub del botón
+     en vez de un diccionario global, porque el panel se carga por AJAX).
+     _franjas se rellena al abrir cada publicación (ver calendarioAbrirPublicacion),
+     no aquí, para no filtrar nombres de franja en la página cuando no hay
+     ninguna publicación abierta. ── */
+  var _franjas = [];
+
+  window.cerrarMeInteresa = function () {
+    document.getElementById('modal-me-interesa').classList.add('modal-hidden');
+  };
+  document.getElementById('modal-me-interesa').addEventListener('click', function (e) {
+    if (e.target === this) cerrarMeInteresa();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') cerrarMeInteresa();
+  });
+
+  function _sel(items, inputId, labelText) {
+    var wrap = document.createElement('div');
+    wrap.className = 'form-group mmi-form-group';
+    var lbl = document.createElement('label');
+    lbl.textContent = labelText;
+    var sel = document.createElement('select');
+    sel.className = 'form-control';
+    items.forEach(function (item) {
+      var opt = document.createElement('option');
+      opt.value = item.id;
+      var display = item.franja ? (item.fecha + ' — ' + item.franja) : (item.fecha + ' — Cualquier turno');
+      opt.textContent = display;
+      opt.dataset.cualquierFranja = item.cualquierFranja ? '1' : '0';
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', function () {
+      document.getElementById(inputId).value = this.value;
+      _actualizarSelectorFranja(this);
+    });
+    wrap.appendChild(lbl);
+    wrap.appendChild(sel);
+    return { wrap: wrap, sel: sel };
+  }
+
+  function _selectorFranja(labelText, inputId) {
+    var wrap = document.createElement('div');
+    wrap.className = 'form-group mmi-form-group';
+    wrap.id = 'mmi-franja-wrap-' + inputId;
+    wrap.style.display = 'none';
+    var lbl = document.createElement('label');
+    lbl.textContent = labelText;
+    var sel = document.createElement('select');
+    sel.className = 'form-control';
+    _franjas.forEach(function (f) {
+      var opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.nombre;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', function () {
+      document.getElementById(inputId).value = this.value;
+    });
+    wrap.appendChild(lbl);
+    wrap.appendChild(sel);
+    return wrap;
+  }
+
+  function _actualizarSelectorFranja(mainSel) {
+    var esCualquiera = mainSel.options[mainSel.selectedIndex].dataset.cualquierFranja === '1';
+    var wrap = document.getElementById('mmi-franja-wrap-mmi-fb');
+    if (wrap) {
+      wrap.style.display = esCualquiera ? '' : 'none';
+      if (!esCualquiera) document.getElementById('mmi-fb').value = '';
+    }
+  }
+
+  window.calendarioAbrirMeInteresa = function (btn) {
+    var pub = JSON.parse(btn.dataset.pub);
+    if (!pub) return;
+
+    document.getElementById('mmi-form').action = '/cambios/' + pub.id + '/me-interesa';
+    document.getElementById('mmi-tc').value = '';
+    document.getElementById('mmi-ta').value = '';
+    document.getElementById('mmi-fb').value = '';
+    document.getElementById('mmi-selects').innerHTML = '';
+
+    if (pub.tipo === 'regalo') {
+      document.getElementById('mmi-form').submit();
+      return;
+    }
+
+    var desc = document.getElementById('mmi-desc');
+    var selects = document.getElementById('mmi-selects');
+    var tipo = pub.tipo;
+
+    document.getElementById('mmi-title').textContent =
+      tipo === 'peticion'   ? '{{ _("¿Quieres cubrir un turno de") }} ' + pub.autor + '?' :
+      tipo === 'cambio_dia' ? '{{ _("Cambio de turno en el día con") }} ' + pub.autor :
+                              '{{ _("Cambio con") }} ' + pub.autor;
+
+    if (tipo === 'peticion') {
+      if (pub.cedidos.length === 1 && !pub.cedidos[0].cualquierFranja) {
+        document.getElementById('mmi-tc').value = pub.cedidos[0].id;
+        document.getElementById('mmi-form').submit();
+        return;
+      }
+      desc.textContent = '{{ _("Selecciona el turno que te ofreces a cubrir:") }}';
+      var s = _sel(pub.cedidos, 'mmi-tc', '{{ _("Turno a cubrir") }}');
+      document.getElementById('mmi-tc').value = pub.cedidos[0] ? pub.cedidos[0].id : '';
+      selects.appendChild(s.wrap);
+    } else if (tipo === 'cambio_dia') {
+      var tc = pub.cedidos[0];
+      var ta = pub.aceptados[0];
+      var html = '<p><strong>{{ _("Tiene el turno de:") }}</strong> ' + tc.franja + ' ' + tc.fecha + '</p>';
+      html += '<p><strong>{{ _("Quiere el turno de:") }}</strong> ' + ta.franja + ' ' + ta.fecha + '</p>';
+      html += '<p>{{ _("Si aceptas, le das tu turno de") }} ' + ta.franja + ' {{ _("y él/ella te da el de") }} ' + tc.franja + '.</p>';
+      desc.innerHTML = html;
+    } else {
+      desc.textContent = '{{ _("Elige el turno que cubrirás y el que quieres que te cubran:") }}';
+      var sc = _sel(pub.cedidos, 'mmi-tc', '{{ _("Turno de") }} ' + pub.autor + ' {{ _("que cubrirás") }}');
+      document.getElementById('mmi-tc').value = pub.cedidos[0] ? pub.cedidos[0].id : '';
+      var sa = _sel(pub.aceptados, 'mmi-ta', '{{ _("Turno tuyo que") }} ' + pub.autor + ' {{ _("te cubrirá") }}');
+      document.getElementById('mmi-ta').value = pub.aceptados[0] ? pub.aceptados[0].id : '';
+      selects.appendChild(sc.wrap);
+      selects.appendChild(sa.wrap);
+      selects.appendChild(_selectorFranja('{{ _("¿Qué turno quieres librar?") }}', 'mmi-fb'));
+      _actualizarSelectorFranja(sa.sel);
+    }
+
+    document.getElementById('modal-me-interesa').classList.remove('modal-hidden');
   };
 })();
 </script>

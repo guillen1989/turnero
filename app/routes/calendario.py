@@ -1,12 +1,15 @@
 import calendar
 from datetime import date
 
-from flask import Blueprint, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, redirect, render_template, request, session, url_for
 from flask_babel import _
 from flask_login import login_required, current_user
+from sqlalchemy.orm import contains_eager, joinedload, selectinload
 
 from app.extensions import db
+from app.models import PublicacionCambio, TurnoAceptado, TurnoCedido, Unidad, Usuario
 from app.models.franja_horaria import FranjaHoraria
+from app.routes.main import _cargar_sint_info, _junte_info, _pub_js_data
 from app.services.calendario_mercado import (
     CUALQUIER_FRANJA,
     colores_por_clave,
@@ -105,6 +108,55 @@ def index():
         datos_mes=datos_mes,
         datos_publicaciones=datos_publicaciones,
         **contexto,
+    )
+
+
+@bp.get("/publicacion/<int:pub_id>")
+@login_required
+def panel_publicacion(pub_id):
+    """Fragmento HTML con el detalle completo de una publicación (sin
+    envoltorio de página), para inyectarlo en el panel de drill-down del
+    calendario sin navegar a Buscar cambios."""
+    unidad_id = request.args.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    categoria_id = categoria_en_unidad(current_user, unidad_activa).id
+    grupo_id = unidad_activa.grupo_intercambio_id
+
+    pub = (
+        PublicacionCambio.query
+        .join(Usuario, PublicacionCambio.usuario_id == Usuario.id)
+        .join(Unidad, Usuario.unidad_id == Unidad.id)
+        .filter(
+            PublicacionCambio.id == pub_id,
+            PublicacionCambio.estado.in_(["abierta", "parcialmente_resuelta"]),
+            PublicacionCambio.usuario_id != current_user.id,
+            Usuario.categoria_id == categoria_id,
+            Unidad.grupo_intercambio_id == grupo_id,
+        )
+        .options(
+            contains_eager(PublicacionCambio.usuario),
+            selectinload(PublicacionCambio.turnos_cedidos).joinedload(TurnoCedido.franja_horaria),
+            selectinload(PublicacionCambio.turnos_aceptados).joinedload(TurnoAceptado.franja_horaria),
+        )
+        .first()
+    )
+    if pub is None:
+        abort(404)
+
+    ji = _junte_info(pub) if pub.tipo == "junte" else None
+    si = _cargar_sint_info([pub]).get(pub.id) if pub.es_sintetica else None
+
+    franjas = (
+        FranjaHoraria.query
+        .filter_by(grupo_intercambio_id=grupo_id)
+        .order_by(FranjaHoraria.hora_inicio)
+        .all()
+    )
+
+    return render_template(
+        "calendario/_panel_publicacion.html",
+        pub=pub, ji=ji, si=si, pub_js_data=_pub_js_data(pub),
+        franjas_js=[{"id": f.id, "nombre": f.nombre} for f in franjas],
     )
 
 

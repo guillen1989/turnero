@@ -2,9 +2,9 @@
 
 Escenario: Pedro publica un 'regalo' (turno que se ofrece a trabajar) para
 un día conocido del mes actual. Ana entra a /calendario, toca ese día,
-toca la franja y sigue el enlace resultante — debe aterrizar en Buscar
-cambios (/cambios) viendo la publicación de Pedro con el botón "Me interesa"
-ya funcional (reutilizado, no reimplementado en el calendario).
+toca la franja y toca la publicación resultante — debe verse el detalle
+completo de la publicación de Pedro dentro del propio panel del calendario
+(sin navegar a Buscar cambios), con el botón "Me interesa" ya funcional.
 """
 from datetime import date, timedelta
 
@@ -57,10 +57,11 @@ def test_drilldown_dia_franja_navega_a_publicacion(page, live_server, escenario_
     assert panel.is_visible()
     # El día solo tiene un tipo de turno, así que el panel salta directo a
     # la lista de publicaciones (sin el paso intermedio de elegir franja).
-    page.locator("a.calendario-lista-item").first.click()
+    page.locator("button.calendario-lista-item").first.click()
 
-    page.wait_for_url(lambda url: "/cambios" in url)
-    assert escenario_oferta["pedro_nombre"] in page.content()
+    # El detalle se muestra dentro del propio panel, sin navegar fuera de /calendario/.
+    assert "/calendario" in page.url
+    assert escenario_oferta["pedro_nombre"] in panel.inner_text()
     assert page.locator('button:has-text("Me interesa")').first.is_visible()
 
 
@@ -83,10 +84,11 @@ def test_dia_con_una_sola_franja_salta_directo_a_publicaciones(page, live_server
     assert panel.is_visible()
 
     # No debe verse el botón intermedio de franja ("Mañana (1)")...
-    assert page.locator("button.calendario-lista-item").count() == 0
-    # ...sino directamente el enlace a la publicación de Pedro.
-    enlace = page.locator("a.calendario-lista-item").first
-    assert enlace.is_visible()
+    botones = page.locator("button.calendario-lista-item")
+    assert botones.count() == 1
+    # ...sino directamente el botón de la publicación de Pedro.
+    boton = botones.first
+    assert boton.is_visible()
     assert escenario_oferta["pedro_nombre"] in page.locator("#calendario-panel").inner_text()
 
     # Al ser la vista "raíz" de ese día, no debe ofrecerse "Volver".

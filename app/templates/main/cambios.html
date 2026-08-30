@@ -144,6 +144,7 @@
   {% endif %}
 
   {% if publicaciones %}
+  {% from "main/_publicacion_detalle.html" import cuerpo %}
   <ul class="publicaciones-list">
     {% for pub in publicaciones %}
     <li class="publicacion-card publicacion-card--ajena">
@@ -152,138 +153,7 @@
            href="{{ url_for('main.cambios', usuario=pub.usuario.nombre) }}">{{ pub.usuario.nombre }}</a>
         <span class="pub-fecha-creacion">{{ pub.fecha_creacion.strftime('%d/%m/%Y') }}</span>
       </div>
-      {% if pub.tipo == 'regalo' %}
-      <span class="tipo-badge tipo-badge--regalo">{{ _('Regalo') }}</span>
-      <div class="turnos-aceptados">
-        <strong>{{ _('Se ofrece a trabajar (sin recibir nada):') }}</strong>
-        {% for turno in pub.turnos_aceptados %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
-        {% endfor %}
-      </div>
-      {% elif pub.tipo == 'peticion' %}
-      <span class="tipo-badge tipo-badge--peticion">{{ _('Petición') }}</span>
-      <div class="turnos-cedidos">
-        <strong>{{ _('Quiere librar (sin ofrecer nada):') }}</strong>
-        {% for turno in pub.turnos_cedidos %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
-        {% endfor %}
-      </div>
-      {% elif pub.tipo == 'junte' %}
-      <span class="tipo-badge tipo-badge--junte">{{ _('Junte de noches') }}</span>
-      {% set ji = junte_info.get(pub.id) %}
-      {% if ji %}
-      <p class="junte-resumen">
-        {{ _('Tiene') }} {{ ji.num_noches }} {{ _('noches') }}.
-        {{ _('Busca trabajar') }} {{ ji.trabaja_str }}.
-        {{ _('Busca librar') }} {{ ji.libra_str }}.
-      </p>
-      {% endif %}
-      <div class="turnos-cedidos">
-        <strong>{{ _('Cede las noches:') }}</strong>
-        {% for turno in pub.turnos_cedidos %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day) }}">{{ turno.fecha.strftime('%d/%m/%Y') }}</a>
-        {% endfor %}
-      </div>
-      <div class="turnos-aceptados">
-        <strong>{{ _('Busca las noches:') }}</strong>
-        {% for turno in pub.turnos_aceptados %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day) }}">{{ turno.fecha.strftime('%d/%m/%Y') }}</a>
-        {% endfor %}
-      </div>
-      {% elif pub.tipo == 'cambio_dia' %}
-      <span class="tipo-badge tipo-badge--cambio-dia">{{ _('Cambio de turno en el día') }}</span>
-      <div class="turnos-cedidos">
-        <strong>{{ _('Quiere cambiar:') }}</strong>
-        {% set tc = pub.turnos_cedidos[0] %}
-        {% set ta = pub.turnos_aceptados[0] %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=tc.fecha.month, dia=tc.fecha.day, tipo='cambio_dia') }}">
-          {{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ ta.franja_horaria.nombre }}
-        </a>
-      </div>
-      {% elif pub.es_sintetica %}
-      {% set si = sint_info.get(pub.id, {}) %}
-      {% set pub_a_user = si.pub_a.usuario if si.pub_a else none %}
-      {% set pub_b_user = si.pub_b.usuario if si.pub_b else none %}
-      {% set pub_intermedio_user = si.pub_intermedio.usuario if si.pub_intermedio else none %}
-      {% if pub_intermedio_user %}
-      <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 4') }}</span>
-      {% if pub_a_user and pub_b_user %}
-      <p class="sintetica-nota">
-        {{ _('Cambio a 4 con %(a)s, %(i)s y %(b)s.', a=pub_a_user.nombre, i=pub_intermedio_user.nombre, b=pub_b_user.nombre) }}
-      </p>
-      {% else %}
-      <p class="sintetica-nota">{{ _('Oportunidad de cambio a 4 bandas.') }}</p>
-      {% endif %}
-      {% else %}
-      <span class="tipo-badge tipo-badge--sintetica">{{ _('Oportunidad a 3') }}</span>
-      {% if pub_a_user and pub_b_user %}
-      <p class="sintetica-nota">
-        {{ _('Cambio a 3 con %(a)s y %(b)s.', a=pub_a_user.nombre, b=pub_b_user.nombre) }}
-      </p>
-      {% else %}
-      <p class="sintetica-nota">{{ _('Oportunidad de cambio a 3 bandas.') }}</p>
-      {% endif %}
-      {% endif %}
-      <div class="turnos-aceptados">
-        <strong>{% if pub_b_user %}{{ _('Le trabajarías a %(nombre)s:', nombre=pub_b_user.nombre) }}{% else %}{{ _('Trabajarías:') }}{% endif %}</strong>
-        {% for turno in pub.turnos_aceptados %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
-        {% endfor %}
-      </div>
-      <div class="turnos-cedidos">
-        <strong>{% if pub_a_user %}{{ _('A cambio, %(nombre)s te trabajaría:', nombre=pub_a_user.nombre) }}{% else %}{{ _('Librarías:') }}{% endif %}</strong>
-        {% for turno in pub.turnos_cedidos %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
-        {% endfor %}
-      </div>
-      {% if pub_intermedio_user %}
-      <p class="sintetica-nota">{{ _('Resto de la cadena, para que puedas explicársela a los demás:') }}</p>
-      {% if si.pub_a %}
-      <div class="turnos-cedidos">
-        <strong>{{ _('%(a)s libra, %(b)s se lo trabaja:', a=pub_a_user.nombre, b=pub_intermedio_user.nombre) }}</strong>
-        {% for turno in si.pub_a.turnos_cedidos if turno.estado == 'abierto' %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% if si.pub_intermedio %}
-      <div class="turnos-cedidos">
-        <strong>{{ _('%(b)s libra, %(c)s se lo trabaja:', b=pub_intermedio_user.nombre, c=pub_b_user.nombre if pub_b_user else '?') }}</strong>
-        {% for turno in si.pub_intermedio.turnos_cedidos if turno.estado == 'abierto' %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% endif %}
-      {% else %}
-      <span class="tipo-badge tipo-badge--cambio">{{ _('Cambio') }}</span>
-      <div class="turnos-cedidos">
-        <strong>{{ _('Quiere librar:') }}</strong>
-        {% for turno in pub.turnos_cedidos %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
-        {% endfor %}
-      </div>
-      <div class="turnos-aceptados">
-        <strong>{{ _('Se ofrece a trabajar:') }}</strong>
-        {% for turno in pub.turnos_aceptados %}
-        <a class="turno turno--link"
-           href="{{ url_for('main.cambios', mes=turno.fecha.month, dia=turno.fecha.day, franja=turno.franja_horaria_id) }}">{{ turno.fecha.strftime('%d/%m/%Y') }} — {{ turno.franja_horaria.nombre }}</a>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% if pub.mensaje %}
-      <p class="match-mensaje">"{{ pub.mensaje }}"</p>
-      {% endif %}
+      {{ cuerpo(pub, junte_info.get(pub.id), sint_info.get(pub.id, {}), True) }}
       <div class="pub-acciones pub-acciones--ajena">
         <button type="button" class="btn btn-primary btn-sm"
                 data-pub-id="{{ pub.id }}"

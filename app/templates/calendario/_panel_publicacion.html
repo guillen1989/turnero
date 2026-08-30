@@ -1,0 +1,22 @@
+{% from "main/_publicacion_detalle.html" import cuerpo %}
+{# Franjas del grupo, para el selector "¿Qué turno quieres librar?" del modal
+   Me interesa. Se embeben aquí (y no en calendario.html) para no filtrar los
+   nombres de franja en la página del calendario cuando no hay nada abierto. #}
+<script type="application/json" id="calendario-panel-franjas">{{ franjas_js | tojson }}</script>
+<div class="calendario-panel-pub">
+  <div class="pub-autor">
+    <span class="pub-autor-nombre">{{ pub.usuario.nombre }}</span>
+    <span class="pub-fecha-creacion">{{ pub.fecha_creacion.strftime('%d/%m/%Y') }}</span>
+  </div>
+  {{ cuerpo(pub, ji, si, False) }}
+  <div class="pub-acciones pub-acciones--ajena">
+    <button type="button" class="btn btn-primary btn-sm"
+            data-pub-id="{{ pub.id }}"
+            data-pub='{{ pub_js_data | tojson }}'
+            onclick="calendarioAbrirMeInteresa(this)">{{ _('Me interesa') }}</button>
+    {% if pub.tipo == 'cambio' %}
+    <a href="{{ url_for('publicaciones.contraoferta', pub_id=pub.id) }}"
+       class="btn btn-secondary btn-sm">{{ _('Contraoferta') }}</a>
+    {% endif %}
+  </div>
+</div>
