@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Novedades') }} — {{ _('Turnero') }}{% endblock %}
+{% block title %}{{ _('Feed de cambios') }} — {{ _('Turnero') }}{% endblock %}
 
 {% block content %}
 <div class="novedades-page">
   <div class="dashboard-header">
-    <h1>{{ _('Novedades') }}</h1>
+    <h1>{{ _('Feed de cambios') }}</h1>
     {% if unidades|length > 1 %}
     <label for="novedades-select-unidad" class="planilla-select-label">{{ _('Unidad') }}:</label>
     <select id="novedades-select-unidad" class="planilla-select" aria-label="{{ _('Unidad') }}"
