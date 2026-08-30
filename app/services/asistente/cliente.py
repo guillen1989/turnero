@@ -3,15 +3,17 @@
 Aísla el resto de la app de la librería del proveedor de IA — solo este
 módulo importa o captura sus excepciones.
 
-Motor activo: Groq (GPT-OSS 120B) — más barato y más rápido que Claude
+Motor activo: Groq (Qwen3.8-27B) — más barato y más rápido que Claude
 Haiku. La lógica original con Anthropic se conserva desactivada al final
 del archivo (ver decisión 2026-08-28 en docs/crear_parser.md); nada la
 invoca.
 
 Nota: llama-3.1-8b-instant y llama-3.3-70b-versatile (probados antes)
 devuelven 404 model_not_found en producción — Groq los pasó a nivel
-Enterprise en su ola de deprecaciones de junio 2026. openai/gpt-oss-120b
-es el modelo de mayor capacidad que sigue disponible en el tier free/dev.
+Enterprise en su ola de deprecaciones de junio 2026. Con el prompt actual
+(reglas + few-shot), qwen/qwen3.8-27b superó a openai/gpt-oss-120b en la
+comparación de 2026-08-30 (78.8%/12.1% vs. 71.2%/21.2% exact match/error
+silencioso, ver docs/pulir_parser.md) — se adopta como motor activo.
 """
 import anthropic
 import groq
@@ -19,7 +21,7 @@ from pydantic import ValidationError
 
 from app.services.asistente.schema import PropuestaPublicacion
 
-_MODELO = "openai/gpt-oss-120b"
+_MODELO = "qwen/qwen3.8-27b"
 _MAX_TOKENS = 2048
 
 
@@ -148,7 +150,7 @@ _EJEMPLOS_FEW_SHOT = [
 
 
 def extraer_propuesta(texto, contexto, client=None):
-    """Motor activo: Groq (GPT-OSS 120B)."""
+    """Motor activo: Groq (Qwen3.8-27B)."""
     if client is None:
         client = groq.Groq()
 
