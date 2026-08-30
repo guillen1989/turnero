@@ -1,4 +1,5 @@
 """Tests para la ruta POST /asistente/parsear."""
+from datetime import date, timedelta
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -29,11 +30,20 @@ def _login_con_geografia(client, email="u@test.es"):
     return u
 
 
+def _fecha_cedido():
+    """Fecha futura para no chocar con el rechazo de fechas pasadas de resolver_propuesta."""
+    return (date.today() + timedelta(days=5)).isoformat()
+
+
+def _fecha_aceptado():
+    return (date.today() + timedelta(days=6)).isoformat()
+
+
 def _propuesta_valida():
     return PropuestaPublicacion(
         tipo="cambio",
-        cedidos=[{"fecha": "2026-08-28", "franja": "Mañana"}],
-        aceptados=[{"fecha": "2026-08-29", "franja": "Tarde"}],
+        cedidos=[{"fecha": _fecha_cedido(), "franja": "Mañana"}],
+        aceptados=[{"fecha": _fecha_aceptado(), "franja": "Tarde"}],
         campos_faltantes=[],
     )
 
@@ -70,8 +80,8 @@ def test_parsear_propuesta_valida_redirige_a_publicar_con_datos(client, db):
                             follow_redirects=True)
 
     assert resp.status_code == 200
-    assert b"2026-08-28" in resp.data
-    assert b"2026-08-29" in resp.data
+    assert _fecha_cedido().encode() in resp.data
+    assert _fecha_aceptado().encode() in resp.data
 
 
 def test_parsear_propuesta_con_problemas_vuelve_a_formulario_vacio_con_aviso(client, db):
@@ -193,8 +203,8 @@ def test_consejos_muestra_la_pantalla_de_consejos(client, db):
 def _propuesta_aceptado_con_franja_desconocida():
     return PropuestaPublicacion(
         tipo="cambio",
-        cedidos=[{"fecha": "2026-08-28", "franja": "Mañana"}],
-        aceptados=[{"fecha": "2026-08-29", "franja": "Turno Fantasma"}],
+        cedidos=[{"fecha": _fecha_cedido(), "franja": "Mañana"}],
+        aceptados=[{"fecha": _fecha_aceptado(), "franja": "Turno Fantasma"}],
         campos_faltantes=[],
     )
 
@@ -207,7 +217,7 @@ def test_parsear_con_problema_solo_en_aceptados_prellena_los_cedidos(client, db)
                             follow_redirects=True)
 
     assert resp.status_code == 200
-    assert b"2026-08-28" in resp.data
+    assert _fecha_cedido().encode() in resp.data
 
 
 def test_parsear_parcial_incluye_enlace_a_consejos_de_redaccion(client, db):
