@@ -252,7 +252,7 @@ def test_calendario_muestra_oportunidad_a_3_para_sintetica(client, db):
         r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
     )
     datos_pubs = json.loads(m_pubs.group(1))
-    assert datos_pubs[str(sint.id)]["contraoferta"] == "Pide librar: 05/07 — Mañana (Cambio a 3)"
+    assert datos_pubs[str(sint.id)]["contraoferta"] == "Pide librar a cambio: 05/07 — Mañana (Cambio a 3)"
 
 
 def test_calendario_muestra_oportunidad_a_4_para_sintetica_con_intermedio(client, db):
@@ -290,7 +290,7 @@ def test_calendario_muestra_oportunidad_a_4_para_sintetica_con_intermedio(client
         r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
     )
     datos_pubs = json.loads(m_pubs.group(1))
-    assert datos_pubs[str(sint.id)]["contraoferta"] == "Pide librar: 05/07 — Mañana (Cambio a 4)"
+    assert datos_pubs[str(sint.id)]["contraoferta"] == "Pide librar a cambio: 05/07 — Mañana (Cambio a 4)"
 
 
 def test_calendario_respeta_preferencia_mostrar_oportunidad_3(client, db):

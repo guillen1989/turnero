@@ -261,11 +261,11 @@ def _texto_contraoferta(pub, modo):
     """
     if modo == "ofertas":
         turnos_contrario = pub.turnos_cedidos if not pub.es_sintetica else pub.turnos_aceptados
-        plantilla_con_datos = _("Pide librar: %(turnos)s")
+        plantilla_con_datos = _("Pide librar a cambio: %(turnos)s")
         texto_vacio = _("No pide nada a cambio")
     else:
         turnos_contrario = pub.turnos_aceptados if not pub.es_sintetica else pub.turnos_cedidos
-        plantilla_con_datos = _("Ofrece trabajar: %(turnos)s")
+        plantilla_con_datos = _("Ofrece trabajar a cambio: %(turnos)s")
         texto_vacio = _("No ofrece nada a cambio")
 
     abiertos = [t for t in turnos_contrario if t.estado == "abierto"]

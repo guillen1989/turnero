@@ -590,7 +590,7 @@ def test_contraoferta_en_ofertas_muestra_lo_que_pide_librar(db):
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([pub.id], "ofertas")[0]
 
-    assert resumen["contraoferta"] == "Pide librar: 01/07 — Tarde"
+    assert resumen["contraoferta"] == "Pide librar a cambio: 01/07 — Tarde"
 
 
 def test_contraoferta_en_peticiones_muestra_lo_que_ofrece_trabajar(db):
@@ -609,7 +609,7 @@ def test_contraoferta_en_peticiones_muestra_lo_que_ofrece_trabajar(db):
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([pub.id], "peticiones")[0]
 
-    assert resumen["contraoferta"] == "Ofrece trabajar: 03/07 — Mañana"
+    assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 03/07 — Mañana"
 
 
 def test_contraoferta_cualquier_franja(db):
@@ -625,7 +625,7 @@ def test_contraoferta_cualquier_franja(db):
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([pub.id], "peticiones")[0]
 
-    assert resumen["contraoferta"] == "Ofrece trabajar: 03/07 — Cualquiera"
+    assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 03/07 — Cualquiera"
 
 
 def test_contraoferta_ignora_turnos_ya_resueltos(db):
@@ -665,4 +665,4 @@ def test_contraoferta_sintetica_ofertas_pide_lo_que_su_turno_aceptado_representa
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([sint.id], "ofertas")[0]
 
-    assert resumen["contraoferta"] == "Pide librar: 05/07 — Tarde (Cambio a 3)"
+    assert resumen["contraoferta"] == "Pide librar a cambio: 05/07 — Tarde (Cambio a 3)"
