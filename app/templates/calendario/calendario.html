@@ -239,7 +239,15 @@
   var TEXTO_PUBLICAR_DIA = {{ _('Publicar un cambio para este día') | tojson }};
   var TEXTO_AMPLIAR = {{ _('Ampliar') | tojson }};
   var TEXTO_ENCOGER = {{ _('Encoger') | tojson }};
+  var MESES_ABREV = {{ MESES_ABREV | tojson }};
   var pila = [];
+
+  function _fechaCorta(fechaIso) {
+    var partes = fechaIso.split('-');
+    var dia = parseInt(partes[2], 10);
+    var mes = parseInt(partes[1], 10);
+    return dia + ' ' + MESES_ABREV[mes - 1] + '.';
+  }
 
   function _urlPublicarDia(fechaIso) {
     return PUBLICAR_URL + '?fecha=' + fechaIso + '&modo=' + MODO;
@@ -302,7 +310,9 @@
   window.calendarioAbrirFranja = function (fechaIso, clave, esRaiz) {
     var ids = (datosMes[fechaIso] || {})[clave] || [];
     pila.push({ tipo: 'franja', fecha: fechaIso, clave: clave });
-    var html = '<ul class="calendario-lista">';
+    var html = '<p class="calendario-panel-encabezado">' +
+      (nombreFranja[clave] || clave) + ' · ' + _fechaCorta(fechaIso) + '</p>';
+    html += '<ul class="calendario-lista">';
     ids.forEach(function (id) {
       var pub = datosPubs[id] || {};
       html += '<li><a class="calendario-lista-item" href="' + _urlPublicacion(fechaIso, clave, pub) + '">' +

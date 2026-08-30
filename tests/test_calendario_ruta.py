@@ -222,6 +222,21 @@ def test_calendario_panel_drilldown_tiene_boton_ampliar(client, db):
     assert b'id="calendario-panel-cuerpo"' in resp.data
 
 
+def test_calendario_lista_de_franja_incluye_encabezado_dia_y_franja(client, db):
+    """Ronda 3: la lista de cambios de una franja concreta (tanto si se llega
+    por botón como si un día con un solo turno salta directo) lleva un
+    encabezado que recuerda a qué día y franja se refiere, para no
+    confundirla con "todos los cambios"."""
+    u = _usuario("Ana", "ana@test.es")
+    _login(client, u.email)
+    resp = client.get("/calendario/")
+    assert resp.status_code == 200
+    html = resp.data.decode("utf-8")
+    assert "calendarioAbrirFranja" in html
+    assert "calendario-panel-encabezado" in html
+    assert "_fechaCorta" in html
+
+
 def test_calendario_titulo_corto_y_boton_ayuda(client, db):
     """Ronda 2, Paso 4: título corto + icono ⓘ con banner de ayuda inline."""
     u = _usuario("Ana", "ana@test.es")
