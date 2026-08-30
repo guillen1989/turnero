@@ -404,12 +404,22 @@ def novedades():
 
     publicaciones, hay_mas = _novedades_activas(current_user, unidad_activa)
 
+    grupo_id = unidad_activa.grupo_intercambio_id
+    franjas = (
+        FranjaHoraria.query
+        .filter_by(grupo_intercambio_id=grupo_id)
+        .order_by(FranjaHoraria.hora_inicio)
+        .all()
+    )
+
     return render_template(
         "main/novedades.html",
         publicaciones=publicaciones,
         hay_mas=hay_mas,
         unidad_activa=unidad_activa,
         unidades=unidades_de(current_user),
+        pub_js_data={pub.id: _pub_js_data(pub) for pub in publicaciones},
+        franjas_js=[{"id": f.id, "nombre": f.nombre} for f in franjas],
     )
 
 
@@ -427,6 +437,7 @@ def novedades_mas():
         "main/_novedades_items.html",
         publicaciones=publicaciones,
         hay_mas=hay_mas,
+        pub_js_data={pub.id: _pub_js_data(pub) for pub in publicaciones},
     )
 
 

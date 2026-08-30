@@ -167,3 +167,39 @@ def test_novedades_mas_sin_resultados_devuelve_vacio(client, db):
     resp = client.get("/novedades/mas?despues_id=999999")
     assert resp.status_code == 200
     assert resp.data.strip() == b""
+
+
+# ---------------------------------------------------------------------------
+# Botones "Me interesa" / "Contraoferta"
+# ---------------------------------------------------------------------------
+
+def test_novedades_muestra_boton_me_interesa_y_contraoferta_para_publicacion_ajena(client, db):
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+    pub = _publicar(u2, date(2026, 9, 5), date(2026, 9, 6))
+    resp = client.get("/novedades")
+    cuerpo = resp.data.decode("utf-8")
+    assert "abrirMeInteresaNovedad(this)" in cuerpo
+    assert f'data-pub-id="{pub.id}"' in cuerpo
+    assert f"/cambios/{pub.id}/contraoferta" in cuerpo
+
+
+def test_novedades_no_muestra_botones_para_publicacion_propia(client, db):
+    u1 = _usuario(email="u1@test.es")
+    _login(client, u1.email)
+    _publicar(u1, date(2026, 9, 1), date(2026, 9, 2))
+    resp = client.get("/novedades")
+    cuerpo = resp.data.decode("utf-8")
+    assert "abrirMeInteresaNovedad(this)" not in cuerpo
+
+
+def test_novedades_mas_incluye_boton_me_interesa_en_publicaciones_paginadas(client, db):
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+    pubs = [_publicar(u2, date(2026, 9, d), date(2026, 9, d + 1)) for d in range(1, 23, 2)]
+    client.get("/novedades")
+    resp_mas = client.get(f"/novedades/mas?despues_id={pubs[0].id}")
+    cuerpo = resp_mas.data.decode("utf-8")
+    assert "abrirMeInteresaNovedad(this)" in cuerpo

@@ -32,6 +32,18 @@
     <p class="novedad-mensaje">{{ pub.mensaje }}</p>
     {% endif %}
   </div>
+  {% if pub.usuario_id != current_user.id %}
+  <div class="pub-acciones pub-acciones--ajena">
+    <button type="button" class="btn btn-primary btn-sm"
+            data-pub-id="{{ pub.id }}"
+            data-pub='{{ pub_js_data[pub.id] | tojson }}'
+            onclick="abrirMeInteresaNovedad(this)">{{ _('Me interesa') }}</button>
+    {% if pub.tipo == 'cambio' %}
+    <a href="{{ url_for('publicaciones.contraoferta', pub_id=pub.id) }}"
+       class="btn btn-secondary btn-sm">{{ _('Contraoferta') }}</a>
+    {% endif %}
+  </div>
+  {% endif %}
 </li>
 {% endfor %}
 {% if hay_mas and publicaciones %}
