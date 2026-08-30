@@ -1,0 +1,39 @@
+{% for pub in publicaciones %}
+<li class="novedad-card" data-pub-id="{{ pub.id }}">
+  <div class="novedad-cabecera">
+    <span class="novedad-autor">{{ pub.usuario.nombre }}</span>
+    <span class="tipo-badge tipo-badge--{{ 'cambio-dia' if pub.tipo == 'cambio_dia' else pub.tipo }}">
+      {% if pub.tipo == 'regalo' %}{{ _('Regalo') }}
+      {% elif pub.tipo == 'peticion' %}{{ _('Petición') }}
+      {% elif pub.tipo == 'junte' %}{{ _('Junte de noches') }}
+      {% elif pub.tipo == 'cambio_dia' %}{{ _('Cambio en el día') }}
+      {% else %}{{ _('Cambio') }}{% endif %}
+    </span>
+    <span class="novedad-fecha">{{ pub.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</span>
+  </div>
+  <div class="novedad-cuerpo">
+    {% if pub.turnos_cedidos %}
+    <div class="novedad-linea">
+      <span class="novedad-etiqueta">{{ _('Cede') }}:</span>
+      {% for t in pub.turnos_cedidos %}
+      <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} {{ t.franja_horaria.nombre }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if pub.turnos_aceptados %}
+    <div class="novedad-linea">
+      <span class="novedad-etiqueta">{{ _('Busca') }}:</span>
+      {% for t in pub.turnos_aceptados %}
+      <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} {{ t.franja_horaria.nombre if t.franja_horaria else _('cualquier turno') }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if pub.mensaje %}
+    <p class="novedad-mensaje">{{ pub.mensaje }}</p>
+    {% endif %}
+  </div>
+</li>
+{% endfor %}
+{% if hay_mas and publicaciones %}
+<li class="novedad-sentinel" data-despues-id="{{ publicaciones[-1].id }}" aria-hidden="true"></li>
+{% endif %}

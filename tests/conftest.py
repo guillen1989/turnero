@@ -136,6 +136,7 @@ def _activar_feature_flags_de_test():
         "cambios_a_4",
         "multi_unidad",
         "asistente_parser",
+        "novedades",
     ):
         try:
             crear_flag(clave)

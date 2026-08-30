@@ -8,9 +8,10 @@ from sqlalchemy.orm import contains_eager, joinedload, selectinload
 from app.extensions import db
 from app.models import BusquedaGuardada, CompatibilidadPlanilla, FranjaHoraria, MatchCambio, MatchParticipacion, Notificacion, PublicacionCambio, TurnoCedido, TurnoAceptado, Unidad, Usuario
 from app.services.caducidad import caducar_publicaciones_expiradas
-from app.services.feature_flags import feature_activa_para_usuario_actual
+from app.services.feature_flags import feature_activa_para_usuario_actual, requiere_feature
 from app.services.junte_semanal import calcular_distribucion, resumen_textual
 from app.services.matches import calcular_trabajas
+from app.services.novedades import publicaciones_activas as _novedades_activas
 from app.services.unidad_usuario import categoria_en_unidad, unidad_activa_o_403, unidades_de
 
 bp = Blueprint("main", __name__)
@@ -391,6 +392,41 @@ def index():
         "main/index.html",
         demo_login_enabled=demo_login_enabled,
         demo_supervisora_login_enabled=demo_supervisora_login_enabled,
+    )
+
+
+@bp.get("/novedades")
+@login_required
+@requiere_feature("novedades")
+def novedades():
+    unidad_id = request.args.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+
+    publicaciones, hay_mas = _novedades_activas(current_user, unidad_activa)
+
+    return render_template(
+        "main/novedades.html",
+        publicaciones=publicaciones,
+        hay_mas=hay_mas,
+        unidad_activa=unidad_activa,
+        unidades=unidades_de(current_user),
+    )
+
+
+@bp.get("/novedades/mas")
+@login_required
+@requiere_feature("novedades")
+def novedades_mas():
+    unidad_id = request.args.get("unidad_id", type=int)
+    unidad_activa = unidad_activa_o_403(current_user, unidad_id)
+    despues_id = request.args.get("despues_id", type=int)
+
+    publicaciones, hay_mas = _novedades_activas(current_user, unidad_activa, despues_id=despues_id)
+
+    return render_template(
+        "main/_novedades_items.html",
+        publicaciones=publicaciones,
+        hay_mas=hay_mas,
     )
 
 

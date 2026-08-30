@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Novedades') }} — {{ _('Turnero') }}{% endblock %}
+
+{% block content %}
+<div class="novedades-page">
+  <div class="dashboard-header">
+    <h1>{{ _('Novedades') }}</h1>
+    {% if unidades|length > 1 %}
+    <label for="novedades-select-unidad" class="planilla-select-label">{{ _('Unidad') }}:</label>
+    <select id="novedades-select-unidad" class="planilla-select" aria-label="{{ _('Unidad') }}"
+            onchange="window.location.href=this.value">
+      {% for u in unidades %}
+        <option value="{{ url_for('main.novedades', unidad_id=u.id) }}"
+                {% if u.id == unidad_activa.id %}selected{% endif %}>{{ u.nombre }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </div>
+
+  {% if publicaciones %}
+  <ul class="novedades-list" id="novedades-list" data-unidad-id="{{ unidad_activa.id }}">
+    {% include "main/_novedades_items.html" %}
+  </ul>
+  {% else %}
+  <p class="empty-state">{{ _('No hay cambios activos publicados en tu unidad ahora mismo.') }}</p>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  var lista = document.getElementById('novedades-list');
+  if (!lista) return;
+  var unidadId = lista.dataset.unidadId;
+
+  function observarSentinela() {
+    var sentinela = lista.querySelector('.novedad-sentinel');
+    if (!sentinela) return;
+    var observador = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (entrada) {
+        if (!entrada.isIntersecting) return;
+        observador.disconnect();
+        cargarMas(sentinela);
+      });
+    });
+    observador.observe(sentinela);
+  }
+
+  function cargarMas(sentinela) {
+    var despuesId = sentinela.dataset.despuesId;
+    var url = '{{ url_for("main.novedades_mas") }}?despues_id=' + encodeURIComponent(despuesId) +
+      '&unidad_id=' + encodeURIComponent(unidadId);
+    fetch(url)
+      .then(function (resp) { return resp.text(); })
+      .then(function (html) {
+        sentinela.insertAdjacentHTML('beforebegin', html);
+        sentinela.remove();
+        observarSentinela();
+      });
+  }
+
+  observarSentinela();
+})();
+</script>
+{% endblock %}

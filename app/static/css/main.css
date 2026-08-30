@@ -1289,3 +1289,16 @@ tr.supervision-fila-resaltada .supervision-col-trabajador {
   border: 1px solid #f59e0b;
 }
 .btn-registrar-papel:hover { background: #fde68a; }
+
+/* Feed de novedades */
+.novedades-page { }
+.novedades-list { list-style: none; padding: 0; max-width: 640px; margin: 0 auto; }
+.novedad-card { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.6rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-left: 4px solid #005a9c; }
+.novedad-cabecera { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+.novedad-autor { font-weight: 700; font-size: 0.92rem; color: #1e293b; }
+.novedad-fecha { font-size: 0.75rem; color: #888; margin-left: auto; }
+.novedad-cuerpo { font-size: 0.88rem; }
+.novedad-linea { display: flex; align-items: center; flex-wrap: wrap; gap: 0.2rem; margin-bottom: 0.2rem; }
+.novedad-etiqueta { font-weight: 600; color: #475569; margin-right: 0.2rem; }
+.novedad-mensaje { margin: 0.3rem 0 0; color: #334155; font-style: italic; }
+.novedad-sentinel { height: 1px; }
