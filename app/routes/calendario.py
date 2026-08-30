@@ -95,7 +95,13 @@ def index():
 
     pub_ids = {pid for franjas_dia in calendario_mes.values() for ids in franjas_dia.values() for pid in ids}
     datos_publicaciones = {
-        str(p["id"]): {"usuario_nombre": p["usuario_nombre"], "contraoferta": p["contraoferta"]}
+        str(p["id"]): {
+            "usuario_nombre": p["usuario_nombre"],
+            "contraoferta": p["contraoferta"],
+            "contraoferta_prefijo": p["contraoferta_prefijo"],
+            "contraoferta_capsulas": p["contraoferta_capsulas"],
+            "contraoferta_sufijo": p["contraoferta_sufijo"],
+        }
         for p in resumen_publicaciones(pub_ids, modo)
     }
 

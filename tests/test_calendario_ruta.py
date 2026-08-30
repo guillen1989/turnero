@@ -200,6 +200,46 @@ def test_calendario_embebe_datos_para_drilldown(client, db):
     assert datos_pubs[str(pub.id)]["contraoferta"] == "No pide nada a cambio"
 
 
+def test_calendario_embebe_capsulas_de_contraoferta_para_pintarlas_por_separado(client, db):
+    """Cada opción de la contraoferta se pinta como su propia cápsula
+    coloreada (no un único texto), para distinguirlas cuando hay varias."""
+    import json
+    import re
+
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+
+    pub = PublicacionCambio(usuario_id=pedro.id, tipo="cambio")
+    db.session.add(pub)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 7, 1), franja_horaria_id=tarde.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
+    db.session.commit()
+
+    _login(client, ana.email)
+    resp = client.get("/calendario/?anyo=2026&mes=7&modo=ofertas")
+    assert resp.status_code == 200
+
+    html = resp.data.decode("utf-8")
+    m_pubs = re.search(
+        r'<script type="application/json" id="calendario-datos-publicaciones">(.*?)</script>', html, re.S
+    )
+    datos_pubs = json.loads(m_pubs.group(1))
+    pub_data = datos_pubs[str(pub.id)]
+
+    assert pub_data["contraoferta_prefijo"] == "Pide librar a cambio:"
+    assert pub_data["contraoferta_sufijo"] == ""
+    assert pub_data["contraoferta_capsulas"] == [{
+        "fecha": "1 jul.", "letra": "T",
+        "color": tarde.color or "#3B82F6", "color_texto": tarde.color_texto,
+    }]
+    assert "MAX_CAPSULAS_CONTRAOFERTA" in html
+    assert "turno-capsula" in html
+
+
 def test_calendario_muestra_boton_publicar_cambio_fijo(client, db):
     """Ronda 2, Paso 3: botón fijo de publicar bajo el calendario."""
     u = _usuario("Ana", "ana@test.es")

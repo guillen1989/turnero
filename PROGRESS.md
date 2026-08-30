@@ -29,6 +29,13 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] feat: en `/calendario`, cada opción que se pide/ofrece a cambio de un
+  turno se pinta como su propia cápsula coloreada con el color de su franja
+  (en vez de un único texto concatenado), y si hay más de 4 se recorta con
+  "…" al final. Nuevos campos `contraoferta_prefijo`/`contraoferta_capsulas`/
+  `contraoferta_sufijo` en `resumen_publicaciones` (`calendario_mercado.py`),
+  render en JS (`_contraofertaHtml`) en `calendario.html`. Tests en
+  `test_calendario_mercado.py`/`test_calendario_ruta.py`.
 - [x] feat: incorpora el asistente de parseo de mensajes de WhatsApp
   (desarrollado y probado en `staging`) mediante cherry-pick selectivo,
   dado que `main` y `staging` llevaban tiempo divergidos y un merge

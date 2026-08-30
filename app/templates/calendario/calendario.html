@@ -275,6 +275,35 @@
     return PUBLICAR_URL + '?fecha=' + fechaIso + '&modo=' + MODO;
   }
 
+  // Máximo de cápsulas visibles por publicación en la lista de una franja:
+  // por encima, se recorta y se añade "…" para que quede claro que hay más
+  // sin desbordar la fila.
+  var MAX_CAPSULAS_CONTRAOFERTA = 4;
+
+  function _capsulaHtml(turno) {
+    return '<span class="turno-capsula" style="background:' + turno.color + '; color:' +
+      (turno.color_texto || '#fff') + ';">' + turno.fecha + ' ' + turno.letra + '</span>';
+  }
+
+  function _contraofertaHtml(pub) {
+    var capsulas = pub.contraoferta_capsulas || [];
+    if (capsulas.length === 0) {
+      return (pub.contraoferta || '');
+    }
+    var visibles = capsulas.slice(0, MAX_CAPSULAS_CONTRAOFERTA);
+    var html = '<span class="calendario-lista-item-label">' + (pub.contraoferta_prefijo || '') + '</span>';
+    html += '<span class="calendario-lista-item-turnos">';
+    html += visibles.map(_capsulaHtml).join('');
+    if (capsulas.length > MAX_CAPSULAS_CONTRAOFERTA) {
+      html += '<span class="turno-capsula turno-capsula--mas">…</span>';
+    }
+    html += '</span>';
+    if (pub.contraoferta_sufijo) {
+      html += '<span class="calendario-lista-item-sufijo">' + pub.contraoferta_sufijo + '</span>';
+    }
+    return html;
+  }
+
   function mostrarVista(html, esRaiz) {
     document.getElementById('calendario-panel-cuerpo').innerHTML = html;
     document.getElementById('calendario-panel-volver').hidden = !!esRaiz;
@@ -327,7 +356,7 @@
     ids.forEach(function (id) {
       var pub = datosPubs[id] || {};
       html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirPublicacion(' + id + ')">' +
-        (pub.contraoferta || '') + '</button></li>';
+        _contraofertaHtml(pub) + '</button></li>';
     });
     html += '</ul>';
     mostrarVista(html, !!esRaiz);

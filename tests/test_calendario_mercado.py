@@ -527,6 +527,9 @@ def test_resumen_publicaciones_devuelve_usuario_y_tipo(db):
         "id": pub.id, "usuario_nombre": "Pedro", "tipo": "regalo",
         "es_sintetica": False, "es_sintetica_4": False,
         "contraoferta": "No pide nada a cambio",
+        "contraoferta_prefijo": "Pide librar a cambio:",
+        "contraoferta_capsulas": [],
+        "contraoferta_sufijo": "",
     }]
 
 
@@ -543,6 +546,9 @@ def test_resumen_publicaciones_indica_si_es_sintetica(db):
         "id": pub.id, "usuario_nombre": "Pedro", "tipo": "cambio",
         "es_sintetica": True, "es_sintetica_4": False,
         "contraoferta": "No ofrece nada a cambio (Cambio a 3)",
+        "contraoferta_prefijo": "Ofrece trabajar a cambio:",
+        "contraoferta_capsulas": [],
+        "contraoferta_sufijo": " (Cambio a 3)",
     }]
 
 
@@ -564,6 +570,9 @@ def test_resumen_publicaciones_indica_si_es_sintetica_de_cadena_4(db):
         "id": pub.id, "usuario_nombre": "Pedro", "tipo": "cambio",
         "es_sintetica": True, "es_sintetica_4": True,
         "contraoferta": "No ofrece nada a cambio (Cambio a 4)",
+        "contraoferta_prefijo": "Ofrece trabajar a cambio:",
+        "contraoferta_capsulas": [],
+        "contraoferta_sufijo": " (Cambio a 4)",
     }]
 
 
@@ -591,6 +600,10 @@ def test_contraoferta_en_ofertas_muestra_lo_que_pide_librar(db):
     resumen = resumen_publicaciones([pub.id], "ofertas")[0]
 
     assert resumen["contraoferta"] == "Pide librar a cambio: 1 jul. T"
+    assert resumen["contraoferta_capsulas"] == [{
+        "fecha": "1 jul.", "letra": "T",
+        "color": tarde.color or "#3B82F6", "color_texto": tarde.color_texto,
+    }]
 
 
 def test_contraoferta_en_peticiones_muestra_lo_que_ofrece_trabajar(db):
@@ -610,6 +623,10 @@ def test_contraoferta_en_peticiones_muestra_lo_que_ofrece_trabajar(db):
     resumen = resumen_publicaciones([pub.id], "peticiones")[0]
 
     assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 3 jul. M"
+    assert resumen["contraoferta_capsulas"] == [{
+        "fecha": "3 jul.", "letra": "M",
+        "color": manana.color or "#3B82F6", "color_texto": manana.color_texto,
+    }]
 
 
 def test_contraoferta_cualquier_franja(db):
@@ -626,6 +643,29 @@ def test_contraoferta_cualquier_franja(db):
     resumen = resumen_publicaciones([pub.id], "peticiones")[0]
 
     assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 3 jul. ?"
+    assert resumen["contraoferta_capsulas"] == [{
+        "fecha": "3 jul.", "letra": "?", "color": "#9333ea", "color_texto": "#ffffff",
+    }]
+
+
+def test_contraoferta_capsulas_ordenadas_por_fecha_una_por_turno(db):
+    """Con varios turnos a cambio, cada uno se representa como su propia
+    cápsula (ordenadas por fecha), no como un único texto concatenado."""
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+    pub = _pub(
+        pedro, "cambio",
+        cedidos=[(date(2026, 7, 10), tarde), (date(2026, 7, 1), manana)],
+        aceptados=[(date(2026, 7, 3), manana)],
+    )
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([pub.id], "ofertas")[0]
+
+    assert [c["fecha"] for c in resumen["contraoferta_capsulas"]] == ["1 jul.", "10 jul."]
+    assert [c["letra"] for c in resumen["contraoferta_capsulas"]] == ["M", "T"]
 
 
 def test_contraoferta_ignora_turnos_ya_resueltos(db):

@@ -267,6 +267,27 @@ def _describir_turnos(turnos):
     return ", ".join(partes)
 
 
+def _turnos_abiertos_contrario(pub, modo):
+    """Turnos abiertos que la publicación pide u ofrece a cambio del turno
+    mostrado en la celda del calendario (ver _texto_contraoferta)."""
+    if modo == "ofertas":
+        turnos_contrario = pub.turnos_cedidos if not pub.es_sintetica else pub.turnos_aceptados
+    else:
+        turnos_contrario = pub.turnos_aceptados if not pub.es_sintetica else pub.turnos_cedidos
+    return [t for t in turnos_contrario if t.estado == "abierto"]
+
+
+def _prefijo_contraoferta(modo):
+    return _("Pide librar a cambio:") if modo == "ofertas" else _("Ofrece trabajar a cambio:")
+
+
+def _sufijo_contraoferta(pub):
+    """' (Cambio a 3)'/' (Cambio a 4)' para sintéticas, '' en otro caso."""
+    if not pub.es_sintetica:
+        return ""
+    return _(" (Cambio a 4)") if pub.sintetica_pub_intermedio_id is not None else _(" (Cambio a 3)")
+
+
 def _texto_contraoferta(pub, modo):
     """Lo que la publicación pide u ofrece a cambio del turno mostrado en la
     celda del calendario.
@@ -277,23 +298,32 @@ def _texto_contraoferta(pub, modo):
     campo contrario: lo que se pide librar. En modo 'peticiones' es al
     revés: lo que se ofrece trabajar a cambio.
     """
-    if modo == "ofertas":
-        turnos_contrario = pub.turnos_cedidos if not pub.es_sintetica else pub.turnos_aceptados
-        plantilla_con_datos = _("Pide librar a cambio: %(turnos)s")
-        texto_vacio = _("No pide nada a cambio")
+    abiertos = _turnos_abiertos_contrario(pub, modo)
+    texto_vacio = _("No pide nada a cambio") if modo == "ofertas" else _("No ofrece nada a cambio")
+    texto = f"{_prefijo_contraoferta(modo)} {_describir_turnos(abiertos)}" if abiertos else texto_vacio
+    return texto + _sufijo_contraoferta(pub)
+
+
+def _capsula_turno(turno):
+    """Fecha corta + inicial de franja + color de esa franja (mismo color
+    que usan las bandas del calendario), para pintar cada opción de la
+    contraoferta como una cápsula independiente en vez de texto plano."""
+    cualquier = getattr(turno, "cualquier_franja", False)
+    mes = _MESES_ABREV[turno.fecha.month - 1]
+    if cualquier:
+        color, color_texto, letra = _COLOR_CUALQUIERA, _COLOR_TEXTO_CUALQUIERA, "?"
     else:
-        turnos_contrario = pub.turnos_aceptados if not pub.es_sintetica else pub.turnos_cedidos
-        plantilla_con_datos = _("Ofrece trabajar a cambio: %(turnos)s")
-        texto_vacio = _("No ofrece nada a cambio")
+        color = turno.franja_horaria.color or "#3B82F6"
+        color_texto = turno.franja_horaria.color_texto
+        letra = turno.franja_horaria.nombre[:1]
+    return {"fecha": f"{turno.fecha.day} {mes}.", "letra": letra, "color": color, "color_texto": color_texto}
 
-    abiertos = [t for t in turnos_contrario if t.estado == "abierto"]
-    texto = plantilla_con_datos % {"turnos": _describir_turnos(abiertos)} if abiertos else texto_vacio
 
-    if pub.es_sintetica:
-        sufijo = _(" (Cambio a 4)") if pub.sintetica_pub_intermedio_id is not None else _(" (Cambio a 3)")
-        texto += sufijo
-
-    return texto
+def _capsulas_contraoferta(pub, modo):
+    """Una cápsula por cada turno abierto de la contraoferta (ver
+    _texto_contraoferta), ordenadas por fecha, para el drill-down."""
+    abiertos = sorted(_turnos_abiertos_contrario(pub, modo), key=lambda t: t.fecha)
+    return [_capsula_turno(t) for t in abiertos]
 
 
 def resumen_publicaciones(pub_ids, modo):
@@ -321,6 +351,9 @@ def resumen_publicaciones(pub_ids, modo):
             "es_sintetica": p.es_sintetica,
             "es_sintetica_4": p.sintetica_pub_intermedio_id is not None,
             "contraoferta": _texto_contraoferta(p, modo),
+            "contraoferta_prefijo": _prefijo_contraoferta(modo),
+            "contraoferta_capsulas": _capsulas_contraoferta(p, modo),
+            "contraoferta_sufijo": _sufijo_contraoferta(p),
         }
         for p in pubs
     ]
