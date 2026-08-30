@@ -239,13 +239,19 @@ def preparar_celdas_mes(dias, calendario_mes, franjas):
     return celdas
 
 
+_MESES_ABREV = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+
+
 def _describir_turnos(turnos):
-    """"03/07 — Mañana, 05/07 — Cualquiera" para una lista de turnos abiertos,
-    ordenados por fecha."""
+    """"5 jul. M, 9 jul. ?" para una lista de turnos abiertos, ordenados por
+    fecha. Formato compacto (día + mes abreviado + inicial de franja): con
+    varias fechas a cambio, el formato largo anterior (dd/mm — Nombre)
+    apelotonaba el panel de drill-down."""
     partes = []
     for turno in sorted(turnos, key=lambda t: t.fecha):
-        nombre_franja = "Cualquiera" if getattr(turno, "cualquier_franja", False) else turno.franja_horaria.nombre
-        partes.append(f"{turno.fecha.strftime('%d/%m')} — {nombre_franja}")
+        letra = "?" if getattr(turno, "cualquier_franja", False) else turno.franja_horaria.nombre[:1]
+        mes = _MESES_ABREV[turno.fecha.month - 1]
+        partes.append(f"{turno.fecha.day} {mes}. {letra}")
     return ", ".join(partes)
 
 

@@ -590,7 +590,7 @@ def test_contraoferta_en_ofertas_muestra_lo_que_pide_librar(db):
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([pub.id], "ofertas")[0]
 
-    assert resumen["contraoferta"] == "Pide librar a cambio: 01/07 — Tarde"
+    assert resumen["contraoferta"] == "Pide librar a cambio: 1 jul. T"
 
 
 def test_contraoferta_en_peticiones_muestra_lo_que_ofrece_trabajar(db):
@@ -609,7 +609,7 @@ def test_contraoferta_en_peticiones_muestra_lo_que_ofrece_trabajar(db):
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([pub.id], "peticiones")[0]
 
-    assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 03/07 — Mañana"
+    assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 3 jul. M"
 
 
 def test_contraoferta_cualquier_franja(db):
@@ -625,7 +625,7 @@ def test_contraoferta_cualquier_franja(db):
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([pub.id], "peticiones")[0]
 
-    assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 03/07 — Cualquiera"
+    assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 3 jul. ?"
 
 
 def test_contraoferta_ignora_turnos_ya_resueltos(db):
@@ -665,4 +665,27 @@ def test_contraoferta_sintetica_ofertas_pide_lo_que_su_turno_aceptado_representa
     from app.services.calendario_mercado import resumen_publicaciones
     resumen = resumen_publicaciones([sint.id], "ofertas")[0]
 
-    assert resumen["contraoferta"] == "Pide librar a cambio: 05/07 — Tarde (Cambio a 3)"
+    assert resumen["contraoferta"] == "Pide librar a cambio: 5 jul. T (Cambio a 3)"
+
+
+def test_contraoferta_con_varios_turnos_usa_formato_compacto(db):
+    """Con varias fechas a cambio, el formato compacto (día + mes abreviado +
+    inicial de franja) evita que el texto se vuelva inmanejable en el panel."""
+    pedro = _usuario("Pedro", "pedro@test.es")
+    gid = pedro.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+    tarde = _franja(gid, "Tarde")
+    pub = _pub(
+        pedro, "cambio",
+        cedidos=[
+            (date(2026, 8, 5), tarde),
+            (date(2026, 8, 10), tarde),
+            (date(2026, 9, 4), tarde),
+        ],
+        aceptados=[(date(2026, 7, 3), manana)],
+    )
+
+    from app.services.calendario_mercado import resumen_publicaciones
+    resumen = resumen_publicaciones([pub.id], "ofertas")[0]
+
+    assert resumen["contraoferta"] == "Pide librar a cambio: 5 ago. T, 10 ago. T, 4 sep. T"

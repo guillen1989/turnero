@@ -201,11 +201,16 @@
   {% if modo != 'juntes' %}
   {# ── Panel de drill-down: día → franjas → publicaciones ── #}
   <div id="calendario-panel" class="calendario-panel" hidden role="dialog" aria-modal="true">
-    <div class="calendario-panel-contenido">
+    <div id="calendario-panel-contenido" class="calendario-panel-contenido">
       <div class="calendario-panel-cabecera">
-        <button type="button" id="calendario-panel-volver" class="btn btn-secondary btn-sm" hidden onclick="calendarioVolver()">
-          &#8249; {{ _('Volver') }}
-        </button>
+        <div class="calendario-panel-cabecera-izq">
+          <button type="button" id="calendario-panel-volver" class="btn btn-secondary btn-sm" hidden onclick="calendarioVolver()">
+            &#8249; {{ _('Volver') }}
+          </button>
+          <button type="button" id="calendario-panel-expandir" class="btn btn-secondary btn-sm" onclick="calendarioToggleExpandir()">
+            &#10530; {{ _('Ampliar') }}
+          </button>
+        </div>
         <button type="button" class="btn btn-secondary btn-sm" onclick="calendarioCerrarPanel()">
           {{ _('Cerrar') }}
         </button>
@@ -232,6 +237,8 @@
   var PUBLICAR_URL = {{ url_for('publicaciones.nueva') | tojson }};
   var TEXTO_SIN_OFERTAS = {{ _('Nadie ha publicado nada este día todavía.') | tojson }};
   var TEXTO_PUBLICAR_DIA = {{ _('Publicar un cambio para este día') | tojson }};
+  var TEXTO_AMPLIAR = {{ _('Ampliar') | tojson }};
+  var TEXTO_ENCOGER = {{ _('Encoger') | tojson }};
   var pila = [];
 
   function _urlPublicarDia(fechaIso) {
@@ -315,6 +322,14 @@
   window.calendarioCerrarPanel = function () {
     pila = [];
     document.getElementById('calendario-panel').hidden = true;
+    document.getElementById('calendario-panel-contenido').classList.remove('calendario-panel-contenido--expandido');
+    document.getElementById('calendario-panel-expandir').innerHTML = '&#10530; ' + TEXTO_AMPLIAR;
+  };
+
+  window.calendarioToggleExpandir = function () {
+    var contenido = document.getElementById('calendario-panel-contenido');
+    var expandido = contenido.classList.toggle('calendario-panel-contenido--expandido');
+    document.getElementById('calendario-panel-expandir').innerHTML = expandido ? ('&#10531; ' + TEXTO_ENCOGER) : ('&#10530; ' + TEXTO_AMPLIAR);
   };
 })();
 </script>
