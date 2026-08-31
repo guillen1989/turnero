@@ -103,6 +103,16 @@
     </div>
   </div>
 
+  <div class="calendario-modo-indicador calendario-modo-indicador--{{ modo }}">
+    {% if modo == 'ofertas' %}
+      {{ _('Viendo: Ofertas') }}
+    {% elif modo == 'peticiones' %}
+      {{ _('Viendo: Peticiones') }}
+    {% else %}
+      {{ _('Viendo: Juntes de noches') }}
+    {% endif %}
+  </div>
+
   {% if modo == 'juntes' %}
   {# ── Juntes de noches: un junte es un patrón semanal, no una noche suelta;
      se agrupa por semana y se despliega la distribución trabaja/libra de
