@@ -290,12 +290,13 @@
   // sin desbordar la fila.
   var MAX_CAPSULAS_CONTRAOFERTA = 4;
 
-  function _capsulaHtml(turno) {
+  function _capsulaHtml(turno, pubId) {
     return '<span class="turno-capsula" style="background:' + turno.color + '; color:' +
-      (turno.color_texto || '#fff') + ';">' + turno.fecha + ' ' + turno.letra + '</span>';
+      (turno.color_texto || '#fff') + ';" onclick="calendarioAbrirMeInteresaDesdeCapsula(event,' + pubId + ',' + turno.id + ')">' +
+      turno.fecha + ' ' + turno.letra + '</span>';
   }
 
-  function _contraofertaHtml(pub) {
+  function _contraofertaHtml(pub, pubId) {
     var capsulas = pub.contraoferta_capsulas || [];
     if (capsulas.length === 0) {
       return (pub.contraoferta || '');
@@ -303,7 +304,7 @@
     var visibles = capsulas.slice(0, MAX_CAPSULAS_CONTRAOFERTA);
     var html = '<span class="calendario-lista-item-label">' + (pub.contraoferta_prefijo || '') + '</span>';
     html += '<span class="calendario-lista-item-turnos">';
-    html += visibles.map(_capsulaHtml).join('');
+    html += visibles.map(function (turno) { return _capsulaHtml(turno, pubId); }).join('');
     if (capsulas.length > MAX_CAPSULAS_CONTRAOFERTA) {
       html += '<span class="turno-capsula turno-capsula--mas">…</span>';
     }
@@ -367,7 +368,7 @@
       var pub = datosPubs[id] || {};
       html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirPublicacion(' + id + ')">' +
         '<span class="calendario-lista-item-autor">' + (pub.usuario_nombre || '') + '</span>' +
-        _contraofertaHtml(pub) + '</button></li>';
+        _contraofertaHtml(pub, id) + '</button></li>';
     });
     html += '</ul>';
     mostrarVista(html, !!esRaiz);
@@ -493,8 +494,10 @@
     }
   }
 
-  window.calendarioAbrirMeInteresa = function (btn) {
-    var pub = JSON.parse(btn.dataset.pub);
+  // preseleccion (opcional): { tcId, taId } ya conocidos de antemano porque
+  // el usuario tocó directamente una cápsula-opción en vez de la ficha
+  // entera (ver calendarioAbrirMeInteresaDesdeCapsula).
+  function _abrirMeInteresaConPub(pub, preseleccion) {
     if (!pub) return;
 
     document.getElementById('mmi-form').action = '/cambios/' + pub.id + '/me-interesa';
@@ -518,14 +521,16 @@
                               '{{ _("Cambio con") }} ' + pub.autor;
 
     if (tipo === 'peticion') {
-      if (pub.cedidos.length === 1 && !pub.cedidos[0].cualquierFranja) {
+      if (!preseleccion && pub.cedidos.length === 1 && !pub.cedidos[0].cualquierFranja) {
         document.getElementById('mmi-tc').value = pub.cedidos[0].id;
         document.getElementById('mmi-form').submit();
         return;
       }
       desc.textContent = '{{ _("Selecciona el turno que te ofreces a cubrir:") }}';
       var s = _sel(pub.cedidos, 'mmi-tc', '{{ _("Turno a cubrir") }}');
-      document.getElementById('mmi-tc').value = pub.cedidos[0] ? pub.cedidos[0].id : '';
+      var tcId = (preseleccion && preseleccion.tcId) || (pub.cedidos[0] ? pub.cedidos[0].id : '');
+      document.getElementById('mmi-tc').value = tcId;
+      s.sel.value = tcId;
       selects.appendChild(s.wrap);
     } else if (tipo === 'cambio_dia') {
       var tc = pub.cedidos[0];
@@ -537,9 +542,13 @@
     } else {
       desc.textContent = '{{ _("Elige el turno que cubrirás y el que quieres que te cubran:") }}';
       var sc = _sel(pub.cedidos, 'mmi-tc', '{{ _("Turno de") }} ' + pub.autor + ' {{ _("que cubrirás") }}');
-      document.getElementById('mmi-tc').value = pub.cedidos[0] ? pub.cedidos[0].id : '';
+      var tcId2 = (preseleccion && preseleccion.tcId) || (pub.cedidos[0] ? pub.cedidos[0].id : '');
+      document.getElementById('mmi-tc').value = tcId2;
+      sc.sel.value = tcId2;
       var sa = _sel(pub.aceptados, 'mmi-ta', '{{ _("Turno tuyo que") }} ' + pub.autor + ' {{ _("te cubrirá") }}');
-      document.getElementById('mmi-ta').value = pub.aceptados[0] ? pub.aceptados[0].id : '';
+      var taId2 = (preseleccion && preseleccion.taId) || (pub.aceptados[0] ? pub.aceptados[0].id : '');
+      document.getElementById('mmi-ta').value = taId2;
+      sa.sel.value = taId2;
       selects.appendChild(sc.wrap);
       selects.appendChild(sa.wrap);
       selects.appendChild(_selectorFranja('{{ _("¿Qué turno quieres librar?") }}', 'mmi-fb'));
@@ -547,6 +556,60 @@
     }
 
     document.getElementById('modal-me-interesa').classList.remove('modal-hidden');
+  }
+
+  window.calendarioAbrirMeInteresa = function (btn) {
+    _abrirMeInteresaConPub(JSON.parse(btn.dataset.pub), null);
+  };
+
+  function _fechaIsoADdMmYyyy(fechaIso) {
+    var partes = fechaIso.split('-');
+    return partes[2] + '/' + partes[1] + '/' + partes[0];
+  }
+
+  // A partir del turno de la cápsula tocada (turnoId) y del contexto de
+  // fecha/franja del calendario ya elegido (contextoFranja), resuelve el
+  // turno_cedido y el turno_aceptado a preseleccionar en "Me interesa":
+  // uno es el propio turnoId de la cápsula, el otro se busca por
+  // coincidencia de fecha+franja en el lado contrario.
+  function _resolverPreseleccionDesdeCapsula(pub, turnoId, contextoFranja) {
+    var enCedidos = (pub.cedidos || []).some(function (t) { return t.id === turnoId; });
+    var destino = enCedidos ? (pub.aceptados || []) : (pub.cedidos || []);
+    var otroId = destino[0] ? destino[0].id : null;
+    if (contextoFranja) {
+      var fechaBuscada = _fechaIsoADdMmYyyy(contextoFranja.fecha);
+      var esCualquiera = contextoFranja.clave === {{ CUALQUIER_FRANJA | tojson }};
+      var nombreBuscado = nombreFranja[contextoFranja.clave];
+      var match = destino.filter(function (t) {
+        return t.fecha === fechaBuscada && (esCualquiera ? t.cualquierFranja : t.franja === nombreBuscado);
+      })[0];
+      if (match) otroId = match.id;
+    }
+    return enCedidos ? { tcId: turnoId, taId: otroId } : { tcId: otroId, taId: turnoId };
+  }
+
+  window.calendarioAbrirMeInteresaDesdeCapsula = function (event, pubId, turnoId) {
+    event.stopPropagation();
+    var contextoFranja = null;
+    for (var i = pila.length - 1; i >= 0; i--) {
+      if (pila[i].tipo === 'franja') { contextoFranja = pila[i]; break; }
+    }
+    fetch(PANEL_PUBLICACION_URL_BASE.replace(/\/0$/, '/' + pubId))
+      .then(function (resp) {
+        if (!resp.ok) throw new Error('http ' + resp.status);
+        return resp.text();
+      })
+      .then(function (html) {
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        var btnPub = tmp.querySelector('[data-pub]');
+        if (!btnPub) return;
+        var pub = JSON.parse(btnPub.dataset.pub);
+        var datosFranjas = tmp.querySelector('#calendario-panel-franjas');
+        _franjas = datosFranjas ? JSON.parse(datosFranjas.textContent) : [];
+        _abrirMeInteresaConPub(pub, _resolverPreseleccionDesdeCapsula(pub, turnoId, contextoFranja));
+      })
+      .catch(function () {});
   };
 })();
 </script>

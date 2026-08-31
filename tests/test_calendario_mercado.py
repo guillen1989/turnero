@@ -601,7 +601,7 @@ def test_contraoferta_en_ofertas_muestra_lo_que_pide_librar(db):
 
     assert resumen["contraoferta"] == "Pide librar a cambio: 1 jul. T"
     assert resumen["contraoferta_capsulas"] == [{
-        "fecha": "1 jul.", "letra": "T",
+        "id": pub.turnos_cedidos[0].id, "fecha": "1 jul.", "letra": "T",
         "color": tarde.color or "#3B82F6", "color_texto": tarde.color_texto,
     }]
 
@@ -624,7 +624,7 @@ def test_contraoferta_en_peticiones_muestra_lo_que_ofrece_trabajar(db):
 
     assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 3 jul. M"
     assert resumen["contraoferta_capsulas"] == [{
-        "fecha": "3 jul.", "letra": "M",
+        "id": pub.turnos_aceptados[0].id, "fecha": "3 jul.", "letra": "M",
         "color": manana.color or "#3B82F6", "color_texto": manana.color_texto,
     }]
 
@@ -644,7 +644,8 @@ def test_contraoferta_cualquier_franja(db):
 
     assert resumen["contraoferta"] == "Ofrece trabajar a cambio: 3 jul. ?"
     assert resumen["contraoferta_capsulas"] == [{
-        "fecha": "3 jul.", "letra": "?", "color": "#9333ea", "color_texto": "#ffffff",
+        "id": pub.turnos_aceptados[0].id, "fecha": "3 jul.", "letra": "?",
+        "color": "#9333ea", "color_texto": "#ffffff",
     }]
 
 
