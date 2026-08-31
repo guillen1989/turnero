@@ -1,3 +1,10 @@
+{% macro _capsula(t) %}
+{% if t.franja_horaria %}
+<span class="turno-capsula" style="background:{{ t.franja_horaria.color or '#3B82F6' }}; color:{{ t.franja_horaria.color_texto }};">{{ t.fecha.strftime('%d/%m/%Y') }} {{ t.franja_horaria.nombre }}</span>
+{% else %}
+<span class="turno-capsula" style="background:#9333ea; color:#ffffff;">{{ t.fecha.strftime('%d/%m/%Y') }} {{ _('cualquier turno') }}</span>
+{% endif %}
+{% endmacro %}
 {% for pub in publicaciones %}
 <li class="novedad-card" data-pub-id="{{ pub.id }}">
   <div class="novedad-cabecera">
@@ -16,7 +23,7 @@
     <div class="novedad-linea">
       <span class="novedad-etiqueta">{{ _('Cede') }}:</span>
       {% for t in pub.turnos_cedidos %}
-      <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} {{ t.franja_horaria.nombre }}</span>
+      {{ _capsula(t) }}
       {% endfor %}
     </div>
     {% endif %}
@@ -24,7 +31,7 @@
     <div class="novedad-linea">
       <span class="novedad-etiqueta">{{ _('Busca') }}:</span>
       {% for t in pub.turnos_aceptados %}
-      <span class="turno">{{ t.fecha.strftime('%d/%m/%Y') }} {{ t.franja_horaria.nombre if t.franja_horaria else _('cualquier turno') }}</span>
+      {{ _capsula(t) }}
       {% endfor %}
     </div>
     {% endif %}
