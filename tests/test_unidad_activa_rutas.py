@@ -180,6 +180,31 @@ class TestCambiosUnidadActiva:
         assert resp.status_code == 200
         assert str(pub_aux.id).encode() in resp.data
 
+    def test_publicacion_con_turno_aceptado_cualquier_franja_no_rompe_render(self, client, db):
+        """Un turno aceptado con cualquier_franja=True no tiene franja_horaria;
+        la plantilla debe mostrar 'Cualquier turno' en vez de fallar."""
+        usuario, uci, urgencias, cat_enf, _ = _crear_usuario_con_dos_unidades(client, db)
+
+        otro = registrar_usuario("Otro", "otro@test.es", "password123", "H-Principal", "UCI", cat_enf.id)
+
+        hoy = date.today()
+        pub = PublicacionCambio(usuario=otro, tipo="cambio", estado="abierta")
+        db.session.add(pub)
+        db.session.commit()
+        franja = FranjaHoraria.query.filter_by(
+            grupo_intercambio_id=otro.unidad.grupo_intercambio_id,
+        ).first()
+        tc = TurnoCedido(fecha=date(hoy.year, hoy.month, 1), publicacion=pub,
+                         franja_horaria=franja, estado="abierto")
+        ta = TurnoAceptado(fecha=date(hoy.year, hoy.month, 2), publicacion=pub,
+                           franja_horaria=None, cualquier_franja=True)
+        db.session.add_all([tc, ta])
+        db.session.commit()
+
+        resp = client.get(url_for("main.cambios", unidad_id=uci.id, tab="resultados"))
+        assert resp.status_code == 200
+        assert str(pub.id).encode() in resp.data
+
 
 class TestPlanillaUnidadActiva:
     def test_sin_unidad_id_usa_la_principal(self, client, db):

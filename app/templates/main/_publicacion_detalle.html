@@ -16,7 +16,7 @@
 <div class="turnos-aceptados">
   <strong>{{ _('Se ofrece a trabajar (sin recibir nada):') }}</strong>
   {% for turno in pub.turnos_aceptados %}
-  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + turno.franja_horaria.nombre) }}
+  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + (_('Cualquier turno') if turno.cualquier_franja else turno.franja_horaria.nombre)) }}
   {% endfor %}
 </div>
 
@@ -25,7 +25,7 @@
 <div class="turnos-cedidos">
   <strong>{{ _('Quiere librar (sin ofrecer nada):') }}</strong>
   {% for turno in pub.turnos_cedidos %}
-  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + turno.franja_horaria.nombre) }}
+  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + (_('Cualquier turno') if turno.cualquier_franja else turno.franja_horaria.nombre)) }}
   {% endfor %}
 </div>
 
@@ -60,10 +60,10 @@
   {% if con_enlaces %}
   <a class="turno turno--link"
      href="{{ url_for('main.cambios', mes=tc.fecha.month, dia=tc.fecha.day, tipo='cambio_dia') }}">
-    {{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ ta.franja_horaria.nombre }}
+    {{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ _('Cualquier turno') if ta.cualquier_franja else ta.franja_horaria.nombre }}
   </a>
   {% else %}
-  <span class="turno">{{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ ta.franja_horaria.nombre }}</span>
+  <span class="turno">{{ tc.fecha.strftime('%d/%m/%Y') }} — {{ tc.franja_horaria.nombre }} → {{ _('Cualquier turno') if ta.cualquier_franja else ta.franja_horaria.nombre }}</span>
   {% endif %}
 </div>
 
@@ -93,13 +93,13 @@
 <div class="turnos-aceptados">
   <strong>{% if pub_b_user %}{{ _('Le trabajarías a %(nombre)s:', nombre=pub_b_user.nombre) }}{% else %}{{ _('Trabajarías:') }}{% endif %}</strong>
   {% for turno in pub.turnos_aceptados %}
-  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + turno.franja_horaria.nombre) }}
+  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + (_('Cualquier turno') if turno.cualquier_franja else turno.franja_horaria.nombre)) }}
   {% endfor %}
 </div>
 <div class="turnos-cedidos">
   <strong>{% if pub_a_user %}{{ _('A cambio, %(nombre)s te trabajaría:', nombre=pub_a_user.nombre) }}{% else %}{{ _('Librarías:') }}{% endif %}</strong>
   {% for turno in pub.turnos_cedidos %}
-  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + turno.franja_horaria.nombre) }}
+  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + (_('Cualquier turno') if turno.cualquier_franja else turno.franja_horaria.nombre)) }}
   {% endfor %}
 </div>
 {% if pub_intermedio_user and mostrar_resto_cadena %}
@@ -108,7 +108,7 @@
 <div class="turnos-cedidos">
   <strong>{{ _('%(a)s libra, %(b)s se lo trabaja:', a=pub_a_user.nombre, b=pub_intermedio_user.nombre) }}</strong>
   {% for turno in si.pub_a.turnos_cedidos if turno.estado == 'abierto' %}
-  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + turno.franja_horaria.nombre) }}
+  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + (_('Cualquier turno') if turno.cualquier_franja else turno.franja_horaria.nombre)) }}
   {% endfor %}
 </div>
 {% endif %}
@@ -116,7 +116,7 @@
 <div class="turnos-cedidos">
   <strong>{{ _('%(b)s libra, %(c)s se lo trabaja:', b=pub_intermedio_user.nombre, c=pub_b_user.nombre if pub_b_user else '?') }}</strong>
   {% for turno in si.pub_intermedio.turnos_cedidos if turno.estado == 'abierto' %}
-  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + turno.franja_horaria.nombre) }}
+  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + (_('Cualquier turno') if turno.cualquier_franja else turno.franja_horaria.nombre)) }}
   {% endfor %}
 </div>
 {% endif %}
@@ -127,13 +127,13 @@
 <div class="turnos-cedidos">
   <strong>{{ _('Quiere librar:') }}</strong>
   {% for turno in pub.turnos_cedidos %}
-  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + turno.franja_horaria.nombre) }}
+  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + (_('Cualquier turno') if turno.cualquier_franja else turno.franja_horaria.nombre)) }}
   {% endfor %}
 </div>
 <div class="turnos-aceptados">
   <strong>{{ _('Se ofrece a trabajar:') }}</strong>
   {% for turno in pub.turnos_aceptados %}
-  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + turno.franja_horaria.nombre) }}
+  {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + (_('Cualquier turno') if turno.cualquier_franja else turno.franja_horaria.nombre)) }}
   {% endfor %}
 </div>
 {% endif %}
