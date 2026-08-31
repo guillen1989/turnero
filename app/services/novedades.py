@@ -1,5 +1,5 @@
 """Consulta del feed de novedades: cambios activos publicados en la unidad
-del usuario, en orden FIFO (más antiguo primero), paginados por cursor."""
+del usuario, en orden LIFO (más reciente primero), paginados por cursor."""
 from sqlalchemy.orm import contains_eager, selectinload
 
 from app.models import PublicacionCambio, TurnoAceptado, TurnoCedido, Unidad, Usuario
@@ -16,7 +16,8 @@ def publicaciones_activas(usuario, unidad, despues_id=None, limite=TAMANO_LOTE):
     Visibilidad: misma categoría profesional y mismo grupo de intercambio
     que `usuario` en `unidad` (igual regla que /cambios), sin excluir las
     publicaciones propias, ya que el feed replica ver "todo lo publicado".
-    Orden FIFO por fecha de creación (id, que crece con ella).
+    Orden LIFO por fecha de creación (id, que crece con ella): las más
+    recientes primero, y el cursor avanza hacia las más antiguas.
     """
     categoria = categoria_en_unidad(usuario, unidad)
     grupo_id = unidad.grupo_intercambio_id
@@ -39,11 +40,11 @@ def publicaciones_activas(usuario, unidad, despues_id=None, limite=TAMANO_LOTE):
         )
     )
     if despues_id is not None:
-        q = q.filter(PublicacionCambio.id > despues_id)
+        q = q.filter(PublicacionCambio.id < despues_id)
 
     publicaciones = (
         q.distinct()
-        .order_by(PublicacionCambio.id.asc())
+        .order_by(PublicacionCambio.id.desc())
         .limit(limite + 1)
         .all()
     )

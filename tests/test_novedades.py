@@ -131,10 +131,10 @@ def test_novedades_no_muestra_publicaciones_cerradas_o_caducadas(client, db):
 
 
 # ---------------------------------------------------------------------------
-# Orden FIFO y paginación
+# Orden LIFO y paginación
 # ---------------------------------------------------------------------------
 
-def test_novedades_orden_fifo_mas_antigua_primero(client, db):
+def test_novedades_orden_lifo_mas_reciente_primero(client, db):
     u1 = _usuario(email="u1@test.es")
     u2 = _usuario(email="u2@test.es")
     _login(client, u1.email)
@@ -142,7 +142,7 @@ def test_novedades_orden_fifo_mas_antigua_primero(client, db):
     _publicar(u2, date(2026, 9, 10), date(2026, 9, 11))
     resp = client.get("/novedades")
     cuerpo = resp.data.decode("utf-8")
-    assert cuerpo.index("01/09/2026") < cuerpo.index("10/09/2026")
+    assert cuerpo.index("10/09/2026") < cuerpo.index("01/09/2026")
 
 
 def test_novedades_mas_devuelve_siguiente_lote(client, db):
@@ -155,10 +155,9 @@ def test_novedades_mas_devuelve_siguiente_lote(client, db):
     resp = client.get("/novedades")
     assert resp.status_code == 200
 
-    ultimo_id = pubs[19].id if len(pubs) > 20 else pubs[-1].id
-    resp_mas = client.get(f"/novedades/mas?despues_id={pubs[0].id}")
+    resp_mas = client.get(f"/novedades/mas?despues_id={pubs[-1].id}")
     assert resp_mas.status_code == 200
-    assert b"05/09/2026" in resp_mas.data or b"03/09/2026" in resp_mas.data
+    assert b"01/09/2026" in resp_mas.data
 
 
 def test_novedades_mas_sin_resultados_devuelve_vacio(client, db):
@@ -200,6 +199,6 @@ def test_novedades_mas_incluye_boton_me_interesa_en_publicaciones_paginadas(clie
     _login(client, u1.email)
     pubs = [_publicar(u2, date(2026, 9, d), date(2026, 9, d + 1)) for d in range(1, 23, 2)]
     client.get("/novedades")
-    resp_mas = client.get(f"/novedades/mas?despues_id={pubs[0].id}")
+    resp_mas = client.get(f"/novedades/mas?despues_id={pubs[-1].id}")
     cuerpo = resp_mas.data.decode("utf-8")
     assert "abrirMeInteresaNovedad(this)" in cuerpo
