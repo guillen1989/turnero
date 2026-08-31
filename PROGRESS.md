@@ -29,6 +29,18 @@ Tras fusionar `staging` en `main` hay dos frentes activos en paralelo:
   Detalle completo en `docs/FEAT_FLAG_MULTI.md`.
 
 ## Últimos pasos completados
+- [x] feat: en `/calendario`, tocar directamente una cápsula-opción de la
+  contraoferta salta directo a "Me interesa" con ambos lados preseleccionados
+  (el turno de la cápsula + el turno de la celda de calendario ya elegida),
+  en vez de abrir primero la ficha completa (que sigue abriéndose si se toca
+  el resto de la ficha). Cambios: `_capsula_turno` ahora incluye `id` del
+  turno (`calendario_mercado.py`); en `calendario.html` se extrae
+  `_abrirMeInteresaConPub(pub, preseleccion)` reutilizable, y
+  `calendarioAbrirMeInteresaDesdeCapsula` resuelve el turno complementario
+  buscando por fecha+franja en `pub.cedidos`/`pub.aceptados` (obtenidos vía
+  el fragmento `/calendario/publicacion/<id>` ya existente), sin duplicar la
+  lógica de inversión `modo`/`es_sintetica`. Tests actualizados en
+  `test_calendario_mercado.py`/`test_calendario_ruta.py`.
 - [x] feat: en `/calendario`, cada opción que se pide/ofrece a cambio de un
   turno se pinta como su propia cápsula coloreada con el color de su franja
   (en vez de un único texto concatenado), y si hay más de 4 se recorta con

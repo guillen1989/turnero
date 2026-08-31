@@ -215,7 +215,8 @@ def test_calendario_embebe_capsulas_de_contraoferta_para_pintarlas_por_separado(
     pub = PublicacionCambio(usuario_id=pedro.id, tipo="cambio")
     db.session.add(pub)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 7, 1), franja_horaria_id=tarde.id))
+    turno_cedido = TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 7, 1), franja_horaria_id=tarde.id)
+    db.session.add(turno_cedido)
     db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
     db.session.commit()
 
@@ -233,11 +234,12 @@ def test_calendario_embebe_capsulas_de_contraoferta_para_pintarlas_por_separado(
     assert pub_data["contraoferta_prefijo"] == "Pide librar a cambio:"
     assert pub_data["contraoferta_sufijo"] == ""
     assert pub_data["contraoferta_capsulas"] == [{
-        "fecha": "1 jul.", "letra": "T",
+        "id": turno_cedido.id, "fecha": "1 jul.", "letra": "T",
         "color": tarde.color or "#3B82F6", "color_texto": tarde.color_texto,
     }]
     assert "MAX_CAPSULAS_CONTRAOFERTA" in html
     assert "turno-capsula" in html
+    assert "calendarioAbrirMeInteresaDesdeCapsula(event," in html
 
 
 def test_calendario_muestra_boton_publicar_cambio_fijo(client, db):

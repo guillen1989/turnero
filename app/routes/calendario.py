@@ -113,6 +113,7 @@ def index():
         color_franja_por_clave=color_franja_por_clave,
         datos_mes=datos_mes,
         datos_publicaciones=datos_publicaciones,
+        CUALQUIER_FRANJA=CUALQUIER_FRANJA,
         **contexto,
     )
 

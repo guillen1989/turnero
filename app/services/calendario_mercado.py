@@ -316,7 +316,10 @@ def _capsula_turno(turno):
         color = turno.franja_horaria.color or "#3B82F6"
         color_texto = turno.franja_horaria.color_texto
         letra = turno.franja_horaria.nombre[:1]
-    return {"fecha": f"{turno.fecha.day} {mes}.", "letra": letra, "color": color, "color_texto": color_texto}
+    return {
+        "id": turno.id, "fecha": f"{turno.fecha.day} {mes}.", "letra": letra,
+        "color": color, "color_texto": color_texto,
+    }
 
 
 def _capsulas_contraoferta(pub, modo):
