@@ -24,3 +24,9 @@ htmlcov/
 turnero_prod_*
 backups/
 planilla_ilog.xls
+
+# android-twa: solo se versionan twa-manifest.json y RELEASE.md (ver android-twa/RELEASE.md).
+# El resto (keystore, apk/aab firmados, proyecto Gradle generado) nunca debe versionarse.
+android-twa/*
+!android-twa/twa-manifest.json
+!android-twa/RELEASE.md
