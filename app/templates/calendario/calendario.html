@@ -356,6 +356,7 @@
     ids.forEach(function (id) {
       var pub = datosPubs[id] || {};
       html += '<li><button type="button" class="calendario-lista-item" onclick="calendarioAbrirPublicacion(' + id + ')">' +
+        '<span class="calendario-lista-item-autor">' + (pub.usuario_nombre || '') + '</span>' +
         _contraofertaHtml(pub) + '</button></li>';
     });
     html += '</ul>';
