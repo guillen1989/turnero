@@ -491,3 +491,47 @@ def test_guardar_preferencias_oportunidades(client, db):
     db.session.refresh(ana)
     assert ana.mostrar_oportunidad_3 is True
     assert ana.mostrar_oportunidad_4 is True
+
+
+def test_panel_publicacion_oculta_resto_de_la_cadena_para_sintetica_4(client, db):
+    """En el panel de drill-down del calendario, una oportunidad a 4 solo
+    muestra el turno propio (le trabajarías / a cambio te trabajarían), sin
+    el detalle de los demás tramos de la cadena (pub_a → intermedio)."""
+    ana = _usuario("Ana", "ana@test.es")
+    pedro = _usuario("Pedro", "pedro@test.es")
+    maria = _usuario("María", "maria@test.es")
+    luis = _usuario("Luis", "luis@test.es")
+    gid = ana.unidad.grupo_intercambio_id
+    manana = _franja(gid, "Mañana")
+
+    # pub_a: Pedro libra un turno que Luis (intermedio) le trabajaría.
+    pub_a = PublicacionCambio(usuario_id=pedro.id, tipo="cambio", unidad_id=ana.unidad_id)
+    db.session.add(pub_a)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub_a.id, fecha=date(2026, 7, 1), franja_horaria_id=manana.id))
+
+    # intermedio: Luis libra un turno (el tramo real B->C ya cerrado).
+    intermedio = PublicacionCambio(usuario_id=luis.id, tipo="cambio", unidad_id=ana.unidad_id)
+    db.session.add(intermedio)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=intermedio.id, fecha=date(2026, 7, 2), franja_horaria_id=manana.id))
+
+    # sintética: María le trabajaría a Ana, Pedro le trabajaría a María.
+    sint = PublicacionCambio(
+        usuario_id=maria.id, tipo="cambio", es_sintetica=True, unidad_id=ana.unidad_id,
+        sintetica_pub_a_id=pub_a.id, sintetica_pub_intermedio_id=intermedio.id,
+    )
+    db.session.add(sint)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=sint.id, fecha=date(2026, 7, 3), franja_horaria_id=manana.id))
+    db.session.add(TurnoAceptado(publicacion_id=sint.id, fecha=date(2026, 7, 5), franja_horaria_id=manana.id))
+    db.session.commit()
+
+    _login(client, ana.email)
+    resp = client.get(f"/calendario/publicacion/{sint.id}")
+    assert resp.status_code == 200
+
+    html = resp.data.decode("utf-8")
+    assert "Resto de la cadena" not in html
+    assert "Luis" not in html
+    assert "Le trabajarías a María" in html or "María" in html

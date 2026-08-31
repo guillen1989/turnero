@@ -8,7 +8,9 @@
     <span class="pub-autor-nombre">{{ pub.usuario.nombre }}</span>
     <span class="pub-fecha-creacion">{{ pub.fecha_creacion.strftime('%d/%m/%Y') }}</span>
   </div>
-  {{ cuerpo(pub, ji, si, False) }}
+  {# En el calendario, al usuario solo le interesa su propio turno dado/recibido:
+     se oculta el resto de la cadena (los demás tramos entre otros participantes). #}
+  {{ cuerpo(pub, ji, si, False, False) }}
   <div class="pub-acciones pub-acciones--ajena">
     <button type="button" class="btn btn-primary btn-sm"
             data-pub-id="{{ pub.id }}"

@@ -1,7 +1,7 @@
 {# Cuerpo de una publicación (badge + turnos + mensaje), compartido entre la
    lista de Buscar cambios (con enlaces de filtrado) y el panel de drill-down
    del calendario (sin ellos, para no navegar fuera del popup). #}
-{% macro cuerpo(pub, ji=none, si=none, con_enlaces=True) %}
+{% macro cuerpo(pub, ji=none, si=none, con_enlaces=True, mostrar_resto_cadena=True) %}
 {% macro _turno(turno, texto, franja=True) %}
 {% if con_enlaces %}
 <a class="turno turno--link"
@@ -102,7 +102,7 @@
   {{ _turno(turno, turno.fecha.strftime('%d/%m/%Y') + ' — ' + turno.franja_horaria.nombre) }}
   {% endfor %}
 </div>
-{% if pub_intermedio_user %}
+{% if pub_intermedio_user and mostrar_resto_cadena %}
 <p class="sintetica-nota">{{ _('Resto de la cadena, para que puedas explicársela a los demás:') }}</p>
 {% if si.pub_a %}
 <div class="turnos-cedidos">
