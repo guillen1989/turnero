@@ -206,3 +206,68 @@ migrar a gevent/asgiref.
   contra `staging`, commit `3660895`).
 - `app/services/email.py`: `enviar_email_async()` — patrón de hilo daemon, igual que
   `enviar_push()` en `app/push/sender.py`.
+
+---
+
+## Incidente: `SystemExit: 1` en publicar/editar publicación (2026-09-09)
+
+### Síntoma
+Sentry/Glitchtip reportaron un breadcrumb de ~90 queries repetidas (conteo de notificaciones,
+inserts en `publicacion_cambio`, `turno_cedido`/`turno_aceptado`, `notificacion`) a lo largo de
+~14s (17:47:11–17:47:25 UTC), terminando en `Type: error, Category: exception, Data:
+{"type":"SystemExit","value":"1"}`.
+
+`grep` sobre `app/` confirma que no existe ningún `sys.exit`/`raise SystemExit` en el código de
+la aplicación — `SystemExit(1)` es característico de gunicorn terminando un worker (redeploy con
+SIGTERM, o timeout de request), no una excepción lanzada por Flask/SQLAlchemy.
+
+### Causa raíz (confirmada por lectura de código, sin poder acceder a datos reales de staging
+porque la sesión de Railway CLI había caducado en el momento de la investigación)
+
+`_candidatas_base` (`app/matching/service.py:87-111`) no aplica ningún límite ni filtro temporal:
+devuelve **todas** las `PublicacionCambio` activas (`abierta`/`parcialmente_resuelta`) de la
+misma categoría y grupo de intercambio que el usuario que publica/edita, sin cota de tamaño.
+
+Esa lista (`candidatas`) alimenta tanto los matches reales (directo, cadena-3, cadena-4 —
+comparaciones en memoria, baratas, sin escritura en BD) como `buscar_avisos_interes_para`, que
+por cada candidata con solapamiento unilateral llama a `procesar_aviso_y_sintetica` →
+`crear_pub_sintetica`. Esta última **sí escribe en BD**: crea una `PublicacionCambio` sintética
+completa más sus `TurnoCedido`/`TurnoAceptado` y `Notificacion` asociadas (~10-15 queries por
+candidata), sin batching y sin commit propio (el commit lo hace el caller, al final de la
+petición HTTP).
+
+**Conclusión:** el coste de publicar/editar una publicación crece linealmente, sin techo, con el
+número de publicaciones activas acumuladas en ese grupo de intercambio + categoría. Si en un
+momento dado ese grupo/categoría acumula una cantidad inusual de publicaciones activas (pico de
+actividad, publicaciones no resueltas que se van acumulando, etc.), la petición síncrona puede
+volverse lo bastante lenta como para que gunicorn mate el worker (timeout de 60s en
+`gunicorn.conf.py`, o un redeploy coincidiendo con la petición).
+
+No se ha podido confirmar con datos reales de staging (nº exacto de candidatas ese día) porque
+la sesión de `railway` CLI había expirado; si se repite el incidente, consultar
+`DATABASE_PUBLIC_URL` (ver memoria `reference_staging_db_access`) para contar publicaciones
+activas por `grupo_intercambio_id`+`categoria_id` en el momento del incidente y confirmar si el
+volumen fue anómalo.
+
+### Opciones de solución evaluadas (no implementadas — decisión pendiente)
+
+1. **Acotar solo el bucle de avisos/sintéticas** (no las candidatas de matching real): limitar
+   cuántas candidatas con solapamiento unilateral llegan a disparar
+   `procesar_aviso_y_sintetica` en una misma tanda (p. ej. las N más recientes). Los matches
+   reales (directo/cadena-3/cadena-4) seguirían operando siempre sobre el conjunto completo, sin
+   límite — nadie pierde una oportunidad de match real, solo se difieren avisos informativos
+   secundarios. Cambio pequeño, sin infraestructura nueva.
+2. **Mover la generación de avisos/sintéticas a un job en background**, fuera del ciclo
+   request/response. Es la solución más correcta a largo plazo, pero el proyecto no tiene hoy
+   ninguna infraestructura de cola (no hay Celery/RQ/Redis en `requirements.txt`, el `Procfile`
+   solo define el proceso web con gunicorn) — requeriría añadir un broker, un worker process y un
+   nuevo servicio en Railway. Elegida por el usuario como dirección preferida a futuro, pero
+   pospuesta por su tamaño (2026-09-09).
+3. **Aumentar el timeout de gunicorn**: mitigación rápida sin tocar el motor de matching, pero no
+   soluciona el fondo (solo retrasa el punto en que un pico de candidatas vuelve a fallar).
+
+### Estado
+Documentado, sin implementar. Si vuelve a ocurrir, revisar primero si el volumen de
+publicaciones activas sin resolver en algún grupo/categoría se ha vuelto estructuralmente alto
+(¿faltan mecanismos de caducidad/limpieza de publicaciones antiguas?) antes de decidir entre las
+opciones de arriba.
