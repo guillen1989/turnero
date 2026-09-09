@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import calendar as _calendar
 from datetime import date
+from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models.planilla import TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla, NotaDia, SalienteDia, TIPOS_ESTADO_DIA
 
@@ -12,9 +13,23 @@ def _get_o_crear_planilla_mes(usuario, anyo, mes, unidad=None):
     planilla = PlanillaMes.query.filter_by(
         usuario_id=usuario.id, anyo=anyo, mes=mes, unidad_id=unidad.id,
     ).first()
-    if planilla is None:
-        planilla = PlanillaMes(usuario=usuario, anyo=anyo, mes=mes, publicada=False, unidad_id=unidad.id)
-        db.session.add(planilla)
+    if planilla is not None:
+        return planilla
+
+    # Dos peticiones concurrentes pueden hacer ambas el SELECT de arriba
+    # antes de que ninguna inserte (p. ej. dos pestañas guardando el mismo
+    # mes a la vez). El savepoint aísla el fallo de unicidad para poder
+    # recuperar la fila que ganó la carrera sin perder el resto de cambios
+    # pendientes en la sesión.
+    try:
+        with db.session.begin_nested():
+            planilla = PlanillaMes(usuario=usuario, anyo=anyo, mes=mes, publicada=False, unidad_id=unidad.id)
+            db.session.add(planilla)
+            db.session.flush()
+    except IntegrityError:
+        planilla = PlanillaMes.query.filter_by(
+            usuario_id=usuario.id, anyo=anyo, mes=mes, unidad_id=unidad.id,
+        ).first()
     return planilla
 
 

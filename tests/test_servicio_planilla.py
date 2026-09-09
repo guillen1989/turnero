@@ -1,4 +1,6 @@
 from datetime import date, time
+import psycopg2
+from sqlalchemy import event
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria,
     Usuario, TurnoPlanilla, PlanillaMes,
@@ -6,7 +8,7 @@ from app.models import (
 from app.services.planilla import (
     añadir_turno, eliminar_turno, publicar_mes, despublicar_mes,
     tiene_mes_publicado, get_turnos_mes, establecer_estado_dia, limpiar_dia,
-    franjas_trabajadas_en_fecha,
+    franjas_trabajadas_en_fecha, _get_o_crear_planilla_mes,
 )
 
 
@@ -64,6 +66,47 @@ def test_añadir_turno_doblaje(db):
     añadir_turno(usuario, date(2026, 7, 1), franja_m.id)
     añadir_turno(usuario, date(2026, 7, 1), franja_t.id)
     assert TurnoPlanilla.query.filter_by(usuario_id=usuario.id, fecha=date(2026, 7, 1)).count() == 2
+
+
+def test_get_o_crear_planilla_mes_recupera_de_insercion_concurrente(db):
+    """Dos peticiones que llegan a la vez pueden hacer ambas el SELECT
+    antes de que ninguna haga el INSERT. Simula la carrera insertando la
+    fila rival, desde una conexión completamente aparte, justo cuando la
+    sesión ORM va a volcar sus cambios (evento before_flush)."""
+    usuario, franja_m, _ = _setup(db, "carrera@test.es")
+
+    url = db.engine.url
+    conexion_rival = psycopg2.connect(
+        dbname=url.database, user=url.username, password=url.password,
+        host=url.host, port=url.port,
+    )
+    conexion_rival.autocommit = True
+
+    ya_inyectada = []
+
+    def _inyectar_fila_rival(session, flush_context, instances):
+        if ya_inyectada:
+            return
+        ya_inyectada.append(True)
+        with conexion_rival.cursor() as cur:
+            cur.execute(
+                "INSERT INTO planilla_mes (usuario_id, anyo, mes, publicada, unidad_id) "
+                "VALUES (%s, %s, %s, false, %s)",
+                (usuario.id, 2026, 7, usuario.unidad_id),
+            )
+
+    event.listen(db.session, "before_flush", _inyectar_fila_rival)
+    try:
+        planilla = _get_o_crear_planilla_mes(usuario, 2026, 7, usuario.unidad)
+        db.session.commit()
+    finally:
+        event.remove(db.session, "before_flush", _inyectar_fila_rival)
+        conexion_rival.close()
+
+    assert planilla is not None
+    assert PlanillaMes.query.filter_by(
+        usuario_id=usuario.id, anyo=2026, mes=7, unidad_id=usuario.unidad_id,
+    ).count() == 1
 
 
 def test_eliminar_turno_existente(db):
