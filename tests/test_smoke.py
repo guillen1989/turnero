@@ -3,7 +3,7 @@ Smoke tests — verifican que las rutas críticas responden con HTTP 2xx/3xx.
 Si alguno falla con 500, una ruta básica está rota.
 No verifican comportamiento de negocio; solo que la ruta no explota.
 """
-from datetime import date
+from datetime import date, timedelta
 from unittest.mock import patch
 
 from app.extensions import db
@@ -130,9 +130,9 @@ def test_smoke_publicar_post(client, db):
     _login(client, u.email)
     franja = _franja(u.unidad.grupo_intercambio_id)
     resp = client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": (date.today() + timedelta(days=1)).isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": (date.today() + timedelta(days=2)).isoformat(),
         "franja_aceptada_0": franja.id,
     }, follow_redirects=False)
     assert resp.status_code == 302

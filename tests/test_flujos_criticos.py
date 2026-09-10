@@ -3,7 +3,7 @@ Tests de flujos críticos — ejercen secuencias de operaciones sobre múltiples
 modelos, simulando el recorrido real del usuario. Detectan bugs de integridad
 referencial o de estado inconsistente que los tests unitarios no ven.
 """
-from datetime import date
+from datetime import date, timedelta
 from unittest.mock import patch
 
 from app.extensions import db
@@ -57,10 +57,12 @@ def test_flujo_publicar_y_eliminar_via_http(client, db):
     _login(client, "a@test.es")
     franja = _franja(u.unidad.grupo_intercambio_id)
 
+    manana = (date.today() + timedelta(days=1)).isoformat()
+    pasado_manana = (date.today() + timedelta(days=2)).isoformat()
     resp = client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": manana,
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": pasado_manana,
         "franja_aceptada_0": franja.id,
     }, follow_redirects=False)
     assert resp.status_code == 302

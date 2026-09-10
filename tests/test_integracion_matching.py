@@ -1,5 +1,5 @@
 """Tests de integración: crear MatchCambio y Notificaciones al publicar (Fase 4, paso 3)."""
-from datetime import date, time
+from datetime import date, time, timedelta
 from unittest.mock import patch
 
 from app.extensions import db
@@ -29,6 +29,11 @@ def _franja(grupo_id, nombre="Mañana"):
     return FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id, nombre=nombre).first()
 
 
+_DIA1 = date.today() + timedelta(days=1)
+_DIA2 = _DIA1 + timedelta(days=1)
+_DIA3 = _DIA1 + timedelta(days=2)
+
+
 # --- Tests: creación de MatchCambio tras publicar ---
 
 def test_publicar_crea_match_cuando_hay_coincidencia(client, db):
@@ -41,16 +46,16 @@ def test_publicar_crea_match_cuando_hay_coincidencia(client, db):
     pub_pedro = PublicacionCambio(usuario_id=pedro.id)
     db.session.add(pub_pedro)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
-    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=_DIA2, franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=_DIA1, franja_horaria_id=franja.id))
     db.session.commit()
 
     # Ana publica → debe disparar el matching y crear un MatchCambio
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": franja.id,
     })
 
@@ -69,15 +74,15 @@ def test_publicar_crea_dos_participaciones(client, db):
     pub_pedro = PublicacionCambio(usuario_id=pedro.id)
     db.session.add(pub_pedro)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
-    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=_DIA2, franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=_DIA1, franja_horaria_id=franja.id))
     db.session.commit()
 
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": franja.id,
     })
 
@@ -93,15 +98,15 @@ def test_publicar_crea_notificacion_para_cada_usuario(client, db):
     pub_pedro = PublicacionCambio(usuario_id=pedro.id)
     db.session.add(pub_pedro)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
-    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=_DIA2, franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=_DIA1, franja_horaria_id=franja.id))
     db.session.commit()
 
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": franja.id,
     })
 
@@ -121,15 +126,15 @@ def test_publicar_sin_coincidencia_no_crea_match(client, db):
     pub_pedro = PublicacionCambio(usuario_id=pedro.id)
     db.session.add(pub_pedro)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 3), franja_horaria_id=franja2.id))
-    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=_DIA3, franja_horaria_id=franja2.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=_DIA1, franja_horaria_id=franja.id))
     db.session.commit()
 
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
     client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": franja.id,
     })
 
@@ -150,8 +155,8 @@ def test_publicar_calcula_candidatas_una_sola_vez(client, db):
     pub_pedro = PublicacionCambio(usuario_id=pedro.id)
     db.session.add(pub_pedro)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
-    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub_pedro.id, fecha=_DIA2, franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_pedro.id, fecha=_DIA1, franja_horaria_id=franja.id))
     db.session.commit()
 
     client.post("/auth/login", data={"email": "ana@test.es", "password": "password123"})
@@ -159,9 +164,9 @@ def test_publicar_calcula_candidatas_una_sola_vez(client, db):
         matching_service, "_candidatas_base", wraps=matching_service._candidatas_base
     ) as candidatas_spy:
         client.post("/publicar", data={
-            "fecha_cedida_0": "2026-09-01",
+            "fecha_cedida_0": _DIA1.isoformat(),
             "franja_cedida_0": franja.id,
-            "fecha_aceptada_0": "2026-09-02",
+            "fecha_aceptada_0": _DIA2.isoformat(),
             "franja_aceptada_0": franja.id,
         })
         assert candidatas_spy.call_count == 1

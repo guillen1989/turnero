@@ -648,6 +648,9 @@ def test_dashboard_tabs_muestran_conteos(client, db):
 
 def test_dashboard_confirmada_muestra_match_de_pub_parcialmente_resuelta(client, db):
     """La pestaña Confirmados muestra matches confirmado_total aunque la pub sea parcialmente_resuelta."""
+    dia1 = date.today() + timedelta(days=30)
+    dia2 = dia1 + timedelta(days=1)
+    dia10 = dia1 + timedelta(days=9)
     insertar_categorias_semilla()
     cat = Categoria.query.filter_by(nombre="Enfermería").first()
     ana = registrar_usuario("Ana", "ana@test.es", "password123", "H1", "Urgencias", cat.id)
@@ -659,15 +662,15 @@ def test_dashboard_confirmada_muestra_match_de_pub_parcialmente_resuelta(client,
     db.session.add(pub_ana)
     db.session.flush()
     tc_ana_resuelto = TurnoCedido(
-        publicacion_id=pub_ana.id, fecha=date(2026, 9, 1),
+        publicacion_id=pub_ana.id, fecha=dia1,
         franja_horaria_id=franja.id, estado="resuelto",
     )
     tc_ana_abierto = TurnoCedido(
-        publicacion_id=pub_ana.id, fecha=date(2026, 9, 2),
+        publicacion_id=pub_ana.id, fecha=dia2,
         franja_horaria_id=franja.id,
     )
     ta_ana_resuelto = TurnoAceptado(
-        publicacion_id=pub_ana.id, fecha=date(2026, 9, 10),
+        publicacion_id=pub_ana.id, fecha=dia10,
         franja_horaria_id=franja.id, estado="resuelto",
     )
     db.session.add_all([tc_ana_resuelto, tc_ana_abierto, ta_ana_resuelto])
@@ -676,7 +679,7 @@ def test_dashboard_confirmada_muestra_match_de_pub_parcialmente_resuelta(client,
     db.session.add(pub_pedro)
     db.session.flush()
     tc_pedro = TurnoCedido(
-        publicacion_id=pub_pedro.id, fecha=date(2026, 9, 10),
+        publicacion_id=pub_pedro.id, fecha=dia10,
         franja_horaria_id=franja.id, estado="resuelto",
     )
     db.session.add(tc_pedro)
@@ -702,7 +705,7 @@ def test_dashboard_confirmada_muestra_match_de_pub_parcialmente_resuelta(client,
     # La tarjeta del match confirmado debe aparecer con el nombre del partner
     assert "Pedro" in html
     # y la fecha del turno que Ana cedió en ese match
-    assert "01/09/2026" in html
+    assert dia1.strftime("%d/%m/%Y") in html
 
 
 def test_dashboard_activos_oculta_turnos_resueltos(client, db):

@@ -1,5 +1,12 @@
 """Tests de la funcionalidad de contraoferta (backlog ítem 2)."""
-from datetime import date
+from datetime import date, timedelta
+
+_HOY = date.today()
+_DIA3 = _HOY + timedelta(days=30)
+_DIA4 = _DIA3 + timedelta(days=1)
+_DIA8 = _DIA3 + timedelta(days=5)
+_DIA10 = _DIA3 + timedelta(days=7)
+_DIA11 = _DIA3 + timedelta(days=8)
 
 from app.extensions import db
 from app.models import (
@@ -57,7 +64,7 @@ def test_contraoferta_requiere_login(client, db):
     """La ruta GET /cambios/<id>/contraoferta redirige al login si no está autenticado."""
     ana = _usuario("Ana", "ana@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub = _pub_cambio(ana, franja, _DIA3, _DIA4)
     resp = client.get(f"/cambios/{pub.id}/contraoferta", follow_redirects=False)
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
@@ -68,7 +75,7 @@ def test_contraoferta_solo_tipo_cambio(client, db):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub_regalo = _pub_regalo(ana, franja, date(2026, 9, 3))
+    pub_regalo = _pub_regalo(ana, franja, _DIA3)
 
     _login(client, "pedro@test.es")
     resp = client.get(f"/cambios/{pub_regalo.id}/contraoferta")
@@ -79,7 +86,7 @@ def test_contraoferta_no_disponible_propia_publicacion(client, db):
     """El autor no puede hacer contraoferta a su propia publicación."""
     ana = _usuario("Ana", "ana@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub = _pub_cambio(ana, franja, _DIA3, _DIA4)
 
     _login(client, "ana@test.es")
     resp = client.get(f"/cambios/{pub.id}/contraoferta", follow_redirects=True)
@@ -92,7 +99,7 @@ def test_contraoferta_get_muestra_formulario(client, db):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub = _pub_cambio(ana, franja, _DIA3, _DIA4)
 
     _login(client, "pedro@test.es")
     resp = client.get(f"/cambios/{pub.id}/contraoferta")
@@ -108,15 +115,15 @@ def test_contraoferta_crea_publicacion_cambio(client, db):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub_ana = _pub_cambio(ana, franja, _DIA3, _DIA4)
 
     _login(client, "pedro@test.es")
     resp = client.post(
         f"/cambios/{pub_ana.id}/contraoferta",
         data={
-            "fecha_cedida_0": "2026-09-04",
+            "fecha_cedida_0": _DIA4.isoformat(),
             "franja_cedida_0": str(franja.id),
-            "fecha_aceptada_0": "2026-09-08",
+            "fecha_aceptada_0": _DIA8.isoformat(),
             "franja_aceptada_0": str(franja.id),
             "mensaje": "¿Te parece bien?",
         },
@@ -128,7 +135,7 @@ def test_contraoferta_crea_publicacion_cambio(client, db):
     ).first()
     assert pub_pedro is not None
     assert len(pub_pedro.turnos_cedidos) == 1
-    assert pub_pedro.turnos_cedidos[0].fecha == date(2026, 9, 4)
+    assert pub_pedro.turnos_cedidos[0].fecha == _DIA4
     assert pub_pedro.mensaje == "¿Te parece bien?"
 
 
@@ -137,15 +144,15 @@ def test_contraoferta_notifica_a_autor_original(client, db):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub_ana = _pub_cambio(ana, franja, _DIA3, _DIA4)
 
     _login(client, "pedro@test.es")
     client.post(
         f"/cambios/{pub_ana.id}/contraoferta",
         data={
-            "fecha_cedida_0": "2026-09-04",
+            "fecha_cedida_0": _DIA4.isoformat(),
             "franja_cedida_0": str(franja.id),
-            "fecha_aceptada_0": "2026-09-08",
+            "fecha_aceptada_0": _DIA8.isoformat(),
             "franja_aceptada_0": str(franja.id),
             "mensaje": "Propuesta",
         },
@@ -160,16 +167,16 @@ def test_contraoferta_rechaza_sin_solapamiento(client, db):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub_ana = _pub_cambio(ana, franja, _DIA3, _DIA4)
 
     _login(client, "pedro@test.es")
     resp = client.post(
         f"/cambios/{pub_ana.id}/contraoferta",
         data={
             # día 10 y día 11 — ninguno coincide con los de Ana (3 y 4)
-            "fecha_cedida_0": "2026-09-10",
+            "fecha_cedida_0": _DIA10.isoformat(),
             "franja_cedida_0": str(franja.id),
-            "fecha_aceptada_0": "2026-09-11",
+            "fecha_aceptada_0": _DIA11.isoformat(),
             "franja_aceptada_0": str(franja.id),
             "mensaje": "Propuesta",
         },
@@ -186,16 +193,16 @@ def test_contraoferta_acepta_solapamiento_con_aceptado_original(client, db):
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
     franja_tarde = _franja_tarde(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub_ana = _pub_cambio(ana, franja, _DIA3, _DIA4)
 
     _login(client, "pedro@test.es")
     # Pedro cede 04/09 (coincide con el aceptado de Ana), acepta 08/09 (no coincide con nada)
     resp = client.post(
         f"/cambios/{pub_ana.id}/contraoferta",
         data={
-            "fecha_cedida_0": "2026-09-04",
+            "fecha_cedida_0": _DIA4.isoformat(),
             "franja_cedida_0": str(franja.id),
-            "fecha_aceptada_0": "2026-09-08",
+            "fecha_aceptada_0": _DIA8.isoformat(),
             "franja_aceptada_0": str(franja_tarde.id),
             "mensaje": "¿Aceptas?",
         },
@@ -214,16 +221,16 @@ def test_contraoferta_acepta_solapamiento_con_cedido_original(client, db):
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
     franja_tarde = _franja_tarde(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub_ana = _pub_cambio(ana, franja, _DIA3, _DIA4)
 
     _login(client, "pedro@test.es")
     # Pedro acepta 03/09 (coincide con el cedido de Ana), cede 08/09
     resp = client.post(
         f"/cambios/{pub_ana.id}/contraoferta",
         data={
-            "fecha_cedida_0": "2026-09-08",
+            "fecha_cedida_0": _DIA8.isoformat(),
             "franja_cedida_0": str(franja_tarde.id),
-            "fecha_aceptada_0": "2026-09-03",
+            "fecha_aceptada_0": _DIA3.isoformat(),
             "franja_aceptada_0": str(franja.id),
             "mensaje": "Puedo cubrirte",
         },
@@ -239,16 +246,16 @@ def test_contraoferta_crea_match_si_es_bilateral(client, db):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub_ana = _pub_cambio(ana, franja, _DIA3, _DIA4)
 
     _login(client, "pedro@test.es")
     # Pedro cede 03/09 (= cedido de Ana) y acepta 04/09 (= aceptado de Ana) → match bilateral
     client.post(
         f"/cambios/{pub_ana.id}/contraoferta",
         data={
-            "fecha_cedida_0": "2026-09-04",
+            "fecha_cedida_0": _DIA4.isoformat(),
             "franja_cedida_0": str(franja.id),
-            "fecha_aceptada_0": "2026-09-03",
+            "fecha_aceptada_0": _DIA3.isoformat(),
             "franja_aceptada_0": str(franja.id),
             "mensaje": "¿Hacemos el cambio?",
         },
@@ -261,13 +268,13 @@ def test_contraoferta_rechaza_sin_cedidos(client, db):
     ana = _usuario("Ana", "ana@test.es")
     pedro = _usuario("Pedro", "pedro@test.es")
     franja = _franja(ana.unidad.grupo_intercambio_id)
-    pub_ana = _pub_cambio(ana, franja, date(2026, 9, 3), date(2026, 9, 4))
+    pub_ana = _pub_cambio(ana, franja, _DIA3, _DIA4)
 
     _login(client, "pedro@test.es")
     resp = client.post(
         f"/cambios/{pub_ana.id}/contraoferta",
         data={
-            "fecha_aceptada_0": "2026-09-04",
+            "fecha_aceptada_0": _DIA4.isoformat(),
             "franja_aceptada_0": str(franja.id),
             "mensaje": "Sin cedidos",
         },
