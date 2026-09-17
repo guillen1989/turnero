@@ -105,8 +105,19 @@ def establecer_estado_dia(usuario, fecha: date, tipo: str, unidad=None, commit=T
         usuario_id=usuario.id, fecha=fecha, unidad_id=unidad.id,
     ).first()
     if estado is None:
-        estado = EstadoDiaPlanilla(usuario=usuario, fecha=fecha, tipo=tipo, unidad_id=unidad.id)
-        db.session.add(estado)
+        # Dos peticiones concurrentes pueden hacer ambas el SELECT de arriba
+        # antes de que ninguna inserte. El savepoint aísla el fallo de
+        # unicidad para poder recuperar la fila que ganó la carrera.
+        try:
+            with db.session.begin_nested():
+                estado = EstadoDiaPlanilla(usuario=usuario, fecha=fecha, tipo=tipo, unidad_id=unidad.id)
+                db.session.add(estado)
+                db.session.flush()
+        except IntegrityError:
+            estado = EstadoDiaPlanilla.query.filter_by(
+                usuario_id=usuario.id, fecha=fecha, unidad_id=unidad.id,
+            ).first()
+            estado.tipo = tipo
     else:
         estado.tipo = tipo
 
