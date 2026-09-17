@@ -2,7 +2,7 @@
 ejecutadas al editar una publicación con varias candidatas activas, algunas
 con turnos aceptados `cualquier_franja=True` (el caso que dispara
 `_franjas_del_grupo` sin caché en `app/matching/service.py`)."""
-from datetime import date
+from datetime import date, timedelta
 
 from app.extensions import db
 from app.models import (
@@ -10,6 +10,12 @@ from app.models import (
     insertar_categorias_semilla,
 )
 from app.services.registro import registrar_usuario
+
+
+def _dia(n):
+    """Fecha futura relativa a hoy, para que las pruebas no dependan de que
+    la fecha de ejecución de CI sea anterior a fechas hardcodeadas."""
+    return date.today() + timedelta(days=n)
 
 
 def _usuario_n(n):
@@ -63,22 +69,22 @@ def test_editar_publicacion_selects_crecen_con_candidatas_cualquier_franja(clien
     pub = PublicacionCambio(usuario_id=autor.id, unidad_id=autor.unidad_id, tipo="cambio")
     db.session.add(pub)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
-    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=_dia(1), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=_dia(2), franja_horaria_id=franja.id))
     db.session.commit()
 
-    _candidata_cualquier_franja(_usuario_n(1), franja, date(2026, 9, 3), date(2026, 9, 4))
+    _candidata_cualquier_franja(_usuario_n(1), franja, _dia(3), _dia(4))
 
     _login(client, autor.email)
     selects_con_1_candidata = _editar_y_contar(
-        client, query_counter, pub.id, franja.id, date(2026, 9, 10), date(2026, 9, 11)
+        client, query_counter, pub.id, franja.id, _dia(10), _dia(11)
     )
 
     for n in range(2, 7):
-        _candidata_cualquier_franja(_usuario_n(n), franja, date(2026, 9, 3), date(2026, 9, 4))
+        _candidata_cualquier_franja(_usuario_n(n), franja, _dia(3), _dia(4))
 
     selects_con_6_candidatas = _editar_y_contar(
-        client, query_counter, pub.id, franja.id, date(2026, 9, 20), date(2026, 9, 21)
+        client, query_counter, pub.id, franja.id, _dia(20), _dia(21)
     )
 
     print(
@@ -124,22 +130,22 @@ def test_editar_publicacion_selects_crecen_poco_con_candidatas_tras_paso_3(clien
     pub = PublicacionCambio(usuario_id=autor.id, unidad_id=autor.unidad_id, tipo="cambio")
     db.session.add(pub)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
-    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=_dia(1), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=_dia(2), franja_horaria_id=franja.id))
     db.session.commit()
 
-    _candidata_cualquier_franja(_usuario_n(1), franja, date(2026, 9, 3), date(2026, 9, 4))
+    _candidata_cualquier_franja(_usuario_n(1), franja, _dia(3), _dia(4))
 
     _login(client, autor.email)
     selects_con_1_candidata = _editar_y_contar(
-        client, query_counter, pub.id, franja.id, date(2026, 9, 10), date(2026, 9, 11)
+        client, query_counter, pub.id, franja.id, _dia(10), _dia(11)
     )
 
     for n in range(2, 7):
-        _candidata_cualquier_franja(_usuario_n(n), franja, date(2026, 9, 3), date(2026, 9, 4))
+        _candidata_cualquier_franja(_usuario_n(n), franja, _dia(3), _dia(4))
 
     selects_con_6_candidatas = _editar_y_contar(
-        client, query_counter, pub.id, franja.id, date(2026, 9, 20), date(2026, 9, 21)
+        client, query_counter, pub.id, franja.id, _dia(20), _dia(21)
     )
 
     crecimiento_por_candidata = (selects_con_6_candidatas - selects_con_1_candidata) / 5
@@ -164,21 +170,21 @@ def test_medir_tiempo_editar_con_15_candidatas(client, db, query_counter):
     pub = PublicacionCambio(usuario_id=autor.id, unidad_id=autor.unidad_id, tipo="cambio")
     db.session.add(pub)
     db.session.flush()
-    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=date(2026, 9, 1), franja_horaria_id=franja.id))
-    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=date(2026, 9, 2), franja_horaria_id=franja.id))
+    db.session.add(TurnoCedido(publicacion_id=pub.id, fecha=_dia(1), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub.id, fecha=_dia(2), franja_horaria_id=franja.id))
     db.session.commit()
 
     for n in range(1, 16):
-        _candidata_cualquier_franja(_usuario_n(n), franja, date(2026, 9, 3), date(2026, 9, 4))
+        _candidata_cualquier_franja(_usuario_n(n), franja, _dia(3), _dia(4))
 
     _login(client, autor.email)
 
     query_counter.selects = 0
     inicio = time.perf_counter()
     client.post(f"/publicaciones/{pub.id}/editar", data={
-        "fecha_cedida_0": date(2026, 9, 20).isoformat(),
+        "fecha_cedida_0": _dia(20).isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": date(2026, 9, 21).isoformat(),
+        "fecha_aceptada_0": _dia(21).isoformat(),
         "franja_aceptada_0": franja.id,
     })
     duracion = time.perf_counter() - inicio
