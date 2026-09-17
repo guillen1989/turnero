@@ -1,5 +1,5 @@
 """Tests de integración para publicar un cambio de turno (Fase 3, paso 2)."""
-from datetime import date, time
+from datetime import date, time, timedelta
 
 from app.models import (
     Categoria,
@@ -25,6 +25,11 @@ def _usuario_y_login(client, email="test@test.es"):
 
 def _franja(db, grupo_id, nombre="Mañana"):
     return FranjaHoraria.query.filter_by(grupo_intercambio_id=grupo_id, nombre=nombre).first()
+
+
+_DIA1 = date.today() + timedelta(days=1)
+_DIA2 = _DIA1 + timedelta(days=1)
+_DIA3 = _DIA1 + timedelta(days=2)
 
 
 # --- Acceso a la ruta ---
@@ -99,9 +104,9 @@ def test_publicar_crea_publicacion_en_bd(client, db):
     usuario = _usuario_y_login(client)
     franja = _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": franja.id,
     }, follow_redirects=False)
     assert resp.status_code == 302
@@ -112,28 +117,28 @@ def test_publicar_crea_turnos_cedidos_y_aceptados(client, db):
     usuario = _usuario_y_login(client)
     franja = _franja(db, usuario.unidad.grupo_intercambio_id)
     client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": franja.id,
     })
     pub = PublicacionCambio.query.filter_by(usuario_id=usuario.id).first()
     assert pub is not None
     assert len(pub.turnos_cedidos) == 1
     assert len(pub.turnos_aceptados) == 1
-    assert pub.turnos_cedidos[0].fecha == date(2026, 9, 1)
-    assert pub.turnos_aceptados[0].fecha == date(2026, 9, 2)
+    assert pub.turnos_cedidos[0].fecha == _DIA1
+    assert pub.turnos_aceptados[0].fecha == _DIA2
 
 
 def test_publicar_multiples_turnos_cedidos(client, db):
     usuario = _usuario_y_login(client)
     franja = _franja(db, usuario.unidad.grupo_intercambio_id)
     client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_cedida_1": "2026-09-03",
+        "fecha_cedida_1": _DIA3.isoformat(),
         "franja_cedida_1": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": franja.id,
     })
     pub = PublicacionCambio.query.filter_by(usuario_id=usuario.id).first()
@@ -145,9 +150,9 @@ def test_publicar_redirige_al_dashboard(client, db):
     usuario = _usuario_y_login(client)
     franja = _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": franja.id,
     }, follow_redirects=False)
     assert resp.status_code == 302
@@ -158,7 +163,7 @@ def test_publicar_sin_turno_cedido_muestra_error(client, db):
     usuario = _usuario_y_login(client)
     _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.post("/publicar", data={
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": 1,
     }, follow_redirects=True)
     assert resp.status_code == 200
@@ -173,7 +178,7 @@ def test_publicar_rechaza_turno_cedido_con_fecha_pasada(client, db):
     resp = client.post("/publicar", data={
         "fecha_cedida_0": ayer,
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": franja.id,
     }, follow_redirects=True)
     assert resp.status_code == 200
@@ -186,7 +191,7 @@ def test_publicar_regalo_crea_publicacion_sin_cedidos(client, db):
     franja = _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.post("/publicar", data={
         "tipo": "regalo",
-        "fecha_aceptada_0": "2026-09-01",
+        "fecha_aceptada_0": _DIA1.isoformat(),
         "franja_aceptada_0": franja.id,
     }, follow_redirects=False)
     assert resp.status_code == 302
@@ -203,7 +208,7 @@ def test_publicar_peticion_crea_publicacion_sin_aceptados(client, db):
     franja = _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.post("/publicar", data={
         "tipo": "peticion",
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
     }, follow_redirects=False)
     assert resp.status_code == 302
@@ -220,9 +225,9 @@ def test_publicar_acepta_cualquier_franja_en_turno_aceptado(client, db):
     franja = _franja(db, usuario.unidad.grupo_intercambio_id)
     resp = client.post("/publicar", data={
         "tipo": "cambio",
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
-        "fecha_aceptada_0": "2026-09-02",
+        "fecha_aceptada_0": _DIA2.isoformat(),
         "franja_aceptada_0": "0",  # 0 = cualquier franja
     }, follow_redirects=False)
     assert resp.status_code == 302
@@ -238,7 +243,7 @@ def test_publicar_rechaza_turno_aceptado_con_fecha_pasada(client, db):
     franja = _franja(db, usuario.unidad.grupo_intercambio_id)
     ayer = (date.today() - timedelta(days=1)).isoformat()
     resp = client.post("/publicar", data={
-        "fecha_cedida_0": "2026-09-01",
+        "fecha_cedida_0": _DIA1.isoformat(),
         "franja_cedida_0": franja.id,
         "fecha_aceptada_0": ayer,
         "franja_aceptada_0": franja.id,
