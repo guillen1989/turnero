@@ -3,7 +3,7 @@ import psycopg2
 from sqlalchemy import event
 from app.models import (
     Hospital, GrupoIntercambio, Unidad, Categoria, FranjaHoraria,
-    Usuario, TurnoPlanilla, PlanillaMes,
+    Usuario, TurnoPlanilla, PlanillaMes, EstadoDiaPlanilla,
 )
 from app.services.planilla import (
     añadir_turno, eliminar_turno, publicar_mes, despublicar_mes,
@@ -106,6 +106,46 @@ def test_get_o_crear_planilla_mes_recupera_de_insercion_concurrente(db):
     assert planilla is not None
     assert PlanillaMes.query.filter_by(
         usuario_id=usuario.id, anyo=2026, mes=7, unidad_id=usuario.unidad_id,
+    ).count() == 1
+
+
+def test_establecer_estado_dia_recupera_de_insercion_concurrente(db):
+    """Mismo escenario de carrera que test_get_o_crear_planilla_mes_recupera_de_insercion_concurrente
+    pero para EstadoDiaPlanilla: dos peticiones que llegan a la vez pueden hacer
+    ambas el SELECT antes de que ninguna haga el INSERT."""
+    usuario, _, _ = _setup(db, "estado-carrera@test.es")
+
+    url = db.engine.url
+    conexion_rival = psycopg2.connect(
+        dbname=url.database, user=url.username, password=url.password,
+        host=url.host, port=url.port,
+    )
+    conexion_rival.autocommit = True
+
+    ya_inyectada = []
+
+    def _inyectar_fila_rival(session, flush_context, instances):
+        if ya_inyectada:
+            return
+        ya_inyectada.append(True)
+        with conexion_rival.cursor() as cur:
+            cur.execute(
+                "INSERT INTO estado_dia_planilla (usuario_id, fecha, tipo, unidad_id) "
+                "VALUES (%s, %s, %s, %s)",
+                (usuario.id, date(2026, 7, 1), "vacaciones", usuario.unidad_id),
+            )
+
+    event.listen(db.session, "before_flush", _inyectar_fila_rival)
+    try:
+        estado = establecer_estado_dia(usuario, date(2026, 7, 1), "libre")
+    finally:
+        event.remove(db.session, "before_flush", _inyectar_fila_rival)
+        conexion_rival.close()
+
+    assert estado is not None
+    assert estado.tipo == "libre"
+    assert EstadoDiaPlanilla.query.filter_by(
+        usuario_id=usuario.id, fecha=date(2026, 7, 1), unidad_id=usuario.unidad_id,
     ).count() == 1
 
 
