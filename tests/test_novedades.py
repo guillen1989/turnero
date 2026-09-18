@@ -202,3 +202,93 @@ def test_novedades_mas_incluye_boton_me_interesa_en_publicaciones_paginadas(clie
     resp_mas = client.get(f"/novedades/mas?despues_id={pubs[-1].id}")
     cuerpo = resp_mas.data.decode("utf-8")
     assert "abrirMeInteresaNovedad(this)" in cuerpo
+
+
+# ---------------------------------------------------------------------------
+# Oportunidades sintéticas (cadena_3 / cadena_4)
+# ---------------------------------------------------------------------------
+
+def test_novedades_distingue_oportunidad_a_3_de_cambio_normal(client, db):
+    """Una publicación sintética de cadena_3 se etiqueta 'Oportunidad a 3' en
+    el feed, distinta del badge 'Cambio' de las publicaciones normales."""
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+
+    pub_normal = _publicar(u2, date(2026, 9, 1), date(2026, 9, 2))
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u2.unidad.grupo_intercambio_id
+    ).first()
+    pub_sint = PublicacionCambio(usuario_id=u2.id, es_sintetica=True, sintetica_pub_a_id=pub_normal.id)
+    db.session.add(pub_sint)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub_sint.id, fecha=date(2026, 9, 10), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_sint.id, fecha=date(2026, 9, 20), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    resp = client.get("/novedades")
+    html = resp.data.decode()
+    assert "Oportunidad a 3" in html
+    assert 'tipo-badge--sintetica' in html
+
+
+def test_novedades_muestra_oportunidad_a_4_con_resto_de_la_cadena(client, db):
+    """Una sintética de cadena_4 se etiqueta 'Oportunidad a 4' y el feed
+    explica quién trabaja el turno de quién en toda la cadena."""
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    u3 = _usuario(email="u3@test.es")
+    u4 = _usuario(email="u4@test.es")
+    _login(client, u1.email)
+
+    pub_a = _publicar(u2, date(2026, 9, 1), date(2026, 9, 2))
+    pub_intermedio = _publicar(u3, date(2026, 9, 5), date(2026, 9, 6))
+    pub_c = _publicar(u4, date(2026, 9, 7), date(2026, 9, 8))
+
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u2.unidad.grupo_intercambio_id
+    ).first()
+    pub_sint = PublicacionCambio(
+        usuario_id=u2.id, es_sintetica=True,
+        sintetica_pub_a_id=pub_a.id, sintetica_pub_b_id=pub_c.id,
+        sintetica_pub_intermedio_id=pub_intermedio.id,
+    )
+    db.session.add(pub_sint)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub_sint.id, fecha=date(2026, 9, 10), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_sint.id, fecha=date(2026, 9, 20), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    resp = client.get("/novedades")
+    html = resp.data.decode()
+    assert "Oportunidad a 4" in html
+    # Se ve el propio cambio (lo que trabajarías / lo que te trabajarían)...
+    assert "10/09/2026" in html
+    assert "20/09/2026" in html
+    # ...y el resto de la cadena, para poder explicarla a los demás.
+    assert "01/09/2026" in html
+    assert "05/09/2026" in html
+
+
+def test_novedades_mas_tambien_distingue_oportunidad_sintetica(client, db):
+    u1 = _usuario(email="u1@test.es")
+    u2 = _usuario(email="u2@test.es")
+    _login(client, u1.email)
+
+    pub_normal = _publicar(u2, date(2026, 9, 1), date(2026, 9, 2))
+    franja = FranjaHoraria.query.filter_by(
+        grupo_intercambio_id=u2.unidad.grupo_intercambio_id
+    ).first()
+    pub_sint = PublicacionCambio(usuario_id=u2.id, es_sintetica=True, sintetica_pub_a_id=pub_normal.id)
+    db.session.add(pub_sint)
+    db.session.flush()
+    db.session.add(TurnoCedido(publicacion_id=pub_sint.id, fecha=date(2026, 9, 10), franja_horaria_id=franja.id))
+    db.session.add(TurnoAceptado(publicacion_id=pub_sint.id, fecha=date(2026, 9, 20), franja_horaria_id=franja.id))
+    db.session.commit()
+
+    otras_pubs = [_publicar(u2, date(2026, 9, d), date(2026, 9, d + 1)) for d in range(11, 29, 2)]
+    client.get("/novedades")
+    resp_mas = client.get(f"/novedades/mas?despues_id={otras_pubs[-1].id}")
+    html = resp_mas.data.decode()
+    assert "Oportunidad a 3" in html

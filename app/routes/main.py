@@ -420,6 +420,7 @@ def novedades():
         unidades=unidades_de(current_user),
         pub_js_data={pub.id: _pub_js_data(pub) for pub in publicaciones},
         franjas_js=[{"id": f.id, "nombre": f.nombre} for f in franjas],
+        sint_info=_cargar_sint_info([p for p in publicaciones if p.es_sintetica]),
     )
 
 
@@ -438,6 +439,7 @@ def novedades_mas():
         publicaciones=publicaciones,
         hay_mas=hay_mas,
         pub_js_data={pub.id: _pub_js_data(pub) for pub in publicaciones},
+        sint_info=_cargar_sint_info([p for p in publicaciones if p.es_sintetica]),
     )
 
 

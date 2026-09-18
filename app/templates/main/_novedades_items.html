@@ -6,9 +6,18 @@
 {% endif %}
 {% endmacro %}
 {% for pub in publicaciones %}
-<li class="novedad-card" data-pub-id="{{ pub.id }}">
+{% set si = sint_info.get(pub.id, {}) if pub.es_sintetica else none %}
+{% set pub_a_user = si.pub_a.usuario if si and si.pub_a else none %}
+{% set pub_b_user = si.pub_b.usuario if si and si.pub_b else none %}
+{% set pub_intermedio_user = si.pub_intermedio.usuario if si and si.pub_intermedio else none %}
+<li class="novedad-card{% if pub.es_sintetica %} novedad-card--sintetica{% endif %}" data-pub-id="{{ pub.id }}">
   <div class="novedad-cabecera">
     <span class="novedad-autor">{{ pub.usuario.nombre }}</span>
+    {% if pub.es_sintetica %}
+    <span class="tipo-badge tipo-badge--sintetica">
+      {{ _('Oportunidad a 4') if pub_intermedio_user else _('Oportunidad a 3') }}
+    </span>
+    {% else %}
     <span class="tipo-badge tipo-badge--{{ 'cambio-dia' if pub.tipo == 'cambio_dia' else pub.tipo }}">
       {% if pub.tipo == 'regalo' %}{{ _('Regalo') }}
       {% elif pub.tipo == 'peticion' %}{{ _('Petición') }}
@@ -16,9 +25,60 @@
       {% elif pub.tipo == 'cambio_dia' %}{{ _('Cambio en el día') }}
       {% else %}{{ _('Cambio') }}{% endif %}
     </span>
+    {% endif %}
     <span class="novedad-fecha">{{ pub.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</span>
   </div>
   <div class="novedad-cuerpo">
+    {% if pub.es_sintetica %}
+    {% if pub_intermedio_user and pub_a_user and pub_b_user %}
+    <p class="sintetica-nota">
+      {{ _('Cambio a 4 con %(a)s, %(i)s y %(b)s.', a=pub_a_user.nombre, i=pub_intermedio_user.nombre, b=pub_b_user.nombre) }}
+    </p>
+    {% elif pub_a_user and pub_b_user %}
+    <p class="sintetica-nota">
+      {{ _('Cambio a 3 con %(a)s y %(b)s.', a=pub_a_user.nombre, b=pub_b_user.nombre) }}
+    </p>
+    {% else %}
+    <p class="sintetica-nota">
+      {{ _('Oportunidad de cambio a 4 bandas.') if pub_intermedio_user else _('Oportunidad de cambio a 3 bandas.') }}
+    </p>
+    {% endif %}
+    <div class="novedad-linea">
+      <span class="novedad-etiqueta">
+        {% if pub_b_user %}{{ _('Le trabajarías a %(nombre)s', nombre=pub_b_user.nombre) }}{% else %}{{ _('Trabajarías') }}{% endif %}:
+      </span>
+      {% for t in pub.turnos_aceptados %}
+      {{ _capsula(t) }}
+      {% endfor %}
+    </div>
+    <div class="novedad-linea">
+      <span class="novedad-etiqueta">
+        {% if pub_a_user %}{{ _('A cambio, %(nombre)s te trabajaría', nombre=pub_a_user.nombre) }}{% else %}{{ _('Librarías') }}{% endif %}:
+      </span>
+      {% for t in pub.turnos_cedidos %}
+      {{ _capsula(t) }}
+      {% endfor %}
+    </div>
+    {% if pub_intermedio_user %}
+    <p class="sintetica-nota">{{ _('Resto de la cadena, para que puedas explicársela a los demás:') }}</p>
+    {% if si.pub_a %}
+    <div class="novedad-linea">
+      <span class="novedad-etiqueta">{{ _('%(a)s libra, %(b)s se lo trabaja', a=pub_a_user.nombre, b=pub_intermedio_user.nombre) }}:</span>
+      {% for t in si.pub_a.turnos_cedidos if t.estado == 'abierto' %}
+      {{ _capsula(t) }}
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if si.pub_intermedio %}
+    <div class="novedad-linea">
+      <span class="novedad-etiqueta">{{ _('%(b)s libra, %(c)s se lo trabaja', b=pub_intermedio_user.nombre, c=pub_b_user.nombre if pub_b_user else '?') }}:</span>
+      {% for t in si.pub_intermedio.turnos_cedidos if t.estado == 'abierto' %}
+      {{ _capsula(t) }}
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+    {% else %}
     {% if pub.turnos_cedidos %}
     <div class="novedad-linea">
       <span class="novedad-etiqueta">{{ _('Cede') }}:</span>
@@ -34,6 +94,7 @@
       {{ _capsula(t) }}
       {% endfor %}
     </div>
+    {% endif %}
     {% endif %}
     {% if pub.mensaje %}
     <p class="novedad-mensaje">{{ pub.mensaje }}</p>

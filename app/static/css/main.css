@@ -1319,6 +1319,7 @@ tr.supervision-fila-resaltada .supervision-col-trabajador {
 .novedades-page { }
 .novedades-list { list-style: none; padding: 0; max-width: 640px; margin: 0 auto; }
 .novedad-card { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.6rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-left: 4px solid #005a9c; }
+.novedad-card--sintetica { border-left-color: #3730a3; background: #f5f4ff; }
 .novedad-cabecera { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
 .novedad-autor { font-weight: 700; font-size: 0.92rem; color: #1e293b; }
 .novedad-fecha { font-size: 0.75rem; color: #888; margin-left: auto; }
