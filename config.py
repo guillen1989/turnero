@@ -72,15 +72,15 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", "postgresql:///turnero"
+    SQLALCHEMY_DATABASE_URI = _fix_db_url(
+        os.environ.get("DATABASE_URL", "postgresql:///turnero")
     )
 
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "TEST_DATABASE_URL", "postgresql:///turnero_test"
+    SQLALCHEMY_DATABASE_URI = _fix_db_url(
+        os.environ.get("TEST_DATABASE_URL", "postgresql:///turnero_test")
     )
     WTF_CSRF_ENABLED = False
     # NullPool evita que las conexiones se reutilicen entre tests,

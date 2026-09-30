@@ -43,7 +43,11 @@ def _uri_aislada_por_ejecucion(uri):
     partes = urlsplit(uri)
     prefijo_bd = f"{partes.path.lstrip('/')}_{sufijo_checkout}"
     nombre_bd = f"{prefijo_bd}_{os.getpid()}"
-    uri_mantenimiento = f"{partes.scheme}://{partes.netloc}/postgres"
+    # psycopg2.connect() no entiende el sufijo "+psycopg2" del scheme de
+    # SQLAlchemy: se usa solo para las conexiones de mantenimiento (crear/
+    # borrar BDs de test), no para la URI que consume Flask-SQLAlchemy.
+    scheme_psycopg2 = partes.scheme.split("+")[0]
+    uri_mantenimiento = f"{scheme_psycopg2}://{partes.netloc}/postgres"
     return f"{partes.scheme}://{partes.netloc}/{nombre_bd}", nombre_bd, prefijo_bd, uri_mantenimiento
 
 
