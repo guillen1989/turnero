@@ -6,9 +6,16 @@ load_dotenv()
 
 
 def _fix_db_url(url):
+    if not url:
+        return url
     # Railway devuelve postgres:// pero SQLAlchemy 2.x requiere postgresql://
-    if url and url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql://", 1)
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    # Fija el driver psycopg2 explícitamente: desde SQLAlchemy 2.1 el driver
+    # por defecto para postgresql:// sin +driver pasó a ser psycopg (v3),
+    # que no está instalado (usamos psycopg2-binary).
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
     return url
 
 
